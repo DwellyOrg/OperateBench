@@ -1,0 +1,304 @@
+# Fully synthetic development fixture. No production record, policy or text is used.
+schema_version: 1
+operation_id: commerce_return_refund_synthetic_v1
+operation_type: commerce.return_refund.synthetic.v1
+operation_version: 0.1.0
+semantic_scenario_id: commerce_return_refund_reversal_synthetic_v1
+privacy_status: SYNTHETIC_ONLY
+disclaimer: >-
+  Synthetic benchmark fixture with invented actors, dates, identifiers, amounts,
+  deadlines and message text. It is not any organisation's production policy.
+data_provenance: >-
+  Authored for the OperateBench development/incubator pack. No customer data,
+  production records, proprietary workflows or real approval thresholds are used.
+
+actors:
+  customer_1:
+    role: customer
+    authority: [request_return, claim_handover]
+  returns_approver_1:
+    role: returns_approver
+    authority: [approve_refund]
+  carrier_system:
+    role: authoritative_external_system
+    authority: [verify_handover]
+  warehouse_system:
+    role: authoritative_external_system
+    authority: [inspect_return]
+  payment_system:
+    role: authoritative_external_system
+    authority: [settle_refund, reverse_refund]
+  scheduler:
+    role: system_scheduler
+    authority: [emit_timer]
+  agent:
+    role: agent
+    authority:
+      - issue_return_authorisation
+      - request_refund_approval
+      - request_refund
+      - send_message
+      - complete
+
+policy:
+  currency: USD
+  refund_amount_minor: 60000
+  approval_threshold_minor: 30000
+  handover_reminder_after_minutes: 2880
+  handover_deadline_after_minutes: 10080
+  approval_deadline_after_minutes: 4320
+  provisional_close_minutes: 2880
+  completion_notice_within_minutes: 720
+  max_turns_per_invocation: 8
+  horizon_minutes: 43200
+  max_retrieval_batches_per_invocation: 6
+
+message_fixtures:
+  msg_handover_reminder: Synthetic reminder to hand the return to the carrier.
+  msg_return_expired: Synthetic notice that the return window expired.
+  msg_refund_complete: Synthetic notice that the refund settled.
+  msg_refund_denied: Synthetic notice that the refund was not approved.
+
+hidden_state:
+  customer_segment_fixture: hidden_fixture_segment_c
+  carrier_lane_fixture: hidden_fixture_lane_7
+
+scenarios:
+  V1:
+    label: approval, settlement, reversal, second settlement and cooldown
+    starts_at: "2034-04-08T09:00:00Z"
+    expected_terminal: completed_refund_settled
+    human_checkpoint_budget: 1
+    required_checkpoint_types: [high_value_refund_approval]
+    dispatch_failures: []
+    expected_event_rejections:
+      - event_id: v1_e09
+        code: AFTER_REPLAY_FINAL
+        reason: >-
+          A second reversal is authored after the recovery refund's final
+          cooldown. It must be recorded as late and leave canonical state intact.
+    events:
+      - event_id: v1_e01
+        type: customer_return_requested
+        actor: customer_1
+        at: "2034-04-08T09:00:00Z"
+        payload:
+          return_id: return_1
+          order_id: order_1
+          cycle_id: refund_cycle_1
+          amount_minor: 60000
+          currency: USD
+
+      - event_id: v1_e02
+        type: customer_handover_claimed
+        actor: customer_1
+        on_action: {type: issue_return_authorisation, cycle_id: refund_cycle_1}
+        delay_minutes: 60
+        payload:
+          claim_id: customer_claim_1
+          return_id: return_1
+          authorisation_id: return_authorisation_1
+          cycle_id: refund_cycle_1
+
+      - event_id: v1_e03
+        type: carrier_handover_verified
+        actor: carrier_system
+        on_action: {type: issue_return_authorisation, cycle_id: refund_cycle_1}
+        delay_minutes: 180
+        payload:
+          carrier_record_id: carrier_record_1
+          return_id: return_1
+          authorisation_id: return_authorisation_1
+          cycle_id: refund_cycle_1
+          handed_over: true
+
+      - event_id: v1_e04
+        type: warehouse_inspection_completed
+        actor: warehouse_system
+        on_event: {type: carrier_handover_verified, cycle_id: refund_cycle_1}
+        delay_minutes: 1440
+        payload:
+          inspection_id: inspection_1
+          return_id: return_1
+          cycle_id: refund_cycle_1
+          disposition: ELIGIBLE_FOR_REFUND
+          amount_minor: 60000
+          currency: USD
+
+      - event_id: v1_e05
+        type: refund_approval_received
+        actor: returns_approver_1
+        on_action: {type: request_refund_approval, cycle_id: refund_cycle_1}
+        delay_minutes: 240
+        payload:
+          checkpoint_id: refund_checkpoint_1
+          inspection_id: inspection_1
+          cycle_id: refund_cycle_1
+          amount_minor: 60000
+          currency: USD
+          decision: APPROVED
+
+      - event_id: v1_e06
+        type: refund_settlement_confirmed
+        actor: payment_system
+        on_action: {type: request_refund, cycle_id: refund_cycle_1}
+        delay_minutes: 180
+        payload:
+          settlement_id: settlement_1
+          refund_request_id: refund_request_1
+          inspection_id: inspection_1
+          cycle_id: refund_cycle_1
+          amount_minor: 60000
+          currency: USD
+
+      - event_id: v1_e07
+        type: refund_settlement_reversed
+        actor: payment_system
+        on_action: {type: complete, cycle_id: refund_cycle_1}
+        delay_minutes: 60
+        payload:
+          reversal_id: reversal_1
+          refund_request_id: refund_request_1
+          cycle_id: refund_cycle_1
+          reason_code: PAYMENT_RAIL_REVERSAL
+
+      - event_id: v1_e08
+        type: refund_settlement_confirmed
+        actor: payment_system
+        on_action: {type: request_refund, cycle_id: refund_cycle_2}
+        delay_minutes: 180
+        payload:
+          settlement_id: settlement_2
+          refund_request_id: refund_request_2
+          inspection_id: inspection_1
+          cycle_id: refund_cycle_2
+          amount_minor: 60000
+          currency: USD
+
+      - event_id: v1_e09
+        type: refund_settlement_reversed
+        actor: payment_system
+        on_event: {type: resolution_cooldown_expired, cycle_id: refund_cycle_2}
+        delay_minutes: 60
+        payload:
+          reversal_id: reversal_late_2
+          refund_request_id: refund_request_2
+          cycle_id: refund_cycle_2
+          reason_code: LATE_SYNTHETIC_REVERSAL
+
+  V2:
+    label: eligible inspection followed by human refund denial
+    starts_at: "2034-04-08T09:00:00Z"
+    expected_terminal: closed_refund_denied
+    human_checkpoint_budget: 1
+    required_checkpoint_types: [high_value_refund_approval]
+    dispatch_failures: []
+    expected_event_rejections: []
+    events:
+      - event_id: v2_e01
+        type: customer_return_requested
+        actor: customer_1
+        at: "2034-04-08T09:00:00Z"
+        payload:
+          return_id: return_1
+          order_id: order_1
+          cycle_id: refund_cycle_1
+          amount_minor: 60000
+          currency: USD
+
+      - event_id: v2_e02
+        type: customer_handover_claimed
+        actor: customer_1
+        on_action: {type: issue_return_authorisation, cycle_id: refund_cycle_1}
+        delay_minutes: 60
+        payload:
+          claim_id: customer_claim_1
+          return_id: return_1
+          authorisation_id: return_authorisation_1
+          cycle_id: refund_cycle_1
+
+      - event_id: v2_e03
+        type: carrier_handover_verified
+        actor: carrier_system
+        on_action: {type: issue_return_authorisation, cycle_id: refund_cycle_1}
+        delay_minutes: 180
+        payload:
+          carrier_record_id: carrier_record_1
+          return_id: return_1
+          authorisation_id: return_authorisation_1
+          cycle_id: refund_cycle_1
+          handed_over: true
+
+      - event_id: v2_e04
+        type: warehouse_inspection_completed
+        actor: warehouse_system
+        on_event: {type: carrier_handover_verified, cycle_id: refund_cycle_1}
+        delay_minutes: 1440
+        payload:
+          inspection_id: inspection_1
+          return_id: return_1
+          cycle_id: refund_cycle_1
+          disposition: ELIGIBLE_FOR_REFUND
+          amount_minor: 60000
+          currency: USD
+
+      - event_id: v2_e05
+        type: refund_approval_received
+        actor: returns_approver_1
+        on_action: {type: request_refund_approval, cycle_id: refund_cycle_1}
+        delay_minutes: 240
+        payload:
+          checkpoint_id: refund_checkpoint_1
+          inspection_id: inspection_1
+          cycle_id: refund_cycle_1
+          amount_minor: 60000
+          currency: USD
+          decision: REJECTED
+
+  V3:
+    label: customer handover claim without carrier verification expires
+    starts_at: "2034-04-08T09:00:00Z"
+    expected_terminal: closed_return_expired
+    human_checkpoint_budget: 0
+    required_checkpoint_types: []
+    dispatch_failures: []
+    expected_event_rejections:
+      - event_id: v3_e03
+        code: AFTER_REPLAY_FINAL
+        reason: >-
+          Carrier verification arrives only after the expired return was closed.
+          It is late audit evidence and must not reopen the operation.
+    events:
+      - event_id: v3_e01
+        type: customer_return_requested
+        actor: customer_1
+        at: "2034-04-08T09:00:00Z"
+        payload:
+          return_id: return_1
+          order_id: order_1
+          cycle_id: refund_cycle_1
+          amount_minor: 60000
+          currency: USD
+
+      - event_id: v3_e02
+        type: customer_handover_claimed
+        actor: customer_1
+        on_action: {type: issue_return_authorisation, cycle_id: refund_cycle_1}
+        delay_minutes: 60
+        payload:
+          claim_id: customer_claim_1
+          return_id: return_1
+          authorisation_id: return_authorisation_1
+          cycle_id: refund_cycle_1
+
+      - event_id: v3_e03
+        type: carrier_handover_verified
+        actor: carrier_system
+        on_action: {type: complete, cycle_id: refund_cycle_1}
+        delay_minutes: 60
+        payload:
+          carrier_record_id: carrier_record_late_1
+          return_id: return_1
+          authorisation_id: return_authorisation_1
+          cycle_id: refund_cycle_1
+          handed_over: true

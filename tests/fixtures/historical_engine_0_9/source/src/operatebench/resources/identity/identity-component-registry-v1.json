@@ -1,0 +1,139 @@
+{
+  "schema": "operatebench.identity_component_registry.v1",
+  "schema_version": 1,
+  "components": [
+    {
+      "name": "card_schema_content",
+      "domain": "operatebench.digest.component.card_schema_content.v1",
+      "schema": "operatebench.component_identity.v1",
+      "schema_version": 1,
+      "requires": []
+    },
+    {
+      "name": "build_provenance_content",
+      "domain": "operatebench.digest.component.build_provenance_content.v1",
+      "schema": "operatebench.component_identity.v1",
+      "schema_version": 1,
+      "requires": []
+    },
+    {
+      "name": "operation_core_content",
+      "domain": "operatebench.digest.component.operation_core_content.v1",
+      "schema": "operatebench.component_identity.v1",
+      "schema_version": 1,
+      "requires": [
+        "card_schema_content"
+      ]
+    },
+    {
+      "name": "semantic_scenario_content",
+      "domain": "operatebench.digest.component.semantic_scenario_content.v1",
+      "schema": "operatebench.component_identity.v1",
+      "schema_version": 1,
+      "requires": [
+        "operation_core_content",
+        "card_schema_content"
+      ]
+    },
+    {
+      "name": "variant_content",
+      "domain": "operatebench.digest.component.variant_content.v1",
+      "schema": "operatebench.component_identity.v1",
+      "schema_version": 1,
+      "requires": [
+        "semantic_scenario_content",
+        "card_schema_content"
+      ]
+    },
+    {
+      "name": "runtime_contract_content",
+      "domain": "operatebench.digest.component.runtime_contract_content.v1",
+      "schema": "operatebench.component_identity.v1",
+      "schema_version": 1,
+      "requires": [
+        "operation_core_content",
+        "card_schema_content"
+      ]
+    },
+    {
+      "name": "scaffold_content",
+      "domain": "operatebench.digest.component.scaffold_content.v1",
+      "schema": "operatebench.component_identity.v1",
+      "schema_version": 1,
+      "requires": [
+        "runtime_contract_content"
+      ]
+    },
+    {
+      "name": "arm_protocol_content",
+      "domain": "operatebench.digest.component.arm_protocol_content.v1",
+      "schema": "operatebench.component_identity.v1",
+      "schema_version": 1,
+      "requires": [
+        "runtime_contract_content",
+        "semantic_scenario_content",
+        "variant_content"
+      ]
+    },
+    {
+      "name": "provider_run_plan_content",
+      "domain": "operatebench.digest.component.provider_run_plan_content.v1",
+      "schema": "operatebench.component_identity.v1",
+      "schema_version": 1,
+      "requires": [
+        "runtime_contract_content",
+        "scaffold_content",
+        "build_provenance_content"
+      ]
+    },
+    {
+      "name": "evaluator_bundle_content",
+      "domain": "operatebench.digest.component.evaluator_bundle_content.v1",
+      "schema": "operatebench.component_identity.v1",
+      "schema_version": 1,
+      "requires": [
+        "operation_core_content",
+        "card_schema_content",
+        "runtime_contract_content"
+      ]
+    },
+    {
+      "name": "analysis_contract_content",
+      "domain": "operatebench.digest.component.analysis_contract_content.v1",
+      "schema": "operatebench.component_identity.v1",
+      "schema_version": 1,
+      "requires": [
+        "evaluator_bundle_content"
+      ]
+    }
+  ],
+  "composites": [
+    {
+      "name": "runtime_bundle",
+      "domain": "operatebench.digest.composite.runtime_bundle.v1",
+      "schema": "operatebench.composite_identity.v1",
+      "schema_version": 1,
+      "members": [
+        "operation_core_content",
+        "semantic_scenario_content",
+        "variant_content",
+        "runtime_contract_content",
+        "scaffold_content",
+        "arm_protocol_content",
+        "provider_run_plan_content",
+        "build_provenance_content"
+      ]
+    },
+    {
+      "name": "experiment_bundle",
+      "domain": "operatebench.digest.composite.experiment_bundle.v1",
+      "schema": "operatebench.composite_identity.v1",
+      "schema_version": 1,
+      "members": [
+        "runtime_bundle",
+        "evaluator_bundle_content",
+        "analysis_contract_content"
+      ]
+    }
+  ]
+}

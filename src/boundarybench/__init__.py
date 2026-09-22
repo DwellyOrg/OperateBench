@@ -1,0 +1,133 @@
+"""BoundaryBench — executable methodology foundation for Sparse Autonomy Cubes."""
+
+from boundarybench.budget import (
+    BudgetError,
+    CostCapExceededError,
+    CostControls,
+    RunCostGuard,
+)
+from boundarybench.compiler import CompileError, Cube, Variant, compile_cube
+from boundarybench.environment import Environment, EnvironmentError
+from boundarybench.evaluator import PREDICATES, VariantEvaluation, evaluate
+from boundarybench.jsonsafe import (
+    CyclicStructureError,
+    JsonSafetyError,
+    NestingDepthError,
+    NonJsonValueError,
+    TextEncodingError,
+    UnrenderableValueError,
+)
+from boundarybench.loader import load_card
+from boundarybench.manifest import (
+    MANIFEST_VERSION,
+    ManifestError,
+    ManifestFormatError,
+    ManifestMismatchError,
+    SemanticManifest,
+    card_fingerprint,
+    load_manifest,
+    verify_manifest,
+)
+from boundarybench.pricing import (
+    PRICING_POLICY_VERSION,
+    ModelPrice,
+    PricingError,
+    UnknownModelPriceError,
+    price_for,
+    pricing_policy_payload,
+)
+from boundarybench.queries import (
+    QUERY_OUTCOMES,
+    QUERY_RESOLUTION_CONTRACT,
+    QueryEntry,
+    QueryRegistry,
+    QueryResolutionError,
+)
+from boundarybench.schema import ConstructCard, SchemaError
+from boundarybench.solvers import SOLVERS, SolverReport, check_solvers
+from boundarybench.suite import (
+    BENCHMARK_VERSION,
+    SUITE_SCHEMA_VERSION,
+    SuiteCheckReport,
+    SuiteConstraintError,
+    SuiteCubeError,
+    SuiteDigestError,
+    SuiteError,
+    SuiteFormatError,
+    SuiteManifest,
+    SuiteManifestError,
+    SuitePathError,
+    SuiteReport,
+    check_suite,
+    load_suite,
+    validate_suite,
+)
+from boundarybench.trajectory import Observation, Step, TerminalDecision, Trajectory
+from boundarybench.version import __version__
+
+__all__ = [
+    "BENCHMARK_VERSION",
+    "MANIFEST_VERSION",
+    "PREDICATES",
+    "PRICING_POLICY_VERSION",
+    "QUERY_OUTCOMES",
+    "QUERY_RESOLUTION_CONTRACT",
+    "SOLVERS",
+    "SUITE_SCHEMA_VERSION",
+    "BudgetError",
+    "CompileError",
+    "ConstructCard",
+    "CostCapExceededError",
+    "CostControls",
+    "Cube",
+    "CyclicStructureError",
+    "Environment",
+    "EnvironmentError",
+    "JsonSafetyError",
+    "ManifestError",
+    "ManifestFormatError",
+    "ManifestMismatchError",
+    "ModelPrice",
+    "NestingDepthError",
+    "NonJsonValueError",
+    "Observation",
+    "PricingError",
+    "QueryEntry",
+    "QueryRegistry",
+    "QueryResolutionError",
+    "RunCostGuard",
+    "SchemaError",
+    "SemanticManifest",
+    "SolverReport",
+    "Step",
+    "SuiteCheckReport",
+    "SuiteConstraintError",
+    "SuiteCubeError",
+    "SuiteDigestError",
+    "SuiteError",
+    "SuiteFormatError",
+    "SuiteManifest",
+    "SuiteManifestError",
+    "SuitePathError",
+    "SuiteReport",
+    "TerminalDecision",
+    "TextEncodingError",
+    "Trajectory",
+    "UnknownModelPriceError",
+    "UnrenderableValueError",
+    "Variant",
+    "VariantEvaluation",
+    "__version__",
+    "card_fingerprint",
+    "check_solvers",
+    "check_suite",
+    "compile_cube",
+    "evaluate",
+    "load_card",
+    "load_manifest",
+    "load_suite",
+    "price_for",
+    "pricing_policy_payload",
+    "validate_suite",
+    "verify_manifest",
+]

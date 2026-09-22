@@ -1,0 +1,1028 @@
+{
+  "schema": "operatebench.identity_manifest_digest_golden.v1",
+  "schema_version": 1,
+  "component": {
+    "name": "card_schema_content",
+    "owned_projection": {
+      "/fixture/card_schema_content": {
+        "index": 0
+      }
+    },
+    "wrapper": {
+      "domain": "operatebench.digest.component.card_schema_content.v1",
+      "schema": "operatebench.component_identity.v1",
+      "content": {
+        "/fixture/card_schema_content": {
+          "index": 0
+        }
+      }
+    },
+    "canonical_utf8_hex": "7b22636f6e74656e74223a7b222f666978747572652f636172645f736368656d615f636f6e74656e74223a7b22696e646578223a307d7d2c22646f6d61696e223a226f70657261746562656e63682e6469676573742e636f6d706f6e656e742e636172645f736368656d615f636f6e74656e742e7631222c22736368656d61223a226f70657261746562656e63682e636f6d706f6e656e745f6964656e746974792e7631227d",
+    "digest_sha256": "6ea65e919b821f70bcd52825e58b398d1ff532143fef21122ded8434a499a99b"
+  },
+  "composite": {
+    "name": "runtime_bundle",
+    "wrapper": {
+      "domain": "operatebench.digest.composite.runtime_bundle.v1",
+      "schema": "operatebench.composite_identity.v1",
+      "content": {
+        "members": [
+          {
+            "name": "operation_core_content",
+            "identity": {
+              "domain": "operatebench.digest.component.operation_core_content.v1",
+              "schema": "operatebench.component_identity.v1",
+              "schema_version": 1,
+              "content_digest_sha256": "fb1f8e065c89c00aab83ebf201dc22e78d168617ff51c12d54a95d08b404fac0",
+              "owned_fields": [
+                "/fixture/operation_core_content"
+              ],
+              "owned_projection": {
+                "/fixture/operation_core_content": {
+                  "index": 2
+                }
+              },
+              "excludes": [],
+              "requires": [
+                {
+                  "component": "card_schema_content",
+                  "compatible": {
+                    "kind": "exact_digest",
+                    "content_digest_sha256": "6ea65e919b821f70bcd52825e58b398d1ff532143fef21122ded8434a499a99b"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "name": "semantic_scenario_content",
+            "identity": {
+              "domain": "operatebench.digest.component.semantic_scenario_content.v1",
+              "schema": "operatebench.component_identity.v1",
+              "schema_version": 1,
+              "content_digest_sha256": "1b689ec623535ecdbd16ca5d9ee1f51f0aa6759ae217eb3bcb986eb2ca6e9bf8",
+              "owned_fields": [
+                "/fixture/semantic_scenario_content"
+              ],
+              "owned_projection": {
+                "/fixture/semantic_scenario_content": {
+                  "index": 3
+                }
+              },
+              "excludes": [],
+              "requires": [
+                {
+                  "component": "operation_core_content",
+                  "compatible": {
+                    "kind": "exact_digest",
+                    "content_digest_sha256": "fb1f8e065c89c00aab83ebf201dc22e78d168617ff51c12d54a95d08b404fac0"
+                  }
+                },
+                {
+                  "component": "card_schema_content",
+                  "compatible": {
+                    "kind": "exact_digest",
+                    "content_digest_sha256": "6ea65e919b821f70bcd52825e58b398d1ff532143fef21122ded8434a499a99b"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "name": "variant_content",
+            "identity": {
+              "domain": "operatebench.digest.component.variant_content.v1",
+              "schema": "operatebench.component_identity.v1",
+              "schema_version": 1,
+              "content_digest_sha256": "0add47d249cd6e8a55dfb79d29356dd0f6ece3a4e372236d98fb3a9b48146781",
+              "owned_fields": [
+                "/fixture/variant_content"
+              ],
+              "owned_projection": {
+                "/fixture/variant_content": {
+                  "index": 4
+                }
+              },
+              "excludes": [],
+              "requires": [
+                {
+                  "component": "semantic_scenario_content",
+                  "compatible": {
+                    "kind": "exact_digest",
+                    "content_digest_sha256": "1b689ec623535ecdbd16ca5d9ee1f51f0aa6759ae217eb3bcb986eb2ca6e9bf8"
+                  }
+                },
+                {
+                  "component": "card_schema_content",
+                  "compatible": {
+                    "kind": "exact_digest",
+                    "content_digest_sha256": "6ea65e919b821f70bcd52825e58b398d1ff532143fef21122ded8434a499a99b"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "name": "runtime_contract_content",
+            "identity": {
+              "domain": "operatebench.digest.component.runtime_contract_content.v1",
+              "schema": "operatebench.component_identity.v1",
+              "schema_version": 1,
+              "content_digest_sha256": "4e4cf36e4eb708e52185dd61ac2988ac0f83c73c9cbfd545d65b34d972e1e2d0",
+              "owned_fields": [
+                "/fixture/runtime_contract_content"
+              ],
+              "owned_projection": {
+                "/fixture/runtime_contract_content": {
+                  "index": 5
+                }
+              },
+              "excludes": [],
+              "requires": [
+                {
+                  "component": "operation_core_content",
+                  "compatible": {
+                    "kind": "exact_digest",
+                    "content_digest_sha256": "fb1f8e065c89c00aab83ebf201dc22e78d168617ff51c12d54a95d08b404fac0"
+                  }
+                },
+                {
+                  "component": "card_schema_content",
+                  "compatible": {
+                    "kind": "exact_digest",
+                    "content_digest_sha256": "6ea65e919b821f70bcd52825e58b398d1ff532143fef21122ded8434a499a99b"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "name": "scaffold_content",
+            "identity": {
+              "domain": "operatebench.digest.component.scaffold_content.v1",
+              "schema": "operatebench.component_identity.v1",
+              "schema_version": 1,
+              "content_digest_sha256": "d383710341102d6549c236803329acd202e31ad4f646ccef43098f35c4451060",
+              "owned_fields": [
+                "/fixture/scaffold_content"
+              ],
+              "owned_projection": {
+                "/fixture/scaffold_content": {
+                  "index": 6
+                }
+              },
+              "excludes": [],
+              "requires": [
+                {
+                  "component": "runtime_contract_content",
+                  "compatible": {
+                    "kind": "exact_digest",
+                    "content_digest_sha256": "4e4cf36e4eb708e52185dd61ac2988ac0f83c73c9cbfd545d65b34d972e1e2d0"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "name": "arm_protocol_content",
+            "identity": {
+              "domain": "operatebench.digest.component.arm_protocol_content.v1",
+              "schema": "operatebench.component_identity.v1",
+              "schema_version": 1,
+              "content_digest_sha256": "21cf80a871163365202943612dfe8c3be0f752e8d0da1bae3a383eb9c47c3826",
+              "owned_fields": [
+                "/fixture/arm_protocol_content"
+              ],
+              "owned_projection": {
+                "/fixture/arm_protocol_content": {
+                  "index": 7
+                }
+              },
+              "excludes": [],
+              "requires": [
+                {
+                  "component": "runtime_contract_content",
+                  "compatible": {
+                    "kind": "exact_digest",
+                    "content_digest_sha256": "4e4cf36e4eb708e52185dd61ac2988ac0f83c73c9cbfd545d65b34d972e1e2d0"
+                  }
+                },
+                {
+                  "component": "semantic_scenario_content",
+                  "compatible": {
+                    "kind": "exact_digest",
+                    "content_digest_sha256": "1b689ec623535ecdbd16ca5d9ee1f51f0aa6759ae217eb3bcb986eb2ca6e9bf8"
+                  }
+                },
+                {
+                  "component": "variant_content",
+                  "compatible": {
+                    "kind": "exact_digest",
+                    "content_digest_sha256": "0add47d249cd6e8a55dfb79d29356dd0f6ece3a4e372236d98fb3a9b48146781"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "name": "provider_run_plan_content",
+            "identity": {
+              "domain": "operatebench.digest.component.provider_run_plan_content.v1",
+              "schema": "operatebench.component_identity.v1",
+              "schema_version": 1,
+              "content_digest_sha256": "9bcc863d148afe1a81d558ad0cec1a22b8ec2bc17efacade5ec3abc6ce092b4d",
+              "owned_fields": [
+                "/fixture/provider_run_plan_content"
+              ],
+              "owned_projection": {
+                "/fixture/provider_run_plan_content": {
+                  "index": 8
+                }
+              },
+              "excludes": [],
+              "requires": [
+                {
+                  "component": "runtime_contract_content",
+                  "compatible": {
+                    "kind": "exact_digest",
+                    "content_digest_sha256": "4e4cf36e4eb708e52185dd61ac2988ac0f83c73c9cbfd545d65b34d972e1e2d0"
+                  }
+                },
+                {
+                  "component": "scaffold_content",
+                  "compatible": {
+                    "kind": "exact_digest",
+                    "content_digest_sha256": "d383710341102d6549c236803329acd202e31ad4f646ccef43098f35c4451060"
+                  }
+                },
+                {
+                  "component": "build_provenance_content",
+                  "compatible": {
+                    "kind": "exact_digest",
+                    "content_digest_sha256": "3bd17b1465a01f24831230441bcd32993d7b7adcc6963d9641bdbba3a9bb45c7"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "name": "build_provenance_content",
+            "identity": {
+              "domain": "operatebench.digest.component.build_provenance_content.v1",
+              "schema": "operatebench.component_identity.v1",
+              "schema_version": 1,
+              "content_digest_sha256": "3bd17b1465a01f24831230441bcd32993d7b7adcc6963d9641bdbba3a9bb45c7",
+              "owned_fields": [
+                "/fixture/build_provenance_content"
+              ],
+              "owned_projection": {
+                "/fixture/build_provenance_content": {
+                  "index": 1
+                }
+              },
+              "excludes": [],
+              "requires": []
+            }
+          }
+        ]
+      }
+    },
+    "canonical_utf8_hex": "7b22636f6e74656e74223a7b226d656d62657273223a5b7b226964656e74697479223a7b22636f6e74656e745f6469676573745f736861323536223a2266623166386530363563383963303061616238336562663230316463323265373864313638363137666635316331326435346139356430386234303466616330222c22646f6d61696e223a226f70657261746562656e63682e6469676573742e636f6d706f6e656e742e6f7065726174696f6e5f636f72655f636f6e74656e742e7631222c226578636c75646573223a5b5d2c226f776e65645f6669656c6473223a5b222f666978747572652f6f7065726174696f6e5f636f72655f636f6e74656e74225d2c226f776e65645f70726f6a656374696f6e223a7b222f666978747572652f6f7065726174696f6e5f636f72655f636f6e74656e74223a7b22696e646578223a327d7d2c227265717569726573223a5b7b22636f6d70617469626c65223a7b22636f6e74656e745f6469676573745f736861323536223a2236656136356539313962383231663730626364353238323565353862333938643166663533323134336665663231313232646564383433346134393961393962222c226b696e64223a2265786163745f646967657374227d2c22636f6d706f6e656e74223a22636172645f736368656d615f636f6e74656e74227d5d2c22736368656d61223a226f70657261746562656e63682e636f6d706f6e656e745f6964656e746974792e7631222c22736368656d615f76657273696f6e223a317d2c226e616d65223a226f7065726174696f6e5f636f72655f636f6e74656e74227d2c7b226964656e74697479223a7b22636f6e74656e745f6469676573745f736861323536223a2231623638396563363233353335656364626431366361356439656531663531663061613637353961653231376562336263623938366562326361366539626638222c22646f6d61696e223a226f70657261746562656e63682e6469676573742e636f6d706f6e656e742e73656d616e7469635f7363656e6172696f5f636f6e74656e742e7631222c226578636c75646573223a5b5d2c226f776e65645f6669656c6473223a5b222f666978747572652f73656d616e7469635f7363656e6172696f5f636f6e74656e74225d2c226f776e65645f70726f6a656374696f6e223a7b222f666978747572652f73656d616e7469635f7363656e6172696f5f636f6e74656e74223a7b22696e646578223a337d7d2c227265717569726573223a5b7b22636f6d70617469626c65223a7b22636f6e74656e745f6469676573745f736861323536223a2266623166386530363563383963303061616238336562663230316463323265373864313638363137666635316331326435346139356430386234303466616330222c226b696e64223a2265786163745f646967657374227d2c22636f6d706f6e656e74223a226f7065726174696f6e5f636f72655f636f6e74656e74227d2c7b22636f6d70617469626c65223a7b22636f6e74656e745f6469676573745f736861323536223a2236656136356539313962383231663730626364353238323565353862333938643166663533323134336665663231313232646564383433346134393961393962222c226b696e64223a2265786163745f646967657374227d2c22636f6d706f6e656e74223a22636172645f736368656d615f636f6e74656e74227d5d2c22736368656d61223a226f70657261746562656e63682e636f6d706f6e656e745f6964656e746974792e7631222c22736368656d615f76657273696f6e223a317d2c226e616d65223a2273656d616e7469635f7363656e6172696f5f636f6e74656e74227d2c7b226964656e74697479223a7b22636f6e74656e745f6469676573745f736861323536223a2230616464343764323439636436653861353564666237396432393335366464306636656365336134653337323233366439386662336139623438313436373831222c22646f6d61696e223a226f70657261746562656e63682e6469676573742e636f6d706f6e656e742e76617269616e745f636f6e74656e742e7631222c226578636c75646573223a5b5d2c226f776e65645f6669656c6473223a5b222f666978747572652f76617269616e745f636f6e74656e74225d2c226f776e65645f70726f6a656374696f6e223a7b222f666978747572652f76617269616e745f636f6e74656e74223a7b22696e646578223a347d7d2c227265717569726573223a5b7b22636f6d70617469626c65223a7b22636f6e74656e745f6469676573745f736861323536223a2231623638396563363233353335656364626431366361356439656531663531663061613637353961653231376562336263623938366562326361366539626638222c226b696e64223a2265786163745f646967657374227d2c22636f6d706f6e656e74223a2273656d616e7469635f7363656e6172696f5f636f6e74656e74227d2c7b22636f6d70617469626c65223a7b22636f6e74656e745f6469676573745f736861323536223a2236656136356539313962383231663730626364353238323565353862333938643166663533323134336665663231313232646564383433346134393961393962222c226b696e64223a2265786163745f646967657374227d2c22636f6d706f6e656e74223a22636172645f736368656d615f636f6e74656e74227d5d2c22736368656d61223a226f70657261746562656e63682e636f6d706f6e656e745f6964656e746974792e7631222c22736368656d615f76657273696f6e223a317d2c226e616d65223a2276617269616e745f636f6e74656e74227d2c7b226964656e74697479223a7b22636f6e74656e745f6469676573745f736861323536223a2234653463663336653465623730386535323138356464363161633239383861633066383363373363396362666435343564363562333464393732653165326430222c22646f6d61696e223a226f70657261746562656e63682e6469676573742e636f6d706f6e656e742e72756e74696d655f636f6e74726163745f636f6e74656e742e7631222c226578636c75646573223a5b5d2c226f776e65645f6669656c6473223a5b222f666978747572652f72756e74696d655f636f6e74726163745f636f6e74656e74225d2c226f776e65645f70726f6a656374696f6e223a7b222f666978747572652f72756e74696d655f636f6e74726163745f636f6e74656e74223a7b22696e646578223a357d7d2c227265717569726573223a5b7b22636f6d70617469626c65223a7b22636f6e74656e745f6469676573745f736861323536223a2266623166386530363563383963303061616238336562663230316463323265373864313638363137666635316331326435346139356430386234303466616330222c226b696e64223a2265786163745f646967657374227d2c22636f6d706f6e656e74223a226f7065726174696f6e5f636f72655f636f6e74656e74227d2c7b22636f6d70617469626c65223a7b22636f6e74656e745f6469676573745f736861323536223a2236656136356539313962383231663730626364353238323565353862333938643166663533323134336665663231313232646564383433346134393961393962222c226b696e64223a2265786163745f646967657374227d2c22636f6d706f6e656e74223a22636172645f736368656d615f636f6e74656e74227d5d2c22736368656d61223a226f70657261746562656e63682e636f6d706f6e656e745f6964656e746974792e7631222c22736368656d615f76657273696f6e223a317d2c226e616d65223a2272756e74696d655f636f6e74726163745f636f6e74656e74227d2c7b226964656e74697479223a7b22636f6e74656e745f6469676573745f736861323536223a2264333833373130333431313032643635343963323336383033333239616364323032653331616434663634366363656634333039386633356334343531303630222c22646f6d61696e223a226f70657261746562656e63682e6469676573742e636f6d706f6e656e742e73636166666f6c645f636f6e74656e742e7631222c226578636c75646573223a5b5d2c226f776e65645f6669656c6473223a5b222f666978747572652f73636166666f6c645f636f6e74656e74225d2c226f776e65645f70726f6a656374696f6e223a7b222f666978747572652f73636166666f6c645f636f6e74656e74223a7b22696e646578223a367d7d2c227265717569726573223a5b7b22636f6d70617469626c65223a7b22636f6e74656e745f6469676573745f736861323536223a2234653463663336653465623730386535323138356464363161633239383861633066383363373363396362666435343564363562333464393732653165326430222c226b696e64223a2265786163745f646967657374227d2c22636f6d706f6e656e74223a2272756e74696d655f636f6e74726163745f636f6e74656e74227d5d2c22736368656d61223a226f70657261746562656e63682e636f6d706f6e656e745f6964656e746974792e7631222c22736368656d615f76657273696f6e223a317d2c226e616d65223a2273636166666f6c645f636f6e74656e74227d2c7b226964656e74697479223a7b22636f6e74656e745f6469676573745f736861323536223a2232316366383061383731313633333635323032393433363132646665386333626530663735326538643064613162616533613338336562396334376333383236222c22646f6d61696e223a226f70657261746562656e63682e6469676573742e636f6d706f6e656e742e61726d5f70726f746f636f6c5f636f6e74656e742e7631222c226578636c75646573223a5b5d2c226f776e65645f6669656c6473223a5b222f666978747572652f61726d5f70726f746f636f6c5f636f6e74656e74225d2c226f776e65645f70726f6a656374696f6e223a7b222f666978747572652f61726d5f70726f746f636f6c5f636f6e74656e74223a7b22696e646578223a377d7d2c227265717569726573223a5b7b22636f6d70617469626c65223a7b22636f6e74656e745f6469676573745f736861323536223a2234653463663336653465623730386535323138356464363161633239383861633066383363373363396362666435343564363562333464393732653165326430222c226b696e64223a2265786163745f646967657374227d2c22636f6d706f6e656e74223a2272756e74696d655f636f6e74726163745f636f6e74656e74227d2c7b22636f6d70617469626c65223a7b22636f6e74656e745f6469676573745f736861323536223a2231623638396563363233353335656364626431366361356439656531663531663061613637353961653231376562336263623938366562326361366539626638222c226b696e64223a2265786163745f646967657374227d2c22636f6d706f6e656e74223a2273656d616e7469635f7363656e6172696f5f636f6e74656e74227d2c7b22636f6d70617469626c65223a7b22636f6e74656e745f6469676573745f736861323536223a2230616464343764323439636436653861353564666237396432393335366464306636656365336134653337323233366439386662336139623438313436373831222c226b696e64223a2265786163745f646967657374227d2c22636f6d706f6e656e74223a2276617269616e745f636f6e74656e74227d5d2c22736368656d61223a226f70657261746562656e63682e636f6d706f6e656e745f6964656e746974792e7631222c22736368656d615f76657273696f6e223a317d2c226e616d65223a2261726d5f70726f746f636f6c5f636f6e74656e74227d2c7b226964656e74697479223a7b22636f6e74656e745f6469676573745f736861323536223a2239626363383633643134386166653161383164353538616430636563316132326238656332626331376566616361646535656333616263366365303932623464222c22646f6d61696e223a226f70657261746562656e63682e6469676573742e636f6d706f6e656e742e70726f76696465725f72756e5f706c616e5f636f6e74656e742e7631222c226578636c75646573223a5b5d2c226f776e65645f6669656c6473223a5b222f666978747572652f70726f76696465725f72756e5f706c616e5f636f6e74656e74225d2c226f776e65645f70726f6a656374696f6e223a7b222f666978747572652f70726f76696465725f72756e5f706c616e5f636f6e74656e74223a7b22696e646578223a387d7d2c227265717569726573223a5b7b22636f6d70617469626c65223a7b22636f6e74656e745f6469676573745f736861323536223a2234653463663336653465623730386535323138356464363161633239383861633066383363373363396362666435343564363562333464393732653165326430222c226b696e64223a2265786163745f646967657374227d2c22636f6d706f6e656e74223a2272756e74696d655f636f6e74726163745f636f6e74656e74227d2c7b22636f6d70617469626c65223a7b22636f6e74656e745f6469676573745f736861323536223a2264333833373130333431313032643635343963323336383033333239616364323032653331616434663634366363656634333039386633356334343531303630222c226b696e64223a2265786163745f646967657374227d2c22636f6d706f6e656e74223a2273636166666f6c645f636f6e74656e74227d2c7b22636f6d70617469626c65223a7b22636f6e74656e745f6469676573745f736861323536223a2233626431376231343635613031663234383331323330343431626364333239393364376237616463633639363364393634316264626261336139626234356337222c226b696e64223a2265786163745f646967657374227d2c22636f6d706f6e656e74223a226275696c645f70726f76656e616e63655f636f6e74656e74227d5d2c22736368656d61223a226f70657261746562656e63682e636f6d706f6e656e745f6964656e746974792e7631222c22736368656d615f76657273696f6e223a317d2c226e616d65223a2270726f76696465725f72756e5f706c616e5f636f6e74656e74227d2c7b226964656e74697479223a7b22636f6e74656e745f6469676573745f736861323536223a2233626431376231343635613031663234383331323330343431626364333239393364376237616463633639363364393634316264626261336139626234356337222c22646f6d61696e223a226f70657261746562656e63682e6469676573742e636f6d706f6e656e742e6275696c645f70726f76656e616e63655f636f6e74656e742e7631222c226578636c75646573223a5b5d2c226f776e65645f6669656c6473223a5b222f666978747572652f6275696c645f70726f76656e616e63655f636f6e74656e74225d2c226f776e65645f70726f6a656374696f6e223a7b222f666978747572652f6275696c645f70726f76656e616e63655f636f6e74656e74223a7b22696e646578223a317d7d2c227265717569726573223a5b5d2c22736368656d61223a226f70657261746562656e63682e636f6d706f6e656e745f6964656e746974792e7631222c22736368656d615f76657273696f6e223a317d2c226e616d65223a226275696c645f70726f76656e616e63655f636f6e74656e74227d5d7d2c22646f6d61696e223a226f70657261746562656e63682e6469676573742e636f6d706f736974652e72756e74696d655f62756e646c652e7631222c22736368656d61223a226f70657261746562656e63682e636f6d706f736974655f6964656e746974792e7631227d",
+    "digest_sha256": "251e36a96f2c4cf474d06cef7d3ff3d39aab75211b4b9d191f1c4c4647b9a1bc"
+  },
+  "manifest": {
+    "manifest": {
+      "schema": "operatebench.identity_manifest.v1",
+      "schema_version": 1,
+      "components": {
+        "card_schema_content": {
+          "domain": "operatebench.digest.component.card_schema_content.v1",
+          "schema": "operatebench.component_identity.v1",
+          "schema_version": 1,
+          "content_digest_sha256": "6ea65e919b821f70bcd52825e58b398d1ff532143fef21122ded8434a499a99b",
+          "owned_fields": [
+            "/fixture/card_schema_content"
+          ],
+          "owned_projection": {
+            "/fixture/card_schema_content": {
+              "index": 0
+            }
+          },
+          "excludes": [],
+          "requires": []
+        },
+        "build_provenance_content": {
+          "domain": "operatebench.digest.component.build_provenance_content.v1",
+          "schema": "operatebench.component_identity.v1",
+          "schema_version": 1,
+          "content_digest_sha256": "3bd17b1465a01f24831230441bcd32993d7b7adcc6963d9641bdbba3a9bb45c7",
+          "owned_fields": [
+            "/fixture/build_provenance_content"
+          ],
+          "owned_projection": {
+            "/fixture/build_provenance_content": {
+              "index": 1
+            }
+          },
+          "excludes": [],
+          "requires": []
+        },
+        "operation_core_content": {
+          "domain": "operatebench.digest.component.operation_core_content.v1",
+          "schema": "operatebench.component_identity.v1",
+          "schema_version": 1,
+          "content_digest_sha256": "fb1f8e065c89c00aab83ebf201dc22e78d168617ff51c12d54a95d08b404fac0",
+          "owned_fields": [
+            "/fixture/operation_core_content"
+          ],
+          "owned_projection": {
+            "/fixture/operation_core_content": {
+              "index": 2
+            }
+          },
+          "excludes": [],
+          "requires": [
+            {
+              "component": "card_schema_content",
+              "compatible": {
+                "kind": "exact_digest",
+                "content_digest_sha256": "6ea65e919b821f70bcd52825e58b398d1ff532143fef21122ded8434a499a99b"
+              }
+            }
+          ]
+        },
+        "semantic_scenario_content": {
+          "domain": "operatebench.digest.component.semantic_scenario_content.v1",
+          "schema": "operatebench.component_identity.v1",
+          "schema_version": 1,
+          "content_digest_sha256": "1b689ec623535ecdbd16ca5d9ee1f51f0aa6759ae217eb3bcb986eb2ca6e9bf8",
+          "owned_fields": [
+            "/fixture/semantic_scenario_content"
+          ],
+          "owned_projection": {
+            "/fixture/semantic_scenario_content": {
+              "index": 3
+            }
+          },
+          "excludes": [],
+          "requires": [
+            {
+              "component": "operation_core_content",
+              "compatible": {
+                "kind": "exact_digest",
+                "content_digest_sha256": "fb1f8e065c89c00aab83ebf201dc22e78d168617ff51c12d54a95d08b404fac0"
+              }
+            },
+            {
+              "component": "card_schema_content",
+              "compatible": {
+                "kind": "exact_digest",
+                "content_digest_sha256": "6ea65e919b821f70bcd52825e58b398d1ff532143fef21122ded8434a499a99b"
+              }
+            }
+          ]
+        },
+        "variant_content": {
+          "domain": "operatebench.digest.component.variant_content.v1",
+          "schema": "operatebench.component_identity.v1",
+          "schema_version": 1,
+          "content_digest_sha256": "0add47d249cd6e8a55dfb79d29356dd0f6ece3a4e372236d98fb3a9b48146781",
+          "owned_fields": [
+            "/fixture/variant_content"
+          ],
+          "owned_projection": {
+            "/fixture/variant_content": {
+              "index": 4
+            }
+          },
+          "excludes": [],
+          "requires": [
+            {
+              "component": "semantic_scenario_content",
+              "compatible": {
+                "kind": "exact_digest",
+                "content_digest_sha256": "1b689ec623535ecdbd16ca5d9ee1f51f0aa6759ae217eb3bcb986eb2ca6e9bf8"
+              }
+            },
+            {
+              "component": "card_schema_content",
+              "compatible": {
+                "kind": "exact_digest",
+                "content_digest_sha256": "6ea65e919b821f70bcd52825e58b398d1ff532143fef21122ded8434a499a99b"
+              }
+            }
+          ]
+        },
+        "runtime_contract_content": {
+          "domain": "operatebench.digest.component.runtime_contract_content.v1",
+          "schema": "operatebench.component_identity.v1",
+          "schema_version": 1,
+          "content_digest_sha256": "4e4cf36e4eb708e52185dd61ac2988ac0f83c73c9cbfd545d65b34d972e1e2d0",
+          "owned_fields": [
+            "/fixture/runtime_contract_content"
+          ],
+          "owned_projection": {
+            "/fixture/runtime_contract_content": {
+              "index": 5
+            }
+          },
+          "excludes": [],
+          "requires": [
+            {
+              "component": "operation_core_content",
+              "compatible": {
+                "kind": "exact_digest",
+                "content_digest_sha256": "fb1f8e065c89c00aab83ebf201dc22e78d168617ff51c12d54a95d08b404fac0"
+              }
+            },
+            {
+              "component": "card_schema_content",
+              "compatible": {
+                "kind": "exact_digest",
+                "content_digest_sha256": "6ea65e919b821f70bcd52825e58b398d1ff532143fef21122ded8434a499a99b"
+              }
+            }
+          ]
+        },
+        "scaffold_content": {
+          "domain": "operatebench.digest.component.scaffold_content.v1",
+          "schema": "operatebench.component_identity.v1",
+          "schema_version": 1,
+          "content_digest_sha256": "d383710341102d6549c236803329acd202e31ad4f646ccef43098f35c4451060",
+          "owned_fields": [
+            "/fixture/scaffold_content"
+          ],
+          "owned_projection": {
+            "/fixture/scaffold_content": {
+              "index": 6
+            }
+          },
+          "excludes": [],
+          "requires": [
+            {
+              "component": "runtime_contract_content",
+              "compatible": {
+                "kind": "exact_digest",
+                "content_digest_sha256": "4e4cf36e4eb708e52185dd61ac2988ac0f83c73c9cbfd545d65b34d972e1e2d0"
+              }
+            }
+          ]
+        },
+        "arm_protocol_content": {
+          "domain": "operatebench.digest.component.arm_protocol_content.v1",
+          "schema": "operatebench.component_identity.v1",
+          "schema_version": 1,
+          "content_digest_sha256": "21cf80a871163365202943612dfe8c3be0f752e8d0da1bae3a383eb9c47c3826",
+          "owned_fields": [
+            "/fixture/arm_protocol_content"
+          ],
+          "owned_projection": {
+            "/fixture/arm_protocol_content": {
+              "index": 7
+            }
+          },
+          "excludes": [],
+          "requires": [
+            {
+              "component": "runtime_contract_content",
+              "compatible": {
+                "kind": "exact_digest",
+                "content_digest_sha256": "4e4cf36e4eb708e52185dd61ac2988ac0f83c73c9cbfd545d65b34d972e1e2d0"
+              }
+            },
+            {
+              "component": "semantic_scenario_content",
+              "compatible": {
+                "kind": "exact_digest",
+                "content_digest_sha256": "1b689ec623535ecdbd16ca5d9ee1f51f0aa6759ae217eb3bcb986eb2ca6e9bf8"
+              }
+            },
+            {
+              "component": "variant_content",
+              "compatible": {
+                "kind": "exact_digest",
+                "content_digest_sha256": "0add47d249cd6e8a55dfb79d29356dd0f6ece3a4e372236d98fb3a9b48146781"
+              }
+            }
+          ]
+        },
+        "provider_run_plan_content": {
+          "domain": "operatebench.digest.component.provider_run_plan_content.v1",
+          "schema": "operatebench.component_identity.v1",
+          "schema_version": 1,
+          "content_digest_sha256": "9bcc863d148afe1a81d558ad0cec1a22b8ec2bc17efacade5ec3abc6ce092b4d",
+          "owned_fields": [
+            "/fixture/provider_run_plan_content"
+          ],
+          "owned_projection": {
+            "/fixture/provider_run_plan_content": {
+              "index": 8
+            }
+          },
+          "excludes": [],
+          "requires": [
+            {
+              "component": "runtime_contract_content",
+              "compatible": {
+                "kind": "exact_digest",
+                "content_digest_sha256": "4e4cf36e4eb708e52185dd61ac2988ac0f83c73c9cbfd545d65b34d972e1e2d0"
+              }
+            },
+            {
+              "component": "scaffold_content",
+              "compatible": {
+                "kind": "exact_digest",
+                "content_digest_sha256": "d383710341102d6549c236803329acd202e31ad4f646ccef43098f35c4451060"
+              }
+            },
+            {
+              "component": "build_provenance_content",
+              "compatible": {
+                "kind": "exact_digest",
+                "content_digest_sha256": "3bd17b1465a01f24831230441bcd32993d7b7adcc6963d9641bdbba3a9bb45c7"
+              }
+            }
+          ]
+        },
+        "evaluator_bundle_content": {
+          "domain": "operatebench.digest.component.evaluator_bundle_content.v1",
+          "schema": "operatebench.component_identity.v1",
+          "schema_version": 1,
+          "content_digest_sha256": "e197fea41f20c7780d0592f8ddde5cbae0a823b1ead09603fc6608752af2402d",
+          "owned_fields": [
+            "/fixture/evaluator_bundle_content"
+          ],
+          "owned_projection": {
+            "/fixture/evaluator_bundle_content": {
+              "index": 9
+            }
+          },
+          "excludes": [],
+          "requires": [
+            {
+              "component": "operation_core_content",
+              "compatible": {
+                "kind": "exact_digest",
+                "content_digest_sha256": "fb1f8e065c89c00aab83ebf201dc22e78d168617ff51c12d54a95d08b404fac0"
+              }
+            },
+            {
+              "component": "card_schema_content",
+              "compatible": {
+                "kind": "exact_digest",
+                "content_digest_sha256": "6ea65e919b821f70bcd52825e58b398d1ff532143fef21122ded8434a499a99b"
+              }
+            },
+            {
+              "component": "runtime_contract_content",
+              "compatible": {
+                "kind": "exact_digest",
+                "content_digest_sha256": "4e4cf36e4eb708e52185dd61ac2988ac0f83c73c9cbfd545d65b34d972e1e2d0"
+              }
+            }
+          ]
+        },
+        "analysis_contract_content": {
+          "domain": "operatebench.digest.component.analysis_contract_content.v1",
+          "schema": "operatebench.component_identity.v1",
+          "schema_version": 1,
+          "content_digest_sha256": "506519362dc50e3dbd506e311e2bf33062f95d1e474a6b002a4b9dc94715ff90",
+          "owned_fields": [
+            "/fixture/analysis_contract_content"
+          ],
+          "owned_projection": {
+            "/fixture/analysis_contract_content": {
+              "index": 10
+            }
+          },
+          "excludes": [],
+          "requires": [
+            {
+              "component": "evaluator_bundle_content",
+              "compatible": {
+                "kind": "exact_digest",
+                "content_digest_sha256": "e197fea41f20c7780d0592f8ddde5cbae0a823b1ead09603fc6608752af2402d"
+              }
+            }
+          ]
+        }
+      },
+      "composites": {
+        "runtime_bundle": {
+          "domain": "operatebench.digest.composite.runtime_bundle.v1",
+          "schema": "operatebench.composite_identity.v1",
+          "schema_version": 1,
+          "members": [
+            "operation_core_content",
+            "semantic_scenario_content",
+            "variant_content",
+            "runtime_contract_content",
+            "scaffold_content",
+            "arm_protocol_content",
+            "provider_run_plan_content",
+            "build_provenance_content"
+          ],
+          "bundle_digest_sha256": "251e36a96f2c4cf474d06cef7d3ff3d39aab75211b4b9d191f1c4c4647b9a1bc"
+        },
+        "experiment_bundle": {
+          "domain": "operatebench.digest.composite.experiment_bundle.v1",
+          "schema": "operatebench.composite_identity.v1",
+          "schema_version": 1,
+          "members": [
+            "runtime_bundle",
+            "evaluator_bundle_content",
+            "analysis_contract_content"
+          ],
+          "bundle_digest_sha256": "dea1f4bed6860d3a5e78ee2e2e7386d6aa67b84878a6eb8be8d7d9beb6efe80e"
+        }
+      },
+      "compatibility_contract": {
+        "schema": "operatebench.compatibility_contract.v1",
+        "schema_version": 1,
+        "requirement_kinds": {
+          "exact_digest": 1,
+          "closed_schema_version_range": 1,
+          "named_predicate": 1
+        },
+        "decision_predicates": {
+          "can_runtime_replay": 1,
+          "can_evaluator_regrade": 1,
+          "can_analysis_recompute": 1,
+          "can_compare": 1,
+          "can_pool": 1
+        },
+        "named_requirement_predicates": []
+      },
+      "manifest_digest_sha256": "44a47e0c8229e14ed96b176223d6e798885ed5289e4375aa3d9e6b1cda4d444c"
+    },
+    "wrapper": {
+      "domain": "operatebench.digest.identity_manifest.v1",
+      "schema": "operatebench.identity_manifest.v1",
+      "content": {
+        "schema": "operatebench.identity_manifest.v1",
+        "schema_version": 1,
+        "components": {
+          "card_schema_content": {
+            "domain": "operatebench.digest.component.card_schema_content.v1",
+            "schema": "operatebench.component_identity.v1",
+            "schema_version": 1,
+            "content_digest_sha256": "6ea65e919b821f70bcd52825e58b398d1ff532143fef21122ded8434a499a99b",
+            "owned_fields": [
+              "/fixture/card_schema_content"
+            ],
+            "owned_projection": {
+              "/fixture/card_schema_content": {
+                "index": 0
+              }
+            },
+            "excludes": [],
+            "requires": []
+          },
+          "build_provenance_content": {
+            "domain": "operatebench.digest.component.build_provenance_content.v1",
+            "schema": "operatebench.component_identity.v1",
+            "schema_version": 1,
+            "content_digest_sha256": "3bd17b1465a01f24831230441bcd32993d7b7adcc6963d9641bdbba3a9bb45c7",
+            "owned_fields": [
+              "/fixture/build_provenance_content"
+            ],
+            "owned_projection": {
+              "/fixture/build_provenance_content": {
+                "index": 1
+              }
+            },
+            "excludes": [],
+            "requires": []
+          },
+          "operation_core_content": {
+            "domain": "operatebench.digest.component.operation_core_content.v1",
+            "schema": "operatebench.component_identity.v1",
+            "schema_version": 1,
+            "content_digest_sha256": "fb1f8e065c89c00aab83ebf201dc22e78d168617ff51c12d54a95d08b404fac0",
+            "owned_fields": [
+              "/fixture/operation_core_content"
+            ],
+            "owned_projection": {
+              "/fixture/operation_core_content": {
+                "index": 2
+              }
+            },
+            "excludes": [],
+            "requires": [
+              {
+                "component": "card_schema_content",
+                "compatible": {
+                  "kind": "exact_digest",
+                  "content_digest_sha256": "6ea65e919b821f70bcd52825e58b398d1ff532143fef21122ded8434a499a99b"
+                }
+              }
+            ]
+          },
+          "semantic_scenario_content": {
+            "domain": "operatebench.digest.component.semantic_scenario_content.v1",
+            "schema": "operatebench.component_identity.v1",
+            "schema_version": 1,
+            "content_digest_sha256": "1b689ec623535ecdbd16ca5d9ee1f51f0aa6759ae217eb3bcb986eb2ca6e9bf8",
+            "owned_fields": [
+              "/fixture/semantic_scenario_content"
+            ],
+            "owned_projection": {
+              "/fixture/semantic_scenario_content": {
+                "index": 3
+              }
+            },
+            "excludes": [],
+            "requires": [
+              {
+                "component": "operation_core_content",
+                "compatible": {
+                  "kind": "exact_digest",
+                  "content_digest_sha256": "fb1f8e065c89c00aab83ebf201dc22e78d168617ff51c12d54a95d08b404fac0"
+                }
+              },
+              {
+                "component": "card_schema_content",
+                "compatible": {
+                  "kind": "exact_digest",
+                  "content_digest_sha256": "6ea65e919b821f70bcd52825e58b398d1ff532143fef21122ded8434a499a99b"
+                }
+              }
+            ]
+          },
+          "variant_content": {
+            "domain": "operatebench.digest.component.variant_content.v1",
+            "schema": "operatebench.component_identity.v1",
+            "schema_version": 1,
+            "content_digest_sha256": "0add47d249cd6e8a55dfb79d29356dd0f6ece3a4e372236d98fb3a9b48146781",
+            "owned_fields": [
+              "/fixture/variant_content"
+            ],
+            "owned_projection": {
+              "/fixture/variant_content": {
+                "index": 4
+              }
+            },
+            "excludes": [],
+            "requires": [
+              {
+                "component": "semantic_scenario_content",
+                "compatible": {
+                  "kind": "exact_digest",
+                  "content_digest_sha256": "1b689ec623535ecdbd16ca5d9ee1f51f0aa6759ae217eb3bcb986eb2ca6e9bf8"
+                }
+              },
+              {
+                "component": "card_schema_content",
+                "compatible": {
+                  "kind": "exact_digest",
+                  "content_digest_sha256": "6ea65e919b821f70bcd52825e58b398d1ff532143fef21122ded8434a499a99b"
+                }
+              }
+            ]
+          },
+          "runtime_contract_content": {
+            "domain": "operatebench.digest.component.runtime_contract_content.v1",
+            "schema": "operatebench.component_identity.v1",
+            "schema_version": 1,
+            "content_digest_sha256": "4e4cf36e4eb708e52185dd61ac2988ac0f83c73c9cbfd545d65b34d972e1e2d0",
+            "owned_fields": [
+              "/fixture/runtime_contract_content"
+            ],
+            "owned_projection": {
+              "/fixture/runtime_contract_content": {
+                "index": 5
+              }
+            },
+            "excludes": [],
+            "requires": [
+              {
+                "component": "operation_core_content",
+                "compatible": {
+                  "kind": "exact_digest",
+                  "content_digest_sha256": "fb1f8e065c89c00aab83ebf201dc22e78d168617ff51c12d54a95d08b404fac0"
+                }
+              },
+              {
+                "component": "card_schema_content",
+                "compatible": {
+                  "kind": "exact_digest",
+                  "content_digest_sha256": "6ea65e919b821f70bcd52825e58b398d1ff532143fef21122ded8434a499a99b"
+                }
+              }
+            ]
+          },
+          "scaffold_content": {
+            "domain": "operatebench.digest.component.scaffold_content.v1",
+            "schema": "operatebench.component_identity.v1",
+            "schema_version": 1,
+            "content_digest_sha256": "d383710341102d6549c236803329acd202e31ad4f646ccef43098f35c4451060",
+            "owned_fields": [
+              "/fixture/scaffold_content"
+            ],
+            "owned_projection": {
+              "/fixture/scaffold_content": {
+                "index": 6
+              }
+            },
+            "excludes": [],
+            "requires": [
+              {
+                "component": "runtime_contract_content",
+                "compatible": {
+                  "kind": "exact_digest",
+                  "content_digest_sha256": "4e4cf36e4eb708e52185dd61ac2988ac0f83c73c9cbfd545d65b34d972e1e2d0"
+                }
+              }
+            ]
+          },
+          "arm_protocol_content": {
+            "domain": "operatebench.digest.component.arm_protocol_content.v1",
+            "schema": "operatebench.component_identity.v1",
+            "schema_version": 1,
+            "content_digest_sha256": "21cf80a871163365202943612dfe8c3be0f752e8d0da1bae3a383eb9c47c3826",
+            "owned_fields": [
+              "/fixture/arm_protocol_content"
+            ],
+            "owned_projection": {
+              "/fixture/arm_protocol_content": {
+                "index": 7
+              }
+            },
+            "excludes": [],
+            "requires": [
+              {
+                "component": "runtime_contract_content",
+                "compatible": {
+                  "kind": "exact_digest",
+                  "content_digest_sha256": "4e4cf36e4eb708e52185dd61ac2988ac0f83c73c9cbfd545d65b34d972e1e2d0"
+                }
+              },
+              {
+                "component": "semantic_scenario_content",
+                "compatible": {
+                  "kind": "exact_digest",
+                  "content_digest_sha256": "1b689ec623535ecdbd16ca5d9ee1f51f0aa6759ae217eb3bcb986eb2ca6e9bf8"
+                }
+              },
+              {
+                "component": "variant_content",
+                "compatible": {
+                  "kind": "exact_digest",
+                  "content_digest_sha256": "0add47d249cd6e8a55dfb79d29356dd0f6ece3a4e372236d98fb3a9b48146781"
+                }
+              }
+            ]
+          },
+          "provider_run_plan_content": {
+            "domain": "operatebench.digest.component.provider_run_plan_content.v1",
+            "schema": "operatebench.component_identity.v1",
+            "schema_version": 1,
+            "content_digest_sha256": "9bcc863d148afe1a81d558ad0cec1a22b8ec2bc17efacade5ec3abc6ce092b4d",
+            "owned_fields": [
+              "/fixture/provider_run_plan_content"
+            ],
+            "owned_projection": {
+              "/fixture/provider_run_plan_content": {
+                "index": 8
+              }
+            },
+            "excludes": [],
+            "requires": [
+              {
+                "component": "runtime_contract_content",
+                "compatible": {
+                  "kind": "exact_digest",
+                  "content_digest_sha256": "4e4cf36e4eb708e52185dd61ac2988ac0f83c73c9cbfd545d65b34d972e1e2d0"
+                }
+              },
+              {
+                "component": "scaffold_content",
+                "compatible": {
+                  "kind": "exact_digest",
+                  "content_digest_sha256": "d383710341102d6549c236803329acd202e31ad4f646ccef43098f35c4451060"
+                }
+              },
+              {
+                "component": "build_provenance_content",
+                "compatible": {
+                  "kind": "exact_digest",
+                  "content_digest_sha256": "3bd17b1465a01f24831230441bcd32993d7b7adcc6963d9641bdbba3a9bb45c7"
+                }
+              }
+            ]
+          },
+          "evaluator_bundle_content": {
+            "domain": "operatebench.digest.component.evaluator_bundle_content.v1",
+            "schema": "operatebench.component_identity.v1",
+            "schema_version": 1,
+            "content_digest_sha256": "e197fea41f20c7780d0592f8ddde5cbae0a823b1ead09603fc6608752af2402d",
+            "owned_fields": [
+              "/fixture/evaluator_bundle_content"
+            ],
+            "owned_projection": {
+              "/fixture/evaluator_bundle_content": {
+                "index": 9
+              }
+            },
+            "excludes": [],
+            "requires": [
+              {
+                "component": "operation_core_content",
+                "compatible": {
+                  "kind": "exact_digest",
+                  "content_digest_sha256": "fb1f8e065c89c00aab83ebf201dc22e78d168617ff51c12d54a95d08b404fac0"
+                }
+              },
+              {
+                "component": "card_schema_content",
+                "compatible": {
+                  "kind": "exact_digest",
+                  "content_digest_sha256": "6ea65e919b821f70bcd52825e58b398d1ff532143fef21122ded8434a499a99b"
+                }
+              },
+              {
+                "component": "runtime_contract_content",
+                "compatible": {
+                  "kind": "exact_digest",
+                  "content_digest_sha256": "4e4cf36e4eb708e52185dd61ac2988ac0f83c73c9cbfd545d65b34d972e1e2d0"
+                }
+              }
+            ]
+          },
+          "analysis_contract_content": {
+            "domain": "operatebench.digest.component.analysis_contract_content.v1",
+            "schema": "operatebench.component_identity.v1",
+            "schema_version": 1,
+            "content_digest_sha256": "506519362dc50e3dbd506e311e2bf33062f95d1e474a6b002a4b9dc94715ff90",
+            "owned_fields": [
+              "/fixture/analysis_contract_content"
+            ],
+            "owned_projection": {
+              "/fixture/analysis_contract_content": {
+                "index": 10
+              }
+            },
+            "excludes": [],
+            "requires": [
+              {
+                "component": "evaluator_bundle_content",
+                "compatible": {
+                  "kind": "exact_digest",
+                  "content_digest_sha256": "e197fea41f20c7780d0592f8ddde5cbae0a823b1ead09603fc6608752af2402d"
+                }
+              }
+            ]
+          }
+        },
+        "composites": {
+          "runtime_bundle": {
+            "domain": "operatebench.digest.composite.runtime_bundle.v1",
+            "schema": "operatebench.composite_identity.v1",
+            "schema_version": 1,
+            "members": [
+              "operation_core_content",
+              "semantic_scenario_content",
+              "variant_content",
+              "runtime_contract_content",
+              "scaffold_content",
+              "arm_protocol_content",
+              "provider_run_plan_content",
+              "build_provenance_content"
+            ],
+            "bundle_digest_sha256": "251e36a96f2c4cf474d06cef7d3ff3d39aab75211b4b9d191f1c4c4647b9a1bc"
+          },
+          "experiment_bundle": {
+            "domain": "operatebench.digest.composite.experiment_bundle.v1",
+            "schema": "operatebench.composite_identity.v1",
+            "schema_version": 1,
+            "members": [
+              "runtime_bundle",
+              "evaluator_bundle_content",
+              "analysis_contract_content"
+            ],
+            "bundle_digest_sha256": "dea1f4bed6860d3a5e78ee2e2e7386d6aa67b84878a6eb8be8d7d9beb6efe80e"
+          }
+        },
+        "compatibility_contract": {
+          "schema": "operatebench.compatibility_contract.v1",
+          "schema_version": 1,
+          "requirement_kinds": {
+            "exact_digest": 1,
+            "closed_schema_version_range": 1,
+            "named_predicate": 1
+          },
+          "decision_predicates": {
+            "can_runtime_replay": 1,
+            "can_evaluator_regrade": 1,
+            "can_analysis_recompute": 1,
+            "can_compare": 1,
+            "can_pool": 1
+          },
+          "named_requirement_predicates": []
+        }
+      }
+    },
+    "canonical_utf8_hex": "7b22636f6e74656e74223a7b22636f6d7061746962696c6974795f636f6e7472616374223a7b226465636973696f6e5f70726564696361746573223a7b2263616e5f616e616c797369735f7265636f6d70757465223a312c2263616e5f636f6d70617265223a312c2263616e5f6576616c7561746f725f72656772616465223a312c2263616e5f706f6f6c223a312c2263616e5f72756e74696d655f7265706c6179223a317d2c226e616d65645f726571756972656d656e745f70726564696361746573223a5b5d2c22726571756972656d656e745f6b696e6473223a7b22636c6f7365645f736368656d615f76657273696f6e5f72616e6765223a312c2265786163745f646967657374223a312c226e616d65645f707265646963617465223a317d2c22736368656d61223a226f70657261746562656e63682e636f6d7061746962696c6974795f636f6e74726163742e7631222c22736368656d615f76657273696f6e223a317d2c22636f6d706f6e656e7473223a7b22616e616c797369735f636f6e74726163745f636f6e74656e74223a7b22636f6e74656e745f6469676573745f736861323536223a2235303635313933363264633530653364626435303665333131653262663333303632663935643165343734613662303032613462396463393437313566663930222c22646f6d61696e223a226f70657261746562656e63682e6469676573742e636f6d706f6e656e742e616e616c797369735f636f6e74726163745f636f6e74656e742e7631222c226578636c75646573223a5b5d2c226f776e65645f6669656c6473223a5b222f666978747572652f616e616c797369735f636f6e74726163745f636f6e74656e74225d2c226f776e65645f70726f6a656374696f6e223a7b222f666978747572652f616e616c797369735f636f6e74726163745f636f6e74656e74223a7b22696e646578223a31307d7d2c227265717569726573223a5b7b22636f6d70617469626c65223a7b22636f6e74656e745f6469676573745f736861323536223a2265313937666561343166323063373738306430353932663864646465356362616530613832336231656164303936303366633636303837353261663234303264222c226b696e64223a2265786163745f646967657374227d2c22636f6d706f6e656e74223a226576616c7561746f725f62756e646c655f636f6e74656e74227d5d2c22736368656d61223a226f70657261746562656e63682e636f6d706f6e656e745f6964656e746974792e7631222c22736368656d615f76657273696f6e223a317d2c2261726d5f70726f746f636f6c5f636f6e74656e74223a7b22636f6e74656e745f6469676573745f736861323536223a2232316366383061383731313633333635323032393433363132646665386333626530663735326538643064613162616533613338336562396334376333383236222c22646f6d61696e223a226f70657261746562656e63682e6469676573742e636f6d706f6e656e742e61726d5f70726f746f636f6c5f636f6e74656e742e7631222c226578636c75646573223a5b5d2c226f776e65645f6669656c6473223a5b222f666978747572652f61726d5f70726f746f636f6c5f636f6e74656e74225d2c226f776e65645f70726f6a656374696f6e223a7b222f666978747572652f61726d5f70726f746f636f6c5f636f6e74656e74223a7b22696e646578223a377d7d2c227265717569726573223a5b7b22636f6d70617469626c65223a7b22636f6e74656e745f6469676573745f736861323536223a2234653463663336653465623730386535323138356464363161633239383861633066383363373363396362666435343564363562333464393732653165326430222c226b696e64223a2265786163745f646967657374227d2c22636f6d706f6e656e74223a2272756e74696d655f636f6e74726163745f636f6e74656e74227d2c7b22636f6d70617469626c65223a7b22636f6e74656e745f6469676573745f736861323536223a2231623638396563363233353335656364626431366361356439656531663531663061613637353961653231376562336263623938366562326361366539626638222c226b696e64223a2265786163745f646967657374227d2c22636f6d706f6e656e74223a2273656d616e7469635f7363656e6172696f5f636f6e74656e74227d2c7b22636f6d70617469626c65223a7b22636f6e74656e745f6469676573745f736861323536223a2230616464343764323439636436653861353564666237396432393335366464306636656365336134653337323233366439386662336139623438313436373831222c226b696e64223a2265786163745f646967657374227d2c22636f6d706f6e656e74223a2276617269616e745f636f6e74656e74227d5d2c22736368656d61223a226f70657261746562656e63682e636f6d706f6e656e745f6964656e746974792e7631222c22736368656d615f76657273696f6e223a317d2c226275696c645f70726f76656e616e63655f636f6e74656e74223a7b22636f6e74656e745f6469676573745f736861323536223a2233626431376231343635613031663234383331323330343431626364333239393364376237616463633639363364393634316264626261336139626234356337222c22646f6d61696e223a226f70657261746562656e63682e6469676573742e636f6d706f6e656e742e6275696c645f70726f76656e616e63655f636f6e74656e742e7631222c226578636c75646573223a5b5d2c226f776e65645f6669656c6473223a5b222f666978747572652f6275696c645f70726f76656e616e63655f636f6e74656e74225d2c226f776e65645f70726f6a656374696f6e223a7b222f666978747572652f6275696c645f70726f76656e616e63655f636f6e74656e74223a7b22696e646578223a317d7d2c227265717569726573223a5b5d2c22736368656d61223a226f70657261746562656e63682e636f6d706f6e656e745f6964656e746974792e7631222c22736368656d615f76657273696f6e223a317d2c22636172645f736368656d615f636f6e74656e74223a7b22636f6e74656e745f6469676573745f736861323536223a2236656136356539313962383231663730626364353238323565353862333938643166663533323134336665663231313232646564383433346134393961393962222c22646f6d61696e223a226f70657261746562656e63682e6469676573742e636f6d706f6e656e742e636172645f736368656d615f636f6e74656e742e7631222c226578636c75646573223a5b5d2c226f776e65645f6669656c6473223a5b222f666978747572652f636172645f736368656d615f636f6e74656e74225d2c226f776e65645f70726f6a656374696f6e223a7b222f666978747572652f636172645f736368656d615f636f6e74656e74223a7b22696e646578223a307d7d2c227265717569726573223a5b5d2c22736368656d61223a226f70657261746562656e63682e636f6d706f6e656e745f6964656e746974792e7631222c22736368656d615f76657273696f6e223a317d2c226576616c7561746f725f62756e646c655f636f6e74656e74223a7b22636f6e74656e745f6469676573745f736861323536223a2265313937666561343166323063373738306430353932663864646465356362616530613832336231656164303936303366633636303837353261663234303264222c22646f6d61696e223a226f70657261746562656e63682e6469676573742e636f6d706f6e656e742e6576616c7561746f725f62756e646c655f636f6e74656e742e7631222c226578636c75646573223a5b5d2c226f776e65645f6669656c6473223a5b222f666978747572652f6576616c7561746f725f62756e646c655f636f6e74656e74225d2c226f776e65645f70726f6a656374696f6e223a7b222f666978747572652f6576616c7561746f725f62756e646c655f636f6e74656e74223a7b22696e646578223a397d7d2c227265717569726573223a5b7b22636f6d70617469626c65223a7b22636f6e74656e745f6469676573745f736861323536223a2266623166386530363563383963303061616238336562663230316463323265373864313638363137666635316331326435346139356430386234303466616330222c226b696e64223a2265786163745f646967657374227d2c22636f6d706f6e656e74223a226f7065726174696f6e5f636f72655f636f6e74656e74227d2c7b22636f6d70617469626c65223a7b22636f6e74656e745f6469676573745f736861323536223a2236656136356539313962383231663730626364353238323565353862333938643166663533323134336665663231313232646564383433346134393961393962222c226b696e64223a2265786163745f646967657374227d2c22636f6d706f6e656e74223a22636172645f736368656d615f636f6e74656e74227d2c7b22636f6d70617469626c65223a7b22636f6e74656e745f6469676573745f736861323536223a2234653463663336653465623730386535323138356464363161633239383861633066383363373363396362666435343564363562333464393732653165326430222c226b696e64223a2265786163745f646967657374227d2c22636f6d706f6e656e74223a2272756e74696d655f636f6e74726163745f636f6e74656e74227d5d2c22736368656d61223a226f70657261746562656e63682e636f6d706f6e656e745f6964656e746974792e7631222c22736368656d615f76657273696f6e223a317d2c226f7065726174696f6e5f636f72655f636f6e74656e74223a7b22636f6e74656e745f6469676573745f736861323536223a2266623166386530363563383963303061616238336562663230316463323265373864313638363137666635316331326435346139356430386234303466616330222c22646f6d61696e223a226f70657261746562656e63682e6469676573742e636f6d706f6e656e742e6f7065726174696f6e5f636f72655f636f6e74656e742e7631222c226578636c75646573223a5b5d2c226f776e65645f6669656c6473223a5b222f666978747572652f6f7065726174696f6e5f636f72655f636f6e74656e74225d2c226f776e65645f70726f6a656374696f6e223a7b222f666978747572652f6f7065726174696f6e5f636f72655f636f6e74656e74223a7b22696e646578223a327d7d2c227265717569726573223a5b7b22636f6d70617469626c65223a7b22636f6e74656e745f6469676573745f736861323536223a2236656136356539313962383231663730626364353238323565353862333938643166663533323134336665663231313232646564383433346134393961393962222c226b696e64223a2265786163745f646967657374227d2c22636f6d706f6e656e74223a22636172645f736368656d615f636f6e74656e74227d5d2c22736368656d61223a226f70657261746562656e63682e636f6d706f6e656e745f6964656e746974792e7631222c22736368656d615f76657273696f6e223a317d2c2270726f76696465725f72756e5f706c616e5f636f6e74656e74223a7b22636f6e74656e745f6469676573745f736861323536223a2239626363383633643134386166653161383164353538616430636563316132326238656332626331376566616361646535656333616263366365303932623464222c22646f6d61696e223a226f70657261746562656e63682e6469676573742e636f6d706f6e656e742e70726f76696465725f72756e5f706c616e5f636f6e74656e742e7631222c226578636c75646573223a5b5d2c226f776e65645f6669656c6473223a5b222f666978747572652f70726f76696465725f72756e5f706c616e5f636f6e74656e74225d2c226f776e65645f70726f6a656374696f6e223a7b222f666978747572652f70726f76696465725f72756e5f706c616e5f636f6e74656e74223a7b22696e646578223a387d7d2c227265717569726573223a5b7b22636f6d70617469626c65223a7b22636f6e74656e745f6469676573745f736861323536223a2234653463663336653465623730386535323138356464363161633239383861633066383363373363396362666435343564363562333464393732653165326430222c226b696e64223a2265786163745f646967657374227d2c22636f6d706f6e656e74223a2272756e74696d655f636f6e74726163745f636f6e74656e74227d2c7b22636f6d70617469626c65223a7b22636f6e74656e745f6469676573745f736861323536223a2264333833373130333431313032643635343963323336383033333239616364323032653331616434663634366363656634333039386633356334343531303630222c226b696e64223a2265786163745f646967657374227d2c22636f6d706f6e656e74223a2273636166666f6c645f636f6e74656e74227d2c7b22636f6d70617469626c65223a7b22636f6e74656e745f6469676573745f736861323536223a2233626431376231343635613031663234383331323330343431626364333239393364376237616463633639363364393634316264626261336139626234356337222c226b696e64223a2265786163745f646967657374227d2c22636f6d706f6e656e74223a226275696c645f70726f76656e616e63655f636f6e74656e74227d5d2c22736368656d61223a226f70657261746562656e63682e636f6d706f6e656e745f6964656e746974792e7631222c22736368656d615f76657273696f6e223a317d2c2272756e74696d655f636f6e74726163745f636f6e74656e74223a7b22636f6e74656e745f6469676573745f736861323536223a2234653463663336653465623730386535323138356464363161633239383861633066383363373363396362666435343564363562333464393732653165326430222c22646f6d61696e223a226f70657261746562656e63682e6469676573742e636f6d706f6e656e742e72756e74696d655f636f6e74726163745f636f6e74656e742e7631222c226578636c75646573223a5b5d2c226f776e65645f6669656c6473223a5b222f666978747572652f72756e74696d655f636f6e74726163745f636f6e74656e74225d2c226f776e65645f70726f6a656374696f6e223a7b222f666978747572652f72756e74696d655f636f6e74726163745f636f6e74656e74223a7b22696e646578223a357d7d2c227265717569726573223a5b7b22636f6d70617469626c65223a7b22636f6e74656e745f6469676573745f736861323536223a2266623166386530363563383963303061616238336562663230316463323265373864313638363137666635316331326435346139356430386234303466616330222c226b696e64223a2265786163745f646967657374227d2c22636f6d706f6e656e74223a226f7065726174696f6e5f636f72655f636f6e74656e74227d2c7b22636f6d70617469626c65223a7b22636f6e74656e745f6469676573745f736861323536223a2236656136356539313962383231663730626364353238323565353862333938643166663533323134336665663231313232646564383433346134393961393962222c226b696e64223a2265786163745f646967657374227d2c22636f6d706f6e656e74223a22636172645f736368656d615f636f6e74656e74227d5d2c22736368656d61223a226f70657261746562656e63682e636f6d706f6e656e745f6964656e746974792e7631222c22736368656d615f76657273696f6e223a317d2c2273636166666f6c645f636f6e74656e74223a7b22636f6e74656e745f6469676573745f736861323536223a2264333833373130333431313032643635343963323336383033333239616364323032653331616434663634366363656634333039386633356334343531303630222c22646f6d61696e223a226f70657261746562656e63682e6469676573742e636f6d706f6e656e742e73636166666f6c645f636f6e74656e742e7631222c226578636c75646573223a5b5d2c226f776e65645f6669656c6473223a5b222f666978747572652f73636166666f6c645f636f6e74656e74225d2c226f776e65645f70726f6a656374696f6e223a7b222f666978747572652f73636166666f6c645f636f6e74656e74223a7b22696e646578223a367d7d2c227265717569726573223a5b7b22636f6d70617469626c65223a7b22636f6e74656e745f6469676573745f736861323536223a2234653463663336653465623730386535323138356464363161633239383861633066383363373363396362666435343564363562333464393732653165326430222c226b696e64223a2265786163745f646967657374227d2c22636f6d706f6e656e74223a2272756e74696d655f636f6e74726163745f636f6e74656e74227d5d2c22736368656d61223a226f70657261746562656e63682e636f6d706f6e656e745f6964656e746974792e7631222c22736368656d615f76657273696f6e223a317d2c2273656d616e7469635f7363656e6172696f5f636f6e74656e74223a7b22636f6e74656e745f6469676573745f736861323536223a2231623638396563363233353335656364626431366361356439656531663531663061613637353961653231376562336263623938366562326361366539626638222c22646f6d61696e223a226f70657261746562656e63682e6469676573742e636f6d706f6e656e742e73656d616e7469635f7363656e6172696f5f636f6e74656e742e7631222c226578636c75646573223a5b5d2c226f776e65645f6669656c6473223a5b222f666978747572652f73656d616e7469635f7363656e6172696f5f636f6e74656e74225d2c226f776e65645f70726f6a656374696f6e223a7b222f666978747572652f73656d616e7469635f7363656e6172696f5f636f6e74656e74223a7b22696e646578223a337d7d2c227265717569726573223a5b7b22636f6d70617469626c65223a7b22636f6e74656e745f6469676573745f736861323536223a2266623166386530363563383963303061616238336562663230316463323265373864313638363137666635316331326435346139356430386234303466616330222c226b696e64223a2265786163745f646967657374227d2c22636f6d706f6e656e74223a226f7065726174696f6e5f636f72655f636f6e74656e74227d2c7b22636f6d70617469626c65223a7b22636f6e74656e745f6469676573745f736861323536223a2236656136356539313962383231663730626364353238323565353862333938643166663533323134336665663231313232646564383433346134393961393962222c226b696e64223a2265786163745f646967657374227d2c22636f6d706f6e656e74223a22636172645f736368656d615f636f6e74656e74227d5d2c22736368656d61223a226f70657261746562656e63682e636f6d706f6e656e745f6964656e746974792e7631222c22736368656d615f76657273696f6e223a317d2c2276617269616e745f636f6e74656e74223a7b22636f6e74656e745f6469676573745f736861323536223a2230616464343764323439636436653861353564666237396432393335366464306636656365336134653337323233366439386662336139623438313436373831222c22646f6d61696e223a226f70657261746562656e63682e6469676573742e636f6d706f6e656e742e76617269616e745f636f6e74656e742e7631222c226578636c75646573223a5b5d2c226f776e65645f6669656c6473223a5b222f666978747572652f76617269616e745f636f6e74656e74225d2c226f776e65645f70726f6a656374696f6e223a7b222f666978747572652f76617269616e745f636f6e74656e74223a7b22696e646578223a347d7d2c227265717569726573223a5b7b22636f6d70617469626c65223a7b22636f6e74656e745f6469676573745f736861323536223a2231623638396563363233353335656364626431366361356439656531663531663061613637353961653231376562336263623938366562326361366539626638222c226b696e64223a2265786163745f646967657374227d2c22636f6d706f6e656e74223a2273656d616e7469635f7363656e6172696f5f636f6e74656e74227d2c7b22636f6d70617469626c65223a7b22636f6e74656e745f6469676573745f736861323536223a2236656136356539313962383231663730626364353238323565353862333938643166663533323134336665663231313232646564383433346134393961393962222c226b696e64223a2265786163745f646967657374227d2c22636f6d706f6e656e74223a22636172645f736368656d615f636f6e74656e74227d5d2c22736368656d61223a226f70657261746562656e63682e636f6d706f6e656e745f6964656e746974792e7631222c22736368656d615f76657273696f6e223a317d7d2c22636f6d706f7369746573223a7b226578706572696d656e745f62756e646c65223a7b2262756e646c655f6469676573745f736861323536223a2264656131663462656436383630643361356537386565326532653733383664366161363762383438373861366562386265386437643962656236656665383065222c22646f6d61696e223a226f70657261746562656e63682e6469676573742e636f6d706f736974652e6578706572696d656e745f62756e646c652e7631222c226d656d62657273223a5b2272756e74696d655f62756e646c65222c226576616c7561746f725f62756e646c655f636f6e74656e74222c22616e616c797369735f636f6e74726163745f636f6e74656e74225d2c22736368656d61223a226f70657261746562656e63682e636f6d706f736974655f6964656e746974792e7631222c22736368656d615f76657273696f6e223a317d2c2272756e74696d655f62756e646c65223a7b2262756e646c655f6469676573745f736861323536223a2232353165333661393666326334636634373464303663656637643366663364333961616237353231316234623964313931663163346334363437623961316263222c22646f6d61696e223a226f70657261746562656e63682e6469676573742e636f6d706f736974652e72756e74696d655f62756e646c652e7631222c226d656d62657273223a5b226f7065726174696f6e5f636f72655f636f6e74656e74222c2273656d616e7469635f7363656e6172696f5f636f6e74656e74222c2276617269616e745f636f6e74656e74222c2272756e74696d655f636f6e74726163745f636f6e74656e74222c2273636166666f6c645f636f6e74656e74222c2261726d5f70726f746f636f6c5f636f6e74656e74222c2270726f76696465725f72756e5f706c616e5f636f6e74656e74222c226275696c645f70726f76656e616e63655f636f6e74656e74225d2c22736368656d61223a226f70657261746562656e63682e636f6d706f736974655f6964656e746974792e7631222c22736368656d615f76657273696f6e223a317d7d2c22736368656d61223a226f70657261746562656e63682e6964656e746974795f6d616e69666573742e7631222c22736368656d615f76657273696f6e223a317d2c22646f6d61696e223a226f70657261746562656e63682e6469676573742e6964656e746974795f6d616e69666573742e7631222c22736368656d61223a226f70657261746562656e63682e6964656e746974795f6d616e69666573742e7631227d",
+    "digest_sha256": "44a47e0c8229e14ed96b176223d6e798885ed5289e4375aa3d9e6b1cda4d444c"
+  }
+}

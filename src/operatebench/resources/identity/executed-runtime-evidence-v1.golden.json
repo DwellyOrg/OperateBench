@@ -1,0 +1,436 @@
+{
+  "schema": "operatebench.executed_runtime_evidence_golden.v1",
+  "schema_version": 1,
+  "digest_domain": "operatebench.digest.executed_runtime_evidence.v1",
+  "bounds": {
+    "max_depth": 64,
+    "max_nodes": 100000,
+    "max_container_members": 4096,
+    "max_string_utf8_bytes": 1048576,
+    "max_payload_utf8_bytes": 8388608,
+    "safe_integer_max": 9007199254740991,
+    "safe_integer_min": -9007199254740991
+  },
+  "valid_vectors": [
+    {
+      "name": "provider_null",
+      "authority_status": "wire_and_digest_valid",
+      "evidence": {
+        "schema": "operatebench.executed_runtime_evidence.v1",
+        "schema_version": 1,
+        "identity_manifest_digest_sha256": "251e36a96f2c4cf474d06cef7d3ff3d39aab75211b4b9d191f1c4c4647b9a1bc",
+        "operation_instance_id": "opinst_00000000000000000000000000000000",
+        "outcome": {
+          "schema": "operatebench.episode_outcome.v2",
+          "schema_version": 2,
+          "status": "completed_successfully",
+          "terminal_outcome": "completed_successfully",
+          "replay_final": true,
+          "started_at": "2031-03-03T09:00:00Z",
+          "ended_at": "2031-03-03T09:00:00Z",
+          "simulated_minutes": 0,
+          "invocations": 0,
+          "final_state": {},
+          "final_state_digest_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+          "trajectory": [],
+          "trajectory_digest_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "events": []
+        },
+        "decision_tape": {
+          "schema": "operatebench.decision_tape.v1",
+          "schema_version": 1,
+          "decisions": [],
+          "decisions_digest_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "execution_record": {
+          "schema": "operatebench.execution_record.v1",
+          "schema_version": 1,
+          "outcome_source": "deterministic",
+          "model": null,
+          "protocol_version": null,
+          "max_output_tokens": null,
+          "transport_calls": 0,
+          "retry_count": 0,
+          "attempts": [],
+          "excluded": false,
+          "exclusion_code": null,
+          "exclusion_detail": ""
+        },
+        "provider_binding": null,
+        "runtime_evidence_digest_sha256": "309b01dd7e08c61e1314b972467c922403f38ef097555ab7f762c125a06c2704"
+      },
+      "canonical_wrapper_utf8": "{\"content\":{\"decision_tape\":{\"decisions\":[],\"decisions_digest_sha256\":\"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945\",\"schema\":\"operatebench.decision_tape.v1\",\"schema_version\":1},\"execution_record\":{\"attempts\":[],\"excluded\":false,\"exclusion_code\":null,\"exclusion_detail\":\"\",\"max_output_tokens\":null,\"model\":null,\"outcome_source\":\"deterministic\",\"protocol_version\":null,\"retry_count\":0,\"schema\":\"operatebench.execution_record.v1\",\"schema_version\":1,\"transport_calls\":0},\"identity_manifest_digest_sha256\":\"251e36a96f2c4cf474d06cef7d3ff3d39aab75211b4b9d191f1c4c4647b9a1bc\",\"operation_instance_id\":\"opinst_00000000000000000000000000000000\",\"outcome\":{\"ended_at\":\"2031-03-03T09:00:00Z\",\"events\":[],\"final_state\":{},\"final_state_digest_sha256\":\"44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a\",\"invocations\":0,\"replay_final\":true,\"schema\":\"operatebench.episode_outcome.v2\",\"schema_version\":2,\"simulated_minutes\":0,\"started_at\":\"2031-03-03T09:00:00Z\",\"status\":\"completed_successfully\",\"terminal_outcome\":\"completed_successfully\",\"trajectory\":[],\"trajectory_digest_sha256\":\"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945\"},\"provider_binding\":null,\"schema\":\"operatebench.executed_runtime_evidence.v1\",\"schema_version\":1},\"domain\":\"operatebench.digest.executed_runtime_evidence.v1\",\"schema\":\"operatebench.executed_runtime_evidence.v1\"}",
+      "canonical_wrapper_utf8_hex": "7b22636f6e74656e74223a7b226465636973696f6e5f74617065223a7b226465636973696f6e73223a5b5d2c226465636973696f6e735f6469676573745f736861323536223a2234663533636461313863326261613063303335346262356639613365636265356564313261623464386531316261383733633266313131363132303262393435222c22736368656d61223a226f70657261746562656e63682e6465636973696f6e5f746170652e7631222c22736368656d615f76657273696f6e223a317d2c22657865637574696f6e5f7265636f7264223a7b22617474656d707473223a5b5d2c226578636c75646564223a66616c73652c226578636c7573696f6e5f636f6465223a6e756c6c2c226578636c7573696f6e5f64657461696c223a22222c226d61785f6f75747075745f746f6b656e73223a6e756c6c2c226d6f64656c223a6e756c6c2c226f7574636f6d655f736f75726365223a2264657465726d696e6973746963222c2270726f746f636f6c5f76657273696f6e223a6e756c6c2c2272657472795f636f756e74223a302c22736368656d61223a226f70657261746562656e63682e657865637574696f6e5f7265636f72642e7631222c22736368656d615f76657273696f6e223a312c227472616e73706f72745f63616c6c73223a307d2c226964656e746974795f6d616e69666573745f6469676573745f736861323536223a2232353165333661393666326334636634373464303663656637643366663364333961616237353231316234623964313931663163346334363437623961316263222c226f7065726174696f6e5f696e7374616e63655f6964223a226f70696e73745f3030303030303030303030303030303030303030303030303030303030303030222c226f7574636f6d65223a7b22656e6465645f6174223a22323033312d30332d30335430393a30303a30305a222c226576656e7473223a5b5d2c2266696e616c5f7374617465223a7b7d2c2266696e616c5f73746174655f6469676573745f736861323536223a2234343133366661333535623336373861313134366164313666376538363439653934666234666332316665373765383331306330363066363163616166663861222c22696e766f636174696f6e73223a302c227265706c61795f66696e616c223a747275652c22736368656d61223a226f70657261746562656e63682e657069736f64655f6f7574636f6d652e7632222c22736368656d615f76657273696f6e223a322c2273696d756c617465645f6d696e75746573223a302c22737461727465645f6174223a22323033312d30332d30335430393a30303a30305a222c22737461747573223a22636f6d706c657465645f7375636365737366756c6c79222c227465726d696e616c5f6f7574636f6d65223a22636f6d706c657465645f7375636365737366756c6c79222c227472616a6563746f7279223a5b5d2c227472616a6563746f72795f6469676573745f736861323536223a2234663533636461313863326261613063303335346262356639613365636265356564313261623464386531316261383733633266313131363132303262393435227d2c2270726f76696465725f62696e64696e67223a6e756c6c2c22736368656d61223a226f70657261746562656e63682e65786563757465645f72756e74696d655f65766964656e63652e7631222c22736368656d615f76657273696f6e223a317d2c22646f6d61696e223a226f70657261746562656e63682e6469676573742e65786563757465645f72756e74696d655f65766964656e63652e7631222c22736368656d61223a226f70657261746562656e63682e65786563757465645f72756e74696d655f65766964656e63652e7631227d",
+      "canonical_wrapper_bytes": 1379,
+      "expected_sha256": "309b01dd7e08c61e1314b972467c922403f38ef097555ab7f762c125a06c2704"
+    },
+    {
+      "name": "provider_non_null",
+      "authority_status": "wire_and_digest_valid_audit_required_for_trust",
+      "evidence": {
+        "schema": "operatebench.executed_runtime_evidence.v1",
+        "schema_version": 1,
+        "identity_manifest_digest_sha256": "251e36a96f2c4cf474d06cef7d3ff3d39aab75211b4b9d191f1c4c4647b9a1bc",
+        "operation_instance_id": "opinst_99999999999999999999999999999999",
+        "outcome": {
+          "schema": "operatebench.episode_outcome.v2",
+          "schema_version": 2,
+          "status": "completed_successfully",
+          "terminal_outcome": "completed_successfully",
+          "replay_final": true,
+          "started_at": "2031-03-03T09:00:00Z",
+          "ended_at": "2031-03-03T09:00:00Z",
+          "simulated_minutes": 0,
+          "invocations": 1,
+          "final_state": {},
+          "final_state_digest_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+          "trajectory": [],
+          "trajectory_digest_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "events": []
+        },
+        "decision_tape": {
+          "schema": "operatebench.decision_tape.v1",
+          "schema_version": 1,
+          "decisions": [
+            {
+              "invocation_index": 1,
+              "turn_index": 0,
+              "observation_digest_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+              "outcome": {
+                "kind": "COMPLETE",
+                "reason": "done",
+                "evidence_refs": []
+              }
+            }
+          ],
+          "decisions_digest_sha256": "92db5d0ab552f56f72156d1695cb6ff1558895f68ac4c738009e9573ef84b496"
+        },
+        "execution_record": {
+          "schema": "operatebench.execution_record.v1",
+          "schema_version": 1,
+          "outcome_source": "model",
+          "model": "synthetic-model",
+          "protocol_version": "operatebench.model.v4",
+          "max_output_tokens": 4096,
+          "transport_calls": 1,
+          "retry_count": 0,
+          "attempts": [
+            {
+              "invocation_index": 1,
+              "turn_index": 0,
+              "request_digest_sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+              "outcome": "decided",
+              "fault": null
+            }
+          ],
+          "excluded": false,
+          "exclusion_code": null,
+          "exclusion_detail": ""
+        },
+        "provider_binding": {
+          "schema": "operatebench.provider_execution_binding.v1",
+          "schema_version": 1,
+          "execution_run_id": "exec_44444444444444444444444444444444",
+          "execution_ledger_version": 2,
+          "execution_ledger_digest_sha256": "5555555555555555555555555555555555555555555555555555555555555555",
+          "provider": "openai",
+          "api": "responses",
+          "model": "synthetic-model",
+          "settings_digest_sha256": "6666666666666666666666666666666666666666666666666666666666666666",
+          "pricing_digest_sha256": "7777777777777777777777777777777777777777777777777777777777777777",
+          "provider_calls": 1,
+          "attempts": 1,
+          "measured_cost_usd": "0",
+          "forfeited_reservation_usd": "0",
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "decision_call_index": [
+            0
+          ]
+        },
+        "runtime_evidence_digest_sha256": "970ec85c12c5d9bbf562198a3ab016d66abcec2d4abba628e7a6e161419d393e"
+      },
+      "canonical_wrapper_utf8": "{\"content\":{\"decision_tape\":{\"decisions\":[{\"invocation_index\":1,\"observation_digest_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"outcome\":{\"evidence_refs\":[],\"kind\":\"COMPLETE\",\"reason\":\"done\"},\"turn_index\":0}],\"decisions_digest_sha256\":\"92db5d0ab552f56f72156d1695cb6ff1558895f68ac4c738009e9573ef84b496\",\"schema\":\"operatebench.decision_tape.v1\",\"schema_version\":1},\"execution_record\":{\"attempts\":[{\"fault\":null,\"invocation_index\":1,\"outcome\":\"decided\",\"request_digest_sha256\":\"3333333333333333333333333333333333333333333333333333333333333333\",\"turn_index\":0}],\"excluded\":false,\"exclusion_code\":null,\"exclusion_detail\":\"\",\"max_output_tokens\":4096,\"model\":\"synthetic-model\",\"outcome_source\":\"model\",\"protocol_version\":\"operatebench.model.v4\",\"retry_count\":0,\"schema\":\"operatebench.execution_record.v1\",\"schema_version\":1,\"transport_calls\":1},\"identity_manifest_digest_sha256\":\"251e36a96f2c4cf474d06cef7d3ff3d39aab75211b4b9d191f1c4c4647b9a1bc\",\"operation_instance_id\":\"opinst_99999999999999999999999999999999\",\"outcome\":{\"ended_at\":\"2031-03-03T09:00:00Z\",\"events\":[],\"final_state\":{},\"final_state_digest_sha256\":\"44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a\",\"invocations\":1,\"replay_final\":true,\"schema\":\"operatebench.episode_outcome.v2\",\"schema_version\":2,\"simulated_minutes\":0,\"started_at\":\"2031-03-03T09:00:00Z\",\"status\":\"completed_successfully\",\"terminal_outcome\":\"completed_successfully\",\"trajectory\":[],\"trajectory_digest_sha256\":\"4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945\"},\"provider_binding\":{\"api\":\"responses\",\"attempts\":1,\"decision_call_index\":[0],\"execution_ledger_digest_sha256\":\"5555555555555555555555555555555555555555555555555555555555555555\",\"execution_ledger_version\":2,\"execution_run_id\":\"exec_44444444444444444444444444444444\",\"forfeited_reservation_usd\":\"0\",\"input_tokens\":0,\"measured_cost_usd\":\"0\",\"model\":\"synthetic-model\",\"output_tokens\":0,\"pricing_digest_sha256\":\"7777777777777777777777777777777777777777777777777777777777777777\",\"provider\":\"openai\",\"provider_calls\":1,\"schema\":\"operatebench.provider_execution_binding.v1\",\"schema_version\":1,\"settings_digest_sha256\":\"6666666666666666666666666666666666666666666666666666666666666666\"},\"schema\":\"operatebench.executed_runtime_evidence.v1\",\"schema_version\":1},\"domain\":\"operatebench.digest.executed_runtime_evidence.v1\",\"schema\":\"operatebench.executed_runtime_evidence.v1\"}",
+      "canonical_wrapper_utf8_hex": "7b22636f6e74656e74223a7b226465636973696f6e5f74617065223a7b226465636973696f6e73223a5b7b22696e766f636174696f6e5f696e646578223a312c226f62736572766174696f6e5f6469676573745f736861323536223a2232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232222c226f7574636f6d65223a7b2265766964656e63655f72656673223a5b5d2c226b696e64223a22434f4d504c455445222c22726561736f6e223a22646f6e65227d2c227475726e5f696e646578223a307d5d2c226465636973696f6e735f6469676573745f736861323536223a2239326462356430616235353266353666373231353664313639356362366666313535383839356636386163346337333830303965393537336566383462343936222c22736368656d61223a226f70657261746562656e63682e6465636973696f6e5f746170652e7631222c22736368656d615f76657273696f6e223a317d2c22657865637574696f6e5f7265636f7264223a7b22617474656d707473223a5b7b226661756c74223a6e756c6c2c22696e766f636174696f6e5f696e646578223a312c226f7574636f6d65223a2264656369646564222c22726571756573745f6469676573745f736861323536223a2233333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333222c227475726e5f696e646578223a307d5d2c226578636c75646564223a66616c73652c226578636c7573696f6e5f636f6465223a6e756c6c2c226578636c7573696f6e5f64657461696c223a22222c226d61785f6f75747075745f746f6b656e73223a343039362c226d6f64656c223a2273796e7468657469632d6d6f64656c222c226f7574636f6d655f736f75726365223a226d6f64656c222c2270726f746f636f6c5f76657273696f6e223a226f70657261746562656e63682e6d6f64656c2e7634222c2272657472795f636f756e74223a302c22736368656d61223a226f70657261746562656e63682e657865637574696f6e5f7265636f72642e7631222c22736368656d615f76657273696f6e223a312c227472616e73706f72745f63616c6c73223a317d2c226964656e746974795f6d616e69666573745f6469676573745f736861323536223a2232353165333661393666326334636634373464303663656637643366663364333961616237353231316234623964313931663163346334363437623961316263222c226f7065726174696f6e5f696e7374616e63655f6964223a226f70696e73745f3939393939393939393939393939393939393939393939393939393939393939222c226f7574636f6d65223a7b22656e6465645f6174223a22323033312d30332d30335430393a30303a30305a222c226576656e7473223a5b5d2c2266696e616c5f7374617465223a7b7d2c2266696e616c5f73746174655f6469676573745f736861323536223a2234343133366661333535623336373861313134366164313666376538363439653934666234666332316665373765383331306330363066363163616166663861222c22696e766f636174696f6e73223a312c227265706c61795f66696e616c223a747275652c22736368656d61223a226f70657261746562656e63682e657069736f64655f6f7574636f6d652e7632222c22736368656d615f76657273696f6e223a322c2273696d756c617465645f6d696e75746573223a302c22737461727465645f6174223a22323033312d30332d30335430393a30303a30305a222c22737461747573223a22636f6d706c657465645f7375636365737366756c6c79222c227465726d696e616c5f6f7574636f6d65223a22636f6d706c657465645f7375636365737366756c6c79222c227472616a6563746f7279223a5b5d2c227472616a6563746f72795f6469676573745f736861323536223a2234663533636461313863326261613063303335346262356639613365636265356564313261623464386531316261383733633266313131363132303262393435227d2c2270726f76696465725f62696e64696e67223a7b22617069223a22726573706f6e736573222c22617474656d707473223a312c226465636973696f6e5f63616c6c5f696e646578223a5b305d2c22657865637574696f6e5f6c65646765725f6469676573745f736861323536223a2235353535353535353535353535353535353535353535353535353535353535353535353535353535353535353535353535353535353535353535353535353535222c22657865637574696f6e5f6c65646765725f76657273696f6e223a322c22657865637574696f6e5f72756e5f6964223a22657865635f3434343434343434343434343434343434343434343434343434343434343434222c22666f726665697465645f7265736572766174696f6e5f757364223a2230222c22696e7075745f746f6b656e73223a302c226d656173757265645f636f73745f757364223a2230222c226d6f64656c223a2273796e7468657469632d6d6f64656c222c226f75747075745f746f6b656e73223a302c2270726963696e675f6469676573745f736861323536223a2237373737373737373737373737373737373737373737373737373737373737373737373737373737373737373737373737373737373737373737373737373737222c2270726f7669646572223a226f70656e6169222c2270726f76696465725f63616c6c73223a312c22736368656d61223a226f70657261746562656e63682e70726f76696465725f657865637574696f6e5f62696e64696e672e7631222c22736368656d615f76657273696f6e223a312c2273657474696e67735f6469676573745f736861323536223a2236363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636227d2c22736368656d61223a226f70657261746562656e63682e65786563757465645f72756e74696d655f65766964656e63652e7631222c22736368656d615f76657273696f6e223a317d2c22646f6d61696e223a226f70657261746562656e63682e6469676573742e65786563757465645f72756e74696d655f65766964656e63652e7631222c22736368656d61223a226f70657261746562656e63682e65786563757465645f72756e74696d655f65766964656e63652e7631227d",
+      "canonical_wrapper_bytes": 2415,
+      "expected_sha256": "970ec85c12c5d9bbf562198a3ab016d66abcec2d4abba628e7a6e161419d393e"
+    }
+  ],
+  "malformed_vectors": [
+    {
+      "code": "duplicate_key",
+      "class": "profile",
+      "expected": "reject"
+    },
+    {
+      "code": "unknown_field",
+      "class": "profile",
+      "expected": "reject"
+    },
+    {
+      "code": "missing_field",
+      "class": "profile",
+      "expected": "reject"
+    },
+    {
+      "code": "bool_for_integer",
+      "class": "profile",
+      "expected": "reject"
+    },
+    {
+      "code": "float",
+      "class": "profile",
+      "expected": "reject"
+    },
+    {
+      "code": "lone_surrogate",
+      "class": "profile",
+      "expected": "reject"
+    },
+    {
+      "code": "non_string_key",
+      "class": "profile",
+      "expected": "reject"
+    },
+    {
+      "code": "tuple_container",
+      "class": "profile",
+      "expected": "reject"
+    },
+    {
+      "code": "mapping_subclass_forgery",
+      "class": "profile",
+      "expected": "reject"
+    },
+    {
+      "code": "unsafe_integer",
+      "class": "profile",
+      "expected": "reject"
+    },
+    {
+      "code": "over_depth",
+      "class": "profile",
+      "expected": "reject"
+    },
+    {
+      "code": "over_nodes",
+      "class": "profile",
+      "expected": "reject"
+    },
+    {
+      "code": "over_container_members",
+      "class": "profile",
+      "expected": "reject"
+    },
+    {
+      "code": "over_string_bytes",
+      "class": "profile",
+      "expected": "reject"
+    },
+    {
+      "code": "over_payload_bytes",
+      "class": "profile",
+      "expected": "reject"
+    },
+    {
+      "code": "newline_suffixed_digest",
+      "class": "lexical",
+      "expected": "reject"
+    },
+    {
+      "code": "carriage_return_suffixed_identifier",
+      "class": "lexical",
+      "expected": "reject"
+    },
+    {
+      "code": "line_separator_suffixed_terminal",
+      "class": "lexical",
+      "expected": "reject"
+    },
+    {
+      "code": "terminal_status_mismatch",
+      "class": "outcome",
+      "expected": "reject"
+    },
+    {
+      "code": "business_terminal_not_replay_final",
+      "class": "outcome",
+      "expected": "reject"
+    },
+    {
+      "code": "impossible_calendar_date",
+      "class": "outcome",
+      "expected": "reject"
+    },
+    {
+      "code": "ended_before_started",
+      "class": "outcome",
+      "expected": "reject"
+    },
+    {
+      "code": "elapsed_minutes_mismatch",
+      "class": "outcome",
+      "expected": "reject"
+    },
+    {
+      "code": "event_instant_not_calendar_valid",
+      "class": "outcome",
+      "expected": "reject"
+    },
+    {
+      "code": "non_increasing_decision_order",
+      "class": "tape",
+      "expected": "reject"
+    },
+    {
+      "code": "stale_section_digest",
+      "class": "tape",
+      "expected": "reject"
+    },
+    {
+      "code": "stale_runtime_digest",
+      "class": "tape",
+      "expected": "reject"
+    },
+    {
+      "code": "self_digest_only_mutation",
+      "class": "tape",
+      "expected": "reject"
+    },
+    {
+      "code": "deterministic_source_model_forgery",
+      "class": "execution",
+      "expected": "reject"
+    },
+    {
+      "code": "deterministic_source_transport_calls",
+      "class": "execution",
+      "expected": "reject"
+    },
+    {
+      "code": "deterministic_source_attempt_present",
+      "class": "execution",
+      "expected": "reject"
+    },
+    {
+      "code": "model_source_null_protocol",
+      "class": "execution",
+      "expected": "reject"
+    },
+    {
+      "code": "model_source_null_token_ceiling",
+      "class": "execution",
+      "expected": "reject"
+    },
+    {
+      "code": "excluded_execution_record",
+      "class": "execution",
+      "expected": "reject"
+    },
+    {
+      "code": "exclusion_code_without_exclusion",
+      "class": "execution",
+      "expected": "reject"
+    },
+    {
+      "code": "fault_outcome_mismatch",
+      "class": "execution",
+      "expected": "reject"
+    },
+    {
+      "code": "attempt_outcome_failed",
+      "class": "execution",
+      "expected": "reject"
+    },
+    {
+      "code": "decision_kind_attempt_outcome_mismatch",
+      "class": "execution",
+      "expected": "reject"
+    },
+    {
+      "code": "invocation_coverage_shortfall",
+      "class": "evidence",
+      "expected": "reject"
+    },
+    {
+      "code": "provider_binding_source_mismatch",
+      "class": "evidence",
+      "expected": "reject"
+    },
+    {
+      "code": "provider_binding_missing_for_model",
+      "class": "evidence",
+      "expected": "reject"
+    },
+    {
+      "code": "provider_binding_model_mismatch",
+      "class": "evidence",
+      "expected": "reject"
+    },
+    {
+      "code": "provider_cardinality_mismatch",
+      "class": "evidence",
+      "expected": "reject"
+    },
+    {
+      "code": "decision_call_index_not_contiguous",
+      "class": "evidence",
+      "expected": "reject"
+    },
+    {
+      "code": "attempt_decision_index_mismatch",
+      "class": "evidence",
+      "expected": "reject"
+    },
+    {
+      "code": "swapped_ledger_identity",
+      "class": "evidence",
+      "expected": "reject"
+    },
+    {
+      "code": "swapped_pricing_or_settings_digest",
+      "class": "evidence",
+      "expected": "reject"
+    },
+    {
+      "code": "swapped_ledger_totals",
+      "class": "evidence",
+      "expected": "reject"
+    },
+    {
+      "code": "audit_companion_field_on_wire",
+      "class": "evidence",
+      "expected": "reject"
+    }
+  ],
+  "malformed_vector_classes": [
+    "evidence",
+    "execution",
+    "lexical",
+    "outcome",
+    "profile",
+    "tape"
+  ],
+  "mutation_coverage": {
+    "every_wire_leaf_mutated": true,
+    "every_wire_container_mutated": true,
+    "self_digest_is_the_sole_omission": true,
+    "caller_aliases_and_fresh_projections": true,
+    "vectors": [
+      "provider_null",
+      "provider_non_null"
+    ]
+  },
+  "independent_pins": [
+    {
+      "name": "provider_null",
+      "canonical_wrapper_bytes": 1379,
+      "expected_sha256": "309b01dd7e08c61e1314b972467c922403f38ef097555ab7f762c125a06c2704"
+    },
+    {
+      "name": "provider_non_null",
+      "canonical_wrapper_bytes": 2415,
+      "expected_sha256": "970ec85c12c5d9bbf562198a3ab016d66abcec2d4abba628e7a6e161419d393e"
+    }
+  ]
+}

@@ -1,0 +1,78 @@
+OperateBench — data and documentation licence
+=============================================
+
+Code in this repository is licensed under the Apache License, Version 2.0. See
+the LICENSE file.
+
+Non-code content in this repository is licensed under the Creative Commons
+Attribution 4.0 International License ("CC BY 4.0").
+
+    Full licence text:  https://creativecommons.org/licenses/by/4.0/legalcode
+    Human-readable summary (not a substitute for the licence):
+                        https://creativecommons.org/licenses/by/4.0/
+    SPDX identifier:    CC-BY-4.0
+
+Explicit path/class licence map
+-------------------------------
+
+`REUSE.toml` is the machine-readable, authoritative map. In summary:
+
+  * Imported or executable schemas are Apache-2.0 code, alongside Python source,
+    tests, tools, CI/configuration, and schemas under `src/`;
+  * synthetic operation fixtures and scenario definitions under `examples/`,
+    documentation under `docs/`, and project prose are under CC-BY-4.0;
+  * canonical licence texts under `LICENSES/` state their own licences.
+
+A file has one licence under this map. There is no mixed-use fallback. A schema
+that is imported, validated, or otherwise executed by the package is
+Apache-2.0 code even when its syntax is JSON or YAML.
+
+Attribution
+-----------
+
+Attribution should name the project, the version or commit used, and link to the
+repository. For example:
+
+    OperateBench (https://github.com/DwellyOrg/OperateBench), operation
+    fixture <operation_id> v<operation_version>, licensed under CC BY 4.0.
+
+For results from this preview, state the operation version and spec digest, the
+unified engine version, artifact version, scenario/variant ids and the run's state
+and trajectory digests. Separate runtime/evaluator versions and bundle digests
+are target-design fields that this build does not emit. See docs/VERSIONING.md.
+
+Contributors
+------------
+
+Contributors retain copyright in their contributions. There is no copyright
+assignment and no transfer of rights to PROSPIRE TECHNOLOGIES LTD. By
+contributing non-code content you licence it to the public under CC BY 4.0, and
+by contributing code you licence it under the Apache License 2.0. Nothing in
+this file changes the ownership of anyone's work.
+
+Third-party content
+-------------------
+
+Content originating elsewhere and redistributed here remains under its own
+licence and is identified where it appears. This notice does not relicense
+third-party material, and it makes no claim over material referenced but not
+included — cited papers, external repositories and linked websites remain
+governed by their own terms.
+
+Synthetic content
+-----------------
+
+All operation fixtures published by this project are fully synthetic. See
+NOTICE and README.md.
+
+About this file
+---------------
+
+This file is a licensing *notice*, not a copy of the CC BY 4.0 licence text. The
+authoritative text is at the URL given above, and it governs. The grant made
+here is unconditional: non-code content in this repository is licensed under
+CC BY 4.0, on the terms of that text, to anyone who receives this repository.
+
+Release approval is a separate question tracked in controlled records outside
+public Git. It can stop a release; it does not qualify, delay or condition the
+licence above for anyone holding this repository.

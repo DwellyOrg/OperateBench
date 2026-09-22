@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: the contributor
+# SPDX-License-Identifier: Apache-2.0
+"""Completion gate for the {{PACK_ID}} scaffold."""
+
+from __future__ import annotations
+
+import pytest
+
+from .pack import PACK
+
+
+def test_scaffold_is_not_submitted_incomplete() -> None:
+    assert PACK.metadata.pack_id == "{{PACK_ID}}"
+    pytest.fail(
+        "TODO: replace this with static validation, reference/negative execution, "
+        "replay, wrong-pack refusal and independently authored oracle tests"
+    )

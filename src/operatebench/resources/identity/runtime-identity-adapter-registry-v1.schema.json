@@ -1,0 +1,456 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://operatebench.org/schemas/runtime-identity-adapter-registry-v1.schema.json",
+  "title": "OperateBench Runtime Identity Adapter Registry v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "schema_version",
+    "manifest_authority",
+    "source_commit_eligibility",
+    "initial_implementation_support",
+    "current_complete_lanes",
+    "arm_default",
+    "outcome_inference_authorized",
+    "arbitrary_injected_agents_supported",
+    "freeze_manifest_sha256",
+    "owners",
+    "lane_registry",
+    "rejection_codes",
+    "dependency_order",
+    "staged_status"
+  ],
+  "properties": {
+    "schema": {
+      "const": "operatebench.runtime_identity_adapter_registry.v1"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "manifest_authority": {
+      "const": "adapter_output_only"
+    },
+    "source_commit_eligibility": {
+      "const": "content_addressed_not_commit_pinned"
+    },
+    "initial_implementation_support": {
+      "const": "deterministic_reference_fresh_after_projectors_and_build_descriptor"
+    },
+    "current_complete_lanes": {
+      "type": "array",
+      "maxItems": 0
+    },
+    "arm_default": {
+      "type": "null"
+    },
+    "outcome_inference_authorized": {
+      "const": false
+    },
+    "arbitrary_injected_agents_supported": {
+      "const": false
+    },
+    "freeze_manifest_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+    },
+    "owners": {
+      "type": "array",
+      "minItems": 8,
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "owner",
+          "authoritative_source",
+          "authoritative_source_leaves",
+          "projector_contract",
+          "card_schema",
+          "projection_pointers",
+          "dependency_bindings",
+          "selected_run_cross_bindings",
+          "support_status"
+        ],
+        "properties": {
+          "owner": {
+            "$ref": "#/$defs/ownerName"
+          },
+          "authoritative_source": {
+            "type": "string",
+            "minLength": 1
+          },
+          "authoritative_source_leaves": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 4096,
+            "uniqueItems": true,
+            "items": {
+              "$ref": "#/$defs/sourceLeaf"
+            }
+          },
+          "projector_contract": {
+            "type": "string",
+            "minLength": 1
+          },
+          "card_schema": {
+            "oneOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "projection_pointers": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 4096,
+            "items": {
+              "$ref": "#/$defs/projectionPointer"
+            }
+          },
+          "dependency_bindings": {
+            "type": "array",
+            "minItems": 0,
+            "maxItems": 4096,
+            "uniqueItems": true,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "requires_owner",
+                "binds_pointer",
+                "binding"
+              ],
+              "properties": {
+                "requires_owner": {
+                  "$ref": "#/$defs/ownerName"
+                },
+                "binds_pointer": {
+                  "$ref": "#/$defs/projectionPointer"
+                },
+                "binding": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          },
+          "selected_run_cross_bindings": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 4096,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "support_status": {
+            "enum": [
+              "blocked_projector_unimplemented",
+              "blocked_build_descriptor_unimplemented"
+            ]
+          }
+        }
+      }
+    },
+    "lane_registry": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "lane",
+          "artifact",
+          "artifact_sha256",
+          "arm_assignment",
+          "assignment_basis",
+          "agent_id",
+          "ledger",
+          "ledger_file_sha256",
+          "freeze_manifest_sha256",
+          "support_status"
+        ],
+        "properties": {
+          "lane": {
+            "enum": [
+              "b31_deterministic_reference",
+              "b31_fake_openai_reference"
+            ]
+          },
+          "artifact": {
+            "type": "string"
+          },
+          "artifact_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+          },
+          "arm_assignment": {
+            "const": "full_lifecycle"
+          },
+          "assignment_basis": {
+            "const": "exact_internal_lane_registry"
+          },
+          "agent_id": {
+            "oneOf": [
+              {
+                "const": "openai-gpt-5-6-luna"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ledger": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ledger_file_sha256": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "freeze_manifest_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+          },
+          "support_status": {
+            "enum": [
+              "blocked_projectors_and_build_descriptor",
+              "blocked_historical_build_descriptor"
+            ]
+          }
+        }
+      }
+    },
+    "rejection_codes": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 4096,
+      "items": {
+        "$ref": "#/$defs/rejectionCode"
+      }
+    },
+    "dependency_order": {
+      "type": "array",
+      "minItems": 7,
+      "maxItems": 7,
+      "prefixItems": [
+        {
+          "const": "contract_amendment"
+        },
+        {
+          "const": "b1_projectors_and_build_descriptor"
+        },
+        {
+          "const": "private_runtime_manifest_binding"
+        },
+        {
+          "const": "canonical_immutable_constituents_and_evidence_digest"
+        },
+        {
+          "const": "can_runtime_replay"
+        },
+        {
+          "const": "evaluator_compatibility"
+        },
+        {
+          "const": "capability_consume"
+        }
+      ],
+      "items": false
+    },
+    "staged_status": {
+      "type": "array",
+      "minItems": 8,
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "stage",
+          "status"
+        ],
+        "properties": {
+          "stage": {
+            "enum": [
+              "contract",
+              "b1_projectors",
+              "build_descriptor",
+              "runtime_manifest_binding",
+              "canonical_evidence",
+              "can_runtime_replay",
+              "evaluator_compatibility",
+              "capability_consume"
+            ]
+          },
+          "status": {
+            "enum": [
+              "frozen",
+              "unimplemented"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "ownerName": {
+      "type": "string",
+      "enum": [
+        "operation_core_content",
+        "semantic_scenario_content",
+        "variant_content",
+        "runtime_contract_content",
+        "scaffold_content",
+        "arm_protocol_content",
+        "provider_run_plan_content",
+        "build_provenance_content"
+      ]
+    },
+    "projectionPointer": {
+      "type": "string",
+      "enum": [
+        "/operation_card/schema",
+        "/operation_card/schema_version",
+        "/operation_card/id",
+        "/operation_card/content_digest_sha256",
+        "/operation_card/content/operation_type",
+        "/operation_card/content/operation_version",
+        "/operation_card/content/state_contract",
+        "/operation_card/content/authority_contract",
+        "/operation_card/content/policy_contract",
+        "/operation_card/content/event_contracts",
+        "/operation_card/content/action_contracts",
+        "/operation_card/content/retrieval_contract",
+        "/operation_card/content/transition_contract",
+        "/semantic_scenario_card/schema",
+        "/semantic_scenario_card/schema_version",
+        "/semantic_scenario_card/id",
+        "/semantic_scenario_card/content_digest_sha256",
+        "/semantic_scenario_card/content/operation_core",
+        "/semantic_scenario_card/content/construct_label",
+        "/semantic_scenario_card/content/common_estimand_id",
+        "/semantic_scenario_card/content/decision_points",
+        "/semantic_scenario_card/content/causal_graph",
+        "/semantic_scenario_card/content/authored_hazards",
+        "/semantic_scenario_card/content/common_outcome_obligations",
+        "/semantic_scenario_card/content/allowed_variant_dimensions",
+        "/variant_card/schema",
+        "/variant_card/schema_version",
+        "/variant_card/id",
+        "/variant_card/content_digest_sha256",
+        "/variant_card/content/semantic_scenario",
+        "/variant_card/content/variant_label",
+        "/variant_card/content/starts_at",
+        "/variant_card/content/expected_terminal",
+        "/variant_card/content/human_checkpoint_budget",
+        "/variant_card/content/required_checkpoint_types",
+        "/variant_card/content/dispatch_failures",
+        "/variant_card/content/expected_event_rejections",
+        "/variant_card/content/actors",
+        "/variant_card/content/hidden_initial_values",
+        "/variant_card/content/message_fixtures",
+        "/variant_card/content/events",
+        "/runtime_contract/engine_version",
+        "/runtime_contract/artifact_version",
+        "/runtime_contract/model_protocol_version",
+        "/runtime_contract/model_visible_fields",
+        "/runtime_contract/outcome_tool_schema",
+        "/runtime_contract/wake_event_types",
+        "/runtime_contract/engine_class",
+        "/runtime_contract/domain_class",
+        "/scaffold/agent_id",
+        "/scaffold/agent_kind",
+        "/scaffold/registry_factory",
+        "/scaffold/supported_scenarios",
+        "/scaffold/prompt_envelope_keys",
+        "/scaffold/instructions_contract",
+        "/scaffold/tool_names",
+        "/scaffold/request_mapping",
+        "/arm_protocol/treatment_label",
+        "/arm_protocol/allowed_claim",
+        "/arm_protocol/semantic_scenario_id",
+        "/arm_protocol/semantic_scenario_digest_sha256",
+        "/arm_protocol/common_expected_vector",
+        "/arm_protocol/denominator",
+        "/arm_protocol/point_ids",
+        "/arm_protocol/subject_continuity",
+        "/arm_protocol/harness_metadata",
+        "/provider_run_plan/execution_mode",
+        "/provider_run_plan/provider",
+        "/provider_run_plan/api",
+        "/provider_run_plan/model",
+        "/provider_run_plan/model_profile",
+        "/provider_run_plan/settings",
+        "/provider_run_plan/controls",
+        "/provider_run_plan/pricing_policy",
+        "/provider_run_plan/max_output_tokens",
+        "/provider_run_plan/retry_policy",
+        "/provider_run_plan/ledger_contract_version",
+        "/build_provenance/schema",
+        "/build_provenance/schema_version",
+        "/build_provenance/source_commit",
+        "/build_provenance/source_tree_algorithm",
+        "/build_provenance/source_tree_digest_sha256",
+        "/build_provenance/tree_clean",
+        "/build_provenance/uv_lock_sha256",
+        "/build_provenance/build_mode",
+        "/build_provenance/distribution_artifacts",
+        "/build_provenance/toolchain"
+      ]
+    },
+    "rejectionCode": {
+      "type": "string",
+      "enum": [
+        "adapter_source_unavailable",
+        "artifact_digest_mismatch",
+        "arm_assignment_missing",
+        "arm_assignment_ambiguous",
+        "b1_projector_unavailable",
+        "build_descriptor_unavailable",
+        "build_provenance_mismatch",
+        "card_projection_invalid",
+        "census_mismatch",
+        "dirty_source_tree",
+        "freeze_manifest_digest_mismatch",
+        "historical_build_descriptor_unavailable",
+        "ledger_required",
+        "ledger_audit_failed",
+        "manifest_input_not_authority",
+        "provider_plan_mismatch",
+        "runtime_contract_mismatch",
+        "scaffold_mismatch",
+        "selected_run_mismatch",
+        "source_identity_mismatch",
+        "unsupported_agent",
+        "unsupported_build_mode",
+        "unsupported_lane",
+        "unsupported_model_profile"
+      ]
+    },
+    "sourceLeaf": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512,
+      "pattern": "^(?:operatebench(?:\\.[A-Za-z_][A-Za-z0-9_]*)+|(?:docs|examples|src|tests|tools)/[^\\\\\\u0000-\\u001f\\u007f]+|uv\\.lock|pyproject\\.toml)(?![\\s\\S])"
+    }
+  }
+}

@@ -1,0 +1,556 @@
+# OperateBench — synthetic Maintenance operation, executable fixture v0.1.
+#
+# FULLY SYNTHETIC. Every actor, identifier, amount, date, message, threshold and
+# event plan below was invented for this benchmark slice. This is NOT Dwelly
+# policy, NOT a Dwelly workflow, and contains no production code, records,
+# contacts, addresses, prices or operational thresholds.
+#
+# This file is the compact executable fixture the vertical slice runs. The
+# methodology describes a larger surface than this fixture executes; deferred
+# behavior is named there rather than implied here. Where prose and this file
+# differ, this file is what executes and what the tests assert.
+
+schema_version: 1
+operation_id: lettings_maintenance_synthetic_v1
+operation_type: lettings.maintenance.synthetic
+operation_version: 0.6.0
+semantic_scenario_id: maintenance_recurring_leak_synthetic_v1
+privacy_status: SYNTHETIC_ONLY
+disclaimer: >-
+  Synthetic benchmark fixture. Invented policy, invented actors and invented
+  amounts. Not Dwelly policy and not a description of production behaviour.
+data_provenance: >-
+  Authored for OperateBench. No production records, customer data, proprietary
+  message text or real approval thresholds are used.
+
+# Every envelope role and every authority claim is derived from this registry.
+# An actor cannot self-assert a capability: an authored event whose actor does
+# not hold the authority its type requires is refused when the spec loads.
+actors:
+  customer_1:
+    role: customer
+    authority: [report_issue, confirm_resolution]
+  supplier_1:
+    role: supplier
+    authority: [respond_to_visit, report_work, submit_quote, submit_invoice, assert_status]
+  approver_1:
+    role: approver
+    authority: [approve_repair_quote]
+  operator_1:
+    role: operator_human
+    authority: [resolve_exception]
+  maintenance_system:
+    role: authoritative_external_system
+    authority: [verify_attendance, verify_work]
+  payment_system:
+    role: authoritative_external_system
+    authority: [validate_invoice, confirm_settlement]
+  scheduler:
+    role: system_scheduler
+    authority: [emit_timer]
+  agent:
+    role: agent
+    authority:
+      - request_supplier_visit
+      - request_approval
+      - send_message
+      - authorise_supplier_work
+      - request_invoice_validation
+      - request_payment
+      - request_exception_resolution
+      - complete
+
+# Invented policy. These numbers exist only to make deterministic paths
+# executable; they are not anybody's real thresholds.
+policy:
+  currency: GBP
+  issue_classification: NON_EMERGENCY_RECURRING_LEAK
+  approval_threshold_minor: 25000
+  approval_reminder_after_minutes: 2880
+  approval_deadline_after_minutes: 4320
+  approval_validity_minutes: 10080
+  provisional_close_minutes: 2880
+  visit_followup_after_minutes: 4320
+  completion_notice_within_minutes: 720
+  max_turns_per_invocation: 8
+  horizon_minutes: 43200
+  # Reading is budgeted apart from deciding. An invocation may have at most this
+  # many retrieval batches served; the bound is published on every observation,
+  # and exhausting it is a named refusal rather than a silently truncated read.
+  max_retrieval_batches_per_invocation: 6
+
+# Synthetic message identities. Wording is diagnostic only and can never change
+# hard state; an unknown fixture id is refused rather than sent.
+message_fixtures:
+  msg_completion_notice: Synthetic notice that the reported issue is resolved.
+  msg_transfer_notice: Synthetic notice that a human colleague has taken over.
+  msg_approval_reminder: Synthetic reminder that a quote decision is outstanding.
+  msg_revisit_complete: Synthetic notice that the revisit work is finished.
+  msg_cannot_proceed: Synthetic notice that the quoted work was not approved.
+  msg_access_question: Synthetic question asking the customer about visit access.
+
+# Environment truth the agent never observes. Present so the observation
+# projection has something to withhold, and asserted on in the tests.
+hidden_state:
+  root_cause_fixture_id: hidden_fixture_perished_seal
+  supplier_reliability_fixture: hidden_fixture_reliability_band_2
+
+scenarios:
+  V1:
+    label: approval granted, provisional reopen, warranty revisit, finalized
+    starts_at: "2031-03-03T09:00:00Z"
+    expected_terminal: completed_successfully
+    human_checkpoint_budget: 1
+    required_checkpoint_types: [repair_quote_approval]
+    dispatch_failures: []
+    # The authored deliveries this variant expects the operation to refuse or to
+    # receive after it is replay-final. Everything else that bounces is
+    # environment desync and fails `environment_integrity` by name.
+    expected_event_rejections:
+      - event_id: v1_e18
+        code: AFTER_REPLAY_FINAL
+        reason: >-
+          A supplier assertion authored to arrive after the finalization timer.
+          It must be recorded as evidence that a late message changed nothing.
+    events:
+      - event_id: v1_e01
+        type: customer_issue_reported
+        actor: customer_1
+        at: "2031-03-03T09:00:00Z"
+        payload:
+          issue_id: issue_1
+          classification: NON_EMERGENCY_RECURRING_LEAK
+          cycle_id: work_cycle_1
+          description_fixture_id: fixture_issue_recurring_leak
+
+      - event_id: v1_e02
+        type: supplier_visit_response
+        actor: supplier_1
+        on_action: {type: request_supplier_visit, cycle_id: work_cycle_1}
+        delay_minutes: 120
+        payload:
+          visit_id: visit_1
+          cycle_id: work_cycle_1
+          response: ACCEPTED
+
+      # Authoritative attendance. Deliberately NOT a semantic trigger: the world
+      # moves, the agent is not woken, and the trajectory records it as audit.
+      - event_id: v1_e03
+        type: visit_attendance_verified
+        actor: maintenance_system
+        on_action: {type: request_supplier_visit, cycle_id: work_cycle_1}
+        delay_minutes: 2880
+        triggers_agent: false
+        payload:
+          visit_id: visit_1
+          cycle_id: work_cycle_1
+          attended: true
+
+      - event_id: v1_e04
+        type: supplier_work_reported
+        actor: supplier_1
+        on_action: {type: request_supplier_visit, cycle_id: work_cycle_1}
+        delay_minutes: 2940
+        payload:
+          visit_id: visit_1
+          cycle_id: work_cycle_1
+          outcome: FURTHER_WORK_REQUIRED
+          scope_digest: a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90
+
+      - event_id: v1_e05
+        type: supplier_quote_received
+        actor: supplier_1
+        on_action: {type: request_supplier_visit, cycle_id: work_cycle_1}
+        delay_minutes: 2970
+        payload:
+          quote_id: quote_1
+          quote_version: 1
+          cycle_id: work_cycle_2
+          parent_cycle_id: work_cycle_1
+          amount_minor: 64000
+          currency: GBP
+          scope_digest: a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90
+
+      # Premature invoice: arrives before any work is authorised or verified.
+      - event_id: v1_e06
+        type: supplier_invoice_received
+        actor: supplier_1
+        on_action: {type: request_approval, cycle_id: work_cycle_2}
+        delay_minutes: 1350
+        payload:
+          invoice_id: invoice_1
+          cycle_id: work_cycle_2
+          quote_id: quote_1
+          quote_version: 1
+          amount_minor: 64000
+          currency: GBP
+
+      # Supplier claim. Observational: it can never establish work or payment.
+      - event_id: v1_e07
+        type: supplier_assertion_received
+        actor: supplier_1
+        on_action: {type: request_approval, cycle_id: work_cycle_2}
+        delay_minutes: 1380
+        payload:
+          assertion_id: assertion_1
+          cycle_id: work_cycle_2
+          assertion: WORK_COMPLETE
+
+      - event_id: v1_e08
+        type: approver_decision_received
+        actor: approver_1
+        on_action: {type: request_approval, cycle_id: work_cycle_2}
+        delay_minutes: 2760
+        payload:
+          checkpoint_id: checkpoint_1
+          quote_id: quote_1
+          quote_version: 1
+          amount_minor: 64000
+          currency: GBP
+          scope_digest: a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90
+          decision: APPROVED
+
+      - event_id: v1_e09
+        type: visit_attendance_verified
+        actor: maintenance_system
+        on_action: {type: authorise_supplier_work, cycle_id: work_cycle_2}
+        delay_minutes: 2880
+        triggers_agent: false
+        payload:
+          visit_id: visit_2
+          cycle_id: work_cycle_2
+          attended: true
+
+      - event_id: v1_e10
+        type: work_evidence_verified
+        actor: maintenance_system
+        on_action: {type: authorise_supplier_work, cycle_id: work_cycle_2}
+        delay_minutes: 2940
+        payload:
+          evidence_id: evidence_1
+          visit_id: visit_2
+          cycle_id: work_cycle_2
+          scope_digest: a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90
+          outcome: COMPLETED
+
+      - event_id: v1_e11
+        type: invoice_validation_completed
+        actor: payment_system
+        on_action: {type: request_invoice_validation, cycle_id: work_cycle_2}
+        delay_minutes: 60
+        payload:
+          validation_id: validation_1
+          invoice_id: invoice_1
+          valid: true
+          reason_code: MATCHES_APPROVED_QUOTE
+
+      - event_id: v1_e12
+        type: payment_settlement_confirmed
+        actor: payment_system
+        on_action: {type: request_payment, cycle_id: work_cycle_2}
+        delay_minutes: 120
+        payload:
+          settlement_id: settlement_1
+          payment_request_id: payment_1
+          invoice_id: invoice_1
+          cycle_id: work_cycle_2
+          amount_minor: 64000
+          currency: GBP
+
+      # Inside the provisional window: the operation reopens rather than closing.
+      - event_id: v1_e13
+        type: customer_resolution_reported
+        actor: customer_1
+        on_action: {type: complete, cycle_id: work_cycle_2}
+        delay_minutes: 60
+        payload:
+          issue_id: issue_1
+          status: PERSISTS
+          related_visit_id: visit_2
+
+      - event_id: v1_e14
+        type: supplier_visit_response
+        actor: supplier_1
+        on_action: {type: request_supplier_visit, cycle_id: work_cycle_3}
+        delay_minutes: 120
+        payload:
+          visit_id: visit_3
+          cycle_id: work_cycle_3
+          response: ACCEPTED
+
+      - event_id: v1_e15
+        type: visit_attendance_verified
+        actor: maintenance_system
+        on_action: {type: request_supplier_visit, cycle_id: work_cycle_3}
+        delay_minutes: 1380
+        triggers_agent: false
+        payload:
+          visit_id: visit_3
+          cycle_id: work_cycle_3
+          attended: true
+
+      - event_id: v1_e16
+        type: work_evidence_verified
+        actor: maintenance_system
+        on_action: {type: request_supplier_visit, cycle_id: work_cycle_3}
+        delay_minutes: 1440
+        payload:
+          evidence_id: evidence_2
+          visit_id: visit_3
+          cycle_id: work_cycle_3
+          scope_digest: a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90
+          outcome: COMPLETED
+
+      - event_id: v1_e17
+        type: customer_resolution_reported
+        actor: customer_1
+        on_event: {type: work_evidence_verified, cycle_id: work_cycle_3}
+        delay_minutes: 120
+        payload:
+          issue_id: issue_1
+          status: RESOLVED
+          related_visit_id: visit_3
+
+      # Arrives after the finalization timer: a late event against a
+      # replay-final operation, which must be recorded and must not mutate.
+      - event_id: v1_e18
+        type: supplier_assertion_received
+        actor: supplier_1
+        on_action: {type: complete, cycle_id: work_cycle_3}
+        delay_minutes: 4320
+        payload:
+          assertion_id: assertion_2
+          cycle_id: work_cycle_2
+          assertion: PAYMENT_RECEIVED
+
+  V2:
+    label: approval rejected, justified exception, transferred to operator
+    starts_at: "2031-03-03T09:00:00Z"
+    expected_terminal: transferred_to_human_ownership
+    human_checkpoint_budget: 2
+    required_checkpoint_types: [repair_quote_approval, maintenance_exception_resolution]
+    # The transfer notice commits and then fails to dispatch. The committed
+    # business decision must survive; the failure is recovery evidence.
+    dispatch_failures: [msg_transfer_notice]
+    # Nothing bounces on this path: every authored delivery lands.
+    expected_event_rejections: []
+    events:
+      - event_id: v2_e01
+        type: customer_issue_reported
+        actor: customer_1
+        at: "2031-03-03T09:00:00Z"
+        payload:
+          issue_id: issue_1
+          classification: NON_EMERGENCY_RECURRING_LEAK
+          cycle_id: work_cycle_1
+          description_fixture_id: fixture_issue_recurring_leak
+
+      - event_id: v2_e02
+        type: supplier_visit_response
+        actor: supplier_1
+        on_action: {type: request_supplier_visit, cycle_id: work_cycle_1}
+        delay_minutes: 120
+        payload:
+          visit_id: visit_1
+          cycle_id: work_cycle_1
+          response: ACCEPTED
+
+      - event_id: v2_e03
+        type: visit_attendance_verified
+        actor: maintenance_system
+        on_action: {type: request_supplier_visit, cycle_id: work_cycle_1}
+        delay_minutes: 2880
+        triggers_agent: false
+        payload:
+          visit_id: visit_1
+          cycle_id: work_cycle_1
+          attended: true
+
+      - event_id: v2_e04
+        type: supplier_work_reported
+        actor: supplier_1
+        on_action: {type: request_supplier_visit, cycle_id: work_cycle_1}
+        delay_minutes: 2940
+        payload:
+          visit_id: visit_1
+          cycle_id: work_cycle_1
+          outcome: FURTHER_WORK_REQUIRED
+          scope_digest: a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90
+
+      - event_id: v2_e05
+        type: supplier_quote_received
+        actor: supplier_1
+        on_action: {type: request_supplier_visit, cycle_id: work_cycle_1}
+        delay_minutes: 2970
+        payload:
+          quote_id: quote_1
+          quote_version: 1
+          cycle_id: work_cycle_2
+          parent_cycle_id: work_cycle_1
+          amount_minor: 64000
+          currency: GBP
+          scope_digest: a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90
+
+      - event_id: v2_e06
+        type: supplier_invoice_received
+        actor: supplier_1
+        on_action: {type: request_approval, cycle_id: work_cycle_2}
+        delay_minutes: 1350
+        payload:
+          invoice_id: invoice_1
+          cycle_id: work_cycle_2
+          quote_id: quote_1
+          quote_version: 1
+          amount_minor: 64000
+          currency: GBP
+
+      - event_id: v2_e07
+        type: supplier_assertion_received
+        actor: supplier_1
+        on_action: {type: request_approval, cycle_id: work_cycle_2}
+        delay_minutes: 1380
+        payload:
+          assertion_id: assertion_1
+          cycle_id: work_cycle_2
+          assertion: WORK_COMPLETE
+
+      - event_id: v2_e08
+        type: approver_decision_received
+        actor: approver_1
+        on_action: {type: request_approval, cycle_id: work_cycle_2}
+        delay_minutes: 2760
+        payload:
+          checkpoint_id: checkpoint_1
+          quote_id: quote_1
+          quote_version: 1
+          amount_minor: 64000
+          currency: GBP
+          scope_digest: a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90
+          decision: REJECTED
+
+      - event_id: v2_e09
+        type: operator_exception_resolved
+        actor: operator_1
+        on_action: {type: request_exception_resolution, cycle_id: work_cycle_2}
+        delay_minutes: 180
+        payload:
+          checkpoint_id: checkpoint_2
+          decision: TAKE_OWNERSHIP
+
+  V3:
+    label: approval unanswered, reminder and deadline, transferred to operator
+    starts_at: "2031-03-03T09:00:00Z"
+    expected_terminal: transferred_to_human_ownership
+    human_checkpoint_budget: 2
+    required_checkpoint_types: [repair_quote_approval, maintenance_exception_resolution]
+    dispatch_failures: []
+    expected_event_rejections:
+      - event_id: v3_e08
+        code: CHECKPOINT_NOT_OPEN
+        reason: >-
+          The approver answers ninety minutes after the deadline timer already
+          expired the checkpoint. The decision is legal evidence that it
+          arrived, and it must not authorise the work it names.
+    events:
+      - event_id: v3_e01
+        type: customer_issue_reported
+        actor: customer_1
+        at: "2031-03-03T09:00:00Z"
+        payload:
+          issue_id: issue_1
+          classification: NON_EMERGENCY_RECURRING_LEAK
+          cycle_id: work_cycle_1
+          description_fixture_id: fixture_issue_recurring_leak
+
+      - event_id: v3_e02
+        type: supplier_visit_response
+        actor: supplier_1
+        on_action: {type: request_supplier_visit, cycle_id: work_cycle_1}
+        delay_minutes: 120
+        payload:
+          visit_id: visit_1
+          cycle_id: work_cycle_1
+          response: ACCEPTED
+
+      - event_id: v3_e03
+        type: visit_attendance_verified
+        actor: maintenance_system
+        on_action: {type: request_supplier_visit, cycle_id: work_cycle_1}
+        delay_minutes: 2880
+        triggers_agent: false
+        payload:
+          visit_id: visit_1
+          cycle_id: work_cycle_1
+          attended: true
+
+      - event_id: v3_e04
+        type: supplier_work_reported
+        actor: supplier_1
+        on_action: {type: request_supplier_visit, cycle_id: work_cycle_1}
+        delay_minutes: 2940
+        payload:
+          visit_id: visit_1
+          cycle_id: work_cycle_1
+          outcome: FURTHER_WORK_REQUIRED
+          scope_digest: a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90
+
+      - event_id: v3_e05
+        type: supplier_quote_received
+        actor: supplier_1
+        on_action: {type: request_supplier_visit, cycle_id: work_cycle_1}
+        delay_minutes: 2970
+        payload:
+          quote_id: quote_1
+          quote_version: 1
+          cycle_id: work_cycle_2
+          parent_cycle_id: work_cycle_1
+          amount_minor: 64000
+          currency: GBP
+          scope_digest: a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90
+
+      - event_id: v3_e06
+        type: supplier_invoice_received
+        actor: supplier_1
+        on_action: {type: request_approval, cycle_id: work_cycle_2}
+        delay_minutes: 1350
+        payload:
+          invoice_id: invoice_1
+          cycle_id: work_cycle_2
+          quote_id: quote_1
+          quote_version: 1
+          amount_minor: 64000
+          currency: GBP
+
+      - event_id: v3_e07
+        type: supplier_assertion_received
+        actor: supplier_1
+        on_action: {type: request_approval, cycle_id: work_cycle_2}
+        delay_minutes: 1380
+        payload:
+          assertion_id: assertion_1
+          cycle_id: work_cycle_2
+          assertion: WORK_COMPLETE
+
+      # Arrives after the checkpoint has already expired: rejected, non-mutating.
+      - event_id: v3_e08
+        type: approver_decision_received
+        actor: approver_1
+        on_event: {type: approval_deadline_due, cycle_id: work_cycle_2}
+        delay_minutes: 90
+        payload:
+          checkpoint_id: checkpoint_1
+          quote_id: quote_1
+          quote_version: 1
+          amount_minor: 64000
+          currency: GBP
+          scope_digest: a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90
+          decision: APPROVED
+
+      - event_id: v3_e09
+        type: operator_exception_resolved
+        actor: operator_1
+        on_action: {type: request_exception_resolution, cycle_id: work_cycle_2}
+        delay_minutes: 180
+        payload:
+          checkpoint_id: checkpoint_2
+          decision: TAKE_OWNERSHIP

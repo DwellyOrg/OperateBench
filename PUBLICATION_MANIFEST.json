@@ -1,0 +1,316 @@
+{
+  "manifest_schema_version": "0.2.0",
+  "manifest_type": "operatebench.publication_manifest",
+  "status": "CANDIDATE",
+  "notes": [
+    "Technical-preview source; technical acceptance does not authorize publication.",
+    "Verified-base evidence is scoped to the accepted clean source tree. Changed candidates require an exact-source controlled acceptance record and successful hosted CI.",
+    "Project name, licence split and author/copyright attribution are owner-confirmed; know-how/rights review and public visibility authorization remain separate human decisions."
+  ],
+  "release": {
+    "project": "OperateBench",
+    "release_name": "OperateBench technical preview",
+    "release_version": "0.1.0",
+    "release_kind": "technical-preview",
+    "prepared_by": "Dmitry Khanukov <dmitry@dwelly.group>",
+    "distribution": {
+      "name": "operatebench",
+      "version": "0.1.0",
+      "version_source": "src/operatebench/version.py",
+      "packages": [
+        "operatebench",
+        "boundarybench"
+      ],
+      "console_scripts": [
+        "operatebench",
+        "boundarybench"
+      ],
+      "compatibility_note": "Distribution 0.1.0 carries the historical boundarybench package 0.0.15 as the Boundary Track compatibility package. That package keeps its own version line and its own historical manifest protocol version; it is not renumbered into the OperateBench line."
+    },
+    "operation_spec_versions": [
+      "lettings_maintenance_synthetic_v1@0.6.0"
+    ],
+    "engine_version": "0.12.0",
+    "artifact_version": 8,
+    "artifact_version_note": "Artefact contract 8 is the current draft contract. It preserves the provider_execution field introduced by contract 7: the binding between an episode and the execution ledger (currently ledger_version 3) that witnessed the provider session behind it; historical ledger_version 2 bindings remain readable under their frozen vocabulary. The binding is null for a run that reached no provider, and is required, non-null and exact for a run whose decisions came off one; a model run with no complete scored ledger writes no episode artefact at all, rather than one with a null binding. It carries identities, digests, counts and exact decimal amounts only \u2014 the execution run identity, the ledger contract version, the digest of the complete journal, the provider, api and model, the settings and pricing digests, the call and attempt counts, the measured cost and forfeited reservation, the token counts, and one call index per recorded decision \u2014 and has no field for provider prose, a credential, a raw response, a header or a filesystem path. Reading the binding establishes that this artefact is internally coherent about that run; it does not establish what the ledger contains, which requires auditing the sidecar with operatebench.execution_bundle.audit_execution_bundle, and neither establishes provider attestation. Replay never opens the sidecar and never reaches a network: it carries the binding forward and reproduces the episode against a forbidden transport at zero provider calls. Contracts 1 to 7 remain readable under their own exact historical semantics but are not reproduced; this build reproduces contract 8 only. Contract 8 changes evaluation meaning for the hardened action-evidence interface while contract 7 remains readable under its historical semantics. No release-grade live-provider evidence or raw provider output is included in this publication candidate. Contract 6 was a bump for a change of meaning rather than of shape: the model-visible observation no longer carries the normalized projection of the operation record or the bare trigger envelope, so an agent is told only the coarse phase, the waking event as a claim with its authority class, the action and terminal contracts including their exact required reads, and the read affordances. Every authoritative fact reaches an agent as the answer to a read it asked for. The agent_invoked row now states the waking authority and the strings that event carried, and the result vector carries the retrieval_discipline dimension, which binds each business proposal to the reads that established it. Contract 6 introduced the retrieval_discipline dimension, and playback for the current contract re-serves every recorded read from the live operation with zero provider calls. Contract 6 is still incomplete provider evidence: it records no provider telemetry, token usage, latency, retry or settlement facts, and this phase makes no live provider call. Contract 5 added the RETRIEVE decision and the retrieval_served, retrieval_refused and derived_context_invalidated rows beside a normalized projection that was still handed over. Contract 4 introduced the opaque operation_instance_id at the model boundary and removed authored-future reachable from wait rows. Contract 3 bound canonical identities to accepted effects. Contract 2 introduced the decision tape and agent_execution record. These digests establish internal consistency and reproducibility, not provider attestation or authorship.",
+    "engine_version_note": "This build records a single engine_version covering the runtime and the evaluator. Separate runtime_version and evaluator_version fields are specified in docs/VERSIONING.md and are not yet carried by artefacts; see that document's preview-status section. Engine 0.12.0 binds reminder and transfer recipients/cycles and independently grades delivery; V2 is explicitly an unreliable permanent-notification-fault control. Engine 0.11.0 corrects six-tool instructions, safe malformed-action feedback, intended completion-recipient enforcement and independent causal grading; see OB-CORR-2026-09-12-BENCHMARK-VALIDITY. Engine 0.10.0 enforced invocation admission. Results under earlier engines are not comparable and affected experiments require reruns, not regrading. Historical records remain unchanged and readable; replay refuses a different engine identity before execution. Artifact 8 retains its outer record and dispatches domain-state validation by recorded engine identity. Maintenance canonical state and its declaration profile advance to @2.0.0; get_case_record advances to v2 and provider request mappings advance with the corrected instructions. Historical state and profile freezes are preserved. Engine 0.9.0 corrected Full-arm terminal suffix mapping so missing future boundaries are UNREACHED only with structurally valid, digest-bound Engine deadlock or horizon provenance. Engine 0.8.0 and earlier results are historical and are not relabelled.",
+    "engine_version_independence_note": "engine_version is not derived from the distribution version and does not move with it. Engine 0.12.0 ships inside distribution 0.1.0. Historically, Engine 0.2.0 changed event delivery, the ledger-to-delivery binding and the result vector; Engine 0.3.0 made the runtime record the canonical identities every accepted effect established and made the evaluator re-derive invoice validation from that ledger evidence; Engine 0.4.0 stopped disclosing the scenario identity to the agent, giving it an opaque per-run operation instance identity instead, and stopped refusing a WAIT because nothing pending could deliver it, so a wait for a known event type was accepted and time \u2014 a delivery, the declared fallback, the operational horizon or deadlock \u2014 decided what ended it. Each was an engine change in both halves, and the packaged distribution did not move for any of them. Engine 0.5.0 made reading an explicit, recorded act: an agent may return a batch of one to eight reads from a published catalogue, the environment alone serves them at one instant, and the trajectory carries a provenance row for every record served plus a row each time derived context is invalidated by a wake or by the agent's own accepted effect. Engine 0.6.0 removed the normalized projection from the agent path altogether, refused a business proposal whose canonical required reads were absent, stale or answered only by what a participant asserted, and graded a new retrieval_discipline dimension reconstructed from the trajectory rather than from those refusals. Engine 0.7.0 hardened typed per-action evidence selection and evaluator reconstruction. Engine 0.8.0 corrected Boundary-arm evaluator ownership. Results produced under engine 0.1.0 through 0.8.0 are historical and are re-run rather than regraded, because this build carries no separate evaluator_version.",
+    "content_digests": {
+      "operation_fixture_spec_digest_sha256": "9e99b409b153e03aeb240c6402e14ff21c8bf0df3b9a1df2016c8fa64138e44d",
+      "negative_control_oracle_id": "lettings_maintenance_negative_controls",
+      "negative_control_oracle_version": "0.5.0",
+      "negative_control_oracle_digest_sha256": "c3cc69543e8baa35f53a63916554be0fc5355b2ac6f003d03ad7dccfaa80b10e",
+      "digest_scope": "Taken over the parsed semantic content of examples/operatebench/maintenance_v0_1.yaml, not over its file bytes, so a comment or reflow change does not move it.",
+      "runtime_contract_sha256": "NOT_YET_EMITTED_BY_THIS_BUILD",
+      "evaluator_bundle_sha256": "NOT_YET_EMITTED_BY_THIS_BUILD"
+    }
+  },
+  "source": {
+    "release_commit_reference": "the commit containing this manifest, resolved externally",
+    "export_method": "curated tracked-file archive; no predecessor Git objects",
+    "export_tool": "git archive followed by reviewed local curation",
+    "history_policy": "Fresh history only after exact staged-blob privacy admission",
+    "history_status": "The accepted base was exported to a fresh root with no predecessor Git ancestry and independently scanned. Candidate additions and final advertised refs must be reviewed in the exact-source acceptance record; this is not an exhaustive confidentiality guarantee."
+  },
+  "target": {
+    "repository": "https://github.com/DwellyOrg/OperateBench",
+    "visibility": "private-prepublication",
+    "visibility_note": "Private staging is not publication. Final public visibility requires separate controlled authorization; source documentation does not enact that decision.",
+    "package_index": "none",
+    "package_name": "operatebench",
+    "package_publication": "deferred",
+    "package_publication_note": "No package-index publication is part of this technical preview."
+  },
+  "included_classes": [
+    {
+      "class": "core_source",
+      "description": "Domain-neutral Lifecycle Core: protocol, deterministic clock and queue, outcomes, engine, ledger and evaluation primitives.",
+      "license": "Apache-2.0"
+    },
+    {
+      "class": "track_and_domain_source",
+      "description": "Lifecycle Track, Boundary Track and the synthetic lettings domain pack.",
+      "license": "Apache-2.0"
+    },
+    {
+      "class": "deterministic_agents",
+      "description": "One reference agent and eight targeted negative agents. Deterministic, in-process, no provider.",
+      "license": "Apache-2.0"
+    },
+    {
+      "class": "operation_fixtures",
+      "description": "Fully synthetic OperationSpec fixtures and scenario variants designated public.",
+      "license": "CC-BY-4.0"
+    },
+    {
+      "class": "tests",
+      "description": "Offline test suite, including the causal acceptance gate and the public-release gate.",
+      "license": "Apache-2.0"
+    },
+    {
+      "class": "release_tooling",
+      "description": "tools/check_public_release.py \u2014 the deterministic public-release checks. Repository machinery; not packaged into the wheel.",
+      "license": "Apache-2.0"
+    },
+    {
+      "class": "documentation",
+      "description": "README, docs/, licensing, governance and release documents.",
+      "license": "CC-BY-4.0"
+    },
+    {
+      "class": "ci_configuration",
+      "description": "CI workflow with network bootstrap for actions/interpreters/dependencies; test execution requests no secrets and makes no live provider/model call.",
+      "license": "Apache-2.0"
+    }
+  ],
+  "excluded_classes": [
+    {
+      "class": "managed_intake_partner_records",
+      "description": "Maintainer-owned partner identity, contact, starter-kit provenance and permission-state records under .github/partner-intake/.",
+      "reason": "Private intake administration is outside the public product surface. The fresh-history export procedure must omit this directory unless field-by-field review and affirmative partner publication consent are complete; the current source scanner still inspects it for forbidden content."
+    },
+    {
+      "class": "production_data",
+      "description": "Any customer record, contact, address, real identifier, internal price, real threshold or proprietary message text.",
+      "reason": "Excluded from the curated candidate by policy; exact-source verification remains required."
+    },
+    {
+      "class": "credentials_and_secrets",
+      "description": "API keys, tokens, credential files, environment files, private endpoints and custom headers.",
+      "reason": "Secrets are environment-supplied at run time and are never committed.",
+      "known_exception": "The Boundary Track's provider-trust tests carry synthetic non-credential literals (for example 'sk-ant-not-a-real-key') whose entire purpose is to prove a credential is refused, redacted or never written. They are allowlisted by exact literal in tools/check_public_release.py."
+    },
+    {
+      "class": "internal_documents",
+      "description": "Internal strategy, roadmap, review, audit, canary-log, unsupported provenance and product-decision documents, and internal filenames, paths or commit identifiers.",
+      "reason": "Not part of the public surface; may contain commercial or personal detail."
+    },
+    {
+      "class": "internal_infrastructure",
+      "description": "Deployment configuration, provider configuration, internal hostnames, internal repository references and absolute local paths.",
+      "reason": "Not needed publicly and disclosive."
+    },
+    {
+      "class": "sealed_scenario_variants",
+      "description": "Held-out evaluation variants. Identity and version are published; semantics are not while sealed.",
+      "reason": "Sealed set integrity. No variant is sealed in this candidate: all three shipped variants are public."
+    },
+    {
+      "class": "provider_run_artifacts",
+      "description": "Real private provider-run artifacts, execution accounting, planning allocations, approval ceilings and spend records are excluded. Grok 4.6 public tooling is offline-only with separately identified fictional fleet metadata, not historical authority. Public vendor rates and invented deterministic test ledgers are not private execution records.",
+      "reason": "This release makes no model claim; publishing partial provider artifacts would invite one."
+    },
+    {
+      "class": "unvalidated_results",
+      "description": "Scores, rankings, leaderboards or comparative model claims.",
+      "reason": "Not supported by one authored scenario and matched controls that have not been run."
+    },
+    {
+      "class": "source_history",
+      "description": "Predecessor/internal source history is excluded from the proposed public surface.",
+      "reason": "The verified base has fresh-root history without predecessor Git ancestry. Later candidate commits and advertised refs require exact-source review."
+    }
+  ],
+  "declarations": {
+    "synthetic_only": {
+      "value": true,
+      "statement": "Every published operation fixture is fully synthetic. Actors, identifiers, amounts, dates, documents, messages, thresholds, policies and event plans were invented for this benchmark. Privacy status is SYNTHETIC_ONLY."
+    },
+    "no_production_records": {
+      "value": true,
+      "statement": "No production code, customer records, contacts, addresses, proprietary message text, internal prices or real operational thresholds are included."
+    },
+    "not_official_policy": {
+      "value": true,
+      "statement": "No fixture is Dwelly policy or a description of production behaviour. Dwelly is the initial steward, not the source of an official policy or workflow fixture."
+    },
+    "no_leaderboard_or_ranking": {
+      "value": true,
+      "statement": "No leaderboard, composite score, model ranking or comparative capability claim is published."
+    },
+    "no_novelty_claim": {
+      "value": true,
+      "statement": "Prior art is conceded in docs/RELATED_WORK.md. The claim is a scoped synthesis and differentiation claim, not a first/broadest/industry-standard claim."
+    },
+    "boundary_artifacts_unrelabelled": {
+      "value": true,
+      "statement": "BoundaryBench artifacts retain their original identities and are not presented as Lifecycle evidence or renumbered into an OperateBench version line. The boundarybench package ships at its historical 0.0.15 inside distribution 0.1.0."
+    },
+    "no_copyright_assignment": {
+      "value": true,
+      "statement": "Contributors retain copyright in their contributions. No copyright assignment is asserted."
+    },
+    "ownership": {
+      "value": true,
+      "statement": "PROSPIRE TECHNOLOGIES LTD (company 14991567) is the copyright owner and licensing principal; Dmitry Khanukov is the named human author; Dwelly is the trading/project brand and steward."
+    },
+    "no_published_live_provider_evidence": {
+      "value": true,
+      "statement": "No release-grade live-provider evidence or raw provider output is included in this publication candidate."
+    },
+    "no_published_benchmark_model_results": {
+      "value": true,
+      "statement": "No published benchmark model results, capability claim, task-versus-operation claim, ranking, or leaderboard are included."
+    }
+  },
+  "gates": [
+    {
+      "id": "G1_clean_history",
+      "description": "Bounded certification of the exact proposed repository history/export, with review scope and residual human confidentiality obligations recorded explicitly.",
+      "command": "Run history/export certification against the exact future public repository or curated export",
+      "evidence": "Fresh-root history/export and bounded disclosure review completed for the verified base; no predecessor ancestry, no confirmed critical disclosure in reviewed source/archives. Review candidate additions and final refs separately.",
+      "evidence_candidate": "verified_base",
+      "blocking": true,
+      "status": "passed"
+    },
+    {
+      "id": "G2_package_build_and_install",
+      "description": "sdist and wheel build, metadata checks pass, and the wheel installs into a clean environment on Python 3.11 and 3.14.",
+      "command": "uv build && uvx twine check dist/*",
+      "evidence": "Base wheel/sdist, metadata, fresh installed wheel lanes on Python 3.11 and 3.14 and standalone clone accepted. Dependencies reused offline, not a fresh dependency-resolution claim. Rebuild changed candidate artifacts in CI.",
+      "evidence_candidate": "verified_base",
+      "blocking": true,
+      "status": "passed"
+    },
+    {
+      "id": "G3_cli_offline",
+      "description": "Installed offline CLI commands and exit-code contract are exercised on both supported Python versions. Runtime isolation is distinct from dependency bootstrap and does not assert absence of credentials elsewhere on the host.",
+      "command": "operatebench --help && operatebench validate examples/operatebench/maintenance_v0_1.yaml && operatebench run-maintenance --spec examples/operatebench/maintenance_v0_1.yaml --scenario V1 --agent reference --output v1.json && operatebench replay --spec examples/operatebench/maintenance_v0_1.yaml --run v1.json && operatebench check-maintenance --spec examples/operatebench/maintenance_v0_1.yaml && boundarybench --help",
+      "evidence": "Installed base CLI help/list/validate/check/run/replay exercised offline on Python 3.11 and 3.14; V2 run exit 2 is expected. Candidate command coverage remains required in CI.",
+      "evidence_candidate": "verified_base",
+      "blocking": true,
+      "status": "passed"
+    },
+    {
+      "id": "G4_causal_acceptance",
+      "description": "V1/V3 references must be reliable; V2 must match the authored permanent-notification-fault expectation with reliable=false, exact recovery/obligations findings and all other dimensions passing; each of the eight negative agents matches the separately versioned oracle's exact failure closure, required findings and must-pass dimensions.",
+      "command": "operatebench check-maintenance --spec examples/operatebench/maintenance_v0_1.yaml",
+      "evidence": "Base Maintenance gate passed with V1/V3 reliable and V2 matching its explicit fault expectation; negative controls met the versioned oracle. Unchanged semantics require candidate CI confirmation.",
+      "evidence_candidate": "verified_base",
+      "blocking": true,
+      "status": "passed"
+    },
+    {
+      "id": "G5_deterministic_replay",
+      "description": "Every published run artifact replays to the same state, event sequence and result vector, on every shipped variant.",
+      "command": "Run reference V1, V2 and V3 to v1.json/v2.json/v3.json, then run operatebench replay --spec examples/operatebench/maintenance_v0_1.yaml --run <each artifact> and require exit 0 for all three.",
+      "evidence": "Installed base V1/V2/V3 reference records replayed successfully on Python 3.11 and 3.14. No historical result relabeling or model claim.",
+      "evidence_candidate": "verified_base",
+      "blocking": true,
+      "status": "passed"
+    },
+    {
+      "id": "G6_offline_suite_and_quality_gates",
+      "description": "The full suite passes on Python 3.11 and 3.14; branch coverage is measured on Python 3.11; lint, format and type gates pass. Dependency bootstrap may use the network, while tests make no live provider/model call.",
+      "command": "uv sync --frozen --all-groups && uv run pytest -q && uv run pytest --cov=operatebench --cov=boundarybench --cov-branch --cov-report=term-missing -q && uv run ruff check . && uv run ruff format --check . && uv run mypy src tools && uv run reuse lint",
+      "evidence": "Base full suites completed on Python 3.11 and 3.14 with zero failures/errors/skips; static checks accepted. Fresh candidate hosted CI and branch-coverage measurement remain required. No old test count is asserted as the current count.",
+      "evidence_candidate": "verified_base",
+      "blocking": true,
+      "status": "pending"
+    },
+    {
+      "id": "G7_secret_and_private_reference_scan",
+      "description": "No credential shape outside the exact synthetic allowlist, no absolute local path, no internal hostname, no unapproved repository owner and no bare internal commit identifier in any candidate file; SHA-pinned GitHub Action uses lines are the sole narrowly validated exception.",
+      "command": "uv run python -m tools.check_public_release",
+      "evidence": "Bounded base source/archive scans and separate Gitleaks review completed; findings were adjudicated synthetic canaries, not real credentials. Candidate scanner changes, fresh artifacts and independent secret scanning require revalidation.",
+      "evidence_candidate": "verified_base",
+      "blocking": true,
+      "status": "passed"
+    },
+    {
+      "id": "G8_claims_scan",
+      "description": "A full manual review, supported but not replaced by scanner checks, finds no unsupported claim of first, broadest, production-representative, industry-standard, official policy, leaderboard validity or model ranking.",
+      "command": "Manual review against PUBLIC_RELEASE_CHECKLIST.md section 6, supported by: grep -rniE \"(first|broadest|most realistic|industry standard|state of the art) (agent |longitudinal |enterprise |benchmark)\" --include='*.md' --include='*.py' .",
+      "evidence": "Bounded independent AI claims/correction review exists, not independent human review and not a complete manual claims census. Full manual claims review remains required.",
+      "evidence_candidate": "verified_base",
+      "blocking": true,
+      "status": "pending"
+    },
+    {
+      "id": "G9_links",
+      "description": "Relative links and anchors resolve; external targets and cited content require a complete bounded recheck for the release candidate.",
+      "command": "uv run python -m tools.check_public_release  # relative links and anchors; external URLs checked by bounded HTTP GET and by arXiv title comparison, recorded in PUBLIC_CANDIDATE_VERIFICATION.md",
+      "evidence": "Base relative links/anchors passed mechanically. A complete external-link and cited-content recheck is not established by the retained acceptance; remains required.",
+      "evidence_candidate": "verified_base",
+      "blocking": true,
+      "status": "pending"
+    },
+    {
+      "id": "G10_licensing",
+      "description": "REUSE/SPDX coverage, canonical licence texts, and the explicit Apache-2.0 code / CC-BY-4.0 non-code map pass mechanically; legal authorization remains a human gate.",
+      "command": "uv run reuse lint && uv run python -m tools.check_public_release",
+      "evidence": "Base REUSE/SPDX and canonical licence/path-map checks passed. Owner confirmed licence split, project name and author/copyright attribution. This is not independent legal counsel, know-how/rights clearance or publication authority.",
+      "evidence_candidate": "verified_base",
+      "blocking": true,
+      "status": "passed"
+    },
+    {
+      "id": "G11_independent_human_gate",
+      "description": "Independent fixture, privacy, and claims assessment is required in the controlled record system.",
+      "command": "human gate; no public-Git command or embedded record",
+      "evidence": "Independent AI review is supporting technical evidence only. Independent human fixture/privacy/claims assessment and know-how/rights confirmation remain required in controlled records.",
+      "blocking": true,
+      "status": "pending",
+      "evidence_candidate": "verified_base"
+    },
+    {
+      "id": "G12_explicit_publication_approval",
+      "description": "Explicit publication authorization is required in the controlled record system.",
+      "command": "human gate; no public-Git command or embedded record",
+      "evidence": "Explicit human publication/visibility authorization remains required. Neither private staging, licence confirmation, technical acceptance nor CI supplies it.",
+      "blocking": true,
+      "status": "pending",
+      "evidence_candidate": "verified_base"
+    }
+  ],
+  "published_artifacts": [],
+  "published_artifacts_note": "Artifact identities and hashes remain solely in the external controlled release record; this manifest requires no post-review manifest edit.",
+  "human_gates_record_system": "controlled records outside public Git",
+  "candidate_acceptance": {
+    "status": "requires_exact_source_record",
+    "hosted_ci": "pending",
+    "workflow": "https://github.com/DwellyOrg/OperateBench/actions/workflows/ci.yml",
+    "evidence_scope": "Gate statuses below describe the verified base, not an automatic PASS for subsequent changes.",
+    "closure": "A controlled acceptance record binds exact source/tree, changed-path review, command outcomes, artifact hashes, hosted CI run and per-gate disposition. It can close candidate technical requirements without a self-referential manifest amendment. Human requirements cannot be closed by CI."
+  }
+}

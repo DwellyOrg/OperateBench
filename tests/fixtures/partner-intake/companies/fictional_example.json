@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "company_id": "fictional_example",
+  "owner": {
+    "owner_id": "fictional_example",
+    "display_name": "Fictional Example Research Ltd"
+  },
+  "identity": {
+    "brand": "Fictional Example",
+    "website_url": "https://fictional.example/",
+    "legal_entity": "Fictional Example Research Ltd",
+    "identity_source_url": "https://fictional.example/de/imprint",
+    "identity_checked_on": "2026-09-03",
+    "registered_office": "Example City, Fictional Jurisdiction",
+    "commercial_register": "FICTIONAL-REGISTER-0001"
+  },
+  "contact": {
+    "email": "contact@fictional.invalid",
+    "contact_source": "owner_supplied"
+  },
+  "provenance": {
+    "partner_confirmed": false,
+    "publication_consent": "PENDING"
+  },
+  "starter_kit": {
+    "filename": "fictional-example-kit.zip",
+    "sha256": "beeb4bb8795fe955c36470dab1b2876bc1ed685ce8dbd94f3fb855936207f62b"
+  },
+  "access": {
+    "managed_intake": "GO",
+    "proposal_return_bundle": "GO",
+    "private_repository_read": "HOLD",
+    "executable_repository_pr": "HOLD",
+    "provider_model_execution": "HOLD",
+    "development_registration": "HOLD",
+    "evidence_admission": "HOLD",
+    "publication_publicity": "HOLD",
+    "github": {
+      "actors": [],
+      "status": "PENDING"
+    },
+    "repository_access_approval": "PENDING",
+    "partner_confirmation": "PENDING"
+  }
+}

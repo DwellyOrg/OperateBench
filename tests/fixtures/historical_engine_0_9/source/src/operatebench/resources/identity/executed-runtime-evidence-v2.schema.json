@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://operatebench.org/schemas/executed-runtime-evidence-v2.schema.json",
+  "title": "OperateBench ExecutedRuntimeEvidenceV2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "schema_version",
+    "identity_manifest_digest_sha256",
+    "operation_instance_id",
+    "outcome",
+    "decision_tape",
+    "execution_record",
+    "provider_binding",
+    "domain_generated_audit_budget_evidence",
+    "domain_generated_audit_budget_evidence_digest_sha256",
+    "runtime_evidence_digest_sha256"
+  ],
+  "properties": {
+    "schema": {
+      "const": "operatebench.executed_runtime_evidence.v2"
+    },
+    "schema_version": {
+      "const": 2
+    },
+    "identity_manifest_digest_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+    },
+    "operation_instance_id": {
+      "type": "string",
+      "pattern": "^opinst_[0-9a-f]{32}(?![\\s\\S])"
+    },
+    "outcome": {
+      "$ref": "episode-outcome-v3.schema.json"
+    },
+    "decision_tape": {
+      "$ref": "decision-tape-v1.schema.json"
+    },
+    "execution_record": {
+      "$ref": "execution-record-v2.schema.json"
+    },
+    "provider_binding": {
+      "oneOf": [
+        {
+          "$ref": "provider-execution-binding-v1.schema.json"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "runtime_evidence_digest_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+    },
+    "domain_generated_audit_budget_evidence": {
+      "$ref": "domain-generated-audit-budget-evidence-v1.schema.json"
+    },
+    "domain_generated_audit_budget_evidence_digest_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+    }
+  },
+  "description": "Mandatory protocol-v1 audit evidence successor; content/shape only and no runtime authority. Cross-record, digest, generation, provider, and bounds invariants are normative in AUDIT_INTEGRITY_OUTCOME_EVIDENCE_PROTOCOL.md."
+}

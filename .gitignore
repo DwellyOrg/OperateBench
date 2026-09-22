@@ -1,0 +1,38 @@
+# Environments and dependency trees.
+.venv/
+venv/
+
+# Python bytecode and packaging output.
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# Tool caches. Never candidate content, and never worth scanning.
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Coverage output.
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
+# mutmut's generated workspace. Durable local evidence, never a committed artefact.
+mutants/
+
+# Run artefacts. `operatebench run-maintenance` writes these on demand; they are
+# reproducible from the spec and the agent, so the repository carries the inputs
+# rather than the outputs.
+*.run.json
+runs/
+
+# Credentials are environment-supplied and never committed. Listed explicitly so
+# a stray local file cannot become a staged one.
+.env
+.env.*
+*.pem
+*.key

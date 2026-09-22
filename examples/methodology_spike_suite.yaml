@@ -1,0 +1,50 @@
+# BoundaryBench suite manifest — methodology spike.
+#
+# FULLY SYNTHETIC. Both Cubes referenced below were invented for this benchmark
+# methodology spike. They are NOT Dwelly policy and contain no production data.
+#
+# This is a methodology foundation, not a model benchmark release: two semantic
+# units and twelve task variants support no model comparison, ranking or public
+# claim of any kind.
+
+schema_version: 1
+suite_id: lettings_methodology_spike
+benchmark_version: 0.2.0-dev.1
+status: METHODOLOGY_SPIKE
+privacy_status: SYNTHETIC_ONLY
+disclaimer: >-
+  Synthetic methodology spike for benchmark development only. Both construct
+  cards are invented for this suite; they are not official Dwelly policy and do
+  not reflect Dwelly's real repair authorisation or property access processes.
+  No production records or customer data are used. Two semantic units are far
+  too few for any model benchmark, ranking or public release claim.
+
+# The identity of this collection, pinned. Computed over the normalized suite
+# metadata, the declared constraints and every member Cube's card fingerprint
+# and ordered variant ids and content digests — never over this field itself.
+# Validation refuses the suite when the two disagree, so any semantic drift needs
+# an explicit, reviewed re-pin in the same commit. Reflowing this YAML does not
+# move it.
+suite_content_digest: 7200bb46dc6cacba47ca4df04102c0ce5a318bfce1a495343eb706471091c293
+
+# Enforced at validation time, not reported after the fact. The suite exists to
+# show the machinery generalises across construct shapes and fact locations, so
+# a collection that drifts into a single answer pattern must fail to validate.
+constraints:
+  cube_types:
+    1-ACT: 1
+    3-ACT: 1
+  fact_locations:
+    elicited: 1
+    initial_state: 1
+  expected_dispositions:
+    ACT: 6
+    STOP: 6
+
+entries:
+  - cube_id: lettings_maintenance_authority_v1
+    card: maintenance_authority.yaml
+    semantic_manifest: maintenance_authority.manifest.json
+  - cube_id: lettings_access_consent_v1
+    card: access_consent.yaml
+    semantic_manifest: access_consent.manifest.json

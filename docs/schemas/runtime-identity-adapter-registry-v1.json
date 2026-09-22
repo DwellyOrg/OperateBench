@@ -1,0 +1,461 @@
+{
+  "schema": "operatebench.runtime_identity_adapter_registry.v1",
+  "schema_version": 1,
+  "manifest_authority": "adapter_output_only",
+  "source_commit_eligibility": "content_addressed_not_commit_pinned",
+  "initial_implementation_support": "deterministic_reference_fresh_after_projectors_and_build_descriptor",
+  "current_complete_lanes": [],
+  "arm_default": null,
+  "outcome_inference_authorized": false,
+  "arbitrary_injected_agents_supported": false,
+  "freeze_manifest_sha256": "6ec8409ca55dc4fbb0f5d9078f25004429edd6525209d1e8080b163b36a2b8c9",
+  "owners": [
+    {
+      "owner": "operation_core_content",
+      "authoritative_source": "operatebench.domains.lettings.maintenance.spec.load_spec(examples/operatebench/maintenance_v0_1.yaml) then OperationSpec.verify_identity(); live OperationSpec.identity_payload(), action_schema_view(), maintenance_action_evidence_contract(), and maintenance_retrieval_catalogue()",
+      "authoritative_source_leaves": [
+        "examples/operatebench/maintenance_v0_1.yaml",
+        "operatebench.domains.lettings.maintenance.retrieval.maintenance_retrieval_catalogue",
+        "operatebench.domains.lettings.maintenance.spec.OperationSpec.action_schema_view",
+        "operatebench.domains.lettings.maintenance.spec.OperationSpec.identity_payload",
+        "operatebench.domains.lettings.maintenance.spec.OperationSpec.verify_identity",
+        "operatebench.domains.lettings.maintenance.spec.load_spec",
+        "operatebench.domains.lettings.maintenance.spec.maintenance_action_evidence_contract"
+      ],
+      "projector_contract": "operatebench.domains.lettings.maintenance.identity_projectors.project_operation_card_v1 (required future production output; absent in this contract-only slice)",
+      "card_schema": "src/operatebench/resources/cards/operation-card-v1.schema.json",
+      "projection_pointers": [
+        "/operation_card/schema",
+        "/operation_card/schema_version",
+        "/operation_card/id",
+        "/operation_card/content_digest_sha256",
+        "/operation_card/content/operation_type",
+        "/operation_card/content/operation_version",
+        "/operation_card/content/state_contract",
+        "/operation_card/content/authority_contract",
+        "/operation_card/content/policy_contract",
+        "/operation_card/content/event_contracts",
+        "/operation_card/content/action_contracts",
+        "/operation_card/content/retrieval_contract",
+        "/operation_card/content/transition_contract"
+      ],
+      "dependency_bindings": [],
+      "selected_run_cross_bindings": [
+        "OperationSpec.identity_payload() equals Artifact8 /operation and verified spec_digest_sha256 equals Artifact8 /operation/spec_digest_sha256",
+        "projected card id/type/version/policy equal the selected verified OperationSpec",
+        "every leaf is owned exactly once by the B1 identity-field census"
+      ],
+      "support_status": "blocked_projector_unimplemented"
+    },
+    {
+      "owner": "semantic_scenario_content",
+      "authoritative_source": "operatebench.domains.lettings.maintenance.semantic_arms_v1.maintenance_v1_semantic_scenario(spec), SemanticScenario.verify_identity(), and SemanticScenario.semantic_payload()",
+      "authoritative_source_leaves": [
+        "operatebench.domains.lettings.maintenance.semantic_arms_v1.SemanticScenario.semantic_payload",
+        "operatebench.domains.lettings.maintenance.semantic_arms_v1.SemanticScenario.verify_identity",
+        "operatebench.domains.lettings.maintenance.semantic_arms_v1.maintenance_v1_semantic_scenario"
+      ],
+      "projector_contract": "operatebench.domains.lettings.maintenance.identity_projectors.project_semantic_scenario_card_v1 (required future production output; absent in this contract-only slice)",
+      "card_schema": "src/operatebench/resources/cards/semantic-scenario-card-v1.schema.json",
+      "projection_pointers": [
+        "/semantic_scenario_card/schema",
+        "/semantic_scenario_card/schema_version",
+        "/semantic_scenario_card/id",
+        "/semantic_scenario_card/content_digest_sha256",
+        "/semantic_scenario_card/content/operation_core",
+        "/semantic_scenario_card/content/construct_label",
+        "/semantic_scenario_card/content/common_estimand_id",
+        "/semantic_scenario_card/content/decision_points",
+        "/semantic_scenario_card/content/causal_graph",
+        "/semantic_scenario_card/content/authored_hazards",
+        "/semantic_scenario_card/content/common_outcome_obligations",
+        "/semantic_scenario_card/content/allowed_variant_dimensions"
+      ],
+      "dependency_bindings": [
+        {
+          "requires_owner": "operation_core_content",
+          "binds_pointer": "/operation_card/id",
+          "binding": "the projected operation_core reference names the accepted operation card, which operation_core_content owns"
+        },
+        {
+          "requires_owner": "operation_core_content",
+          "binds_pointer": "/operation_card/content_digest_sha256",
+          "binding": "the projected operation_core reference carries the accepted operation card content digest, which operation_core_content owns"
+        }
+      ],
+      "selected_run_cross_bindings": [
+        "selected semantic scenario id equals OperationSpec.semantic_scenario_id, Artifact8 /semantic_scenario_id, and Artifact8 /operation/semantic_scenario_id",
+        "operation id and digest reference the accepted operation card",
+        "compile_maintenance_v1 accepts the exact verified semantic source with contiguous point order"
+      ],
+      "support_status": "blocked_projector_unimplemented"
+    },
+    {
+      "owner": "variant_content",
+      "authoritative_source": "OperationSpec.scenario(selected scenario_id) and ScenarioSpec.semantic_payload() plus OperationSpec.actor_snapshot(), hidden_state_snapshot(), and message_fixture_snapshot() only where required by the B1 card",
+      "authoritative_source_leaves": [
+        "operatebench.domains.lettings.maintenance.spec.OperationSpec.actor_snapshot",
+        "operatebench.domains.lettings.maintenance.spec.OperationSpec.hidden_state_snapshot",
+        "operatebench.domains.lettings.maintenance.spec.OperationSpec.message_fixture_snapshot",
+        "operatebench.domains.lettings.maintenance.spec.OperationSpec.scenario",
+        "operatebench.domains.lettings.maintenance.spec.ScenarioSpec.semantic_payload"
+      ],
+      "projector_contract": "operatebench.domains.lettings.maintenance.identity_projectors.project_variant_card_v1 (required future production output; absent in this contract-only slice)",
+      "card_schema": "src/operatebench/resources/cards/variant-card-v1.schema.json",
+      "projection_pointers": [
+        "/variant_card/schema",
+        "/variant_card/schema_version",
+        "/variant_card/id",
+        "/variant_card/content_digest_sha256",
+        "/variant_card/content/semantic_scenario",
+        "/variant_card/content/variant_label",
+        "/variant_card/content/starts_at",
+        "/variant_card/content/expected_terminal",
+        "/variant_card/content/human_checkpoint_budget",
+        "/variant_card/content/required_checkpoint_types",
+        "/variant_card/content/dispatch_failures",
+        "/variant_card/content/expected_event_rejections",
+        "/variant_card/content/actors",
+        "/variant_card/content/hidden_initial_values",
+        "/variant_card/content/message_fixtures",
+        "/variant_card/content/events"
+      ],
+      "dependency_bindings": [
+        {
+          "requires_owner": "semantic_scenario_content",
+          "binds_pointer": "/semantic_scenario_card/id",
+          "binding": "the projected semantic_scenario reference names the accepted semantic scenario card, which semantic_scenario_content owns"
+        },
+        {
+          "requires_owner": "semantic_scenario_content",
+          "binds_pointer": "/semantic_scenario_card/content_digest_sha256",
+          "binding": "the projected semantic_scenario reference carries the accepted semantic scenario card content digest, which semantic_scenario_content owns"
+        }
+      ],
+      "selected_run_cross_bindings": [
+        "Artifact8 /scenario_id selects exactly one ScenarioSpec and equals the projected variant id",
+        "semantic scenario reference equals the accepted semantic scenario card",
+        "label and expected terminal equal Artifact8 /scenario_label and /expected_terminal; actors/events/fixtures resolve against OperationSpec"
+      ],
+      "support_status": "blocked_projector_unimplemented"
+    },
+    {
+      "owner": "runtime_contract_content",
+      "authoritative_source": "operatebench.version.OPERATEBENCH_VERSION; operatebench.artifact.ARTIFACT_VERSION; operatebench.agents.model MODEL_PROTOCOL_VERSION and tool_schema; operatebench.core.protocol MODEL_VISIBLE_FIELDS/model_projection; MAINTENANCE_WAKE_EVENT_TYPES; Engine and MaintenanceOperation identifiers",
+      "authoritative_source_leaves": [
+        "operatebench.agents.model.MODEL_PROTOCOL_VERSION",
+        "operatebench.agents.model.tool_schema",
+        "operatebench.artifact.ARTIFACT_VERSION",
+        "operatebench.core.engine.Engine",
+        "operatebench.core.protocol.MODEL_VISIBLE_FIELDS",
+        "operatebench.core.protocol.model_projection",
+        "operatebench.domains.lettings.maintenance.operation.MaintenanceOperation",
+        "operatebench.domains.lettings.maintenance.spec.MAINTENANCE_WAKE_EVENT_TYPES",
+        "operatebench.version.OPERATEBENCH_VERSION"
+      ],
+      "projector_contract": "future private runtime-manifest adapter projection after B1 projectors",
+      "card_schema": null,
+      "projection_pointers": [
+        "/runtime_contract/engine_version",
+        "/runtime_contract/artifact_version",
+        "/runtime_contract/model_protocol_version",
+        "/runtime_contract/model_visible_fields",
+        "/runtime_contract/outcome_tool_schema",
+        "/runtime_contract/wake_event_types",
+        "/runtime_contract/engine_class",
+        "/runtime_contract/domain_class"
+      ],
+      "dependency_bindings": [
+        {
+          "requires_owner": "operation_core_content",
+          "binds_pointer": "/operation_card/content/action_contracts",
+          "binding": "the live action schema and action evidence contract are read from the accepted operation card's action contracts; runtime_contract_content never re-owns them"
+        },
+        {
+          "requires_owner": "operation_core_content",
+          "binds_pointer": "/operation_card/content/retrieval_contract",
+          "binding": "the live retrieval catalogue is read from the accepted operation card's retrieval contract; runtime_contract_content never re-owns it"
+        }
+      ],
+      "selected_run_cross_bindings": [
+        "engine/artifact versions equal Artifact8 values",
+        "model protocol/tool schema equal built model requests and Artifact8 agent_execution protocol",
+        "the bound action/evidence/retrieval declarations are the exact runtime-consumed declarations of the accepted operation card"
+      ],
+      "support_status": "blocked_build_descriptor_unimplemented"
+    },
+    {
+      "owner": "scaffold_content",
+      "authoritative_source": "deterministic: maintenance.agents.agent_entry('reference'), AGENTS, AgentEntry and build_agent(); frozen fake: internally constructed ModelAgent.build_request(), lifecycle_contract INSTRUCTIONS_CONTRACT/check_model_request/outcome_tools, and openai_responses LIFECYCLE_OPENAI_REQUEST_MAPPING_VERSION",
+      "authoritative_source_leaves": [
+        "operatebench.agents.lifecycle_contract.INSTRUCTIONS_CONTRACT",
+        "operatebench.agents.lifecycle_contract.check_model_request",
+        "operatebench.agents.lifecycle_contract.outcome_tools",
+        "operatebench.agents.model.ModelAgent.build_request",
+        "operatebench.agents.openai_responses.LIFECYCLE_OPENAI_REQUEST_MAPPING_VERSION",
+        "operatebench.domains.lettings.maintenance.agents.AGENTS",
+        "operatebench.domains.lettings.maintenance.agents.AgentEntry",
+        "operatebench.domains.lettings.maintenance.agents.agent_entry",
+        "operatebench.domains.lettings.maintenance.agents.build_agent"
+      ],
+      "projector_contract": "future private runtime-manifest adapter projection after B1 projectors",
+      "card_schema": null,
+      "projection_pointers": [
+        "/scaffold/agent_id",
+        "/scaffold/agent_kind",
+        "/scaffold/registry_factory",
+        "/scaffold/supported_scenarios",
+        "/scaffold/prompt_envelope_keys",
+        "/scaffold/instructions_contract",
+        "/scaffold/tool_names",
+        "/scaffold/request_mapping"
+      ],
+      "dependency_bindings": [
+        {
+          "requires_owner": "runtime_contract_content",
+          "binds_pointer": "/runtime_contract/model_visible_fields",
+          "binding": "the built request exposes exactly the runtime contract's model-visible fields; scaffold_content never re-owns them"
+        },
+        {
+          "requires_owner": "runtime_contract_content",
+          "binds_pointer": "/runtime_contract/outcome_tool_schema",
+          "binding": "the advertised tool schemas are the runtime contract's outcome tool schema; scaffold_content owns only the selected tool names"
+        },
+        {
+          "requires_owner": "runtime_contract_content",
+          "binds_pointer": "/runtime_contract/model_protocol_version",
+          "binding": "the request mapping is emitted under the runtime contract's model protocol version"
+        }
+      ],
+      "selected_run_cross_bindings": [
+        "reference agent id/kind/scenario equal shipped AgentEntry and selected artifact",
+        "model scaffold binds ModelAgent model/output ceiling and every built request to runtime contract and provider plan",
+        "openai-gpt-5-6-luna is admitted only by the jointly pinned frozen lane"
+      ],
+      "support_status": "blocked_build_descriptor_unimplemented"
+    },
+    {
+      "owner": "arm_protocol_content",
+      "authoritative_source": "compile_maintenance_v1(spec, verified semantic scenario) and the selected CompiledArm treatment_label, allowed_claim, semantic ids/digest, expected vector, denominator, point ids, continuity and harness metadata; excludes outcomes/trajectories/evaluations/results",
+      "authoritative_source_leaves": [
+        "operatebench.domains.lettings.maintenance.semantic_arms_v1.CompiledArm",
+        "operatebench.domains.lettings.maintenance.semantic_arms_v1.compile_maintenance_v1"
+      ],
+      "projector_contract": "future internal runtime-manifest lane adapter",
+      "card_schema": null,
+      "projection_pointers": [
+        "/arm_protocol/treatment_label",
+        "/arm_protocol/allowed_claim",
+        "/arm_protocol/semantic_scenario_id",
+        "/arm_protocol/semantic_scenario_digest_sha256",
+        "/arm_protocol/common_expected_vector",
+        "/arm_protocol/denominator",
+        "/arm_protocol/point_ids",
+        "/arm_protocol/subject_continuity",
+        "/arm_protocol/harness_metadata"
+      ],
+      "dependency_bindings": [
+        {
+          "requires_owner": "runtime_contract_content",
+          "binds_pointer": "/runtime_contract/engine_class",
+          "binding": "the compiled arm executes under the runtime contract's engine class; arm_protocol_content never re-owns it"
+        },
+        {
+          "requires_owner": "semantic_scenario_content",
+          "binds_pointer": "/semantic_scenario_card/content_digest_sha256",
+          "binding": "the compiled arm's semantic digest is compared with the accepted semantic scenario card digest owned by semantic_scenario_content"
+        },
+        {
+          "requires_owner": "variant_content",
+          "binds_pointer": "/variant_card/id",
+          "binding": "the compiled arm resolves the selected variant card owned by variant_content"
+        }
+      ],
+      "selected_run_cross_bindings": [
+        "compiled source id/digest equal accepted semantic card",
+        "point ids and denominator equal canonical semantic point order/count",
+        "only the two exact B3.1 artifact hashes receive full_lifecycle from the internal lane registry; never infer from outcome"
+      ],
+      "support_status": "blocked_build_descriptor_unimplemented"
+    },
+    {
+      "owner": "provider_run_plan_content",
+      "authoritative_source": "deterministic: in_process_execution(); fake model: provider_identity_for, lifecycle_openai_settings, request_profile_for, MAX_OUTPUT_TOKENS, LIFECYCLE_RETRY_POLICY, LedgerControls, PRICING_RATE_FIELDS, EXECUTION_LEDGER_VERSION and a fresh successful audit_execution_bundle_files over the complete scored execution-ledger-v2 sidecar",
+      "authoritative_source_leaves": [
+        "operatebench.agents.evidence.provider_identity_for",
+        "operatebench.agents.openai_responses.LIFECYCLE_RETRY_POLICY",
+        "operatebench.agents.openai_responses.lifecycle_openai_settings",
+        "operatebench.agents.transport.in_process_execution",
+        "operatebench.execution_bundle.audit_execution_bundle_files",
+        "operatebench.execution_ledger.EXECUTION_LEDGER_VERSION",
+        "operatebench.execution_ledger.LedgerControls",
+        "operatebench.execution_ledger.PRICING_RATE_FIELDS",
+        "operatebench.providers.openai_responses.MAX_OUTPUT_TOKENS",
+        "operatebench.providers.openai_responses.request_profile_for"
+      ],
+      "projector_contract": "future private runtime-manifest adapter projection; provider binding candidate is never input authority",
+      "card_schema": null,
+      "projection_pointers": [
+        "/provider_run_plan/execution_mode",
+        "/provider_run_plan/provider",
+        "/provider_run_plan/api",
+        "/provider_run_plan/model",
+        "/provider_run_plan/model_profile",
+        "/provider_run_plan/settings",
+        "/provider_run_plan/controls",
+        "/provider_run_plan/pricing_policy",
+        "/provider_run_plan/max_output_tokens",
+        "/provider_run_plan/retry_policy",
+        "/provider_run_plan/ledger_contract_version"
+      ],
+      "dependency_bindings": [
+        {
+          "requires_owner": "runtime_contract_content",
+          "binds_pointer": "/runtime_contract/model_protocol_version",
+          "binding": "the plan executes under the runtime contract's model protocol version; provider_run_plan_content never re-owns it"
+        },
+        {
+          "requires_owner": "scaffold_content",
+          "binds_pointer": "/scaffold/request_mapping",
+          "binding": "the provider request mapping is the selected scaffold's mapping; provider_run_plan_content never re-owns it"
+        },
+        {
+          "requires_owner": "build_provenance_content",
+          "binds_pointer": "/build_provenance/source_tree_digest_sha256",
+          "binding": "the audited plan is admissible only under the validated build descriptor's clean tracked source tree digest"
+        }
+      ],
+      "selected_run_cross_bindings": [
+        "deterministic plan is in_process with null provider/model/ledger and zero transport calls",
+        "model plan equals audited ledger header and Artifact8 execution/provider bindings",
+        "model equals scaffold; settings/profile/mapping are re-derived from exact transport"
+      ],
+      "support_status": "blocked_build_descriptor_unimplemented"
+    },
+    {
+      "owner": "build_provenance_content",
+      "authoritative_source": "fresh validated BuildProvenanceDescriptorV1 under operatebench.clean_tracked_source_tree.v1; source_commit is evidence, source-tree digest and build mode establish eligibility",
+      "authoritative_source_leaves": [
+        "docs/schemas/build-provenance-descriptor-v1.schema.json",
+        "docs/schemas/clean-tracked-source-tree-v1.golden.json",
+        "uv.lock"
+      ],
+      "projector_contract": "future private runtime-manifest adapter projection from a validated build descriptor",
+      "card_schema": null,
+      "projection_pointers": [
+        "/build_provenance/schema",
+        "/build_provenance/schema_version",
+        "/build_provenance/source_commit",
+        "/build_provenance/source_tree_algorithm",
+        "/build_provenance/source_tree_digest_sha256",
+        "/build_provenance/tree_clean",
+        "/build_provenance/uv_lock_sha256",
+        "/build_provenance/build_mode",
+        "/build_provenance/distribution_artifacts",
+        "/build_provenance/toolchain"
+      ],
+      "dependency_bindings": [],
+      "selected_run_cross_bindings": [
+        "source tree digest is recomputed from clean tracked content, not compared to a forever-pinned commit",
+        "uv.lock digest equals checked source and the B3.1 freeze value where adapting a historical lane",
+        "distribution/toolchain agree with runtime and provider plan; historical B3.1 fixtures remain unavailable without their missing descriptor or approved equivalent"
+      ],
+      "support_status": "blocked_build_descriptor_unimplemented"
+    }
+  ],
+  "lane_registry": [
+    {
+      "lane": "b31_deterministic_reference",
+      "artifact": "artifact8-deterministic-reference-v1.json",
+      "artifact_sha256": "45f2f3bec377230a0fc464c5ea1b64798a053beeb588c3ec4bdb477eaf7cfab5",
+      "arm_assignment": "full_lifecycle",
+      "assignment_basis": "exact_internal_lane_registry",
+      "agent_id": null,
+      "ledger": null,
+      "ledger_file_sha256": null,
+      "freeze_manifest_sha256": "6ec8409ca55dc4fbb0f5d9078f25004429edd6525209d1e8080b163b36a2b8c9",
+      "support_status": "blocked_projectors_and_build_descriptor"
+    },
+    {
+      "lane": "b31_fake_openai_reference",
+      "artifact": "artifact8-fake-openai-reference-v1.json",
+      "artifact_sha256": "115bd5c058f4b4057cf7b4cd18d7cf0b367c0234b4367fbac92396aa26a24b3f",
+      "arm_assignment": "full_lifecycle",
+      "assignment_basis": "exact_internal_lane_registry",
+      "agent_id": "openai-gpt-5-6-luna",
+      "ledger": "artifact8-fake-openai-reference-v1.execution-ledger-v2.ndjson",
+      "ledger_file_sha256": "29fc1c33d601529151b9340bc253992c3b55c28ba4c55849f070df13ead7afdb",
+      "freeze_manifest_sha256": "6ec8409ca55dc4fbb0f5d9078f25004429edd6525209d1e8080b163b36a2b8c9",
+      "support_status": "blocked_historical_build_descriptor"
+    }
+  ],
+  "rejection_codes": [
+    "adapter_source_unavailable",
+    "artifact_digest_mismatch",
+    "arm_assignment_missing",
+    "arm_assignment_ambiguous",
+    "b1_projector_unavailable",
+    "build_descriptor_unavailable",
+    "build_provenance_mismatch",
+    "card_projection_invalid",
+    "census_mismatch",
+    "dirty_source_tree",
+    "freeze_manifest_digest_mismatch",
+    "historical_build_descriptor_unavailable",
+    "ledger_required",
+    "ledger_audit_failed",
+    "manifest_input_not_authority",
+    "provider_plan_mismatch",
+    "runtime_contract_mismatch",
+    "scaffold_mismatch",
+    "selected_run_mismatch",
+    "source_identity_mismatch",
+    "unsupported_agent",
+    "unsupported_build_mode",
+    "unsupported_lane",
+    "unsupported_model_profile"
+  ],
+  "dependency_order": [
+    "contract_amendment",
+    "b1_projectors_and_build_descriptor",
+    "private_runtime_manifest_binding",
+    "canonical_immutable_constituents_and_evidence_digest",
+    "can_runtime_replay",
+    "evaluator_compatibility",
+    "capability_consume"
+  ],
+  "staged_status": [
+    {
+      "stage": "contract",
+      "status": "frozen"
+    },
+    {
+      "stage": "b1_projectors",
+      "status": "unimplemented"
+    },
+    {
+      "stage": "build_descriptor",
+      "status": "unimplemented"
+    },
+    {
+      "stage": "runtime_manifest_binding",
+      "status": "unimplemented"
+    },
+    {
+      "stage": "canonical_evidence",
+      "status": "unimplemented"
+    },
+    {
+      "stage": "can_runtime_replay",
+      "status": "unimplemented"
+    },
+    {
+      "stage": "evaluator_compatibility",
+      "status": "unimplemented"
+    },
+    {
+      "stage": "capability_consume",
+      "status": "unimplemented"
+    }
+  ]
+}

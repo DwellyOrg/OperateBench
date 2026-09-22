@@ -1,0 +1,259 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://operatebench.org/schemas/episode-outcome-v3.schema.json",
+  "title": "OperateBench EpisodeOutcomeV3",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "schema_version",
+    "status",
+    "terminal_outcome",
+    "replay_final",
+    "started_at",
+    "ended_at",
+    "simulated_minutes",
+    "invocations",
+    "final_state",
+    "final_state_digest_sha256",
+    "trajectory",
+    "trajectory_digest_sha256",
+    "events"
+  ],
+  "properties": {
+    "schema": {
+      "const": "operatebench.episode_outcome.v3"
+    },
+    "schema_version": {
+      "const": 3
+    },
+    "status": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind"
+          ],
+          "properties": {
+            "kind": {
+              "const": "domain_terminal"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "code"
+          ],
+          "properties": {
+            "kind": {
+              "const": "engine_halt"
+            },
+            "code": {
+              "enum": [
+                "operation_deadlock",
+                "operational_horizon_exhausted"
+              ]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "contract_id",
+            "code"
+          ],
+          "properties": {
+            "kind": {
+              "const": "integrity_error"
+            },
+            "contract_id": {
+              "const": "operatebench.domain-generated-audit-budget.v1"
+            },
+            "code": {
+              "enum": [
+                "DOMAIN_AUDIT_BUDGET_EXCEEDED",
+                "DOMAIN_AUDIT_CONTRACT_VIOLATION",
+                "DOMAIN_AUDIT_COUNTER_INTEGRITY"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "terminal_outcome": {
+      "oneOf": [
+        {
+          "allOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255,
+              "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*(?![\\s\\S])"
+            },
+            {
+              "not": {
+                "enum": [
+                  "operation_deadlock",
+                  "operational_horizon_exhausted"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "replay_final": {
+      "type": "boolean"
+    },
+    "started_at": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])T(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]Z(?![\\s\\S])"
+    },
+    "ended_at": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])T(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]Z(?![\\s\\S])"
+    },
+    "simulated_minutes": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "invocations": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "final_state": {
+      "type": "object",
+      "maxProperties": 4096
+    },
+    "final_state_digest_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+    },
+    "trajectory": {
+      "type": "array",
+      "maxItems": 4096
+    },
+    "trajectory_digest_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+    },
+    "events": {
+      "type": "array",
+      "maxItems": 4096,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "event_id",
+          "event_type",
+          "actor_id",
+          "at",
+          "sequence",
+          "payload",
+          "triggers_agent",
+          "caused_by",
+          "disposition",
+          "verdict_code"
+        ],
+        "properties": {
+          "event_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "event_type": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "actor_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "at": {
+            "type": "string",
+            "pattern": "^[0-9]{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])T(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]Z(?![\\s\\S])"
+          },
+          "sequence": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "payload": {
+            "type": "object",
+            "maxProperties": 4096
+          },
+          "triggers_agent": {
+            "type": "boolean"
+          },
+          "caused_by": {
+            "oneOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "disposition": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "verdict_code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          }
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "properties": {
+              "kind": {
+                "const": "domain_terminal"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "terminal_outcome": {
+            "type": "string"
+          },
+          "replay_final": {
+            "const": true
+          }
+        }
+      }
+    }
+  ],
+  "description": "Core-generic successor outcome. Tagged-status reconciliation, rollback snapshots, horizon precedence, and absence of primary grading authority are normative in AUDIT_INTEGRITY_OUTCOME_EVIDENCE_PROTOCOL.md."
+}

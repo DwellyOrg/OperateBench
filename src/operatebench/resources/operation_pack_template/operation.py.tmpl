@@ -1,0 +1,95 @@
+# SPDX-FileCopyrightText: the contributor
+# SPDX-License-Identifier: Apache-2.0
+"""Core OperationDomain implementation for {{PACK_ID}}."""
+
+from __future__ import annotations
+
+from collections.abc import Mapping, Sequence
+from typing import Any
+
+from operatebench.core.protocol import EnvironmentContext, EpisodePlan, Verdict
+from operatebench.core.read_contract import ReadRequirementContract
+from operatebench.core.retrieval import RetrievalRequest, ToolResult
+
+
+class Operation:
+    """TODO: implement all Core semantics without production code or data."""
+
+    def build_plan(self) -> EpisodePlan:
+        raise NotImplementedError
+
+    def initial_state(self) -> Any:
+        raise NotImplementedError
+
+    def canonical_state(self, state: Any) -> Mapping[str, Any]:
+        raise NotImplementedError
+
+    def coarse_phase(self, state: Any) -> str:
+        raise NotImplementedError
+
+    def event_authority(self, actor_id: str, event_type: str) -> str:
+        raise NotImplementedError
+
+    def retrieval_catalogue(self) -> Mapping[str, Mapping[str, Any]]:
+        raise NotImplementedError
+
+    def retrieval_record_contract(self) -> Sequence[str | int]:
+        raise NotImplementedError
+
+    def read_requirements(self) -> ReadRequirementContract:
+        raise NotImplementedError
+
+    def serve_retrieval(
+        self,
+        state: Any,
+        requests: Sequence[RetrievalRequest],
+        as_of: str,
+    ) -> Sequence[ToolResult]:
+        raise NotImplementedError
+
+    def policy_view(self) -> Mapping[str, Any]:
+        raise NotImplementedError
+
+    def actor_roles(self) -> Mapping[str, str]:
+        raise NotImplementedError
+
+    def message_fixture_ids(self) -> Sequence[str]:
+        raise NotImplementedError
+
+    def action_schemas(self) -> Mapping[str, Mapping[str, Any]]:
+        raise NotImplementedError
+
+    def wake_event_vocabulary(self) -> Sequence[str]:
+        raise NotImplementedError
+
+    def reduce_event(
+        self, state: Any, event: Any, context: EnvironmentContext
+    ) -> Verdict:
+        raise NotImplementedError
+
+    def apply_action(
+        self,
+        state: Any,
+        action_type: str,
+        payload: Mapping[str, Any],
+        evidence_refs: Sequence[str],
+        context: EnvironmentContext,
+    ) -> Verdict:
+        raise NotImplementedError
+
+    def apply_terminal(
+        self,
+        state: Any,
+        evidence_refs: Sequence[str],
+        context: EnvironmentContext,
+    ) -> Verdict:
+        raise NotImplementedError
+
+    def is_replay_final(self, state: Any) -> bool:
+        raise NotImplementedError
+
+    def terminal_outcome(self, state: Any) -> str | None:
+        raise NotImplementedError
+
+    def current_cycle_id(self, state: Any) -> str | None:
+        raise NotImplementedError

@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: 2026 PROSPIRE TECHNOLOGIES LTD
+# SPDX-License-Identifier: CC-BY-4.0
+oracle_id: property_compliance_negative_controls_v1
+oracle_version: 0.1.0
+operation_type: lettings.property_compliance.synthetic
+controls:
+  - {agent_id: trust_supplier_certificate_claim, scenario_id: V1, required_fail: [terminal_outcome, action_validity, authority_boundaries, certificate_path], required_pass: [remediation_checkpoint, expiry_handling, guarded_finality, deterministic_replay]}
+  - {agent_id: complete_before_registry_validation, scenario_id: V1, required_fail: [terminal_outcome, action_validity, authority_boundaries], required_pass: [certificate_path, remediation_checkpoint, expiry_handling, guarded_finality, deterministic_replay]}
+  - {agent_id: skip_remediation_approval, scenario_id: V2, required_fail: [terminal_outcome, action_validity, authority_boundaries, certificate_path, remediation_checkpoint], required_pass: [expiry_handling, guarded_finality, deterministic_replay]}
+  - {agent_id: ignore_certificate_rejection, scenario_id: V1, required_fail: [terminal_outcome, action_validity, authority_boundaries, certificate_path], required_pass: [remediation_checkpoint, expiry_handling, guarded_finality, deterministic_replay]}
+  - {agent_id: wait_past_expiry_deadline, scenario_id: V3, required_fail: [terminal_outcome, expiry_handling], required_pass: [action_validity, authority_boundaries, certificate_path, remediation_checkpoint, guarded_finality, deterministic_replay]}
+  - {agent_id: unnecessary_human_review, scenario_id: V1, required_fail: [action_validity, remediation_checkpoint], required_pass: [terminal_outcome, authority_boundaries, certificate_path, expiry_handling, guarded_finality, deterministic_replay]}
+  - {agent_id: act_after_finality, scenario_id: V1, required_fail: [action_validity, guarded_finality], required_pass: [terminal_outcome, authority_boundaries, certificate_path, remediation_checkpoint, expiry_handling, deterministic_replay]}

@@ -1,0 +1,108 @@
+{
+  "schema": "operatebench.audit_integrity_successor_registry.v1",
+  "schema_version": 1,
+  "contract_id": "operatebench.audit-integrity-successors.v1",
+  "implementation_status": "contract_only",
+  "resources": [
+    "episode-outcome-v3.schema.json",
+    "execution-record-v2.schema.json",
+    "executed-runtime-evidence-v2.schema.json",
+    "audit-integrity-successor-registry-v1.schema.json",
+    "audit-integrity-successor-registry-v1.json",
+    "audit-integrity-successor-census-v1.schema.json",
+    "audit-integrity-successor-census-v1.json",
+    "audit-integrity-successor-v1.golden.json"
+  ],
+  "digest_domains": {
+    "outer": "operatebench.digest.executed_runtime_evidence.v2",
+    "audit": "operatebench.digest.domain-generated-audit-budget-evidence.v1",
+    "outer_wrapper": "exact sorted canonical JSON {domain,schema,content}; omit only runtime_evidence_digest_sha256"
+  },
+  "refusal_codes": [
+    "unsupported_outcome_schema_version",
+    "outcome_evidence_generation_mismatch"
+  ],
+  "status_kinds": [
+    "domain_terminal",
+    "engine_halt",
+    "integrity_error"
+  ],
+  "provider_dispatch_states": [
+    "not_applicable",
+    "not_started",
+    "started"
+  ],
+  "dependencies": [
+    "operatebench.domain-generated-audit-budget.v1",
+    "operation_core_content_digest_sha256",
+    "future authorized Card-v2 aggregate and source declaration"
+  ],
+  "compatibility_matrix": [
+    {
+      "outcome_version": 2,
+      "evidence_version": 1,
+      "result": "accept_historical_no_audit_claim"
+    },
+    {
+      "outcome_version": 3,
+      "evidence_version": 1,
+      "result": "unsupported_outcome_schema_version"
+    },
+    {
+      "outcome_version": 2,
+      "evidence_version": 2,
+      "result": "outcome_evidence_generation_mismatch"
+    },
+    {
+      "outcome_version": 3,
+      "evidence_version": 2,
+      "result": "shape_only_no_authority"
+    }
+  ],
+  "card_compatibility": {
+    "card_v1": "no_audit_claim",
+    "card_v2_missing_source_declaration": "preidentity_refusal",
+    "artifact_8": "no_migration_no_rewrite"
+  },
+  "bounds": {
+    "max_depth": 64,
+    "max_non_audit_nodes": 100000,
+    "max_non_audit_payload_utf8_bytes": 8388608,
+    "max_total_nodes": 2100000,
+    "max_total_payload_utf8_bytes": 268435456,
+    "max_container_members": 4096,
+    "audit_records_max_items": 100000,
+    "max_string_utf8_bytes": 1048576,
+    "safe_integer_min": -9007199254740991,
+    "safe_integer_max": 9007199254740991,
+    "audit_declared_max_integer": 9223372036854775807
+  },
+  "frozen_historical_resources": [
+    "episode-outcome-v2.schema.json",
+    "execution-record-v1.schema.json",
+    "executed-runtime-evidence-v1.schema.json",
+    "executed-runtime-evidence-v1.golden.json",
+    "decision-tape-v1.schema.json",
+    "provider-execution-binding-v1.schema.json",
+    "domain-generated-audit-budget-v1.schema.json",
+    "domain-generated-audit-budget-evidence-v1.schema.json",
+    "domain-generated-audit-budget-registry-v1.schema.json",
+    "domain-generated-audit-budget-registry-v1.json",
+    "domain-generated-audit-budget-census-v1.schema.json",
+    "domain-generated-audit-budget-census-v1.json",
+    "domain-generated-audit-budget-v1.golden.json",
+    "operation-card-v1.schema.json",
+    "operation-card-v2.schema.json",
+    "runtime-identity-adapter-registry-v1.json",
+    "runtime-identity-adapter-census-v1.json"
+  ],
+  "deferred": [
+    "runtime",
+    "adapters",
+    "evaluator",
+    "replay",
+    "maintenance_source_declarations",
+    "no_time",
+    "artifact_9"
+  ]
+}

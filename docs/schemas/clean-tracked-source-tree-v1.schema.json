@@ -1,0 +1,361 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://operatebench.org/schemas/clean-tracked-source-tree-v1.schema.json",
+  "title": "OperateBench Clean Tracked Source Tree v1 conformance vectors",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "schema_version",
+    "algorithm",
+    "prefix_utf8",
+    "prefix_utf8_hex",
+    "separator_byte_hex",
+    "length_field_bytes",
+    "enumeration_command",
+    "accepted_modes",
+    "max_path_utf8_bytes",
+    "refusal_codes",
+    "precondition_vectors",
+    "accept_vectors",
+    "reject_vectors"
+  ],
+  "properties": {
+    "schema": {
+      "const": "operatebench.clean_tracked_source_tree_golden.v1"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "algorithm": {
+      "const": "operatebench.clean_tracked_source_tree.v1"
+    },
+    "prefix_utf8": {
+      "const": "operatebench.clean_tracked_source_tree.v1"
+    },
+    "prefix_utf8_hex": {
+      "const": "6f70657261746562656e63682e636c65616e5f747261636b65645f736f757263655f747265652e7631"
+    },
+    "separator_byte_hex": {
+      "const": "00"
+    },
+    "enumeration_command": {
+      "const": "git ls-tree -r -z --full-tree HEAD"
+    },
+    "accepted_modes": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "prefixItems": [
+        {
+          "const": "100644"
+        },
+        {
+          "const": "100755"
+        },
+        {
+          "const": "120000"
+        }
+      ],
+      "items": false
+    },
+    "max_path_utf8_bytes": {
+      "const": 4096
+    },
+    "refusal_codes": {
+      "type": "array",
+      "minItems": 12,
+      "maxItems": 12,
+      "prefixItems": [
+        {
+          "const": "dirty_tracked_content"
+        },
+        {
+          "const": "duplicate_path"
+        },
+        {
+          "const": "frame_length_overflow"
+        },
+        {
+          "const": "mode_observation_unavailable"
+        },
+        {
+          "const": "non_canonical_path"
+        },
+        {
+          "const": "out_of_order"
+        },
+        {
+          "const": "portable_path_collision"
+        },
+        {
+          "const": "staged_index_drift"
+        },
+        {
+          "const": "submodule_entry"
+        },
+        {
+          "const": "unreadable_bytes"
+        },
+        {
+          "const": "unsafe_path"
+        },
+        {
+          "const": "unsupported_mode"
+        }
+      ],
+      "items": false
+    },
+    "precondition_vectors": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "description",
+          "refusal_code",
+          "probe",
+          "order"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1
+          },
+          "refusal_code": {
+            "$ref": "#/$defs/refusalCode"
+          },
+          "probe": {
+            "type": "string",
+            "minLength": 1
+          },
+          "order": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3
+          }
+        }
+      }
+    },
+    "accept_vectors": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 4096,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "description",
+          "entries",
+          "framed_bytes_hex",
+          "framed_byte_count",
+          "expected_sha256"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1
+          },
+          "entries": {
+            "type": "array",
+            "minItems": 0,
+            "maxItems": 4096,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "mode",
+                "path_hex",
+                "content_hex"
+              ],
+              "properties": {
+                "mode": {
+                  "enum": [
+                    "100644",
+                    "100755",
+                    "120000"
+                  ]
+                },
+                "path_hex": {
+                  "$ref": "#/$defs/hexBytes"
+                },
+                "content_hex": {
+                  "$ref": "#/$defs/hexBytes"
+                }
+              }
+            }
+          },
+          "framed_bytes_hex": {
+            "$ref": "#/$defs/hexBytes"
+          },
+          "framed_byte_count": {
+            "type": "integer",
+            "minimum": 42,
+            "maximum": 9007199254740991
+          },
+          "expected_sha256": {
+            "$ref": "#/$defs/sha256"
+          }
+        }
+      }
+    },
+    "reject_vectors": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 4096,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "description",
+          "refusal_code"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1
+          },
+          "refusal_code": {
+            "$ref": "#/$defs/refusalCode"
+          },
+          "entry": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "mode",
+              "path_hex",
+              "content_hex"
+            ],
+            "properties": {
+              "mode": {
+                "type": "string",
+                "pattern": "^[0-7]{6}(?![\\s\\S])"
+              },
+              "path_hex": {
+                "$ref": "#/$defs/hexBytes"
+              },
+              "content_hex": {
+                "oneOf": [
+                  {
+                    "$ref": "#/$defs/hexBytes"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          },
+          "entries": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 4096,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "mode",
+                "path_hex",
+                "content_hex"
+              ],
+              "properties": {
+                "mode": {
+                  "type": "string",
+                  "pattern": "^[0-7]{6}(?![\\s\\S])"
+                },
+                "path_hex": {
+                  "$ref": "#/$defs/hexBytes"
+                },
+                "content_hex": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/$defs/hexBytes"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "probe": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "oneOf": [
+          {
+            "required": [
+              "entry"
+            ]
+          },
+          {
+            "required": [
+              "entries"
+            ]
+          },
+          {
+            "required": [
+              "probe"
+            ]
+          }
+        ]
+      }
+    },
+    "length_field_bytes": {
+      "const": 8
+    }
+  },
+  "$defs": {
+    "hexBytes": {
+      "type": "string",
+      "pattern": "^(?:[0-9a-f]{2})*(?![\\s\\S])"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+    },
+    "refusalCode": {
+      "type": "string",
+      "enum": [
+        "dirty_tracked_content",
+        "duplicate_path",
+        "frame_length_overflow",
+        "mode_observation_unavailable",
+        "non_canonical_path",
+        "out_of_order",
+        "portable_path_collision",
+        "staged_index_drift",
+        "submodule_entry",
+        "unreadable_bytes",
+        "unsafe_path",
+        "unsupported_mode"
+      ]
+    }
+  },
+  "description": "Machine-readable conformance vectors for operatebench.clean_tracked_source_tree.v1. Every accept vector states exact fixed-width framed bytes, byte count and SHA-256 independently. Reject vectors cover entry, sequence, framing, and checkout precondition refusals with one closed code."
+}

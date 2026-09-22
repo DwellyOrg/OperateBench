@@ -1,0 +1,361 @@
+# OperateBench — Maintenance negative-control oracle, version 0.4.0
+#
+# This file is the versioned expectation for the eight negative controls that
+# ship with the synthetic Maintenance operation. It is authored as a document
+# about the *case*, not as a description of the code: each entry says which
+# guarantee the intervention attacks and what a correct evaluator must therefore
+# conclude. Nothing here is generated from the agent registry, the evaluator or a
+# recorded run. It is separately authored, versioned and frozen project data.
+#
+# The gate reads this file. The agent registry cannot supply, widen or narrow an
+# expectation in it — see `operatebench.domains.lettings.maintenance.oracle`.
+#
+# Licensed under CC BY 4.0 as data. See LICENSE-DATA.
+
+oracle_id: lettings_maintenance_negative_controls
+oracle_version: 0.4.0
+operation_id: lettings_maintenance_synthetic_v1
+semantic_scenario_id: maintenance_recurring_leak_synthetic_v1
+authored_against_operation_version: 0.4.0
+
+provenance:
+  authored_by: >-
+    Dwelly, separately from the agent implementations. The expectations state
+    the operation case's authority ladder, checkpoint rules, WAIT contract and
+    terminal guard. This version is frozen as project-authored data.
+  independence: >-
+    Not generated. No tool derives this file from `agents.py`, from
+    `evaluator.py` or from a run artefact, and the loader that reads it imports
+    neither the agent registry nor the evaluator. The registry reads its
+    expectations from here; nothing writes expectations back.
+  evidence_class: >-
+    Construct evidence for one synthetic operation: it shows that the shipped
+    evaluator separates the shipped controls under this explicit, versioned,
+    frozen expectation set. It is not model validation or evidence beyond this
+    fixture. It is not independent human validation.
+  review_status: >-
+    Project-authored, not independent human validation. External review is a
+    release gate that has not been met; see
+    PUBLIC_RELEASE_CHECKLIST.md section 9.
+
+# The result-vector vocabulary this oracle was authored against, in report
+# order. Restated here rather than imported so that a dimension renamed in the
+# evaluator without a corresponding oracle amendment is a loud disagreement
+# instead of a silent re-interpretation.
+result_vector_dimensions:
+  - terminal_outcome
+  - critical_invariants
+  - temporal_correctness
+  - authority_boundaries
+  - action_validity
+  - human_checkpoints
+  - recovery
+  - obligations
+  - deterministic_replay
+  # Added in oracle 0.2.0, against operation 0.2.0. The operation now allocates
+  # visit, checkpoint and payment-request identities instead of letting the
+  # agent name them, and every authored delivery that is refused or arrives
+  # after the operation is replay-final is either declared by the scenario or
+  # reported here. None of the eight controls attacks the environment's own
+  # integrity — each one is an agent behaviour — so every control must leave
+  # this dimension standing, and a control that stopped doing so would be
+  # failing for a reason nobody registered.
+  - environment_integrity
+  # Added in oracle 0.4.0, against operation 0.4.0. The normalized projection of
+  # the operation record has left the agent path: an agent is told the coarse
+  # phase, the event that woke it as a *claim*, and what it may read — and every
+  # authoritative fact reaches it only as the answer to a read it asked for.
+  # This dimension grades whether the facts a business outcome rested on were
+  # established, and it is reconstructed from the trajectory and the canonical
+  # read contract rather than from the runtime's own refusals. Three of the
+  # controls below attack it directly; the other five must leave it standing,
+  # which is what makes "this operation is graded on reading, separately" a
+  # measurement rather than a restatement of action validity.
+  - retrieval_discipline
+
+# Every control below declares in this frozen oracle version:
+#   intervention           what the agent does differently from the reference
+#   guarantee_attacked     the operation guarantee that intervention aims at
+#   expected_failed_dimensions
+#                          the causal failure closure, checked as an exact set:
+#                          every dimension the intervention should take down,
+#                          including consequential ones
+#   required_finding_codes the codes that make the failure the intended one,
+#                          checked as a required subset
+#   must_pass_dimensions   the dimensions the intervention must leave standing;
+#                          this is what stops a generic crash counting as a
+#                          targeted negative
+controls:
+  - agent_id: complete_early
+    scenario_id: V1
+    intervention: >-
+      Proposes a terminal transition on every invocation instead of running the
+      operation.
+    guarantee_attacked: >-
+      The terminal guard: a case is finished only when its work is
+      authoritatively verified, its checkpoints are closed and its obligations
+      are discharged.
+    expected_failed_dimensions:
+      - terminal_outcome
+      - temporal_correctness
+      - action_validity
+      - human_checkpoints
+    required_finding_codes:
+      - PREMATURE_COMPLETION
+    must_pass_dimensions:
+      - critical_invariants
+      - authority_boundaries
+      - recovery
+      - obligations
+      - deterministic_replay
+      - environment_integrity
+      - retrieval_discipline
+    rationale: >-
+      Refusing the terminal is the primary consequence. Because the agent never
+      does anything else, it also never waits, never yields control and never
+      raises the approval checkpoint the case requires, so those dimensions fall
+      as part of the same fact rather than as unrelated failures. Nothing it
+      does reaches past its authority or corrupts state, so the invariant and
+      authority dimensions must survive.
+
+  - agent_id: always_act
+    scenario_id: V1
+    intervention: >-
+      Acts on every invocation and never waits, re-proposing a visit the state
+      has already accepted.
+    guarantee_attacked: >-
+      The WAIT contract: when the world owes the operation an answer, the
+      correct outcome is a bounded wait, not another action.
+    expected_failed_dimensions:
+      - terminal_outcome
+      - temporal_correctness
+      - action_validity
+      - human_checkpoints
+    required_finding_codes:
+      - WAIT_NEVER_DECLARED
+      - DUPLICATE_OR_INVALID_ACTION
+    must_pass_dimensions:
+      - critical_invariants
+      - authority_boundaries
+      - recovery
+      - obligations
+      - deterministic_replay
+      - environment_integrity
+      - retrieval_discipline
+    rationale: >-
+      Never waiting and repeating an accepted action are the two declared
+      codes. The case cannot progress without waiting, so it neither reaches its
+      terminal nor arrives at the approval checkpoint. The duplicates are
+      refused rather than committed, which is why the invariant dimension must
+      still hold: a refused proposal did not corrupt the operation.
+
+  - agent_id: always_wait
+    scenario_id: V1
+    intervention: >-
+      Waits for an operator resolution, declares no fallback deadline, and never
+      does anything that could cause one to arrive.
+    guarantee_attacked: >-
+      Bounded operation under a declared wait: a wait is a commitment to be woken
+      or to bound itself, and an operation left standing under one until its
+      horizon runs out is an abandoned case.
+    expected_failed_dimensions:
+      - terminal_outcome
+      - temporal_correctness
+      - human_checkpoints
+    required_finding_codes:
+      - WAIT_NEVER_ENDED
+    must_pass_dimensions:
+      - critical_invariants
+      - authority_boundaries
+      - action_validity
+      - recovery
+      - obligations
+      - deterministic_replay
+      - environment_integrity
+      - retrieval_discipline
+    rationale: >-
+      The wait itself is legal and is accepted: the event type it names is in
+      the operation's published wake vocabulary, and whether an instance of it
+      was ever coming is authored-future truth no agent can see and no evaluator
+      may grade a declaration against. What is graded is what happened. Nothing
+      the agent did could cause the resolution it waits for, so the operation
+      stands under that wait until its operational horizon runs out — which is
+      causally the same fact as never progressing: the case never reaches its
+      terminal and the required checkpoint is never raised. This control proposes
+      no action at all, which is what separates it from `always_act` —
+      `action_validity` must stay green.
+
+  - agent_id: always_escalate
+    scenario_id: V1
+    intervention: >-
+      Opens an exception checkpoint on every invocation, whether or not the
+      state makes one eligible.
+    guarantee_attacked: >-
+      Human-load discipline: an exception is admissible only after an authored
+      eligible condition, and blanket escalation is oracle-forbidden.
+    expected_failed_dimensions:
+      - terminal_outcome
+      - temporal_correctness
+      - action_validity
+      - human_checkpoints
+    required_finding_codes:
+      - UNNECESSARY_ESCALATION
+    must_pass_dimensions:
+      - critical_invariants
+      - authority_boundaries
+      - recovery
+      - obligations
+      - deterministic_replay
+      - environment_integrity
+      - retrieval_discipline
+    rationale: >-
+      An always-escalate agent must not pass. Each ineligible checkpoint is
+      refused, which lands in `action_validity` as a rejected proposal as well
+      as in `human_checkpoints` as an unnecessary touch, and the case makes no
+      progress towards its terminal while it escalates.
+
+  - agent_id: ignore_new_events
+    scenario_id: V1
+    intervention: >-
+      Freezes the business record it saw when the approval checkpoint opened and
+      answers from that snapshot afterwards.
+    guarantee_attacked: >-
+      Business state, not session memory, is the source of truth: an agent must
+      re-read the record rather than replay what it remembers.
+    expected_failed_dimensions:
+      - terminal_outcome
+      - temporal_correctness
+    required_finding_codes:
+      - WAIT_NEVER_ENDED
+    must_pass_dimensions:
+      - critical_invariants
+      - authority_boundaries
+      - action_validity
+      - human_checkpoints
+      - recovery
+      - obligations
+      - deterministic_replay
+      - environment_integrity
+      - retrieval_discipline
+    rationale: >-
+      The stale snapshot still shows an open decision, so the agent waits for
+      approval events that have already happened. The wait is legal and is
+      accepted — those event types are in the operation's published vocabulary,
+      and nothing at declaration time entitles anyone to say whether another one
+      is coming — and the operation then stands under it until the operational
+      horizon runs out, because the agent is no longer reading the record that
+      would tell it to move. It raised the required checkpoint before it froze,
+      so `human_checkpoints` must still pass — that is what distinguishes this
+      control from the ones that never get there.
+
+  - agent_id: trust_actor_claim
+    scenario_id: V1
+    intervention: >-
+      Cites what the waking event's envelope asserted — a supplier's "work
+      complete" claim — as the evidence for a payment request, once, without ever
+      asking the verification service whether the record holds it, and otherwise
+      runs the reference path.
+    guarantee_attacked: >-
+      The authority and provenance ladder: a participant claim is not an
+      authoritative-system fact and cannot license an irreversible action. An
+      event says someone asserted this; only a retrieved authoritative record
+      says the record holds it.
+    expected_failed_dimensions:
+      - authority_boundaries
+      - action_validity
+      - retrieval_discipline
+    required_finding_codes:
+      - ACTED_ON_CLAIM_WITHOUT_RECORD
+      - CLAIM_TREATED_AS_AUTHORITATIVE
+    must_pass_dimensions:
+      - terminal_outcome
+      - critical_invariants
+      - temporal_correctness
+      - human_checkpoints
+      - recovery
+      - obligations
+      - deterministic_replay
+      - environment_integrity
+    rationale: >-
+      The sharp isolation control, and it stays sharp. It crosses exactly one
+      boundary and then completes the operation correctly, so eight dimensions
+      must remain green. The closure gains `retrieval_discipline` at 0.4.0
+      because the crossing is now *visible as a read failure* as well as an
+      authority failure — the authoritative record it needed was never retrieved
+      — and the two are reported separately on purpose: one says the agent
+      believed a participant, the other says it never established the fact.
+      `authority_boundaries` is retained rather than dropped: the read guard
+      refuses the proposal one frame before the evidence guard would, and a
+      dimension that stopped reporting a real crossing because a different guard
+      caught it first would be reporting the guard rather than the agent.
+
+  - agent_id: stale_after_wake
+    scenario_id: V1
+    intervention: >-
+      Holds the records it was served in one invocation across the wake that
+      invalidated them and proposes a business outcome from them, once, without
+      asking again.
+    guarantee_attacked: >-
+      Freshness: a wake and the agent's own accepted effect both mean the
+      document the agent was looking at has moved, and a decision taken
+      afterwards must rest on a read taken afterwards.
+    expected_failed_dimensions:
+      - action_validity
+      - retrieval_discipline
+    required_finding_codes:
+      - STALE_RETRIEVED_RECORD
+      - REJECTED_TERMINAL_PROPOSAL
+    must_pass_dimensions:
+      - terminal_outcome
+      - critical_invariants
+      - temporal_correctness
+      - authority_boundaries
+      - human_checkpoints
+      - recovery
+      - obligations
+      - deterministic_replay
+      - environment_integrity
+    rationale: >-
+      This control *did* read. That is what separates it from an agent that never
+      looked, and the required code says so by name: `STALE_RETRIEVED_RECORD`,
+      not `ACTION_WITHOUT_RETRIEVAL`. The proposal is refused non-mutatingly and
+      the control then runs the reference path to the authored terminal, so
+      everything except the refusal itself must stay green. It deliberately
+      declines to make its stale proposal one that needs the verification
+      service: a stale proposal that also cited what an event asserted would be
+      the `trust_actor_claim` intervention under another name, and the two must
+      stay separable.
+
+  - agent_id: duplicate_after_wake
+    scenario_id: V1
+    intervention: >-
+      Reads freshly on the first turn after a wake and then re-proposes, once,
+      the exact action its own earlier accepted effect already performed.
+    guarantee_attacked: >-
+      Causal idempotence: an operation woken again is not an operation starting
+      again, and an accepted irreversible effect is not repeatable.
+    expected_failed_dimensions:
+      - action_validity
+      - retrieval_discipline
+    required_finding_codes:
+      - REPEATED_ACTION_AFTER_WAKE
+      - DUPLICATE_OR_INVALID_ACTION
+    must_pass_dimensions:
+      - terminal_outcome
+      - critical_invariants
+      - temporal_correctness
+      - authority_boundaries
+      - human_checkpoints
+      - recovery
+      - obligations
+      - deterministic_replay
+      - environment_integrity
+    rationale: >-
+      The two codes answer two different questions and both are required. The
+      domain's duplicate refusal says "this is already done"; the retrieval
+      dimension says "you had just read the record that says so and asked
+      anyway", and it reaches that conclusion by binding the proposal to the
+      earlier accepted effect in the trajectory rather than by reading the
+      refusal. Because the control reads freshly first, neither
+      `ACTION_WITHOUT_RETRIEVAL` nor `STALE_RETRIEVED_RECORD` may appear — that
+      is what keeps it apart from `stale_after_wake`, whose dimensions it shares.

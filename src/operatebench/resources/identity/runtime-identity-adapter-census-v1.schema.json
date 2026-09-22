@@ -1,0 +1,222 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://operatebench.org/schemas/runtime-identity-adapter-census-v1.schema.json",
+  "title": "OperateBench Runtime Identity Adapter Census v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "schema_version",
+    "registry_schema",
+    "owners",
+    "entries"
+  ],
+  "properties": {
+    "schema": {
+      "const": "operatebench.runtime_identity_adapter_census.v1"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "registry_schema": {
+      "const": "operatebench.runtime_identity_adapter_registry.v1"
+    },
+    "owners": {
+      "type": "array",
+      "minItems": 8,
+      "maxItems": 8,
+      "prefixItems": [
+        {
+          "const": "operation_core_content"
+        },
+        {
+          "const": "semantic_scenario_content"
+        },
+        {
+          "const": "variant_content"
+        },
+        {
+          "const": "runtime_contract_content"
+        },
+        {
+          "const": "scaffold_content"
+        },
+        {
+          "const": "arm_protocol_content"
+        },
+        {
+          "const": "provider_run_plan_content"
+        },
+        {
+          "const": "build_provenance_content"
+        }
+      ],
+      "items": false
+    },
+    "entries": {
+      "type": "array",
+      "minItems": 87,
+      "maxItems": 87,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "field_path",
+          "owner",
+          "source",
+          "source_paths",
+          "consumer",
+          "nullability",
+          "cardinality"
+        ],
+        "properties": {
+          "field_path": {
+            "type": "string",
+            "enum": [
+              "/operation_card/schema",
+              "/operation_card/schema_version",
+              "/operation_card/id",
+              "/operation_card/content_digest_sha256",
+              "/operation_card/content/operation_type",
+              "/operation_card/content/operation_version",
+              "/operation_card/content/state_contract",
+              "/operation_card/content/authority_contract",
+              "/operation_card/content/policy_contract",
+              "/operation_card/content/event_contracts",
+              "/operation_card/content/action_contracts",
+              "/operation_card/content/retrieval_contract",
+              "/operation_card/content/transition_contract",
+              "/semantic_scenario_card/schema",
+              "/semantic_scenario_card/schema_version",
+              "/semantic_scenario_card/id",
+              "/semantic_scenario_card/content_digest_sha256",
+              "/semantic_scenario_card/content/operation_core",
+              "/semantic_scenario_card/content/construct_label",
+              "/semantic_scenario_card/content/common_estimand_id",
+              "/semantic_scenario_card/content/decision_points",
+              "/semantic_scenario_card/content/causal_graph",
+              "/semantic_scenario_card/content/authored_hazards",
+              "/semantic_scenario_card/content/common_outcome_obligations",
+              "/semantic_scenario_card/content/allowed_variant_dimensions",
+              "/variant_card/schema",
+              "/variant_card/schema_version",
+              "/variant_card/id",
+              "/variant_card/content_digest_sha256",
+              "/variant_card/content/semantic_scenario",
+              "/variant_card/content/variant_label",
+              "/variant_card/content/starts_at",
+              "/variant_card/content/expected_terminal",
+              "/variant_card/content/human_checkpoint_budget",
+              "/variant_card/content/required_checkpoint_types",
+              "/variant_card/content/dispatch_failures",
+              "/variant_card/content/expected_event_rejections",
+              "/variant_card/content/actors",
+              "/variant_card/content/hidden_initial_values",
+              "/variant_card/content/message_fixtures",
+              "/variant_card/content/events",
+              "/runtime_contract/engine_version",
+              "/runtime_contract/artifact_version",
+              "/runtime_contract/model_protocol_version",
+              "/runtime_contract/model_visible_fields",
+              "/runtime_contract/outcome_tool_schema",
+              "/runtime_contract/wake_event_types",
+              "/runtime_contract/engine_class",
+              "/runtime_contract/domain_class",
+              "/scaffold/agent_id",
+              "/scaffold/agent_kind",
+              "/scaffold/registry_factory",
+              "/scaffold/supported_scenarios",
+              "/scaffold/prompt_envelope_keys",
+              "/scaffold/instructions_contract",
+              "/scaffold/tool_names",
+              "/scaffold/request_mapping",
+              "/arm_protocol/treatment_label",
+              "/arm_protocol/allowed_claim",
+              "/arm_protocol/semantic_scenario_id",
+              "/arm_protocol/semantic_scenario_digest_sha256",
+              "/arm_protocol/common_expected_vector",
+              "/arm_protocol/denominator",
+              "/arm_protocol/point_ids",
+              "/arm_protocol/subject_continuity",
+              "/arm_protocol/harness_metadata",
+              "/provider_run_plan/execution_mode",
+              "/provider_run_plan/provider",
+              "/provider_run_plan/api",
+              "/provider_run_plan/model",
+              "/provider_run_plan/model_profile",
+              "/provider_run_plan/settings",
+              "/provider_run_plan/controls",
+              "/provider_run_plan/pricing_policy",
+              "/provider_run_plan/max_output_tokens",
+              "/provider_run_plan/retry_policy",
+              "/provider_run_plan/ledger_contract_version",
+              "/build_provenance/schema",
+              "/build_provenance/schema_version",
+              "/build_provenance/source_commit",
+              "/build_provenance/source_tree_algorithm",
+              "/build_provenance/source_tree_digest_sha256",
+              "/build_provenance/tree_clean",
+              "/build_provenance/uv_lock_sha256",
+              "/build_provenance/build_mode",
+              "/build_provenance/distribution_artifacts",
+              "/build_provenance/toolchain"
+            ]
+          },
+          "owner": {
+            "type": "string",
+            "enum": [
+              "operation_core_content",
+              "semantic_scenario_content",
+              "variant_content",
+              "runtime_contract_content",
+              "scaffold_content",
+              "arm_protocol_content",
+              "provider_run_plan_content",
+              "build_provenance_content"
+            ]
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "b1_operation_card_projector",
+              "b1_semantic_scenario_card_projector",
+              "b1_variant_card_projector",
+              "build_provenance_descriptor",
+              "compiled_arm_and_lane_registry",
+              "execution_plan_and_ledger_audit",
+              "live_runtime_declarations",
+              "selected_agent_authority"
+            ]
+          },
+          "source_paths": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 4096,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "pattern": "^(?:(?:docs|examples|src|tests|tools)/[^\\\\\\u0000-\\u001f\\u007f]+|uv\\.lock|pyproject\\.toml)(?![\\s\\S])"
+            }
+          },
+          "consumer": {
+            "type": "string",
+            "enum": [
+              "runtime_manifest_binding",
+              "runtime_replay"
+            ]
+          },
+          "nullability": {
+            "enum": [
+              "never",
+              "explicit_null_allowed"
+            ]
+          },
+          "cardinality": {
+            "const": "exact"
+          }
+        }
+      },
+      "uniqueItems": true
+    }
+  }
+}

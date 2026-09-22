@@ -1,0 +1,505 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "schema_version",
+    "id",
+    "content",
+    "content_digest_sha256"
+  ],
+  "properties": {
+    "schema": {
+      "const": "operatebench.operation_card.v1"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*(?:@[0-9]+\\.[0-9]+\\.[0-9]+)?$",
+      "minLength": 1,
+      "maxLength": 255
+    },
+    "content": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "operation_type",
+        "operation_version",
+        "state_contract",
+        "authority_contract",
+        "policy_contract",
+        "event_contracts",
+        "action_contracts",
+        "retrieval_contract",
+        "transition_contract"
+      ],
+      "properties": {
+        "operation_type": {
+          "const": "lettings.maintenance.synthetic"
+        },
+        "operation_version": {
+          "type": "string",
+          "pattern": "^(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)(?:-(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)(?:\\.(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))*)?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$"
+        },
+        "state_contract": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema_id",
+            "initial_state_schema",
+            "canonical_state_projection",
+            "replay_final_pointer",
+            "terminal_pointer"
+          ],
+          "properties": {
+            "schema_id": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+              "minLength": 1,
+              "maxLength": 255
+            },
+            "initial_state_schema": {
+              "$ref": "card-defs-v1.schema.json#/$defs/jsonSchemaSubset"
+            },
+            "canonical_state_projection": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^(?:|/(?:[^~/]|~0|~1)*)$",
+                "maxLength": 1024
+              },
+              "minItems": 1,
+              "uniqueItems": true
+            },
+            "replay_final_pointer": {
+              "type": "string",
+              "pattern": "^(?:|/(?:[^~/]|~0|~1)*)$",
+              "maxLength": 1024
+            },
+            "terminal_pointer": {
+              "type": "string",
+              "pattern": "^(?:|/(?:[^~/]|~0|~1)*)$",
+              "maxLength": 1024
+            }
+          }
+        },
+        "authority_contract": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "roles",
+            "event_authority",
+            "action_authority"
+          ],
+          "properties": {
+            "roles": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "role_id",
+                  "authorities"
+                ],
+                "properties": {
+                  "role_id": {
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "authorities": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+                      "minLength": 1,
+                      "maxLength": 255
+                    },
+                    "minItems": 1,
+                    "uniqueItems": true
+                  }
+                }
+              },
+              "minItems": 1,
+              "uniqueItems": true
+            },
+            "event_authority": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "event_type",
+                  "required_authority"
+                ],
+                "properties": {
+                  "event_type": {
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "required_authority": {
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+                    "minLength": 1,
+                    "maxLength": 255
+                  }
+                }
+              },
+              "minItems": 1,
+              "uniqueItems": true
+            },
+            "action_authority": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "action_type",
+                  "required_authority"
+                ],
+                "properties": {
+                  "action_type": {
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "required_authority": {
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+                    "minLength": 1,
+                    "maxLength": 255
+                  }
+                }
+              },
+              "minItems": 1,
+              "uniqueItems": true
+            }
+          }
+        },
+        "policy_contract": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema",
+            "currency",
+            "issue_classification",
+            "approval_threshold_minor",
+            "approval_reminder_after_minutes",
+            "approval_deadline_after_minutes",
+            "approval_validity_minutes",
+            "provisional_close_minutes",
+            "visit_followup_after_minutes",
+            "completion_notice_within_minutes",
+            "max_turns_per_invocation",
+            "horizon_minutes",
+            "max_retrieval_batches_per_invocation"
+          ],
+          "properties": {
+            "schema": {
+              "const": "operatebench.policy.lettings.maintenance.v1"
+            },
+            "currency": {
+              "type": "string",
+              "pattern": "^[A-Z]{3}$"
+            },
+            "issue_classification": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+              "minLength": 1,
+              "maxLength": 255
+            },
+            "approval_threshold_minor": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9223372036854775807
+            },
+            "approval_reminder_after_minutes": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9223372036854775807
+            },
+            "approval_deadline_after_minutes": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9223372036854775807
+            },
+            "approval_validity_minutes": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9223372036854775807
+            },
+            "provisional_close_minutes": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9223372036854775807
+            },
+            "visit_followup_after_minutes": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9223372036854775807
+            },
+            "completion_notice_within_minutes": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9223372036854775807
+            },
+            "max_turns_per_invocation": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9223372036854775807
+            },
+            "horizon_minutes": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9223372036854775807
+            },
+            "max_retrieval_batches_per_invocation": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9223372036854775807
+            }
+          }
+        },
+        "event_contracts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "event_type",
+              "required",
+              "optional"
+            ],
+            "properties": {
+              "event_type": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+                "minLength": 1,
+                "maxLength": 255
+              },
+              "required": {
+                "$ref": "card-defs-v1.schema.json#/$defs/fieldShapeMap"
+              },
+              "optional": {
+                "$ref": "card-defs-v1.schema.json#/$defs/fieldShapeMap"
+              }
+            }
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "action_contracts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "action_type",
+              "required",
+              "optional",
+              "evidence_refs"
+            ],
+            "properties": {
+              "action_type": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+                "minLength": 1,
+                "maxLength": 255
+              },
+              "required": {
+                "$ref": "card-defs-v1.schema.json#/$defs/fieldShapeMap"
+              },
+              "optional": {
+                "$ref": "card-defs-v1.schema.json#/$defs/fieldShapeMap"
+              },
+              "evidence_refs": {
+                "enum": [
+                  "required",
+                  "optional",
+                  "forbidden"
+                ]
+              }
+            }
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "retrieval_contract": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "catalogue",
+            "record_identity_algorithm",
+            "evidence_requirements"
+          ],
+          "properties": {
+            "catalogue": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "tool_id",
+                  "source",
+                  "authority",
+                  "schema_id",
+                  "arguments"
+                ],
+                "properties": {
+                  "tool_id": {
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "source": {
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "authority": {
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "schema_id": {
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "arguments": {
+                    "$ref": "card-defs-v1.schema.json#/$defs/fieldShapeMap"
+                  }
+                }
+              },
+              "minItems": 1,
+              "uniqueItems": true
+            },
+            "record_identity_algorithm": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+              "minLength": 1,
+              "maxLength": 255
+            },
+            "evidence_requirements": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "outcome_type",
+                  "selector_id",
+                  "required_tools"
+                ],
+                "properties": {
+                  "outcome_type": {
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "selector_id": {
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "required_tools": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+                      "minLength": 1,
+                      "maxLength": 255
+                    },
+                    "minItems": 0,
+                    "uniqueItems": true
+                  }
+                }
+              },
+              "minItems": 1,
+              "uniqueItems": true
+            }
+          }
+        },
+        "transition_contract": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "reducer_ids",
+            "obligation_types",
+            "terminal_kinds",
+            "common_predicate_inputs",
+            "declared_max_domain_generated_audit_events"
+          ],
+          "properties": {
+            "reducer_ids": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+                "minLength": 1,
+                "maxLength": 255
+              },
+              "minItems": 1,
+              "uniqueItems": true
+            },
+            "obligation_types": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+                "minLength": 1,
+                "maxLength": 255
+              },
+              "minItems": 1,
+              "uniqueItems": true
+            },
+            "terminal_kinds": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+                "minLength": 1,
+                "maxLength": 255
+              },
+              "minItems": 1,
+              "uniqueItems": true
+            },
+            "common_predicate_inputs": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^(?:|/(?:[^~/]|~0|~1)*)$",
+                "maxLength": 1024
+              },
+              "minItems": 1,
+              "uniqueItems": true
+            },
+            "declared_max_domain_generated_audit_events": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9223372036854775807
+            }
+          }
+        }
+      }
+    },
+    "content_digest_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://operatebench.org/schemas/operation-card-v1.schema.json",
+  "title": "OperateBench Operation Card v1"
+}

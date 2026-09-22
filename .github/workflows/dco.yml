@@ -1,0 +1,64 @@
+name: DCO
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  dco:
+    runs-on: ubuntu-latest
+    steps:
+      # pull_request_target loads this workflow from the trusted default branch.
+      # Pin the worktree to the event's base commit so PR code is never checked out.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Check every pull-request commit with the trusted checker
+        shell: bash
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          [[ "$PR_NUMBER" =~ ^[0-9]+$ ]] || {
+            echo "::error::Invalid pull request number"
+            exit 2
+          }
+          [[ "$BASE_SHA" =~ ^[0-9a-fA-F]{40}$ ]] || {
+            echo "::error::Invalid base SHA"
+            exit 2
+          }
+          [[ "$HEAD_SHA" =~ ^[0-9a-fA-F]{40}$ ]] || {
+            echo "::error::Invalid head SHA"
+            exit 2
+          }
+
+          CHECKED_OUT_BASE="$(git rev-parse --verify 'HEAD^{commit}')"
+          [[ "$CHECKED_OUT_BASE" == "$BASE_SHA" ]] || {
+            echo "::error::Checked-out base does not match the event base SHA"
+            exit 1
+          }
+
+          # GitHub exposes a base-repository pseudo-ref for fork and same-repo PRs.
+          # Fetch it into FETCH_HEAD only: never create a branch or PR worktree.
+          AUTH_HEADER="$(printf 'x-access-token:%s' "$GITHUB_TOKEN" | base64 | tr -d '\n')"
+          git -c http.extraheader="AUTHORIZATION: basic $AUTH_HEADER" fetch \
+            --no-tags origin "refs/pull/${PR_NUMBER}/head"
+          unset AUTH_HEADER GITHUB_TOKEN
+
+          FETCHED_SHA="$(git rev-parse --verify 'FETCH_HEAD^{commit}')"
+          [[ "$FETCHED_SHA" == "$HEAD_SHA" ]] || {
+            echo "::error::Fetched PR ref does not match the event head SHA"
+            exit 1
+          }
+
+          # The worktree and checker remain the trusted base version.
+          python tools/check_dco.py "${BASE_SHA}..${HEAD_SHA}"

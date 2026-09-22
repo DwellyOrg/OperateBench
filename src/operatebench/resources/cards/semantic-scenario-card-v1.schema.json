@@ -1,0 +1,293 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "schema_version",
+    "id",
+    "content",
+    "content_digest_sha256"
+  ],
+  "properties": {
+    "schema": {
+      "const": "operatebench.semantic_scenario_card.v1"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*(?:@[0-9]+\\.[0-9]+\\.[0-9]+)?$",
+      "minLength": 1,
+      "maxLength": 255
+    },
+    "content": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "operation_core",
+        "construct_label",
+        "common_estimand_id",
+        "decision_points",
+        "causal_graph",
+        "authored_hazards",
+        "common_outcome_obligations",
+        "allowed_variant_dimensions"
+      ],
+      "properties": {
+        "operation_core": {
+          "$ref": "card-defs-v1.schema.json#/$defs/operationCardRef"
+        },
+        "construct_label": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+          "minLength": 1,
+          "maxLength": 255
+        },
+        "common_estimand_id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+          "minLength": 1,
+          "maxLength": 255
+        },
+        "decision_points": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "point_id",
+              "order",
+              "reach_predicate",
+              "required_prior_point_ids",
+              "common_obligation_id",
+              "admissible_effect_classes"
+            ],
+            "properties": {
+              "point_id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+                "minLength": 1,
+                "maxLength": 255
+              },
+              "order": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "reach_predicate": {
+                "$ref": "card-defs-v1.schema.json#/$defs/predicateAst"
+              },
+              "required_prior_point_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+                  "minLength": 1,
+                  "maxLength": 255
+                },
+                "minItems": 0,
+                "uniqueItems": true
+              },
+              "common_obligation_id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+                "minLength": 1,
+                "maxLength": 255
+              },
+              "admissible_effect_classes": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+                  "minLength": 1,
+                  "maxLength": 255
+                },
+                "minItems": 1,
+                "uniqueItems": true
+              }
+            }
+          },
+          "minItems": 1
+        },
+        "causal_graph": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "nodes",
+            "edges"
+          ],
+          "properties": {
+            "nodes": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "node_id",
+                  "semantic_type"
+                ],
+                "properties": {
+                  "node_id": {
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "semantic_type": {
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+                    "minLength": 1,
+                    "maxLength": 255
+                  }
+                }
+              },
+              "minItems": 1,
+              "uniqueItems": true
+            },
+            "edges": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "cause_node_id",
+                  "effect_node_id",
+                  "relation"
+                ],
+                "properties": {
+                  "cause_node_id": {
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "effect_node_id": {
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "relation": {
+                    "enum": [
+                      "CAUSES",
+                      "ENABLES",
+                      "PRECEDES",
+                      "REOPENS",
+                      "FINALIZES"
+                    ]
+                  }
+                }
+              },
+              "minItems": 0,
+              "uniqueItems": true
+            }
+          }
+        },
+        "authored_hazards": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "hazard_id",
+              "predicate",
+              "expected_common_finding_code"
+            ],
+            "properties": {
+              "hazard_id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+                "minLength": 1,
+                "maxLength": 255
+              },
+              "predicate": {
+                "$ref": "card-defs-v1.schema.json#/$defs/predicateAst"
+              },
+              "expected_common_finding_code": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+                "minLength": 1,
+                "maxLength": 255
+              }
+            }
+          },
+          "minItems": 0,
+          "uniqueItems": true
+        },
+        "common_outcome_obligations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "obligation_id",
+              "predicate_id",
+              "terminal_required"
+            ],
+            "properties": {
+              "obligation_id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+                "minLength": 1,
+                "maxLength": 255
+              },
+              "predicate_id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+                "minLength": 1,
+                "maxLength": 255
+              },
+              "terminal_required": {
+                "type": "boolean"
+              }
+            }
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "allowed_variant_dimensions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "dimension_id",
+              "value_type",
+              "changes_semantics"
+            ],
+            "properties": {
+              "dimension_id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+                "minLength": 1,
+                "maxLength": 255
+              },
+              "value_type": {
+                "enum": [
+                  "STRING",
+                  "INTEGER",
+                  "BOOLEAN",
+                  "TIMESTAMP",
+                  "FIXTURE_DIGEST",
+                  "EVENT_SEQUENCE"
+                ]
+              },
+              "changes_semantics": {
+                "const": false
+              }
+            }
+          },
+          "minItems": 0,
+          "uniqueItems": true
+        }
+      }
+    },
+    "content_digest_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://operatebench.org/schemas/semantic-scenario-card-v1.schema.json",
+  "title": "OperateBench Semantic Scenario Card v1"
+}

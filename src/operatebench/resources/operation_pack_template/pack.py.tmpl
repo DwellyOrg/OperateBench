@@ -1,0 +1,61 @@
+# SPDX-FileCopyrightText: the contributor
+# SPDX-License-Identifier: Apache-2.0
+"""Unregistered SDK adapter for {{PACK_ID}}."""
+
+from __future__ import annotations
+
+from operatebench.sdk import (
+    CheckRequest,
+    CommandResult,
+    OperationPackError,
+    OperationPackMetadata,
+    ReplayRequest,
+    RunRequest,
+    ValidateRequest,
+)
+
+
+class IncubatorPack:
+    metadata = OperationPackMetadata(
+        pack_id="{{PACK_ID}}",
+        operation_type="{{OPERATION_TYPE}}",
+        operation_id="{{OPERATION_ID}}",
+        pack_version="0.1.0",
+        display_name="{{MODULE_NAME}} synthetic operation",
+        owner_id="{{OWNER_ID}}",
+        owner_display_name={{OWNER_DISPLAY_NAME_LITERAL}},
+        contribution_kind="{{CONTRIBUTION_KIND}}",
+        status="incubator",
+        privacy_status="SYNTHETIC_ONLY",
+        default_spec="examples/contributions/{{OWNER_ID}}/{{MODULE_NAME}}/operation.yaml",
+        agent_ids=("reference",),
+        aliases=(),
+        evidence_eligible=False,
+    )
+
+    @staticmethod
+    def _incomplete(command: str) -> CommandResult:
+        raise OperationPackError(
+            f"operation pack {PACK.metadata.pack_id!r} is an unregistered "
+            f"scaffold; implement {command} and its "
+            "tests before asking a maintainer to register it"
+        )
+
+    def validate(self, request: ValidateRequest) -> CommandResult:
+        del request
+        return self._incomplete("validate")
+
+    def run(self, request: RunRequest) -> CommandResult:
+        del request
+        return self._incomplete("run")
+
+    def replay(self, request: ReplayRequest) -> CommandResult:
+        del request
+        return self._incomplete("replay")
+
+    def check(self, request: CheckRequest) -> CommandResult:
+        del request
+        return self._incomplete("check")
+
+
+PACK = IncubatorPack()

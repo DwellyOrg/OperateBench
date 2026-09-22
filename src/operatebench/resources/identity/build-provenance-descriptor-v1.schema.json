@@ -1,0 +1,204 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://operatebench.org/schemas/build-provenance-descriptor-v1.schema.json",
+  "title": "OperateBench BuildProvenanceDescriptorV1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "schema_version",
+    "source_commit",
+    "source_tree_algorithm",
+    "source_tree_digest_sha256",
+    "tree_clean",
+    "uv_lock_sha256",
+    "build_mode",
+    "distribution_artifacts",
+    "toolchain"
+  ],
+  "properties": {
+    "schema": {
+      "const": "operatebench.build_provenance_descriptor.v1"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "source_commit": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}(?![\\s\\S])"
+    },
+    "source_tree_algorithm": {
+      "const": "operatebench.clean_tracked_source_tree.v1"
+    },
+    "source_tree_digest_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+    },
+    "tree_clean": {
+      "const": true
+    },
+    "uv_lock_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+    },
+    "build_mode": {
+      "enum": [
+        "checkout",
+        "audited_distribution_pair"
+      ]
+    },
+    "distribution_artifacts": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "prefixItems": [
+            {
+              "allOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "kind",
+                    "filename",
+                    "sha256"
+                  ],
+                  "properties": {
+                    "kind": {
+                      "enum": [
+                        "wheel",
+                        "sdist"
+                      ]
+                    },
+                    "filename": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256
+                    },
+                    "sha256": {
+                      "type": "string",
+                      "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+                    }
+                  }
+                },
+                {
+                  "properties": {
+                    "kind": {
+                      "const": "wheel"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "allOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "kind",
+                    "filename",
+                    "sha256"
+                  ],
+                  "properties": {
+                    "kind": {
+                      "enum": [
+                        "wheel",
+                        "sdist"
+                      ]
+                    },
+                    "filename": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256
+                    },
+                    "sha256": {
+                      "type": "string",
+                      "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+                    }
+                  }
+                },
+                {
+                  "properties": {
+                    "kind": {
+                      "const": "sdist"
+                    }
+                  }
+                }
+              ]
+            }
+          ],
+          "items": false
+        }
+      ]
+    },
+    "toolchain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "python_implementation",
+        "python_version",
+        "build_backend",
+        "build_backend_version"
+      ],
+      "properties": {
+        "python_implementation": {
+          "enum": [
+            "cpython"
+          ]
+        },
+        "python_version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?![\\s\\S])"
+        },
+        "build_backend": {
+          "const": "hatchling"
+        },
+        "build_backend_version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        }
+      }
+    }
+  },
+  "description": "Content-addressed build evidence. Source commit is evidence, never eligibility. The clean tracked-tree algorithm excludes Git metadata, generated files, and ignored files; it binds tracked path, mode, and exact blob bytes in Git tree order.",
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "build_mode": {
+            "const": "checkout"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "distribution_artifacts": {
+            "type": "null"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "build_mode": {
+            "const": "audited_distribution_pair"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "distribution_artifacts": {
+            "type": "array"
+          }
+        }
+      }
+    }
+  ]
+}

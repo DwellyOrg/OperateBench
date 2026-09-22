@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: the contributor
+# SPDX-License-Identifier: Apache-2.0
+"""Reference and targeted negative agents for {{PACK_ID}}."""
+
+from __future__ import annotations
+
+from collections.abc import Mapping
+from typing import Any
+
+from operatebench.core.outcomes import AgentOutcome
+from operatebench.core.protocol import AgentObservation
+from operatebench.core.retrieval import RetrieveBatch
+
+
+class ReferenceAgent:
+    agent_id = "reference"
+
+    def begin_episode(self, identity: Mapping[str, Any]) -> None:
+        del identity
+
+    def decide(self, observation: AgentObservation) -> AgentOutcome | RetrieveBatch:
+        del observation
+        raise NotImplementedError("TODO: implement the deterministic reference agent")
+
+
+def agent_ids() -> tuple[str, ...]:
+    return ("reference",)
+
+
+def build_agent(agent_id: str) -> Any:
+    if agent_id == "reference":
+        return ReferenceAgent()
+    raise ValueError(f"unknown {{PACK_ID}} agent {agent_id!r}")

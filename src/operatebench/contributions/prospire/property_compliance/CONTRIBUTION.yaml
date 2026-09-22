@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: 2026 PROSPIRE TECHNOLOGIES LTD
+# SPDX-License-Identifier: CC-BY-4.0
+schema_version: 1
+owner_id: prospire
+pack_id: lettings.property_compliance.synthetic
+operation_id: lettings_property_compliance_synthetic_v1
+operation_type: lettings.property_compliance.synthetic
+aliases: []
+module: operatebench.contributions.prospire.property_compliance
+source_path: src/operatebench/contributions/prospire/property_compliance
+test_path: tests/contributions/prospire/property_compliance/test_pack.py
+fixture_path: examples/contributions/prospire/property_compliance/operation.yaml
+documentation_path: docs/contributions/prospire/property_compliance.md

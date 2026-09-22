@@ -1,0 +1,33 @@
+{
+  "manifest_version": 1,
+  "card": "access_consent.yaml",
+  "cube_id": "lettings_access_consent_v1",
+  "note": "Semantic fingerprint of the parsed card. YAML formatting and comments are ignored. Any change here requires an explicit, reviewed artefact revision.",
+  "card_fingerprint_sha256": "b9bee3056313c465569ca2b1828a5ada98d1645d00943e9e38214673976cfb7a",
+  "variants": [
+    {
+      "variant_id": "lettings_access_consent_v1::cell::S0_P0",
+      "content_digest": "9d304631e0e063c1cf82e23718ea77ea5873f3679d1b093fd1edb9ac7e79195c"
+    },
+    {
+      "variant_id": "lettings_access_consent_v1::cell::S0_P1",
+      "content_digest": "724ec82a4bf9acda41a5b829c4c277ded73f5e7bdff2a16cea45a871da9e058e"
+    },
+    {
+      "variant_id": "lettings_access_consent_v1::cell::S1_P0",
+      "content_digest": "17394639081adf033724397aae48493e26a6e1f29fbaa1a13434af2082ffb028"
+    },
+    {
+      "variant_id": "lettings_access_consent_v1::cell::S1_P1",
+      "content_digest": "a980d08ed53beb1ed0ef7c5eea9c8c3a7afa80b18dc0f73d04ffa27a8f6e4d98"
+    },
+    {
+      "variant_id": "lettings_access_consent_v1::probe::alarmist",
+      "content_digest": "8e9c20623944f920e00230008511fc809d3c7de4801717cfab437240f3b3a63c"
+    },
+    {
+      "variant_id": "lettings_access_consent_v1::probe::reassurance",
+      "content_digest": "de97010b559280295599fe290906d288c637c78defc0db00464a95a2104daa3a"
+    }
+  ]
+}

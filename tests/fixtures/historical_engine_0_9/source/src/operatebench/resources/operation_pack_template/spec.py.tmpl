@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: the contributor
+# SPDX-License-Identifier: Apache-2.0
+"""Strict, pack-owned spec loader for {{PACK_ID}}."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from pathlib import Path
+
+from operatebench.core.errors import SpecSchemaError
+
+
+@dataclass(frozen=True)
+class OperationSpec:
+    source: str
+    operation_id: str
+    operation_type: str
+    scenario_ids: tuple[str, ...]
+
+
+def load_spec(path: str | Path) -> OperationSpec:
+    raise SpecSchemaError(
+        f"{path}: TODO: implement an exact-field, bounded, SYNTHETIC_ONLY loader "
+        "owned by {{PACK_ID}}"
+    )

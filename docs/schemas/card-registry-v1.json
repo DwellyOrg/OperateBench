@@ -1,0 +1,274 @@
+{
+  "schema": "operatebench.card_registry.v1",
+  "schema_version": 1,
+  "schema_documents": [
+    {
+      "schema_literal": "operatebench.operation_card.v1",
+      "$id": "https://operatebench.org/schemas/operation-card-v1.schema.json",
+      "offline_path": "operation-card-v1.schema.json"
+    },
+    {
+      "schema_literal": "operatebench.semantic_scenario_card.v1",
+      "$id": "https://operatebench.org/schemas/semantic-scenario-card-v1.schema.json",
+      "offline_path": "semantic-scenario-card-v1.schema.json"
+    },
+    {
+      "schema_literal": "operatebench.variant_card.v1",
+      "$id": "https://operatebench.org/schemas/variant-card-v1.schema.json",
+      "offline_path": "variant-card-v1.schema.json"
+    },
+    {
+      "schema_literal": "operatebench.card_defs.v1",
+      "$id": "https://operatebench.org/schemas/card-defs-v1.schema.json",
+      "offline_path": "card-defs-v1.schema.json"
+    }
+  ],
+  "canonical_json": {
+    "encoding": "UTF-8",
+    "object_key_order": "unicode_code_point_ascending",
+    "whitespace": "none",
+    "escape": "shortest_json_escape_lowercase_u",
+    "integers": "signed_64_bit",
+    "floats": "forbidden",
+    "duplicate_object_keys": "forbidden",
+    "lone_surrogates": "forbidden"
+  },
+  "digest_wrapper_keys": [
+    "domain",
+    "schema_version",
+    "id",
+    "content"
+  ],
+  "digest_domain_equals_card_schema": true,
+  "strict_json_schema_subset": {
+    "allowed_keywords": [
+      "additionalProperties",
+      "enum",
+      "items",
+      "maxItems",
+      "maxLength",
+      "maximum",
+      "minItems",
+      "minLength",
+      "minimum",
+      "pattern",
+      "properties",
+      "required",
+      "type",
+      "uniqueItems"
+    ],
+    "allowed_types": [
+      "array",
+      "boolean",
+      "integer",
+      "null",
+      "object",
+      "string"
+    ],
+    "required_object_additional_properties": false,
+    "safe_regex": {
+      "pattern_character_set": "printable_ascii_u0020_through_u007e",
+      "pattern_utf8_bytes_per_character": 1,
+      "pattern_max_characters": 256,
+      "pattern_max_utf8_bytes": 256,
+      "input_max_characters": 4096,
+      "repeat_maximum": 4096,
+      "published_authored_schema": {
+        "relationship_to_runtime": "sound_conservative_subset",
+        "repeat_bound_spelling": "canonical_decimal_no_leading_zero_except_zero",
+        "character_class_ranges": [
+          "0-9",
+          "A-Z",
+          "a-z",
+          "printable_ascii_u0020_through_u007e"
+        ],
+        "escaped_class_atoms_as_range_endpoints": false,
+        "fixed_repeat_forms": [
+          "{n}",
+          "{4096,}"
+        ],
+        "variable_bounded_repeat_forms": [
+          "one_digit_ordered_bounds",
+          "differing_decimal_width_bounds",
+          "zero_minimum",
+          "4096_maximum"
+        ],
+        "runtime_compatibility_extensions_not_authorable": [
+          "noncanonical_leading_zero_repeat_bounds",
+          "equal_comma_repeat_bounds",
+          "same_width_multidigit_repeat_bounds_outside_published_forms",
+          "escaped_class_range_endpoints",
+          "other_ascending_raw_class_ranges",
+          "overlapping_raw_class_ranges"
+        ]
+      },
+      "allowed": [
+        "anchors_at_pattern_boundaries",
+        "character_classes_and_ranges",
+        "escaped_literals_and_dDsSwW_categories",
+        "literals",
+        "maximum_one_variable_width_quantifier_per_pattern",
+        "one_simple_or_bounded_quantifier_per_single_atom"
+      ],
+      "forbidden": [
+        "advanced_escapes",
+        "adjacent_quantified_atoms",
+        "alternation",
+        "all_grouping_constructs",
+        "atomic_groups",
+        "backreferences",
+        "capturing_groups",
+        "conditionals",
+        "inline_flags",
+        "lookarounds",
+        "malformed_escapes_and_character_classes",
+        "multiple_variable_width_quantifiers",
+        "quantified_groups",
+        "repeated_quantifiers",
+        "wildcards"
+      ]
+    },
+    "forbidden_keywords": [
+      "$anchor",
+      "$comment",
+      "$defs",
+      "$dynamicAnchor",
+      "$dynamicRef",
+      "$id",
+      "$ref",
+      "$schema",
+      "allOf",
+      "anyOf",
+      "const",
+      "contains",
+      "dependentRequired",
+      "dependentSchemas",
+      "description",
+      "else",
+      "examples",
+      "format",
+      "if",
+      "maxProperties",
+      "minProperties",
+      "multipleOf",
+      "not",
+      "oneOf",
+      "patternProperties",
+      "prefixItems",
+      "propertyNames",
+      "readOnly",
+      "then",
+      "title",
+      "unevaluatedItems",
+      "unevaluatedProperties",
+      "writeOnly"
+    ]
+  },
+  "field_shape_tags": [
+    "array",
+    "boolean",
+    "integer",
+    "null",
+    "object",
+    "string"
+  ],
+  "predicate_ast": {
+    "tags": [
+      "all",
+      "any",
+      "not",
+      "quantified",
+      "scalar"
+    ],
+    "scalar_operators": [
+      "EQ",
+      "GT",
+      "GTE",
+      "IN",
+      "LT",
+      "LTE",
+      "MATCHES",
+      "NE",
+      "NOT_IN"
+    ],
+    "quantifiers": [
+      "ALL",
+      "ANY",
+      "NONE"
+    ],
+    "value_expression_tags": [
+      "binding",
+      "literal",
+      "pointer"
+    ]
+  },
+  "policy_registrations": [
+    {
+      "operation_type": "lettings.maintenance.synthetic",
+      "policy_schema": "operatebench.policy.lettings.maintenance.v1",
+      "projection_fields": [
+        "approval_deadline_after_minutes",
+        "approval_reminder_after_minutes",
+        "approval_threshold_minor",
+        "approval_validity_minutes",
+        "completion_notice_within_minutes",
+        "currency",
+        "horizon_minutes",
+        "issue_classification",
+        "max_retrieval_batches_per_invocation",
+        "max_turns_per_invocation",
+        "provisional_close_minutes",
+        "visit_followup_after_minutes"
+      ],
+      "source": "src/operatebench/domains/lettings/maintenance/spec.py::_POLICY_FIELDS,PolicySpec,_parse_policy"
+    }
+  ],
+  "census_consumer_tuples_by_owner": {
+    "card_schema_content": [
+      "package_loader",
+      "card_validator"
+    ],
+    "operation_core_content": [
+      "card_loader",
+      "card_validator",
+      "identity_manifest_input"
+    ],
+    "semantic_scenario_content": [
+      "card_loader",
+      "card_validator",
+      "identity_manifest_input"
+    ],
+    "variant_content": [
+      "card_loader",
+      "card_validator",
+      "identity_manifest_input"
+    ]
+  },
+  "set_class_array_json_pointers": [
+    "/content/action_contracts",
+    "/content/allowed_variant_dimensions",
+    "/content/actors",
+    "/content/authored_hazards",
+    "/content/authority_contract/action_authority",
+    "/content/authority_contract/event_authority",
+    "/content/authority_contract/roles",
+    "/content/causal_graph/edges",
+    "/content/causal_graph/nodes",
+    "/content/common_outcome_obligations",
+    "/content/dispatch_failures",
+    "/content/event_contracts",
+    "/content/message_fixtures",
+    "/content/required_checkpoint_types",
+    "/content/retrieval_contract/catalogue",
+    "/content/retrieval_contract/evidence_requirements",
+    "/content/transition_contract/common_predicate_inputs",
+    "/content/transition_contract/obligation_types",
+    "/content/transition_contract/reducer_ids",
+    "/content/transition_contract/terminal_kinds"
+  ],
+  "ordered_array_json_pointers": [
+    "/content/decision_points",
+    "/content/events",
+    "/content/expected_event_rejections"
+  ]
+}

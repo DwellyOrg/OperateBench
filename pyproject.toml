@@ -1,0 +1,182 @@
+[project]
+# One distribution, two packages. `operatebench` is the project; `boundarybench`
+# ships inside it as the Boundary Track compatibility package and keeps its own
+# historical version and manifest semantics (see docs/VERSIONING.md).
+name = "operatebench"
+# Read from the package itself: the run manifest records this version as the
+# provenance of a run, so the number that ships and the number that is recorded
+# must be the same number, not two that have to be kept in step by hand.
+dynamic = ["version"]
+description = "OperateBench — a deterministic, replayable benchmark for agents that own longitudinal business operations"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "Apache-2.0"
+license-files = [
+    "LICENSE",
+    "LICENSE-DATA",
+    "NOTICE",
+    "LICENSES/Apache-2.0.txt",
+    "LICENSES/CC-BY-4.0.txt",
+]
+# Dmitry Khanukov is the human author. PROSPIRE TECHNOLOGIES LTD (company
+# 14991567) is the copyright owner and licensing principal; Dwelly is the
+# trading/project brand and steward, not an author entry.
+authors = [
+    { name = "Dmitry Khanukov", email = "dmitry@dwelly.group" },
+]
+maintainers = [{ name = "Dmitry Khanukov", email = "dmitry@dwelly.group" }]
+keywords = [
+    "agent-benchmark",
+    "business-operations",
+    "deterministic-replay",
+    "event-driven",
+    "human-in-the-loop",
+    "synthetic-fixtures",
+]
+classifiers = [
+    # No "License ::" classifier: PEP 639 retires it in favour of the SPDX
+    # expression above, and stating a licence twice is a way to state it wrong.
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Testing",
+    "Typing :: Typed",
+]
+dependencies = [
+    # The Anthropic Messages adapter. The floor is the version this
+    # build was actually verified against, not the oldest one that might work:
+    # the SDK decides request serialisation, response parsing and error
+    # classification, so its version is a result-affecting setting and is
+    # recorded in run identity. The ceiling is a major bump, which may move any
+    # of those three and so requires re-verification before a run made under it
+    # is comparable with one made under this range.
+    #
+    # Public/offline Lifecycle reference and negative commands need no SDK calls.
+    # Model-capable operator tooling exists and requires separate authorization.
+    "anthropic>=0.121.0,<1",
+    # The OpenAI SDK, on the same terms and for the same reason. It serves two
+    # adapters rather than one: the OpenAI Responses adapter, and the xAI
+    # adapter, which talks to xAI's documented OpenAI-compatible Chat
+    # Completions surface through this same client. `xai-sdk` is deliberately
+    # *not* a dependency — see `docs/PROVIDER_MATRIX.md` for why, and for what
+    # that costs.
+    "openai>=2.53.0,<3",
+    # The Mistral SDK. `mistralai` 2.x is a namespace distribution and the
+    # client class lives at `mistralai.client.Mistral`; the floor is the version
+    # this build serialised a request with and parsed a response through.
+    "mistralai>=2.9.2,<3",
+    "pyyaml>=6.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/DwellyOrg/OperateBench"
+Repository = "https://github.com/DwellyOrg/OperateBench"
+Documentation = "https://github.com/DwellyOrg/OperateBench/blob/main/docs/METHODOLOGY.md"
+Issues = "https://github.com/DwellyOrg/OperateBench/issues"
+
+[project.scripts]
+# The OperateBench Lifecycle CLI. Same distribution, separate package and
+# separate command from the Boundary Track: a Boundary run and a Lifecycle run
+# are different constructs and must never be invoked, or reported, as the same
+# thing.
+operatebench = "operatebench.cli:main"
+boundarybench = "boundarybench.cli:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "reuse>=5.0",
+    "mypy>=1.11",
+    "ruff>=0.6",
+    "types-PyYAML>=6.0",
+    "jsonschema>=4.26.0",
+]
+
+[build-system]
+requires = ["hatchling==1.32.0"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+path = "src/operatebench/version.py"
+
+[tool.hatch.build.targets.wheel]
+# `tools/` is repository machinery — the release checker and its allowlists —
+# and is deliberately not among them.
+packages = ["src/operatebench", "src/boundarybench"]
+
+[tool.hatch.build.targets.sdist]
+# The sdist carries both packages, the offline suite, shipped fixtures and
+# qualifying documents. Historical regeneration integration tests additionally
+# use the bundled byte-pinned historical source: docs/HISTORICAL_RUNTIME.md.
+include = [
+    "/.github/workflows/ci.yml",
+    "/src",
+    "/tests",
+    "/tools",
+    "/examples",
+    "/docs",
+    "/README.md",
+    "/LICENSE",
+    "/LICENSE-DATA",
+    "/NOTICE",
+    "/CITATION.cff",
+    "/CONTRIBUTING.md",
+    "/CODE_OF_CONDUCT.md",
+    "/SECURITY.md",
+    "/REUSE.toml",
+    "/LICENSES",
+    "/DCO",
+    "/.github/workflows/dco.yml",
+    "/.github/pull_request_template.md",
+    "/uv.lock",
+    "/pyproject.toml",
+    "/setup.cfg",
+]
+exclude = [
+    "/tests/matched_control_fixtures.py",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+pythonpath = ["."]
+
+[tool.coverage.run]
+branch = true
+source = ["src/boundarybench", "src/operatebench"]
+
+[tool.coverage.report]
+exclude_also = [
+    # Entrypoint guard: exercised by the console script, not by the test suite.
+    'if __name__ == .__main__.:',
+    # Typing-only imports.
+    'if TYPE_CHECKING:',
+]
+
+[tool.ruff]
+extend-exclude = ["tests/fixtures/historical_engine_0_9/source"]
+line-length = 90
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "C4", "RUF"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+mypy_path = "src"
+# The strictly-typed surface: the shipped packages and the release tooling.
+#
+# `tests` is deliberately outside it. The offline suite predates strict typing
+# and does not satisfy it; a CI step that runs `mypy .` therefore fails on a
+# clean checkout, which is worse than a gate that states its scope. Widening
+# this to the suite is real work on the suite, not a config change.
+files = ["src", "tools"]

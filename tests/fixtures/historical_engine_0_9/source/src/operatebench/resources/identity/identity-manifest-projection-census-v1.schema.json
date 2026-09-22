@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://operatebench.org/schemas/identity-manifest-projection-census-v1.schema.json",
+  "title": "OperateBench Identity Manifest Projection Census v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "schema_version", "manifest_schema", "owners", "entries"],
+  "properties": {
+    "schema": {"const": "operatebench.identity_manifest_projection_census.v1"},
+    "schema_version": {"const": 1},
+    "manifest_schema": {"const": "operatebench.identity_manifest.v1"},
+    "owners": {
+      "type": "array",
+      "minItems": 11,
+      "maxItems": 11,
+      "prefixItems": [
+        {"const": "card_schema_content"},
+        {"const": "build_provenance_content"},
+        {"const": "operation_core_content"},
+        {"const": "semantic_scenario_content"},
+        {"const": "variant_content"},
+        {"const": "runtime_contract_content"},
+        {"const": "scaffold_content"},
+        {"const": "arm_protocol_content"},
+        {"const": "provider_run_plan_content"},
+        {"const": "evaluator_bundle_content"},
+        {"const": "analysis_contract_content"}
+      ],
+      "items": false
+    },
+    "entries": {
+      "type": "array",
+      "maxItems": 4096,
+      "items": {"$ref": "#/$defs/entry"}
+    }
+  },
+  "$defs": {
+    "fieldPath": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 1024,
+      "pattern": "^/(?:[^/~*]|~0|~1)+(?:/(?:[^/~*]|~0|~1)+)*(?![\\s\\S])"
+    },
+    "owner": {
+      "type": "string",
+      "enum": [
+        "card_schema_content",
+        "build_provenance_content",
+        "operation_core_content",
+        "semantic_scenario_content",
+        "variant_content",
+        "runtime_contract_content",
+        "scaffold_content",
+        "arm_protocol_content",
+        "provider_run_plan_content",
+        "evaluator_bundle_content",
+        "analysis_contract_content"
+      ]
+    },
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["field_path", "owner"],
+      "properties": {
+        "field_path": {"$ref": "#/$defs/fieldPath"},
+        "owner": {"$ref": "#/$defs/owner"}
+      }
+    }
+  }
+}

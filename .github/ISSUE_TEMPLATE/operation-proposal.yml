@@ -1,0 +1,126 @@
+name: Operation proposal
+description: Propose a fully synthetic persistent business operation for a guided OperateBench pilot.
+title: "[Operation proposal] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This is a public issue. Proposals are self-service; executable packs remain guided.
+
+        Read the [Partner Contribution Kit](https://github.com/DwellyOrg/OperateBench/blob/main/docs/PARTNER_CONTRIBUTION_KIT.md), the [operation contribution rules](https://github.com/DwellyOrg/OperateBench/blob/main/docs/CONTRIBUTING_OPERATIONS.md), and the [completed synthetic example](https://github.com/DwellyOrg/OperateBench/blob/main/examples/partner_operation_proposal.md) first.
+
+        Describe only a fully synthetic operation invented from scratch. Do not paste production records, internal documents, proprietary text, personal data, real policies, screenshots, logs, exports, prompts, or customer information. Replacing names in a production record does not make it synthetic. If the case cannot be described without non-public material, stop and do not submit it; follow [SECURITY.md](https://github.com/DwellyOrg/OperateBench/blob/main/SECURITY.md) if an exposure may already have occurred.
+  - type: input
+    id: title
+    attributes:
+      label: Working title
+      description: A short invented name for the operation.
+    validations:
+      required: true
+  - type: input
+    id: domain
+    attributes:
+      label: Industry or domain
+    validations:
+      required: true
+  - type: textarea
+    id: operation_fit
+    attributes:
+      label: Operation and fit
+      description: Describe one persistent case and why a one-shot task or conversation misses its important difficulty.
+    validations:
+      required: true
+  - type: textarea
+    id: actors_authority
+    attributes:
+      label: Actors, authority, and authoritative systems
+      description: Use invented roles and systems. State whose claims are non-authoritative and what source establishes truth.
+    validations:
+      required: true
+  - type: textarea
+    id: lifecycle_paths
+    attributes:
+      label: Lifecycle and legitimate paths
+      description: Give the main states and at least two legitimate trajectories, including admissible terminal outcomes.
+    validations:
+      required: true
+  - type: textarea
+    id: time_events
+    attributes:
+      label: WAIT, wake, follow-up, deadline, and exogenous events
+      description: Include one correct WAIT, its wake condition and fallback, one scheduled follow-up, one deadline, and an outside event.
+    validations:
+      required: true
+  - type: textarea
+    id: humans_authority
+    attributes:
+      label: Human checkpoints and authority boundaries
+      description: Include a required checkpoint, a path where escalation is unnecessary, and a boundary the agent cannot cross.
+    validations:
+      required: true
+  - type: textarea
+    id: claims_truth
+    attributes:
+      label: Actor claim versus authoritative fact
+      description: Give a plausible false or not-yet-authoritative claim and the exact evidence required before action.
+    validations:
+      required: true
+  - type: textarea
+    id: recovery_finality
+    attributes:
+      label: Loop, recovery, guarded finality, and late event
+      description: Describe a retry/reopen path, the final guard, and a late event that must not resurrect the operation.
+    validations:
+      required: true
+  - type: textarea
+    id: failure_modes
+    attributes:
+      label: Five to eight targeted causal failure modes
+      description: For each, name the attacked guarantee, expected effect/finding, and unrelated behaviour that should remain correct.
+    validations:
+      required: true
+  - type: textarea
+    id: matched_controls
+    attributes:
+      label: Proposed matched controls
+      description: Sketch static/decomposed, Boundary-only, and stateful time-removed controls and what must remain matched.
+    validations:
+      required: true
+  - type: dropdown
+    id: capability_tags
+    attributes:
+      label: Capability tags
+      multiple: true
+      options:
+        - state_dependency
+        - insufficient_information
+        - authority_change
+        - wait_required
+        - late_event
+        - reopen
+        - human_checkpoint
+        - duplicate_event
+        - post_commit_failure
+        - disclosure_boundary
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Required safety and rights attestation
+      options:
+        - label: Every concrete detail in this proposal is invented; privacy status is SYNTHETIC_ONLY.
+          required: true
+        - label: I included no production record, personal data, proprietary text, real threshold, internal document, screenshot, log, export, prompt, or customer information.
+          required: true
+        - label: This proposal is not my organisation's official policy or workflow.
+          required: true
+        - label: I have the right to contribute this material under the repository licences.
+          required: true
+  - type: checkboxes
+    id: stage
+    attributes:
+      label: Stage acknowledgement
+      options:
+        - label: I understand that an accepted proposal is not yet an executable pack, official benchmark case, model result, or publication decision.
+          required: true

@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: 2026 PROSPIRE TECHNOLOGIES LTD
+# SPDX-License-Identifier: Apache-2.0
+schema_version: 1
+operations:
+  - owner_id: prospire
+    owner_display_name: PROSPIRE TECHNOLOGIES LTD
+    contribution_kind: maintainer
+    pack_id: commerce.return_refund.synthetic.v1
+    operation_type: commerce.return_refund.synthetic.v1
+    operation_id: commerce_return_refund_synthetic_v1
+    aliases:
+      - return-refund
+    source_module: operatebench.domains.commerce.return_refund.pack
+    source_path: src/operatebench/domains/commerce/return_refund
+  - owner_id: prospire
+    owner_display_name: PROSPIRE TECHNOLOGIES LTD
+    contribution_kind: maintainer
+    pack_id: lettings.maintenance.synthetic
+    operation_type: lettings.maintenance.synthetic
+    operation_id: lettings_maintenance_synthetic_v1
+    aliases:
+      - maintenance
+    source_module: operatebench.domains.lettings.maintenance.pack
+    source_path: src/operatebench/domains/lettings/maintenance
+  - owner_id: prospire
+    owner_display_name: PROSPIRE TECHNOLOGIES LTD
+    contribution_kind: maintainer
+    pack_id: lettings.property_compliance.synthetic
+    operation_type: lettings.property_compliance.synthetic
+    operation_id: lettings_property_compliance_synthetic_v1
+    aliases: []
+    source_module: operatebench.contributions.prospire.property_compliance.pack
+    source_path: src/operatebench/contributions/prospire/property_compliance

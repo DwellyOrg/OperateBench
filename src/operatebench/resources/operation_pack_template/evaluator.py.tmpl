@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: the contributor
+# SPDX-License-Identifier: Apache-2.0
+"""Deterministic evaluator for {{PACK_ID}}."""
+
+from __future__ import annotations
+
+from typing import Any
+
+from operatebench.core.evaluation import OperationEvaluation
+
+
+def evaluate_fresh(fresh: Any) -> OperationEvaluation:
+    del fresh
+    raise NotImplementedError(
+        "TODO: grade only freshly executed, pack-authenticated state and trajectory"
+    )

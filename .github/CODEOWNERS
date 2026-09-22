@@ -1,0 +1,10 @@
+# Sensitive execution, evaluation, methodology, publication, governance, and CI surfaces.
+/src/operatebench/ @khanukov
+/tools/ @khanukov
+/.github/ @khanukov
+/docs/METHODOLOGY.md @khanukov
+/docs/REPOSITORY_GOVERNANCE.md @khanukov
+/PUBLICATION_MANIFEST.json @khanukov
+/pyproject.toml @khanukov
+/uv.lock @khanukov
+/REUSE.toml @khanukov

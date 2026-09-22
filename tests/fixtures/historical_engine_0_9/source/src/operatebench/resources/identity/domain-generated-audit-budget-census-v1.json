@@ -1,0 +1,80 @@
+{
+  "schema": "operatebench.domain_generated_audit_budget_census.v1",
+  "schema_version": 1,
+  "protocol_id": "operatebench.domain-generated-audit-budget.v1",
+  "entry_count": 12,
+  "entries": [
+    {
+      "field_path": "/declaration/declared_max_events",
+      "owner": "operation_core",
+      "consumer": "core_runtime_preflight",
+      "role": "authored_maximum"
+    },
+    {
+      "field_path": "/declaration/sources",
+      "owner": "operation_core",
+      "consumer": "core_runtime_preflight",
+      "role": "source_semantics"
+    },
+    {
+      "field_path": "/protocol/counted_kinds",
+      "owner": "core_runtime",
+      "consumer": "core_reservation_api",
+      "role": "closed_taxonomy"
+    },
+    {
+      "field_path": "/protocol/excluded_kinds",
+      "owner": "core_runtime",
+      "consumer": "core_reservation_api",
+      "role": "closed_taxonomy"
+    },
+    {
+      "field_path": "/runtime/operation_counter",
+      "owner": "core_runtime",
+      "consumer": "core_reservation_api",
+      "role": "authoritative_counter"
+    },
+    {
+      "field_path": "/runtime/source_counters",
+      "owner": "core_runtime",
+      "consumer": "core_reservation_api",
+      "role": "authoritative_counter"
+    },
+    {
+      "field_path": "/runtime/transition_reservation",
+      "owner": "core_runtime",
+      "consumer": "core_transition_commit",
+      "role": "transient_capability"
+    },
+    {
+      "field_path": "/evidence/committed_intents",
+      "owner": "core_runtime",
+      "consumer": "future_evidence_verifier",
+      "role": "derived_evidence"
+    },
+    {
+      "field_path": "/evidence/integrity_finding",
+      "owner": "core_runtime",
+      "consumer": "future_outcome_successor",
+      "role": "bounded_refusal"
+    },
+    {
+      "field_path": "/evidence/terminal_summary",
+      "owner": "core_runtime",
+      "consumer": "future_evidence_verifier",
+      "role": "derived_evidence"
+    },
+    {
+      "field_path": "/card/declared_max_domain_generated_audit_events",
+      "owner": "operation_core",
+      "consumer": "card_v2_projector",
+      "role": "authored_maximum"
+    },
+    {
+      "field_path": "/no_time/domain_generated_audit_term",
+      "owner": "operation_core",
+      "consumer": "future_no_time_verifier",
+      "role": "specified_only_consumer"
+    }
+  ]
+}

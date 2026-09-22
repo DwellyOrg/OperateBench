@@ -1,0 +1,1044 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "schema_version",
+    "protocol_id",
+    "entry_count",
+    "entries"
+  ],
+  "properties": {
+    "schema": {
+      "const": "operatebench.domain_generated_audit_budget_census.v1"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "protocol_id": {
+      "const": "operatebench.domain-generated-audit-budget.v1"
+    },
+    "entry_count": {
+      "const": 12
+    },
+    "entries": {
+      "type": "array",
+      "minItems": 12,
+      "maxItems": 12,
+      "prefixItems": [
+        {
+          "allOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "field_path",
+                "owner",
+                "consumer",
+                "role"
+              ],
+              "properties": {
+                "field_path": {
+                  "enum": [
+                    "/declaration/declared_max_events",
+                    "/declaration/sources",
+                    "/protocol/counted_kinds",
+                    "/protocol/excluded_kinds",
+                    "/runtime/operation_counter",
+                    "/runtime/source_counters",
+                    "/runtime/transition_reservation",
+                    "/evidence/committed_intents",
+                    "/evidence/integrity_finding",
+                    "/evidence/terminal_summary",
+                    "/card/declared_max_domain_generated_audit_events",
+                    "/no_time/domain_generated_audit_term"
+                  ]
+                },
+                "owner": {
+                  "enum": [
+                    "operation_core",
+                    "core_runtime",
+                    "card",
+                    "semantic_scenario",
+                    "variant",
+                    "scaffold",
+                    "provider",
+                    "evaluator",
+                    "no_time"
+                  ]
+                },
+                "consumer": {
+                  "enum": [
+                    "card_v2_projector",
+                    "core_reservation_api",
+                    "core_runtime_preflight",
+                    "core_transition_commit",
+                    "future_evidence_verifier",
+                    "future_no_time_verifier",
+                    "future_outcome_successor"
+                  ]
+                },
+                "role": {
+                  "enum": [
+                    "authored_maximum",
+                    "authoritative_counter",
+                    "bounded_refusal",
+                    "closed_taxonomy",
+                    "derived_evidence",
+                    "source_semantics",
+                    "specified_only_consumer",
+                    "transient_capability"
+                  ]
+                }
+              }
+            },
+            {
+              "properties": {
+                "field_path": {
+                  "const": "/declaration/declared_max_events"
+                },
+                "owner": {
+                  "const": "operation_core"
+                },
+                "consumer": {
+                  "const": "core_runtime_preflight"
+                },
+                "role": {
+                  "const": "authored_maximum"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "field_path",
+                "owner",
+                "consumer",
+                "role"
+              ],
+              "properties": {
+                "field_path": {
+                  "enum": [
+                    "/declaration/declared_max_events",
+                    "/declaration/sources",
+                    "/protocol/counted_kinds",
+                    "/protocol/excluded_kinds",
+                    "/runtime/operation_counter",
+                    "/runtime/source_counters",
+                    "/runtime/transition_reservation",
+                    "/evidence/committed_intents",
+                    "/evidence/integrity_finding",
+                    "/evidence/terminal_summary",
+                    "/card/declared_max_domain_generated_audit_events",
+                    "/no_time/domain_generated_audit_term"
+                  ]
+                },
+                "owner": {
+                  "enum": [
+                    "operation_core",
+                    "core_runtime",
+                    "card",
+                    "semantic_scenario",
+                    "variant",
+                    "scaffold",
+                    "provider",
+                    "evaluator",
+                    "no_time"
+                  ]
+                },
+                "consumer": {
+                  "enum": [
+                    "card_v2_projector",
+                    "core_reservation_api",
+                    "core_runtime_preflight",
+                    "core_transition_commit",
+                    "future_evidence_verifier",
+                    "future_no_time_verifier",
+                    "future_outcome_successor"
+                  ]
+                },
+                "role": {
+                  "enum": [
+                    "authored_maximum",
+                    "authoritative_counter",
+                    "bounded_refusal",
+                    "closed_taxonomy",
+                    "derived_evidence",
+                    "source_semantics",
+                    "specified_only_consumer",
+                    "transient_capability"
+                  ]
+                }
+              }
+            },
+            {
+              "properties": {
+                "field_path": {
+                  "const": "/declaration/sources"
+                },
+                "owner": {
+                  "const": "operation_core"
+                },
+                "consumer": {
+                  "const": "core_runtime_preflight"
+                },
+                "role": {
+                  "const": "source_semantics"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "field_path",
+                "owner",
+                "consumer",
+                "role"
+              ],
+              "properties": {
+                "field_path": {
+                  "enum": [
+                    "/declaration/declared_max_events",
+                    "/declaration/sources",
+                    "/protocol/counted_kinds",
+                    "/protocol/excluded_kinds",
+                    "/runtime/operation_counter",
+                    "/runtime/source_counters",
+                    "/runtime/transition_reservation",
+                    "/evidence/committed_intents",
+                    "/evidence/integrity_finding",
+                    "/evidence/terminal_summary",
+                    "/card/declared_max_domain_generated_audit_events",
+                    "/no_time/domain_generated_audit_term"
+                  ]
+                },
+                "owner": {
+                  "enum": [
+                    "operation_core",
+                    "core_runtime",
+                    "card",
+                    "semantic_scenario",
+                    "variant",
+                    "scaffold",
+                    "provider",
+                    "evaluator",
+                    "no_time"
+                  ]
+                },
+                "consumer": {
+                  "enum": [
+                    "card_v2_projector",
+                    "core_reservation_api",
+                    "core_runtime_preflight",
+                    "core_transition_commit",
+                    "future_evidence_verifier",
+                    "future_no_time_verifier",
+                    "future_outcome_successor"
+                  ]
+                },
+                "role": {
+                  "enum": [
+                    "authored_maximum",
+                    "authoritative_counter",
+                    "bounded_refusal",
+                    "closed_taxonomy",
+                    "derived_evidence",
+                    "source_semantics",
+                    "specified_only_consumer",
+                    "transient_capability"
+                  ]
+                }
+              }
+            },
+            {
+              "properties": {
+                "field_path": {
+                  "const": "/protocol/counted_kinds"
+                },
+                "owner": {
+                  "const": "core_runtime"
+                },
+                "consumer": {
+                  "const": "core_reservation_api"
+                },
+                "role": {
+                  "const": "closed_taxonomy"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "field_path",
+                "owner",
+                "consumer",
+                "role"
+              ],
+              "properties": {
+                "field_path": {
+                  "enum": [
+                    "/declaration/declared_max_events",
+                    "/declaration/sources",
+                    "/protocol/counted_kinds",
+                    "/protocol/excluded_kinds",
+                    "/runtime/operation_counter",
+                    "/runtime/source_counters",
+                    "/runtime/transition_reservation",
+                    "/evidence/committed_intents",
+                    "/evidence/integrity_finding",
+                    "/evidence/terminal_summary",
+                    "/card/declared_max_domain_generated_audit_events",
+                    "/no_time/domain_generated_audit_term"
+                  ]
+                },
+                "owner": {
+                  "enum": [
+                    "operation_core",
+                    "core_runtime",
+                    "card",
+                    "semantic_scenario",
+                    "variant",
+                    "scaffold",
+                    "provider",
+                    "evaluator",
+                    "no_time"
+                  ]
+                },
+                "consumer": {
+                  "enum": [
+                    "card_v2_projector",
+                    "core_reservation_api",
+                    "core_runtime_preflight",
+                    "core_transition_commit",
+                    "future_evidence_verifier",
+                    "future_no_time_verifier",
+                    "future_outcome_successor"
+                  ]
+                },
+                "role": {
+                  "enum": [
+                    "authored_maximum",
+                    "authoritative_counter",
+                    "bounded_refusal",
+                    "closed_taxonomy",
+                    "derived_evidence",
+                    "source_semantics",
+                    "specified_only_consumer",
+                    "transient_capability"
+                  ]
+                }
+              }
+            },
+            {
+              "properties": {
+                "field_path": {
+                  "const": "/protocol/excluded_kinds"
+                },
+                "owner": {
+                  "const": "core_runtime"
+                },
+                "consumer": {
+                  "const": "core_reservation_api"
+                },
+                "role": {
+                  "const": "closed_taxonomy"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "field_path",
+                "owner",
+                "consumer",
+                "role"
+              ],
+              "properties": {
+                "field_path": {
+                  "enum": [
+                    "/declaration/declared_max_events",
+                    "/declaration/sources",
+                    "/protocol/counted_kinds",
+                    "/protocol/excluded_kinds",
+                    "/runtime/operation_counter",
+                    "/runtime/source_counters",
+                    "/runtime/transition_reservation",
+                    "/evidence/committed_intents",
+                    "/evidence/integrity_finding",
+                    "/evidence/terminal_summary",
+                    "/card/declared_max_domain_generated_audit_events",
+                    "/no_time/domain_generated_audit_term"
+                  ]
+                },
+                "owner": {
+                  "enum": [
+                    "operation_core",
+                    "core_runtime",
+                    "card",
+                    "semantic_scenario",
+                    "variant",
+                    "scaffold",
+                    "provider",
+                    "evaluator",
+                    "no_time"
+                  ]
+                },
+                "consumer": {
+                  "enum": [
+                    "card_v2_projector",
+                    "core_reservation_api",
+                    "core_runtime_preflight",
+                    "core_transition_commit",
+                    "future_evidence_verifier",
+                    "future_no_time_verifier",
+                    "future_outcome_successor"
+                  ]
+                },
+                "role": {
+                  "enum": [
+                    "authored_maximum",
+                    "authoritative_counter",
+                    "bounded_refusal",
+                    "closed_taxonomy",
+                    "derived_evidence",
+                    "source_semantics",
+                    "specified_only_consumer",
+                    "transient_capability"
+                  ]
+                }
+              }
+            },
+            {
+              "properties": {
+                "field_path": {
+                  "const": "/runtime/operation_counter"
+                },
+                "owner": {
+                  "const": "core_runtime"
+                },
+                "consumer": {
+                  "const": "core_reservation_api"
+                },
+                "role": {
+                  "const": "authoritative_counter"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "field_path",
+                "owner",
+                "consumer",
+                "role"
+              ],
+              "properties": {
+                "field_path": {
+                  "enum": [
+                    "/declaration/declared_max_events",
+                    "/declaration/sources",
+                    "/protocol/counted_kinds",
+                    "/protocol/excluded_kinds",
+                    "/runtime/operation_counter",
+                    "/runtime/source_counters",
+                    "/runtime/transition_reservation",
+                    "/evidence/committed_intents",
+                    "/evidence/integrity_finding",
+                    "/evidence/terminal_summary",
+                    "/card/declared_max_domain_generated_audit_events",
+                    "/no_time/domain_generated_audit_term"
+                  ]
+                },
+                "owner": {
+                  "enum": [
+                    "operation_core",
+                    "core_runtime",
+                    "card",
+                    "semantic_scenario",
+                    "variant",
+                    "scaffold",
+                    "provider",
+                    "evaluator",
+                    "no_time"
+                  ]
+                },
+                "consumer": {
+                  "enum": [
+                    "card_v2_projector",
+                    "core_reservation_api",
+                    "core_runtime_preflight",
+                    "core_transition_commit",
+                    "future_evidence_verifier",
+                    "future_no_time_verifier",
+                    "future_outcome_successor"
+                  ]
+                },
+                "role": {
+                  "enum": [
+                    "authored_maximum",
+                    "authoritative_counter",
+                    "bounded_refusal",
+                    "closed_taxonomy",
+                    "derived_evidence",
+                    "source_semantics",
+                    "specified_only_consumer",
+                    "transient_capability"
+                  ]
+                }
+              }
+            },
+            {
+              "properties": {
+                "field_path": {
+                  "const": "/runtime/source_counters"
+                },
+                "owner": {
+                  "const": "core_runtime"
+                },
+                "consumer": {
+                  "const": "core_reservation_api"
+                },
+                "role": {
+                  "const": "authoritative_counter"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "field_path",
+                "owner",
+                "consumer",
+                "role"
+              ],
+              "properties": {
+                "field_path": {
+                  "enum": [
+                    "/declaration/declared_max_events",
+                    "/declaration/sources",
+                    "/protocol/counted_kinds",
+                    "/protocol/excluded_kinds",
+                    "/runtime/operation_counter",
+                    "/runtime/source_counters",
+                    "/runtime/transition_reservation",
+                    "/evidence/committed_intents",
+                    "/evidence/integrity_finding",
+                    "/evidence/terminal_summary",
+                    "/card/declared_max_domain_generated_audit_events",
+                    "/no_time/domain_generated_audit_term"
+                  ]
+                },
+                "owner": {
+                  "enum": [
+                    "operation_core",
+                    "core_runtime",
+                    "card",
+                    "semantic_scenario",
+                    "variant",
+                    "scaffold",
+                    "provider",
+                    "evaluator",
+                    "no_time"
+                  ]
+                },
+                "consumer": {
+                  "enum": [
+                    "card_v2_projector",
+                    "core_reservation_api",
+                    "core_runtime_preflight",
+                    "core_transition_commit",
+                    "future_evidence_verifier",
+                    "future_no_time_verifier",
+                    "future_outcome_successor"
+                  ]
+                },
+                "role": {
+                  "enum": [
+                    "authored_maximum",
+                    "authoritative_counter",
+                    "bounded_refusal",
+                    "closed_taxonomy",
+                    "derived_evidence",
+                    "source_semantics",
+                    "specified_only_consumer",
+                    "transient_capability"
+                  ]
+                }
+              }
+            },
+            {
+              "properties": {
+                "field_path": {
+                  "const": "/runtime/transition_reservation"
+                },
+                "owner": {
+                  "const": "core_runtime"
+                },
+                "consumer": {
+                  "const": "core_transition_commit"
+                },
+                "role": {
+                  "const": "transient_capability"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "field_path",
+                "owner",
+                "consumer",
+                "role"
+              ],
+              "properties": {
+                "field_path": {
+                  "enum": [
+                    "/declaration/declared_max_events",
+                    "/declaration/sources",
+                    "/protocol/counted_kinds",
+                    "/protocol/excluded_kinds",
+                    "/runtime/operation_counter",
+                    "/runtime/source_counters",
+                    "/runtime/transition_reservation",
+                    "/evidence/committed_intents",
+                    "/evidence/integrity_finding",
+                    "/evidence/terminal_summary",
+                    "/card/declared_max_domain_generated_audit_events",
+                    "/no_time/domain_generated_audit_term"
+                  ]
+                },
+                "owner": {
+                  "enum": [
+                    "operation_core",
+                    "core_runtime",
+                    "card",
+                    "semantic_scenario",
+                    "variant",
+                    "scaffold",
+                    "provider",
+                    "evaluator",
+                    "no_time"
+                  ]
+                },
+                "consumer": {
+                  "enum": [
+                    "card_v2_projector",
+                    "core_reservation_api",
+                    "core_runtime_preflight",
+                    "core_transition_commit",
+                    "future_evidence_verifier",
+                    "future_no_time_verifier",
+                    "future_outcome_successor"
+                  ]
+                },
+                "role": {
+                  "enum": [
+                    "authored_maximum",
+                    "authoritative_counter",
+                    "bounded_refusal",
+                    "closed_taxonomy",
+                    "derived_evidence",
+                    "source_semantics",
+                    "specified_only_consumer",
+                    "transient_capability"
+                  ]
+                }
+              }
+            },
+            {
+              "properties": {
+                "field_path": {
+                  "const": "/evidence/committed_intents"
+                },
+                "owner": {
+                  "const": "core_runtime"
+                },
+                "consumer": {
+                  "const": "future_evidence_verifier"
+                },
+                "role": {
+                  "const": "derived_evidence"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "field_path",
+                "owner",
+                "consumer",
+                "role"
+              ],
+              "properties": {
+                "field_path": {
+                  "enum": [
+                    "/declaration/declared_max_events",
+                    "/declaration/sources",
+                    "/protocol/counted_kinds",
+                    "/protocol/excluded_kinds",
+                    "/runtime/operation_counter",
+                    "/runtime/source_counters",
+                    "/runtime/transition_reservation",
+                    "/evidence/committed_intents",
+                    "/evidence/integrity_finding",
+                    "/evidence/terminal_summary",
+                    "/card/declared_max_domain_generated_audit_events",
+                    "/no_time/domain_generated_audit_term"
+                  ]
+                },
+                "owner": {
+                  "enum": [
+                    "operation_core",
+                    "core_runtime",
+                    "card",
+                    "semantic_scenario",
+                    "variant",
+                    "scaffold",
+                    "provider",
+                    "evaluator",
+                    "no_time"
+                  ]
+                },
+                "consumer": {
+                  "enum": [
+                    "card_v2_projector",
+                    "core_reservation_api",
+                    "core_runtime_preflight",
+                    "core_transition_commit",
+                    "future_evidence_verifier",
+                    "future_no_time_verifier",
+                    "future_outcome_successor"
+                  ]
+                },
+                "role": {
+                  "enum": [
+                    "authored_maximum",
+                    "authoritative_counter",
+                    "bounded_refusal",
+                    "closed_taxonomy",
+                    "derived_evidence",
+                    "source_semantics",
+                    "specified_only_consumer",
+                    "transient_capability"
+                  ]
+                }
+              }
+            },
+            {
+              "properties": {
+                "field_path": {
+                  "const": "/evidence/integrity_finding"
+                },
+                "owner": {
+                  "const": "core_runtime"
+                },
+                "consumer": {
+                  "const": "future_outcome_successor"
+                },
+                "role": {
+                  "const": "bounded_refusal"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "field_path",
+                "owner",
+                "consumer",
+                "role"
+              ],
+              "properties": {
+                "field_path": {
+                  "enum": [
+                    "/declaration/declared_max_events",
+                    "/declaration/sources",
+                    "/protocol/counted_kinds",
+                    "/protocol/excluded_kinds",
+                    "/runtime/operation_counter",
+                    "/runtime/source_counters",
+                    "/runtime/transition_reservation",
+                    "/evidence/committed_intents",
+                    "/evidence/integrity_finding",
+                    "/evidence/terminal_summary",
+                    "/card/declared_max_domain_generated_audit_events",
+                    "/no_time/domain_generated_audit_term"
+                  ]
+                },
+                "owner": {
+                  "enum": [
+                    "operation_core",
+                    "core_runtime",
+                    "card",
+                    "semantic_scenario",
+                    "variant",
+                    "scaffold",
+                    "provider",
+                    "evaluator",
+                    "no_time"
+                  ]
+                },
+                "consumer": {
+                  "enum": [
+                    "card_v2_projector",
+                    "core_reservation_api",
+                    "core_runtime_preflight",
+                    "core_transition_commit",
+                    "future_evidence_verifier",
+                    "future_no_time_verifier",
+                    "future_outcome_successor"
+                  ]
+                },
+                "role": {
+                  "enum": [
+                    "authored_maximum",
+                    "authoritative_counter",
+                    "bounded_refusal",
+                    "closed_taxonomy",
+                    "derived_evidence",
+                    "source_semantics",
+                    "specified_only_consumer",
+                    "transient_capability"
+                  ]
+                }
+              }
+            },
+            {
+              "properties": {
+                "field_path": {
+                  "const": "/evidence/terminal_summary"
+                },
+                "owner": {
+                  "const": "core_runtime"
+                },
+                "consumer": {
+                  "const": "future_evidence_verifier"
+                },
+                "role": {
+                  "const": "derived_evidence"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "field_path",
+                "owner",
+                "consumer",
+                "role"
+              ],
+              "properties": {
+                "field_path": {
+                  "enum": [
+                    "/declaration/declared_max_events",
+                    "/declaration/sources",
+                    "/protocol/counted_kinds",
+                    "/protocol/excluded_kinds",
+                    "/runtime/operation_counter",
+                    "/runtime/source_counters",
+                    "/runtime/transition_reservation",
+                    "/evidence/committed_intents",
+                    "/evidence/integrity_finding",
+                    "/evidence/terminal_summary",
+                    "/card/declared_max_domain_generated_audit_events",
+                    "/no_time/domain_generated_audit_term"
+                  ]
+                },
+                "owner": {
+                  "enum": [
+                    "operation_core",
+                    "core_runtime",
+                    "card",
+                    "semantic_scenario",
+                    "variant",
+                    "scaffold",
+                    "provider",
+                    "evaluator",
+                    "no_time"
+                  ]
+                },
+                "consumer": {
+                  "enum": [
+                    "card_v2_projector",
+                    "core_reservation_api",
+                    "core_runtime_preflight",
+                    "core_transition_commit",
+                    "future_evidence_verifier",
+                    "future_no_time_verifier",
+                    "future_outcome_successor"
+                  ]
+                },
+                "role": {
+                  "enum": [
+                    "authored_maximum",
+                    "authoritative_counter",
+                    "bounded_refusal",
+                    "closed_taxonomy",
+                    "derived_evidence",
+                    "source_semantics",
+                    "specified_only_consumer",
+                    "transient_capability"
+                  ]
+                }
+              }
+            },
+            {
+              "properties": {
+                "field_path": {
+                  "const": "/card/declared_max_domain_generated_audit_events"
+                },
+                "owner": {
+                  "const": "operation_core"
+                },
+                "consumer": {
+                  "const": "card_v2_projector"
+                },
+                "role": {
+                  "const": "authored_maximum"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "field_path",
+                "owner",
+                "consumer",
+                "role"
+              ],
+              "properties": {
+                "field_path": {
+                  "enum": [
+                    "/declaration/declared_max_events",
+                    "/declaration/sources",
+                    "/protocol/counted_kinds",
+                    "/protocol/excluded_kinds",
+                    "/runtime/operation_counter",
+                    "/runtime/source_counters",
+                    "/runtime/transition_reservation",
+                    "/evidence/committed_intents",
+                    "/evidence/integrity_finding",
+                    "/evidence/terminal_summary",
+                    "/card/declared_max_domain_generated_audit_events",
+                    "/no_time/domain_generated_audit_term"
+                  ]
+                },
+                "owner": {
+                  "enum": [
+                    "operation_core",
+                    "core_runtime",
+                    "card",
+                    "semantic_scenario",
+                    "variant",
+                    "scaffold",
+                    "provider",
+                    "evaluator",
+                    "no_time"
+                  ]
+                },
+                "consumer": {
+                  "enum": [
+                    "card_v2_projector",
+                    "core_reservation_api",
+                    "core_runtime_preflight",
+                    "core_transition_commit",
+                    "future_evidence_verifier",
+                    "future_no_time_verifier",
+                    "future_outcome_successor"
+                  ]
+                },
+                "role": {
+                  "enum": [
+                    "authored_maximum",
+                    "authoritative_counter",
+                    "bounded_refusal",
+                    "closed_taxonomy",
+                    "derived_evidence",
+                    "source_semantics",
+                    "specified_only_consumer",
+                    "transient_capability"
+                  ]
+                }
+              }
+            },
+            {
+              "properties": {
+                "field_path": {
+                  "const": "/no_time/domain_generated_audit_term"
+                },
+                "owner": {
+                  "const": "operation_core"
+                },
+                "consumer": {
+                  "const": "future_no_time_verifier"
+                },
+                "role": {
+                  "const": "specified_only_consumer"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "items": false
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://operatebench.org/schemas/domain-generated-audit-budget-census-v1.schema.json",
+  "title": "OperateBench Domain-Generated Audit Budget Ownership/Consumer Census v1"
+}

@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://operatebench.org/schemas/audit-integrity-successor-census-v1.schema.json",
+  "title": "OperateBench Audit Integrity Successor Census v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "schema_version",
+    "contract_id",
+    "scope",
+    "entry_count",
+    "entries"
+  ],
+  "properties": {
+    "schema": {
+      "const": "operatebench.audit_integrity_successor_census.v1"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "contract_id": {
+      "const": "operatebench.audit-integrity-successors.v1"
+    },
+    "scope": {
+      "const": "new_successor_fields_only_not_artifact9"
+    },
+    "entry_count": {
+      "const": 4
+    },
+    "entries": {
+      "const": [
+        {
+          "field_path": "/episode_outcome/status",
+          "owner": "Core runtime outcome contract",
+          "source": "future Core terminal disposition",
+          "consumer": "future successor evidence composer and replay verifier",
+          "cardinality": "exactly_one_closed_tag",
+          "nullability": "nonnull"
+        },
+        {
+          "field_path": "/execution_record/provider_dispatch_state",
+          "owner": "execution recorder contract",
+          "source": "future provider dispatch boundary",
+          "consumer": "future successor evidence verifier",
+          "cardinality": "exactly_one_enum",
+          "nullability": "nonnull"
+        },
+        {
+          "field_path": "/executed_runtime_evidence/domain_generated_audit_budget_evidence",
+          "owner": "Core runtime audit evidence",
+          "source": "future authoritative Core reservation accounting",
+          "consumer": "future successor evidence composer and verifier",
+          "cardinality": "exactly_one_complete_v1_object",
+          "nullability": "nonnull"
+        },
+        {
+          "field_path": "/executed_runtime_evidence/domain_generated_audit_budget_evidence_digest_sha256",
+          "owner": "executed evidence composer contract",
+          "source": "frozen audit evidence wrapped projection",
+          "consumer": "future successor evidence verifier",
+          "cardinality": "exactly_one_sha256",
+          "nullability": "nonnull"
+        }
+      ]
+    }
+  }
+}

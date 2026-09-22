@@ -1,0 +1,77 @@
+OperateBench
+Copyright 2026 PROSPIRE TECHNOLOGIES LTD and the OperateBench contributors
+
+This product includes software owned and licensed by PROSPIRE TECHNOLOGIES LTD,
+authored by Dmitry Khanukov in the course of his work as CTO, and developed with
+contributors to the OperateBench project.
+
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+this file except in compliance with the License. You may obtain a copy of the
+License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software distributed
+under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+CONDITIONS OF ANY KIND, either express or implied. See the License for the
+specific language governing permissions and limitations under the License.
+
+Non-code content — operation fixtures, documentation and result artifacts — is
+licensed under CC BY 4.0. Imported or executable schemas are Apache-2.0 code.
+See LICENSE-DATA and REUSE.toml for the explicit path/class map.
+
+
+Stewardship
+-----------
+
+Dwelly is the trading/project brand and initial steward of OperateBench.
+PROSPIRE TECHNOLOGIES LTD is the copyright owner and licensing principal.
+
+Stewardship is not endorsement. Specifically:
+
+  * Dwelly does not endorse, certify or validate any result produced with
+    OperateBench, by itself or by anyone else.
+  * A score, rate or vector produced by this benchmark is not a Dwelly
+    assessment of any model, product, vendor or organisation.
+  * OperateBench publishes no leaderboard and no model ranking, and neither
+    stewardship nor use of this benchmark implies one.
+  * Nothing in this project constitutes advice, certification or a guarantee of
+    fitness for any operational, commercial or regulatory purpose.
+
+
+Synthetic content
+-----------------
+
+Every operation fixture published by this project is fully synthetic. Actors,
+identifiers, amounts, dates, addresses, documents, messages, thresholds,
+policies and event plans were invented for the benchmark.
+
+The fixtures are informed by operational topology of the kind found in the
+domains they model. They transfer semantic structure and failure modes only.
+They contain no production code, customer records, contacts, addresses,
+proprietary message text, internal prices or real operational thresholds.
+
+**No fixture is Dwelly policy.** No fixture describes how Dwelly, or any other
+organisation, actually operates, and no fixture should be read as a statement of
+anyone's real workflow, threshold or approval rule.
+
+
+Historical components
+---------------------
+
+OperateBench incorporates methodology and infrastructure from BoundaryBench, the
+predecessor project, as the foundation of the OperateBench Boundary Track.
+BoundaryBench artifacts retain their original names, identifiers and digests,
+and are cited as "BoundaryBench evidence, reused by the OperateBench Boundary
+Track". OperateBench is not a rename of BoundaryBench, and no BoundaryBench run
+is evidence for the OperateBench Lifecycle Track.
+
+
+Trademarks
+----------
+
+"Dwelly" and "OperateBench" identify the trading/project brand and project.
+Nothing in the Apache License 2.0 grants trademark rights, and this
+notice grants none. Third-party names — of benchmarks, papers, organisations
+and models referenced in the documentation — are the property of their
+respective owners and are used for identification only.

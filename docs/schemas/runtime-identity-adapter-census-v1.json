@@ -1,0 +1,1147 @@
+{
+  "schema": "operatebench.runtime_identity_adapter_census.v1",
+  "schema_version": 1,
+  "registry_schema": "operatebench.runtime_identity_adapter_registry.v1",
+  "owners": [
+    "operation_core_content",
+    "semantic_scenario_content",
+    "variant_content",
+    "runtime_contract_content",
+    "scaffold_content",
+    "arm_protocol_content",
+    "provider_run_plan_content",
+    "build_provenance_content"
+  ],
+  "entries": [
+    {
+      "field_path": "/operation_card/schema",
+      "owner": "operation_core_content",
+      "source": "b1_operation_card_projector",
+      "source_paths": [
+        "examples/operatebench/maintenance_v0_1.yaml",
+        "src/operatebench/domains/lettings/maintenance/retrieval.py",
+        "src/operatebench/domains/lettings/maintenance/spec.py"
+      ],
+      "consumer": "runtime_manifest_binding",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/operation_card/schema_version",
+      "owner": "operation_core_content",
+      "source": "b1_operation_card_projector",
+      "source_paths": [
+        "examples/operatebench/maintenance_v0_1.yaml",
+        "src/operatebench/domains/lettings/maintenance/retrieval.py",
+        "src/operatebench/domains/lettings/maintenance/spec.py"
+      ],
+      "consumer": "runtime_manifest_binding",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/operation_card/id",
+      "owner": "operation_core_content",
+      "source": "b1_operation_card_projector",
+      "source_paths": [
+        "examples/operatebench/maintenance_v0_1.yaml",
+        "src/operatebench/domains/lettings/maintenance/retrieval.py",
+        "src/operatebench/domains/lettings/maintenance/spec.py"
+      ],
+      "consumer": "runtime_manifest_binding",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/operation_card/content_digest_sha256",
+      "owner": "operation_core_content",
+      "source": "b1_operation_card_projector",
+      "source_paths": [
+        "examples/operatebench/maintenance_v0_1.yaml",
+        "src/operatebench/domains/lettings/maintenance/retrieval.py",
+        "src/operatebench/domains/lettings/maintenance/spec.py"
+      ],
+      "consumer": "runtime_manifest_binding",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/operation_card/content/operation_type",
+      "owner": "operation_core_content",
+      "source": "b1_operation_card_projector",
+      "source_paths": [
+        "examples/operatebench/maintenance_v0_1.yaml",
+        "src/operatebench/domains/lettings/maintenance/retrieval.py",
+        "src/operatebench/domains/lettings/maintenance/spec.py"
+      ],
+      "consumer": "runtime_manifest_binding",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/operation_card/content/operation_version",
+      "owner": "operation_core_content",
+      "source": "b1_operation_card_projector",
+      "source_paths": [
+        "examples/operatebench/maintenance_v0_1.yaml",
+        "src/operatebench/domains/lettings/maintenance/retrieval.py",
+        "src/operatebench/domains/lettings/maintenance/spec.py"
+      ],
+      "consumer": "runtime_manifest_binding",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/operation_card/content/state_contract",
+      "owner": "operation_core_content",
+      "source": "b1_operation_card_projector",
+      "source_paths": [
+        "examples/operatebench/maintenance_v0_1.yaml",
+        "src/operatebench/domains/lettings/maintenance/retrieval.py",
+        "src/operatebench/domains/lettings/maintenance/spec.py"
+      ],
+      "consumer": "runtime_manifest_binding",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/operation_card/content/authority_contract",
+      "owner": "operation_core_content",
+      "source": "b1_operation_card_projector",
+      "source_paths": [
+        "examples/operatebench/maintenance_v0_1.yaml",
+        "src/operatebench/domains/lettings/maintenance/retrieval.py",
+        "src/operatebench/domains/lettings/maintenance/spec.py"
+      ],
+      "consumer": "runtime_manifest_binding",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/operation_card/content/policy_contract",
+      "owner": "operation_core_content",
+      "source": "b1_operation_card_projector",
+      "source_paths": [
+        "examples/operatebench/maintenance_v0_1.yaml",
+        "src/operatebench/domains/lettings/maintenance/retrieval.py",
+        "src/operatebench/domains/lettings/maintenance/spec.py"
+      ],
+      "consumer": "runtime_manifest_binding",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/operation_card/content/event_contracts",
+      "owner": "operation_core_content",
+      "source": "b1_operation_card_projector",
+      "source_paths": [
+        "examples/operatebench/maintenance_v0_1.yaml",
+        "src/operatebench/domains/lettings/maintenance/retrieval.py",
+        "src/operatebench/domains/lettings/maintenance/spec.py"
+      ],
+      "consumer": "runtime_manifest_binding",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/operation_card/content/action_contracts",
+      "owner": "operation_core_content",
+      "source": "b1_operation_card_projector",
+      "source_paths": [
+        "examples/operatebench/maintenance_v0_1.yaml",
+        "src/operatebench/domains/lettings/maintenance/retrieval.py",
+        "src/operatebench/domains/lettings/maintenance/spec.py"
+      ],
+      "consumer": "runtime_manifest_binding",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/operation_card/content/retrieval_contract",
+      "owner": "operation_core_content",
+      "source": "b1_operation_card_projector",
+      "source_paths": [
+        "examples/operatebench/maintenance_v0_1.yaml",
+        "src/operatebench/domains/lettings/maintenance/retrieval.py",
+        "src/operatebench/domains/lettings/maintenance/spec.py"
+      ],
+      "consumer": "runtime_manifest_binding",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/operation_card/content/transition_contract",
+      "owner": "operation_core_content",
+      "source": "b1_operation_card_projector",
+      "source_paths": [
+        "examples/operatebench/maintenance_v0_1.yaml",
+        "src/operatebench/domains/lettings/maintenance/retrieval.py",
+        "src/operatebench/domains/lettings/maintenance/spec.py"
+      ],
+      "consumer": "runtime_manifest_binding",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/semantic_scenario_card/schema",
+      "owner": "semantic_scenario_content",
+      "source": "b1_semantic_scenario_card_projector",
+      "source_paths": [
+        "src/operatebench/domains/lettings/maintenance/semantic_arms_v1.py"
+      ],
+      "consumer": "runtime_manifest_binding",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/semantic_scenario_card/schema_version",
+      "owner": "semantic_scenario_content",
+      "source": "b1_semantic_scenario_card_projector",
+      "source_paths": [
+        "src/operatebench/domains/lettings/maintenance/semantic_arms_v1.py"
+      ],
+      "consumer": "runtime_manifest_binding",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/semantic_scenario_card/id",
+      "owner": "semantic_scenario_content",
+      "source": "b1_semantic_scenario_card_projector",
+      "source_paths": [
+        "src/operatebench/domains/lettings/maintenance/semantic_arms_v1.py"
+      ],
+      "consumer": "runtime_manifest_binding",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/semantic_scenario_card/content_digest_sha256",
+      "owner": "semantic_scenario_content",
+      "source": "b1_semantic_scenario_card_projector",
+      "source_paths": [
+        "src/operatebench/domains/lettings/maintenance/semantic_arms_v1.py"
+      ],
+      "consumer": "runtime_manifest_binding",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/semantic_scenario_card/content/operation_core",
+      "owner": "semantic_scenario_content",
+      "source": "b1_semantic_scenario_card_projector",
+      "source_paths": [
+        "src/operatebench/domains/lettings/maintenance/semantic_arms_v1.py"
+      ],
+      "consumer": "runtime_manifest_binding",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/semantic_scenario_card/content/construct_label",
+      "owner": "semantic_scenario_content",
+      "source": "b1_semantic_scenario_card_projector",
+      "source_paths": [
+        "src/operatebench/domains/lettings/maintenance/semantic_arms_v1.py"
+      ],
+      "consumer": "runtime_manifest_binding",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/semantic_scenario_card/content/common_estimand_id",
+      "owner": "semantic_scenario_content",
+      "source": "b1_semantic_scenario_card_projector",
+      "source_paths": [
+        "src/operatebench/domains/lettings/maintenance/semantic_arms_v1.py"
+      ],
+      "consumer": "runtime_manifest_binding",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/semantic_scenario_card/content/decision_points",
+      "owner": "semantic_scenario_content",
+      "source": "b1_semantic_scenario_card_projector",
+      "source_paths": [
+        "src/operatebench/domains/lettings/maintenance/semantic_arms_v1.py"
+      ],
+      "consumer": "runtime_manifest_binding",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/semantic_scenario_card/content/causal_graph",
+      "owner": "semantic_scenario_content",
+      "source": "b1_semantic_scenario_card_projector",
+      "source_paths": [
+        "src/operatebench/domains/lettings/maintenance/semantic_arms_v1.py"
+      ],
+      "consumer": "runtime_manifest_binding",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/semantic_scenario_card/content/authored_hazards",
+      "owner": "semantic_scenario_content",
+      "source": "b1_semantic_scenario_card_projector",
+      "source_paths": [
+        "src/operatebench/domains/lettings/maintenance/semantic_arms_v1.py"
+      ],
+      "consumer": "runtime_manifest_binding",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/semantic_scenario_card/content/common_outcome_obligations",
+      "owner": "semantic_scenario_content",
+      "source": "b1_semantic_scenario_card_projector",
+      "source_paths": [
+        "src/operatebench/domains/lettings/maintenance/semantic_arms_v1.py"
+      ],
+      "consumer": "runtime_manifest_binding",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/semantic_scenario_card/content/allowed_variant_dimensions",
+      "owner": "semantic_scenario_content",
+      "source": "b1_semantic_scenario_card_projector",
+      "source_paths": [
+        "src/operatebench/domains/lettings/maintenance/semantic_arms_v1.py"
+      ],
+      "consumer": "runtime_manifest_binding",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/variant_card/schema",
+      "owner": "variant_content",
+      "source": "b1_variant_card_projector",
+      "source_paths": [
+        "src/operatebench/domains/lettings/maintenance/spec.py"
+      ],
+      "consumer": "runtime_manifest_binding",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/variant_card/schema_version",
+      "owner": "variant_content",
+      "source": "b1_variant_card_projector",
+      "source_paths": [
+        "src/operatebench/domains/lettings/maintenance/spec.py"
+      ],
+      "consumer": "runtime_manifest_binding",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/variant_card/id",
+      "owner": "variant_content",
+      "source": "b1_variant_card_projector",
+      "source_paths": [
+        "src/operatebench/domains/lettings/maintenance/spec.py"
+      ],
+      "consumer": "runtime_manifest_binding",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/variant_card/content_digest_sha256",
+      "owner": "variant_content",
+      "source": "b1_variant_card_projector",
+      "source_paths": [
+        "src/operatebench/domains/lettings/maintenance/spec.py"
+      ],
+      "consumer": "runtime_manifest_binding",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/variant_card/content/semantic_scenario",
+      "owner": "variant_content",
+      "source": "b1_variant_card_projector",
+      "source_paths": [
+        "src/operatebench/domains/lettings/maintenance/spec.py"
+      ],
+      "consumer": "runtime_manifest_binding",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/variant_card/content/variant_label",
+      "owner": "variant_content",
+      "source": "b1_variant_card_projector",
+      "source_paths": [
+        "src/operatebench/domains/lettings/maintenance/spec.py"
+      ],
+      "consumer": "runtime_manifest_binding",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/variant_card/content/starts_at",
+      "owner": "variant_content",
+      "source": "b1_variant_card_projector",
+      "source_paths": [
+        "src/operatebench/domains/lettings/maintenance/spec.py"
+      ],
+      "consumer": "runtime_manifest_binding",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/variant_card/content/expected_terminal",
+      "owner": "variant_content",
+      "source": "b1_variant_card_projector",
+      "source_paths": [
+        "src/operatebench/domains/lettings/maintenance/spec.py"
+      ],
+      "consumer": "runtime_manifest_binding",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/variant_card/content/human_checkpoint_budget",
+      "owner": "variant_content",
+      "source": "b1_variant_card_projector",
+      "source_paths": [
+        "src/operatebench/domains/lettings/maintenance/spec.py"
+      ],
+      "consumer": "runtime_manifest_binding",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/variant_card/content/required_checkpoint_types",
+      "owner": "variant_content",
+      "source": "b1_variant_card_projector",
+      "source_paths": [
+        "src/operatebench/domains/lettings/maintenance/spec.py"
+      ],
+      "consumer": "runtime_manifest_binding",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/variant_card/content/dispatch_failures",
+      "owner": "variant_content",
+      "source": "b1_variant_card_projector",
+      "source_paths": [
+        "src/operatebench/domains/lettings/maintenance/spec.py"
+      ],
+      "consumer": "runtime_manifest_binding",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/variant_card/content/expected_event_rejections",
+      "owner": "variant_content",
+      "source": "b1_variant_card_projector",
+      "source_paths": [
+        "src/operatebench/domains/lettings/maintenance/spec.py"
+      ],
+      "consumer": "runtime_manifest_binding",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/variant_card/content/actors",
+      "owner": "variant_content",
+      "source": "b1_variant_card_projector",
+      "source_paths": [
+        "src/operatebench/domains/lettings/maintenance/spec.py"
+      ],
+      "consumer": "runtime_manifest_binding",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/variant_card/content/hidden_initial_values",
+      "owner": "variant_content",
+      "source": "b1_variant_card_projector",
+      "source_paths": [
+        "src/operatebench/domains/lettings/maintenance/spec.py"
+      ],
+      "consumer": "runtime_manifest_binding",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/variant_card/content/message_fixtures",
+      "owner": "variant_content",
+      "source": "b1_variant_card_projector",
+      "source_paths": [
+        "src/operatebench/domains/lettings/maintenance/spec.py"
+      ],
+      "consumer": "runtime_manifest_binding",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/variant_card/content/events",
+      "owner": "variant_content",
+      "source": "b1_variant_card_projector",
+      "source_paths": [
+        "src/operatebench/domains/lettings/maintenance/spec.py"
+      ],
+      "consumer": "runtime_manifest_binding",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/runtime_contract/engine_version",
+      "owner": "runtime_contract_content",
+      "source": "live_runtime_declarations",
+      "source_paths": [
+        "src/operatebench/agents/model.py",
+        "src/operatebench/artifact.py",
+        "src/operatebench/core/engine.py",
+        "src/operatebench/core/protocol.py",
+        "src/operatebench/domains/lettings/maintenance/operation.py",
+        "src/operatebench/domains/lettings/maintenance/spec.py",
+        "src/operatebench/version.py"
+      ],
+      "consumer": "runtime_replay",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/runtime_contract/artifact_version",
+      "owner": "runtime_contract_content",
+      "source": "live_runtime_declarations",
+      "source_paths": [
+        "src/operatebench/agents/model.py",
+        "src/operatebench/artifact.py",
+        "src/operatebench/core/engine.py",
+        "src/operatebench/core/protocol.py",
+        "src/operatebench/domains/lettings/maintenance/operation.py",
+        "src/operatebench/domains/lettings/maintenance/spec.py",
+        "src/operatebench/version.py"
+      ],
+      "consumer": "runtime_replay",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/runtime_contract/model_protocol_version",
+      "owner": "runtime_contract_content",
+      "source": "live_runtime_declarations",
+      "source_paths": [
+        "src/operatebench/agents/model.py",
+        "src/operatebench/artifact.py",
+        "src/operatebench/core/engine.py",
+        "src/operatebench/core/protocol.py",
+        "src/operatebench/domains/lettings/maintenance/operation.py",
+        "src/operatebench/domains/lettings/maintenance/spec.py",
+        "src/operatebench/version.py"
+      ],
+      "consumer": "runtime_replay",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/runtime_contract/model_visible_fields",
+      "owner": "runtime_contract_content",
+      "source": "live_runtime_declarations",
+      "source_paths": [
+        "src/operatebench/agents/model.py",
+        "src/operatebench/artifact.py",
+        "src/operatebench/core/engine.py",
+        "src/operatebench/core/protocol.py",
+        "src/operatebench/domains/lettings/maintenance/operation.py",
+        "src/operatebench/domains/lettings/maintenance/spec.py",
+        "src/operatebench/version.py"
+      ],
+      "consumer": "runtime_replay",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/runtime_contract/outcome_tool_schema",
+      "owner": "runtime_contract_content",
+      "source": "live_runtime_declarations",
+      "source_paths": [
+        "src/operatebench/agents/model.py",
+        "src/operatebench/artifact.py",
+        "src/operatebench/core/engine.py",
+        "src/operatebench/core/protocol.py",
+        "src/operatebench/domains/lettings/maintenance/operation.py",
+        "src/operatebench/domains/lettings/maintenance/spec.py",
+        "src/operatebench/version.py"
+      ],
+      "consumer": "runtime_replay",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/runtime_contract/wake_event_types",
+      "owner": "runtime_contract_content",
+      "source": "live_runtime_declarations",
+      "source_paths": [
+        "src/operatebench/agents/model.py",
+        "src/operatebench/artifact.py",
+        "src/operatebench/core/engine.py",
+        "src/operatebench/core/protocol.py",
+        "src/operatebench/domains/lettings/maintenance/operation.py",
+        "src/operatebench/domains/lettings/maintenance/spec.py",
+        "src/operatebench/version.py"
+      ],
+      "consumer": "runtime_replay",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/runtime_contract/engine_class",
+      "owner": "runtime_contract_content",
+      "source": "live_runtime_declarations",
+      "source_paths": [
+        "src/operatebench/agents/model.py",
+        "src/operatebench/artifact.py",
+        "src/operatebench/core/engine.py",
+        "src/operatebench/core/protocol.py",
+        "src/operatebench/domains/lettings/maintenance/operation.py",
+        "src/operatebench/domains/lettings/maintenance/spec.py",
+        "src/operatebench/version.py"
+      ],
+      "consumer": "runtime_replay",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/runtime_contract/domain_class",
+      "owner": "runtime_contract_content",
+      "source": "live_runtime_declarations",
+      "source_paths": [
+        "src/operatebench/agents/model.py",
+        "src/operatebench/artifact.py",
+        "src/operatebench/core/engine.py",
+        "src/operatebench/core/protocol.py",
+        "src/operatebench/domains/lettings/maintenance/operation.py",
+        "src/operatebench/domains/lettings/maintenance/spec.py",
+        "src/operatebench/version.py"
+      ],
+      "consumer": "runtime_replay",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/scaffold/agent_id",
+      "owner": "scaffold_content",
+      "source": "selected_agent_authority",
+      "source_paths": [
+        "src/operatebench/agents/lifecycle_contract.py",
+        "src/operatebench/agents/model.py",
+        "src/operatebench/agents/openai_responses.py",
+        "src/operatebench/domains/lettings/maintenance/agents.py"
+      ],
+      "consumer": "runtime_replay",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/scaffold/agent_kind",
+      "owner": "scaffold_content",
+      "source": "selected_agent_authority",
+      "source_paths": [
+        "src/operatebench/agents/lifecycle_contract.py",
+        "src/operatebench/agents/model.py",
+        "src/operatebench/agents/openai_responses.py",
+        "src/operatebench/domains/lettings/maintenance/agents.py"
+      ],
+      "consumer": "runtime_replay",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/scaffold/registry_factory",
+      "owner": "scaffold_content",
+      "source": "selected_agent_authority",
+      "source_paths": [
+        "src/operatebench/agents/lifecycle_contract.py",
+        "src/operatebench/agents/model.py",
+        "src/operatebench/agents/openai_responses.py",
+        "src/operatebench/domains/lettings/maintenance/agents.py"
+      ],
+      "consumer": "runtime_replay",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/scaffold/supported_scenarios",
+      "owner": "scaffold_content",
+      "source": "selected_agent_authority",
+      "source_paths": [
+        "src/operatebench/agents/lifecycle_contract.py",
+        "src/operatebench/agents/model.py",
+        "src/operatebench/agents/openai_responses.py",
+        "src/operatebench/domains/lettings/maintenance/agents.py"
+      ],
+      "consumer": "runtime_replay",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/scaffold/prompt_envelope_keys",
+      "owner": "scaffold_content",
+      "source": "selected_agent_authority",
+      "source_paths": [
+        "src/operatebench/agents/lifecycle_contract.py",
+        "src/operatebench/agents/model.py",
+        "src/operatebench/agents/openai_responses.py",
+        "src/operatebench/domains/lettings/maintenance/agents.py"
+      ],
+      "consumer": "runtime_replay",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/scaffold/instructions_contract",
+      "owner": "scaffold_content",
+      "source": "selected_agent_authority",
+      "source_paths": [
+        "src/operatebench/agents/lifecycle_contract.py",
+        "src/operatebench/agents/model.py",
+        "src/operatebench/agents/openai_responses.py",
+        "src/operatebench/domains/lettings/maintenance/agents.py"
+      ],
+      "consumer": "runtime_replay",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/scaffold/tool_names",
+      "owner": "scaffold_content",
+      "source": "selected_agent_authority",
+      "source_paths": [
+        "src/operatebench/agents/lifecycle_contract.py",
+        "src/operatebench/agents/model.py",
+        "src/operatebench/agents/openai_responses.py",
+        "src/operatebench/domains/lettings/maintenance/agents.py"
+      ],
+      "consumer": "runtime_replay",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/scaffold/request_mapping",
+      "owner": "scaffold_content",
+      "source": "selected_agent_authority",
+      "source_paths": [
+        "src/operatebench/agents/lifecycle_contract.py",
+        "src/operatebench/agents/model.py",
+        "src/operatebench/agents/openai_responses.py",
+        "src/operatebench/domains/lettings/maintenance/agents.py"
+      ],
+      "consumer": "runtime_replay",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/arm_protocol/treatment_label",
+      "owner": "arm_protocol_content",
+      "source": "compiled_arm_and_lane_registry",
+      "source_paths": [
+        "src/operatebench/domains/lettings/maintenance/semantic_arms_v1.py"
+      ],
+      "consumer": "runtime_replay",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/arm_protocol/allowed_claim",
+      "owner": "arm_protocol_content",
+      "source": "compiled_arm_and_lane_registry",
+      "source_paths": [
+        "src/operatebench/domains/lettings/maintenance/semantic_arms_v1.py"
+      ],
+      "consumer": "runtime_replay",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/arm_protocol/semantic_scenario_id",
+      "owner": "arm_protocol_content",
+      "source": "compiled_arm_and_lane_registry",
+      "source_paths": [
+        "src/operatebench/domains/lettings/maintenance/semantic_arms_v1.py"
+      ],
+      "consumer": "runtime_replay",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/arm_protocol/semantic_scenario_digest_sha256",
+      "owner": "arm_protocol_content",
+      "source": "compiled_arm_and_lane_registry",
+      "source_paths": [
+        "src/operatebench/domains/lettings/maintenance/semantic_arms_v1.py"
+      ],
+      "consumer": "runtime_replay",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/arm_protocol/common_expected_vector",
+      "owner": "arm_protocol_content",
+      "source": "compiled_arm_and_lane_registry",
+      "source_paths": [
+        "src/operatebench/domains/lettings/maintenance/semantic_arms_v1.py"
+      ],
+      "consumer": "runtime_replay",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/arm_protocol/denominator",
+      "owner": "arm_protocol_content",
+      "source": "compiled_arm_and_lane_registry",
+      "source_paths": [
+        "src/operatebench/domains/lettings/maintenance/semantic_arms_v1.py"
+      ],
+      "consumer": "runtime_replay",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/arm_protocol/point_ids",
+      "owner": "arm_protocol_content",
+      "source": "compiled_arm_and_lane_registry",
+      "source_paths": [
+        "src/operatebench/domains/lettings/maintenance/semantic_arms_v1.py"
+      ],
+      "consumer": "runtime_replay",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/arm_protocol/subject_continuity",
+      "owner": "arm_protocol_content",
+      "source": "compiled_arm_and_lane_registry",
+      "source_paths": [
+        "src/operatebench/domains/lettings/maintenance/semantic_arms_v1.py"
+      ],
+      "consumer": "runtime_replay",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/arm_protocol/harness_metadata",
+      "owner": "arm_protocol_content",
+      "source": "compiled_arm_and_lane_registry",
+      "source_paths": [
+        "src/operatebench/domains/lettings/maintenance/semantic_arms_v1.py"
+      ],
+      "consumer": "runtime_replay",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/provider_run_plan/execution_mode",
+      "owner": "provider_run_plan_content",
+      "source": "execution_plan_and_ledger_audit",
+      "source_paths": [
+        "src/operatebench/agents/evidence.py",
+        "src/operatebench/agents/openai_responses.py",
+        "src/operatebench/agents/transport.py",
+        "src/operatebench/execution_bundle.py",
+        "src/operatebench/execution_ledger.py",
+        "src/operatebench/providers/openai_responses.py"
+      ],
+      "consumer": "runtime_replay",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/provider_run_plan/provider",
+      "owner": "provider_run_plan_content",
+      "source": "execution_plan_and_ledger_audit",
+      "source_paths": [
+        "src/operatebench/agents/evidence.py",
+        "src/operatebench/agents/openai_responses.py",
+        "src/operatebench/agents/transport.py",
+        "src/operatebench/execution_bundle.py",
+        "src/operatebench/execution_ledger.py",
+        "src/operatebench/providers/openai_responses.py"
+      ],
+      "consumer": "runtime_replay",
+      "nullability": "explicit_null_allowed",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/provider_run_plan/api",
+      "owner": "provider_run_plan_content",
+      "source": "execution_plan_and_ledger_audit",
+      "source_paths": [
+        "src/operatebench/agents/evidence.py",
+        "src/operatebench/agents/openai_responses.py",
+        "src/operatebench/agents/transport.py",
+        "src/operatebench/execution_bundle.py",
+        "src/operatebench/execution_ledger.py",
+        "src/operatebench/providers/openai_responses.py"
+      ],
+      "consumer": "runtime_replay",
+      "nullability": "explicit_null_allowed",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/provider_run_plan/model",
+      "owner": "provider_run_plan_content",
+      "source": "execution_plan_and_ledger_audit",
+      "source_paths": [
+        "src/operatebench/agents/evidence.py",
+        "src/operatebench/agents/openai_responses.py",
+        "src/operatebench/agents/transport.py",
+        "src/operatebench/execution_bundle.py",
+        "src/operatebench/execution_ledger.py",
+        "src/operatebench/providers/openai_responses.py"
+      ],
+      "consumer": "runtime_replay",
+      "nullability": "explicit_null_allowed",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/provider_run_plan/model_profile",
+      "owner": "provider_run_plan_content",
+      "source": "execution_plan_and_ledger_audit",
+      "source_paths": [
+        "src/operatebench/agents/evidence.py",
+        "src/operatebench/agents/openai_responses.py",
+        "src/operatebench/agents/transport.py",
+        "src/operatebench/execution_bundle.py",
+        "src/operatebench/execution_ledger.py",
+        "src/operatebench/providers/openai_responses.py"
+      ],
+      "consumer": "runtime_replay",
+      "nullability": "explicit_null_allowed",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/provider_run_plan/settings",
+      "owner": "provider_run_plan_content",
+      "source": "execution_plan_and_ledger_audit",
+      "source_paths": [
+        "src/operatebench/agents/evidence.py",
+        "src/operatebench/agents/openai_responses.py",
+        "src/operatebench/agents/transport.py",
+        "src/operatebench/execution_bundle.py",
+        "src/operatebench/execution_ledger.py",
+        "src/operatebench/providers/openai_responses.py"
+      ],
+      "consumer": "runtime_replay",
+      "nullability": "explicit_null_allowed",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/provider_run_plan/controls",
+      "owner": "provider_run_plan_content",
+      "source": "execution_plan_and_ledger_audit",
+      "source_paths": [
+        "src/operatebench/agents/evidence.py",
+        "src/operatebench/agents/openai_responses.py",
+        "src/operatebench/agents/transport.py",
+        "src/operatebench/execution_bundle.py",
+        "src/operatebench/execution_ledger.py",
+        "src/operatebench/providers/openai_responses.py"
+      ],
+      "consumer": "runtime_replay",
+      "nullability": "explicit_null_allowed",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/provider_run_plan/pricing_policy",
+      "owner": "provider_run_plan_content",
+      "source": "execution_plan_and_ledger_audit",
+      "source_paths": [
+        "src/operatebench/agents/evidence.py",
+        "src/operatebench/agents/openai_responses.py",
+        "src/operatebench/agents/transport.py",
+        "src/operatebench/execution_bundle.py",
+        "src/operatebench/execution_ledger.py",
+        "src/operatebench/providers/openai_responses.py"
+      ],
+      "consumer": "runtime_replay",
+      "nullability": "explicit_null_allowed",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/provider_run_plan/max_output_tokens",
+      "owner": "provider_run_plan_content",
+      "source": "execution_plan_and_ledger_audit",
+      "source_paths": [
+        "src/operatebench/agents/evidence.py",
+        "src/operatebench/agents/openai_responses.py",
+        "src/operatebench/agents/transport.py",
+        "src/operatebench/execution_bundle.py",
+        "src/operatebench/execution_ledger.py",
+        "src/operatebench/providers/openai_responses.py"
+      ],
+      "consumer": "runtime_replay",
+      "nullability": "explicit_null_allowed",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/provider_run_plan/retry_policy",
+      "owner": "provider_run_plan_content",
+      "source": "execution_plan_and_ledger_audit",
+      "source_paths": [
+        "src/operatebench/agents/evidence.py",
+        "src/operatebench/agents/openai_responses.py",
+        "src/operatebench/agents/transport.py",
+        "src/operatebench/execution_bundle.py",
+        "src/operatebench/execution_ledger.py",
+        "src/operatebench/providers/openai_responses.py"
+      ],
+      "consumer": "runtime_replay",
+      "nullability": "explicit_null_allowed",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/provider_run_plan/ledger_contract_version",
+      "owner": "provider_run_plan_content",
+      "source": "execution_plan_and_ledger_audit",
+      "source_paths": [
+        "src/operatebench/agents/evidence.py",
+        "src/operatebench/agents/openai_responses.py",
+        "src/operatebench/agents/transport.py",
+        "src/operatebench/execution_bundle.py",
+        "src/operatebench/execution_ledger.py",
+        "src/operatebench/providers/openai_responses.py"
+      ],
+      "consumer": "runtime_replay",
+      "nullability": "explicit_null_allowed",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/build_provenance/schema",
+      "owner": "build_provenance_content",
+      "source": "build_provenance_descriptor",
+      "source_paths": [
+        "docs/schemas/build-provenance-descriptor-v1.schema.json",
+        "docs/schemas/clean-tracked-source-tree-v1.golden.json",
+        "uv.lock"
+      ],
+      "consumer": "runtime_replay",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/build_provenance/schema_version",
+      "owner": "build_provenance_content",
+      "source": "build_provenance_descriptor",
+      "source_paths": [
+        "docs/schemas/build-provenance-descriptor-v1.schema.json",
+        "docs/schemas/clean-tracked-source-tree-v1.golden.json",
+        "uv.lock"
+      ],
+      "consumer": "runtime_replay",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/build_provenance/source_commit",
+      "owner": "build_provenance_content",
+      "source": "build_provenance_descriptor",
+      "source_paths": [
+        "docs/schemas/build-provenance-descriptor-v1.schema.json",
+        "docs/schemas/clean-tracked-source-tree-v1.golden.json",
+        "uv.lock"
+      ],
+      "consumer": "runtime_replay",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/build_provenance/source_tree_algorithm",
+      "owner": "build_provenance_content",
+      "source": "build_provenance_descriptor",
+      "source_paths": [
+        "docs/schemas/build-provenance-descriptor-v1.schema.json",
+        "docs/schemas/clean-tracked-source-tree-v1.golden.json",
+        "uv.lock"
+      ],
+      "consumer": "runtime_replay",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/build_provenance/source_tree_digest_sha256",
+      "owner": "build_provenance_content",
+      "source": "build_provenance_descriptor",
+      "source_paths": [
+        "docs/schemas/build-provenance-descriptor-v1.schema.json",
+        "docs/schemas/clean-tracked-source-tree-v1.golden.json",
+        "uv.lock"
+      ],
+      "consumer": "runtime_replay",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/build_provenance/tree_clean",
+      "owner": "build_provenance_content",
+      "source": "build_provenance_descriptor",
+      "source_paths": [
+        "docs/schemas/build-provenance-descriptor-v1.schema.json",
+        "docs/schemas/clean-tracked-source-tree-v1.golden.json",
+        "uv.lock"
+      ],
+      "consumer": "runtime_replay",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/build_provenance/uv_lock_sha256",
+      "owner": "build_provenance_content",
+      "source": "build_provenance_descriptor",
+      "source_paths": [
+        "docs/schemas/build-provenance-descriptor-v1.schema.json",
+        "docs/schemas/clean-tracked-source-tree-v1.golden.json",
+        "uv.lock"
+      ],
+      "consumer": "runtime_replay",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/build_provenance/build_mode",
+      "owner": "build_provenance_content",
+      "source": "build_provenance_descriptor",
+      "source_paths": [
+        "docs/schemas/build-provenance-descriptor-v1.schema.json",
+        "docs/schemas/clean-tracked-source-tree-v1.golden.json",
+        "uv.lock"
+      ],
+      "consumer": "runtime_replay",
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/build_provenance/distribution_artifacts",
+      "owner": "build_provenance_content",
+      "source": "build_provenance_descriptor",
+      "source_paths": [
+        "docs/schemas/build-provenance-descriptor-v1.schema.json",
+        "docs/schemas/clean-tracked-source-tree-v1.golden.json",
+        "uv.lock"
+      ],
+      "consumer": "runtime_replay",
+      "nullability": "explicit_null_allowed",
+      "cardinality": "exact"
+    },
+    {
+      "field_path": "/build_provenance/toolchain",
+      "owner": "build_provenance_content",
+      "source": "build_provenance_descriptor",
+      "source_paths": [
+        "docs/schemas/build-provenance-descriptor-v1.schema.json",
+        "docs/schemas/clean-tracked-source-tree-v1.golden.json",
+        "uv.lock"
+      ],
+      "consumer": "runtime_replay",
+      "nullability": "never",
+      "cardinality": "exact"
+    }
+  ]
+}

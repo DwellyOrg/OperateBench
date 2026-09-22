@@ -1,0 +1,33 @@
+{
+  "manifest_version": 1,
+  "card": "maintenance_authority.yaml",
+  "cube_id": "lettings_maintenance_authority_v1",
+  "note": "Semantic fingerprint of the parsed card. YAML formatting and comments are ignored. Any change here requires an explicit, reviewed artefact revision.",
+  "card_fingerprint_sha256": "969298506c7755f38e7c4bf45df770b61e09150b218b02d354f668140ecad941",
+  "variants": [
+    {
+      "variant_id": "lettings_maintenance_authority_v1::cell::S0_P0",
+      "content_digest": "277b966fd67b69946f96f74ab1f42a44dd53430301ec01d5ef326cf25ad9e0c1"
+    },
+    {
+      "variant_id": "lettings_maintenance_authority_v1::cell::S0_P1",
+      "content_digest": "004ccfdcc593e62e87be897125bfb791ce5ba2ea0c8bfa7300f8de3a41128834"
+    },
+    {
+      "variant_id": "lettings_maintenance_authority_v1::cell::S1_P0",
+      "content_digest": "90b8b024cb6e4db56f400f9f4e8e6b7675215628278e1314d2761bc65a0ccfb8"
+    },
+    {
+      "variant_id": "lettings_maintenance_authority_v1::cell::S1_P1",
+      "content_digest": "f7de64d2212d6e5090ea352356b07d1dbfefcfc9c82598c42223cd69092c8403"
+    },
+    {
+      "variant_id": "lettings_maintenance_authority_v1::probe::alarmist",
+      "content_digest": "c2ecf3eeee4fa45e890c912ca8a9a733e91b4a12c791082c17a91b22966e11bc"
+    },
+    {
+      "variant_id": "lettings_maintenance_authority_v1::probe::reassurance",
+      "content_digest": "dddb72d6313d0d3157185a303386d708944739d2df422c25428c49aed0789b34"
+    }
+  ]
+}

@@ -1,0 +1,343 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://operatebench.org/schemas/decision-tape-v1.schema.json",
+  "title": "OperateBench DecisionTapeV1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "schema_version",
+    "decisions",
+    "decisions_digest_sha256"
+  ],
+  "properties": {
+    "schema": {
+      "const": "operatebench.decision_tape.v1"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "decisions": {
+      "type": "array",
+      "maxItems": 4096,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "invocation_index",
+          "turn_index",
+          "observation_digest_sha256",
+          "outcome"
+        ],
+        "properties": {
+          "invocation_index": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "turn_index": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "observation_digest_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+          },
+          "outcome": {
+            "oneOf": [
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "kind",
+                  "action_type",
+                  "payload",
+                  "evidence_refs",
+                  "rationale"
+                ],
+                "properties": {
+                  "kind": {
+                    "const": "ACT"
+                  },
+                  "action_type": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 256
+                  },
+                  "payload": {
+                    "type": "object",
+                    "maxProperties": 4096
+                  },
+                  "evidence_refs": {
+                    "type": "array",
+                    "maxItems": 4096,
+                    "items": {
+                      "type": "string",
+                      "maxLength": 262144
+                    }
+                  },
+                  "rationale": {
+                    "type": "string",
+                    "maxLength": 262144
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "kind",
+                  "reason",
+                  "wake_on",
+                  "fallback_after_minutes"
+                ],
+                "properties": {
+                  "kind": {
+                    "const": "WAIT"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "maxLength": 262144
+                  },
+                  "wake_on": {
+                    "type": "array",
+                    "maxItems": 4096,
+                    "items": {
+                      "type": "string",
+                      "maxLength": 262144
+                    }
+                  },
+                  "fallback_after_minutes": {
+                    "oneOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "kind",
+                  "recipient_actor_id",
+                  "message_fixture_id",
+                  "correlation_id",
+                  "wait"
+                ],
+                "properties": {
+                  "kind": {
+                    "const": "ASK"
+                  },
+                  "recipient_actor_id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 256
+                  },
+                  "message_fixture_id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 256
+                  },
+                  "correlation_id": {
+                    "oneOf": [
+                      {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 256
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "wait": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "kind",
+                      "reason",
+                      "wake_on",
+                      "fallback_after_minutes"
+                    ],
+                    "properties": {
+                      "kind": {
+                        "const": "WAIT"
+                      },
+                      "reason": {
+                        "type": "string",
+                        "maxLength": 262144
+                      },
+                      "wake_on": {
+                        "type": "array",
+                        "maxItems": 4096,
+                        "items": {
+                          "type": "string",
+                          "maxLength": 262144
+                        }
+                      },
+                      "fallback_after_minutes": {
+                        "oneOf": [
+                          {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "kind",
+                  "checkpoint_id",
+                  "exception_type",
+                  "evidence_refs",
+                  "deadline_after_minutes",
+                  "rationale"
+                ],
+                "properties": {
+                  "kind": {
+                    "const": "ESCALATE"
+                  },
+                  "checkpoint_id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 256
+                  },
+                  "exception_type": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 256
+                  },
+                  "evidence_refs": {
+                    "type": "array",
+                    "maxItems": 4096,
+                    "items": {
+                      "type": "string",
+                      "maxLength": 262144
+                    }
+                  },
+                  "deadline_after_minutes": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "rationale": {
+                    "type": "string",
+                    "maxLength": 262144
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "kind",
+                  "reason",
+                  "evidence_refs"
+                ],
+                "properties": {
+                  "kind": {
+                    "const": "COMPLETE"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "maxLength": 262144
+                  },
+                  "evidence_refs": {
+                    "type": "array",
+                    "maxItems": 4096,
+                    "items": {
+                      "type": "string",
+                      "maxLength": 262144
+                    }
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "kind",
+                  "requests"
+                ],
+                "properties": {
+                  "kind": {
+                    "const": "RETRIEVE"
+                  },
+                  "requests": {
+                    "type": "array",
+                    "maxItems": 4096,
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "tool",
+                        "arguments"
+                      ],
+                      "properties": {
+                        "tool": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 256
+                        },
+                        "arguments": {
+                          "type": "object",
+                          "maxProperties": 4096
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "kind",
+                  "code"
+                ],
+                "properties": {
+                  "kind": {
+                    "const": "MALFORMED"
+                  },
+                  "code": {
+                    "enum": [
+                      "MODEL_MALFORMED_ARGUMENTS",
+                      "MODEL_MULTIPLE_TOOL_CALLS",
+                      "MODEL_NO_TOOL_CALL",
+                      "MODEL_OUTPUT_LIMIT_EXCEEDED",
+                      "MODEL_OUTPUT_TRUNCATED",
+                      "MODEL_OUTPUT_UNCLASSIFIED",
+                      "MODEL_UNKNOWN_TOOL"
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    "decisions_digest_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+    }
+  },
+  "description": "Closed canonical decision tape; strict increasing invocation/turn order and digest equality are semantic invariants."
+}

@@ -1,0 +1,1583 @@
+{
+  "schema": "operatebench.identity_field_census.v2",
+  "schema_version": 2,
+  "artifact_schema": "operatebench.b1_card_contract.v2",
+  "entries": [
+    {
+      "field_path_pattern": "/contract_resources/card-defs-v2.schema.json",
+      "owner": "card_schema_content",
+      "source_paths": [
+        "docs/schemas/card-defs-v2.schema.json"
+      ],
+      "consumers": [
+        "package_loader",
+        "card_validator"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/contract_resources/operation-card-v2.schema.json",
+      "owner": "card_schema_content",
+      "source_paths": [
+        "docs/schemas/operation-card-v2.schema.json"
+      ],
+      "consumers": [
+        "package_loader",
+        "card_validator"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/contract_resources/semantic-scenario-card-v2.schema.json",
+      "owner": "card_schema_content",
+      "source_paths": [
+        "docs/schemas/semantic-scenario-card-v2.schema.json"
+      ],
+      "consumers": [
+        "package_loader",
+        "card_validator"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/contract_resources/variant-card-v2.schema.json",
+      "owner": "card_schema_content",
+      "source_paths": [
+        "docs/schemas/variant-card-v2.schema.json"
+      ],
+      "consumers": [
+        "package_loader",
+        "card_validator"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/contract_resources/card-registry-v2.json",
+      "owner": "card_schema_content",
+      "source_paths": [
+        "docs/schemas/card-registry-v2.json"
+      ],
+      "consumers": [
+        "package_loader",
+        "card_validator"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/contract_resources/identity-field-census-v2.schema.json",
+      "owner": "card_schema_content",
+      "source_paths": [
+        "docs/schemas/identity-field-census-v2.schema.json"
+      ],
+      "consumers": [
+        "package_loader",
+        "card_validator"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/contract_resources/identity-field-census-v2.registry.json",
+      "owner": "card_schema_content",
+      "source_paths": [
+        "docs/schemas/identity-field-census-v2.registry.json"
+      ],
+      "consumers": [
+        "package_loader",
+        "card_validator"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/operation_card_v2/schema",
+      "owner": "operation_core_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/operation-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/operation_card_v2/schema_version",
+      "owner": "operation_core_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/operation-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/operation_card_v2/id",
+      "owner": "operation_core_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/operation-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/operation_card_v2/content_digest_sha256",
+      "owner": "operation_core_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/operation-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/operation_card_v2/content/operation_type",
+      "owner": "operation_core_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/operation-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/operation_card_v2/content/operation_version",
+      "owner": "operation_core_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/operation-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/operation_card_v2/content/state_contract/schema_id",
+      "owner": "operation_core_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/operation-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/operation_card_v2/content/state_contract/initial_state_schema",
+      "owner": "operation_core_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/operation-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/operation_card_v2/content/state_contract/canonical_state_projection",
+      "owner": "operation_core_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/operation-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/operation_card_v2/content/state_contract/replay_final_pointer",
+      "owner": "operation_core_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/operation-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/operation_card_v2/content/state_contract/terminal_pointer",
+      "owner": "operation_core_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/operation-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/operation_card_v2/content/authority_contract/roles/role_id",
+      "owner": "operation_core_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/operation-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/operation_card_v2/content/authority_contract/roles/authorities",
+      "owner": "operation_core_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/operation-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/operation_card_v2/content/authority_contract/event_authority/event_type",
+      "owner": "operation_core_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/operation-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/operation_card_v2/content/authority_contract/event_authority/required_authority",
+      "owner": "operation_core_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/operation-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/operation_card_v2/content/authority_contract/action_authority/action_type",
+      "owner": "operation_core_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/operation-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/operation_card_v2/content/authority_contract/action_authority/required_authority",
+      "owner": "operation_core_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/operation-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/operation_card_v2/content/policy_contract",
+      "owner": "operation_core_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/operation-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/operation_card_v2/content/event_contracts/event_type",
+      "owner": "operation_core_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/operation-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/operation_card_v2/content/event_contracts/required",
+      "owner": "operation_core_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/operation-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/operation_card_v2/content/event_contracts/optional",
+      "owner": "operation_core_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/operation-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/operation_card_v2/content/action_contracts/action_type",
+      "owner": "operation_core_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/operation-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/operation_card_v2/content/action_contracts/required",
+      "owner": "operation_core_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/operation-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/operation_card_v2/content/action_contracts/optional",
+      "owner": "operation_core_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/operation-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/operation_card_v2/content/action_contracts/evidence_refs",
+      "owner": "operation_core_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/operation-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/operation_card_v2/content/retrieval_contract/catalogue/tool_id",
+      "owner": "operation_core_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/operation-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/operation_card_v2/content/retrieval_contract/catalogue/source",
+      "owner": "operation_core_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/operation-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/operation_card_v2/content/retrieval_contract/catalogue/authority",
+      "owner": "operation_core_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/operation-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/operation_card_v2/content/retrieval_contract/catalogue/schema_id",
+      "owner": "operation_core_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/operation-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/operation_card_v2/content/retrieval_contract/catalogue/arguments",
+      "owner": "operation_core_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/operation-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/operation_card_v2/content/retrieval_contract/record_identity_algorithm",
+      "owner": "operation_core_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/operation-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/operation_card_v2/content/retrieval_contract/evidence_requirements/outcome_type",
+      "owner": "operation_core_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/operation-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/operation_card_v2/content/retrieval_contract/evidence_requirements/selector_id",
+      "owner": "operation_core_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/operation-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/operation_card_v2/content/retrieval_contract/evidence_requirements/required_tools",
+      "owner": "operation_core_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/operation-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/operation_card_v2/content/transition_contract/reducer_ids",
+      "owner": "operation_core_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/operation-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/operation_card_v2/content/transition_contract/obligation_types",
+      "owner": "operation_core_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/operation-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/operation_card_v2/content/transition_contract/terminal_kinds",
+      "owner": "operation_core_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/operation-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/operation_card_v2/content/transition_contract/common_predicate_inputs",
+      "owner": "operation_core_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/operation-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/operation_card_v2/content/transition_contract/declared_max_domain_generated_audit_events",
+      "owner": "operation_core_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/operation-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/semantic_scenario_card_v2/schema",
+      "owner": "semantic_scenario_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/semantic-scenario-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/semantic_scenario_card_v2/schema_version",
+      "owner": "semantic_scenario_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/semantic-scenario-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/semantic_scenario_card_v2/id",
+      "owner": "semantic_scenario_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/semantic-scenario-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/semantic_scenario_card_v2/content_digest_sha256",
+      "owner": "semantic_scenario_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/semantic-scenario-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/semantic_scenario_card_v2/content/operation_core/schema",
+      "owner": "semantic_scenario_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/semantic-scenario-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/semantic_scenario_card_v2/content/operation_core/id",
+      "owner": "semantic_scenario_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/semantic-scenario-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/semantic_scenario_card_v2/content/operation_core/content_digest_sha256",
+      "owner": "semantic_scenario_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/semantic-scenario-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/semantic_scenario_card_v2/content/construct_label",
+      "owner": "semantic_scenario_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/semantic-scenario-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/semantic_scenario_card_v2/content/common_estimand_id",
+      "owner": "semantic_scenario_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/semantic-scenario-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/semantic_scenario_card_v2/content/decision_points/point_id",
+      "owner": "semantic_scenario_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/semantic-scenario-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/semantic_scenario_card_v2/content/decision_points/order",
+      "owner": "semantic_scenario_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/semantic-scenario-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/semantic_scenario_card_v2/content/decision_points/reach_predicate",
+      "owner": "semantic_scenario_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/semantic-scenario-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/semantic_scenario_card_v2/content/decision_points/required_prior_point_ids",
+      "owner": "semantic_scenario_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/semantic-scenario-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/semantic_scenario_card_v2/content/decision_points/common_obligation_id",
+      "owner": "semantic_scenario_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/semantic-scenario-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/semantic_scenario_card_v2/content/decision_points/admissible_effect_classes",
+      "owner": "semantic_scenario_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/semantic-scenario-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/semantic_scenario_card_v2/content/causal_graph/nodes/node_id",
+      "owner": "semantic_scenario_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/semantic-scenario-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/semantic_scenario_card_v2/content/causal_graph/nodes/semantic_type",
+      "owner": "semantic_scenario_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/semantic-scenario-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/semantic_scenario_card_v2/content/causal_graph/edges/cause_node_id",
+      "owner": "semantic_scenario_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/semantic-scenario-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/semantic_scenario_card_v2/content/causal_graph/edges/effect_node_id",
+      "owner": "semantic_scenario_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/semantic-scenario-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/semantic_scenario_card_v2/content/causal_graph/edges/relation",
+      "owner": "semantic_scenario_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/semantic-scenario-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/semantic_scenario_card_v2/content/authored_hazards/hazard_id",
+      "owner": "semantic_scenario_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/semantic-scenario-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/semantic_scenario_card_v2/content/authored_hazards/predicate",
+      "owner": "semantic_scenario_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/semantic-scenario-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/semantic_scenario_card_v2/content/authored_hazards/expected_common_finding_code",
+      "owner": "semantic_scenario_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/semantic-scenario-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/semantic_scenario_card_v2/content/common_outcome_obligations/obligation_id",
+      "owner": "semantic_scenario_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/semantic-scenario-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/semantic_scenario_card_v2/content/common_outcome_obligations/predicate_id",
+      "owner": "semantic_scenario_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/semantic-scenario-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/semantic_scenario_card_v2/content/common_outcome_obligations/terminal_required",
+      "owner": "semantic_scenario_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/semantic-scenario-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/semantic_scenario_card_v2/content/allowed_variant_dimensions/dimension_id",
+      "owner": "semantic_scenario_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/semantic-scenario-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/semantic_scenario_card_v2/content/allowed_variant_dimensions/value_type",
+      "owner": "semantic_scenario_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/semantic-scenario-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/semantic_scenario_card_v2/content/allowed_variant_dimensions/changes_semantics",
+      "owner": "semantic_scenario_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/semantic-scenario-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/variant_card_v2/schema",
+      "owner": "variant_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/variant-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/variant_card_v2/schema_version",
+      "owner": "variant_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/variant-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/variant_card_v2/id",
+      "owner": "variant_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/variant-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/variant_card_v2/content_digest_sha256",
+      "owner": "variant_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/variant-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/variant_card_v2/content/semantic_scenario/schema",
+      "owner": "variant_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/variant-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/variant_card_v2/content/semantic_scenario/id",
+      "owner": "variant_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/variant-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/variant_card_v2/content/semantic_scenario/content_digest_sha256",
+      "owner": "variant_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/variant-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/variant_card_v2/content/variant_label",
+      "owner": "variant_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/variant-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/variant_card_v2/content/starts_at",
+      "owner": "variant_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/variant-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/variant_card_v2/content/expected_terminal",
+      "owner": "variant_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/variant-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/variant_card_v2/content/human_checkpoint_budget",
+      "owner": "variant_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/variant-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/variant_card_v2/content/required_checkpoint_types",
+      "owner": "variant_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/variant-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/variant_card_v2/content/dispatch_failures",
+      "owner": "variant_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/variant-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/variant_card_v2/content/expected_event_rejections/event_id",
+      "owner": "variant_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/variant-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/variant_card_v2/content/expected_event_rejections/code",
+      "owner": "variant_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/variant-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/variant_card_v2/content/actors/actor_id",
+      "owner": "variant_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/variant-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/variant_card_v2/content/actors/role_id",
+      "owner": "variant_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/variant-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/variant_card_v2/content/hidden_initial_values",
+      "owner": "variant_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/variant-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/variant_card_v2/content/message_fixtures/fixture_id",
+      "owner": "variant_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/variant-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/variant_card_v2/content/message_fixtures/surface_content_digest_sha256",
+      "owner": "variant_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/variant-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/variant_card_v2/content/events/event_id",
+      "owner": "variant_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/variant-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/variant_card_v2/content/events/event_type",
+      "owner": "variant_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/variant-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/variant_card_v2/content/events/actor_id",
+      "owner": "variant_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/variant-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/variant_card_v2/content/events/authored_sequence",
+      "owner": "variant_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/variant-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/variant_card_v2/content/events/at",
+      "owner": "variant_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/variant-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/variant_card_v2/content/events/trigger/kind",
+      "owner": "variant_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/variant-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/variant_card_v2/content/events/trigger/type_name",
+      "owner": "variant_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/variant-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/variant_card_v2/content/events/trigger/correlation",
+      "owner": "variant_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/variant-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/variant_card_v2/content/events/delay_minutes",
+      "owner": "variant_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/variant-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/variant_card_v2/content/events/triggers_agent",
+      "owner": "variant_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/variant-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    },
+    {
+      "field_path_pattern": "/variant_card_v2/content/events/payload",
+      "owner": "variant_content",
+      "source_paths": [
+        "src/operatebench/cards.py",
+        "docs/schemas/variant-card-v2.schema.json"
+      ],
+      "consumers": [
+        "card_loader",
+        "card_validator",
+        "identity_manifest_input"
+      ],
+      "nullability": "never",
+      "cardinality": "exact"
+    }
+  ]
+}

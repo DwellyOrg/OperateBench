@@ -1,0 +1,420 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "schema_version",
+    "contract_id",
+    "operation_core_content_digest_sha256",
+    "operation_instance_id",
+    "declared_max_events",
+    "records"
+  ],
+  "properties": {
+    "schema": {
+      "const": "operatebench.domain_generated_audit_budget_evidence.v1"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "contract_id": {
+      "const": "operatebench.domain-generated-audit-budget.v1"
+    },
+    "operation_core_content_digest_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+    },
+    "operation_instance_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255,
+      "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,254}(?![\\s\\S])"
+    },
+    "declared_max_events": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9223372036854775807
+    },
+    "records": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 100000,
+      "items": {
+        "oneOf": [
+          {
+            "$ref": "#/$defs/committedIntent"
+          },
+          {
+            "$ref": "#/$defs/integrityFinding"
+          },
+          {
+            "$ref": "#/$defs/terminalSummary"
+          }
+        ]
+      }
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://operatebench.org/schemas/domain-generated-audit-budget-evidence-v1.schema.json",
+  "title": "OperateBench Domain-Generated Audit Budget Evidence Vocabulary v1",
+  "$defs": {
+    "committedIntent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "record_type",
+        "contract_id",
+        "intent_digest_sha256",
+        "intent_id",
+        "source_id",
+        "counted_kind",
+        "transition_id",
+        "batch_ordinal",
+        "operation_committed_count"
+      ],
+      "properties": {
+        "record_type": {
+          "const": "committed_intent"
+        },
+        "contract_id": {
+          "const": "operatebench.domain-generated-audit-budget.v1"
+        },
+        "intent_digest_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+        },
+        "intent_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*(?![\\s\\S])"
+        },
+        "source_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*(?![\\s\\S])"
+        },
+        "counted_kind": {
+          "enum": [
+            "scheduled_audit_event_intent",
+            "immediate_audit_event_intent"
+          ]
+        },
+        "transition_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*(?![\\s\\S])"
+        },
+        "batch_ordinal": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 99998
+        },
+        "operation_committed_count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 99998
+        }
+      }
+    },
+    "integrityFinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "record_type",
+        "contract_id",
+        "integrity_code",
+        "refusal_class",
+        "source_id",
+        "requested_count",
+        "operation_committed_before",
+        "source_committed_before",
+        "declared_max_events",
+        "transition_id",
+        "invocation_index"
+      ],
+      "properties": {
+        "record_type": {
+          "const": "integrity_finding"
+        },
+        "contract_id": {
+          "const": "operatebench.domain-generated-audit-budget.v1"
+        },
+        "integrity_code": {
+          "enum": [
+            "DOMAIN_AUDIT_BUDGET_EXCEEDED",
+            "DOMAIN_AUDIT_CONTRACT_VIOLATION",
+            "DOMAIN_AUDIT_COUNTER_INTEGRITY"
+          ]
+        },
+        "refusal_class": {
+          "enum": [
+            "unsupported_or_wrong_contract",
+            "non_exact_type_or_boolean",
+            "negative_value",
+            "duplicate_or_unauthorized_order",
+            "source_or_aggregate_mismatch",
+            "v1_capacity_exceeded",
+            "unknown_source_or_kind",
+            "invalid_batch_or_identity",
+            "reservation_lifecycle_violation",
+            "post_finality_attempt",
+            "checked_signed_int64_arithmetic_overflow",
+            "malformed_runtime_counter",
+            "valid_reservation_above_declared_aggregate",
+            "valid_reservation_above_declared_source"
+          ]
+        },
+        "source_id": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255,
+              "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*(?![\\s\\S])"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "requested_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 99998
+        },
+        "operation_committed_before": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 99998
+        },
+        "declared_max_events": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9223372036854775807
+        },
+        "transition_id": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255,
+              "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,254}(?![\\s\\S])"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "invocation_index": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 99998
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "source_committed_before": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 99998
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "terminalSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "record_type",
+        "contract_id",
+        "declared_max_events",
+        "committed_count",
+        "result",
+        "integrity_code"
+      ],
+      "properties": {
+        "record_type": {
+          "const": "terminal_summary"
+        },
+        "contract_id": {
+          "const": "operatebench.domain-generated-audit-budget.v1"
+        },
+        "declared_max_events": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9223372036854775807
+        },
+        "committed_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 99998
+        },
+        "result": {
+          "enum": [
+            "SUCCESS",
+            "ERROR"
+          ]
+        },
+        "integrity_code": {
+          "oneOf": [
+            {
+              "enum": [
+                "DOMAIN_AUDIT_BUDGET_EXCEEDED",
+                "DOMAIN_AUDIT_CONTRACT_VIOLATION",
+                "DOMAIN_AUDIT_COUNTER_INTEGRITY"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "intentDigestProjection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract_id",
+        "operation_core_content_digest_sha256",
+        "operation_instance_id",
+        "intent_id",
+        "source_id",
+        "transition_id",
+        "batch_ordinal"
+      ],
+      "properties": {
+        "contract_id": {
+          "const": "operatebench.domain-generated-audit-budget.v1"
+        },
+        "operation_core_content_digest_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+        },
+        "operation_instance_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,254}(?![\\s\\S])"
+        },
+        "intent_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*(?![\\s\\S])"
+        },
+        "source_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*(?![\\s\\S])"
+        },
+        "transition_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*(?![\\s\\S])"
+        },
+        "batch_ordinal": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 99998
+        }
+      }
+    },
+    "evidenceDigestProjection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract_id",
+        "operation_core_content_digest_sha256",
+        "operation_instance_id",
+        "declared_max_events",
+        "records"
+      ],
+      "properties": {
+        "contract_id": {
+          "const": "operatebench.domain-generated-audit-budget.v1"
+        },
+        "operation_core_content_digest_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+        },
+        "operation_instance_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,254}(?![\\s\\S])"
+        },
+        "declared_max_events": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9223372036854775807
+        },
+        "records": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 100000,
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/committedIntent"
+              },
+              {
+                "$ref": "#/$defs/integrityFinding"
+              },
+              {
+                "$ref": "#/$defs/terminalSummary"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "intentDigestWrapper": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "content",
+        "domain"
+      ],
+      "properties": {
+        "content": {
+          "$ref": "#/$defs/intentDigestProjection"
+        },
+        "domain": {
+          "const": "operatebench.digest.domain-generated-audit-intent.v1"
+        }
+      }
+    },
+    "evidenceDigestWrapper": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "content",
+        "domain"
+      ],
+      "properties": {
+        "content": {
+          "$ref": "#/$defs/evidenceDigestProjection"
+        },
+        "domain": {
+          "const": "operatebench.digest.domain-generated-audit-budget-evidence.v1"
+        }
+      }
+    }
+  }
+}

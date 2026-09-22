@@ -1,0 +1,73 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "schema_version",
+    "contract_id",
+    "operation_core_content_digest_sha256",
+    "declared_max_events",
+    "sources"
+  ],
+  "properties": {
+    "schema": {
+      "const": "operatebench.domain_generated_audit_budget.v1"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "contract_id": {
+      "const": "operatebench.domain-generated-audit-budget.v1"
+    },
+    "operation_core_content_digest_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+    },
+    "declared_max_events": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 99998
+    },
+    "sources": {
+      "type": "array",
+      "maxItems": 4096,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "source_id",
+          "counted_kind",
+          "max_accepted_occurrences",
+          "max_events_per_transition"
+        ],
+        "properties": {
+          "source_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*(?![\\s\\S])"
+          },
+          "counted_kind": {
+            "enum": [
+              "scheduled_audit_event_intent",
+              "immediate_audit_event_intent"
+            ]
+          },
+          "max_accepted_occurrences": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 99998
+          },
+          "max_events_per_transition": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 99998
+          }
+        }
+      }
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://operatebench.org/schemas/domain-generated-audit-budget-v1.schema.json",
+  "title": "OperateBench Domain-Generated Audit Budget Declaration v1"
+}

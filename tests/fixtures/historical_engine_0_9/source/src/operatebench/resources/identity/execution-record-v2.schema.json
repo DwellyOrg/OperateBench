@@ -1,0 +1,284 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://operatebench.org/schemas/execution-record-v2.schema.json",
+  "title": "OperateBench ExecutionRecordV2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "schema_version",
+    "outcome_source",
+    "model",
+    "protocol_version",
+    "max_output_tokens",
+    "transport_calls",
+    "retry_count",
+    "attempts",
+    "excluded",
+    "exclusion_code",
+    "exclusion_detail",
+    "provider_dispatch_state"
+  ],
+  "properties": {
+    "schema": {
+      "const": "operatebench.execution_record.v2"
+    },
+    "schema_version": {
+      "const": 2
+    },
+    "outcome_source": {
+      "enum": [
+        "deterministic",
+        "model",
+        "recorded"
+      ]
+    },
+    "model": {
+      "oneOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "protocol_version": {
+      "oneOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "max_output_tokens": {
+      "oneOf": [
+        {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "transport_calls": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "retry_count": {
+      "const": 0
+    },
+    "attempts": {
+      "type": "array",
+      "maxItems": 4096,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "invocation_index",
+          "turn_index",
+          "request_digest_sha256",
+          "outcome",
+          "fault"
+        ],
+        "properties": {
+          "invocation_index": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "turn_index": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "request_digest_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+          },
+          "outcome": {
+            "enum": [
+              "decided",
+              "classified",
+              "failed"
+            ]
+          },
+          "fault": {
+            "oneOf": [
+              {
+                "enum": [
+                  "provider_transport",
+                  "provider_protocol",
+                  "provider_deadline",
+                  "provider_budget"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "excluded": {
+      "type": "boolean"
+    },
+    "exclusion_code": {
+      "oneOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "exclusion_detail": {
+      "type": "string",
+      "maxLength": 262144
+    },
+    "provider_dispatch_state": {
+      "enum": [
+        "not_applicable",
+        "not_started",
+        "started"
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "outcome_source": {
+            "enum": [
+              "deterministic",
+              "recorded"
+            ]
+          }
+        },
+        "required": [
+          "outcome_source"
+        ]
+      },
+      "then": {
+        "properties": {
+          "model": {
+            "type": "null"
+          },
+          "protocol_version": {
+            "type": "null"
+          },
+          "max_output_tokens": {
+            "type": "null"
+          },
+          "transport_calls": {
+            "const": 0
+          },
+          "attempts": {
+            "maxItems": 0
+          },
+          "provider_dispatch_state": {
+            "const": "not_applicable"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "outcome_source": {
+            "const": "model"
+          }
+        },
+        "required": [
+          "outcome_source"
+        ]
+      },
+      "then": {
+        "properties": {
+          "model": {
+            "type": "string",
+            "minLength": 1
+          },
+          "protocol_version": {
+            "type": "string",
+            "minLength": 1
+          },
+          "max_output_tokens": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "provider_dispatch_state": {
+            "enum": [
+              "not_started",
+              "started"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "provider_dispatch_state": {
+            "const": "not_started"
+          }
+        },
+        "required": [
+          "provider_dispatch_state"
+        ]
+      },
+      "then": {
+        "properties": {
+          "outcome_source": {
+            "const": "model"
+          },
+          "transport_calls": {
+            "const": 0
+          },
+          "attempts": {
+            "maxItems": 0
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "provider_dispatch_state": {
+            "const": "started"
+          }
+        },
+        "required": [
+          "provider_dispatch_state"
+        ]
+      },
+      "then": {
+        "properties": {
+          "outcome_source": {
+            "const": "model"
+          },
+          "transport_calls": {
+            "minimum": 1
+          },
+          "attempts": {
+            "minItems": 1
+          }
+        }
+      }
+    }
+  ],
+  "description": "ExecutionRecordV1 plus provider dispatch state. The exact source/provider/cardinality matrix is normative in AUDIT_INTEGRITY_OUTCOME_EVIDENCE_PROTOCOL.md."
+}

@@ -1,0 +1,220 @@
+# OperateBench CI.
+#
+# **Two kinds of network, and only one of them is used here.**
+#
+# *Bootstrap network* — checking out the repository, downloading the pinned
+# actions, downloading a CPython build and resolving the locked dependency set —
+# is required, and these jobs will not run without it. Saying this workflow runs
+# "everything offline" would be false: `actions/checkout`, `astral-sh/setup-uv`,
+# `uv python install` and `uv sync` all reach a network index.
+#
+# *Benchmark runtime network* — a provider or model call made by the code under
+# test — is not used at any point, and no step here can make one. Once the
+# dependencies are installed, every command below is provider- and
+# model-offline: the deterministic in-process adapter, the linters, the type
+# checker, the release gate and the two operation gates. Nothing invokes
+# `run-suite --adapter anthropic`, and no shipped module opens a socket to a
+# provider under any command this workflow runs.
+#
+# **No secrets.** No job declares a `secrets:` input, references `secrets.*` or
+# sets `ANTHROPIC_API_KEY`, so the provider adapter has no credential to resolve
+# even if a step tried. `permissions: contents: read` and
+# `persist-credentials: false` mean the checkout token is not left on disk for a
+# later step to reach.
+#
+# **Not hermetic, and not claimed to be.** Pinning the dependency *resolution*
+# (`uv.lock`, `UV_FROZEN=1`) is not the same as pinning what the bootstrap
+# downloads. A hermetic build is a separate change and is not attempted here.
+#
+# Third-party actions are pinned to the exact commits resolved from their
+# upstream release refs. The trailing comments retain the human-readable major
+# versions while preventing a moved tag from changing trusted CI code.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Refuse to re-resolve: `uv sync` installs exactly what uv.lock records and
+  # fails rather than quietly reaching for a newer version. This bounds what the
+  # bootstrap downloads; it does not make the bootstrap offline.
+  UV_FROZEN: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  test:
+    name: test (py${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.14"]
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5
+        with:
+          enable-cache: true
+
+      - name: Install Python ${{ matrix.python-version }}
+        run: uv python install ${{ matrix.python-version }}
+
+      # The last step in this job that needs the network. Every step after it is
+      # provider- and model-offline.
+      - name: Sync the locked environment
+        run: uv sync --frozen --all-groups --python ${{ matrix.python-version }}
+
+      - name: Ruff — lint
+        run: uv run --python ${{ matrix.python-version }} ruff check .
+
+      - name: Ruff — format check
+        run: uv run --python ${{ matrix.python-version }} ruff format --check .
+
+      # Scoped to the shipped packages and the release tooling. The test suite
+      # is not strict-clean; see the note in pyproject.toml.
+      - name: mypy — shipped packages
+        run: uv run --python ${{ matrix.python-version }} mypy src
+
+      - name: mypy — release tooling
+        run: uv run --python ${{ matrix.python-version }} mypy tools
+
+      - name: REUSE — licensing coverage
+        run: uv run --python ${{ matrix.python-version }} reuse lint
+
+      - name: Contribution ownership isolation
+        run: >-
+          uv run --python ${{ matrix.python-version }}
+          python -m tools.check_contribution_isolation
+
+      - name: pytest
+        shell: bash
+        run: |
+          if [[ "${{ matrix.python-version }}" == "3.11" ]]; then
+            uv run --python 3.11 pytest -q --cov=operatebench --cov=boundarybench --cov-branch --cov-report=term-missing
+          else
+            uv run --python 3.14 pytest -q
+          fi
+
+      # The public-release gate, run as a command as well as a test, so a
+      # failure names the file and the finding in the log rather than only in
+      # an assertion.
+      - name: Public-release checks
+        run: >-
+          uv run --python ${{ matrix.python-version }}
+          python -m tools.check_public_release
+
+      # The deterministic operation gates. Both run in process against the
+      # shipped synthetic fixture: no provider, no model, no socket.
+      # `validate` performs static schema, authority, reducer-vocabulary and
+      # identity checks; it does not execute scenarios or prove terminal
+      # reachability. `check-maintenance` executes the reference and controls,
+      # comparing every negative with the separate oracle's failure closure,
+      # required findings and must-pass dimensions.
+      - name: Validate the operation fixture
+        run: >-
+          uv run --python ${{ matrix.python-version }}
+          operatebench validate examples/operatebench/maintenance_v0_1.yaml
+
+      - name: Causal acceptance gate
+        run: >-
+          uv run --python ${{ matrix.python-version }}
+          operatebench check-maintenance
+          --spec examples/operatebench/maintenance_v0_1.yaml
+
+  secret-scan:
+    name: independent secret scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      # Independent default-rule secret scanner; no baseline or file allowlists.
+      # Download is bootstrap network, checksum-bound to the reviewed release.
+      - name: Install independent secret scanner
+        shell: bash
+        run: |
+          curl --fail --silent --show-error --location --max-time 120 \
+            https://github.com/gitleaks/gitleaks/releases/download/v8.24.3/gitleaks_8.24.3_linux_x64.tar.gz \
+            --output "$RUNNER_TEMP/gitleaks.tar.gz"
+          printf '%s  %s\n' '9991e0b2903da4c8f6122b5c3186448b927a5da4deef1fe45271c3793f4ee29c' "$RUNNER_TEMP/gitleaks.tar.gz" | sha256sum --check
+          mkdir "$RUNNER_TEMP/secret-scanner"
+          tar -xzf "$RUNNER_TEMP/gitleaks.tar.gz" -C "$RUNNER_TEMP/secret-scanner" gitleaks
+          printf '%s\n' "$RUNNER_TEMP/secret-scanner" >> "$GITHUB_PATH"
+
+      - name: Independent source secret scan
+        run: gitleaks dir --redact --no-banner .
+
+  build:
+    name: build distribution
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: test
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5
+        with:
+          enable-cache: true
+
+      - name: Install Python 3.11
+        run: uv python install 3.11
+
+      # Dependency bootstrap uses the network here. `uv build` may also fetch its
+      # isolated backend, and the later `uvx twine` step may fetch Twine because
+      # Twine is not part of the project lock. None of those is a provider/model
+      # call, and no benchmark credential is available to this job.
+      - name: Sync the locked environment
+        run: uv sync --frozen --all-groups --python 3.11
+
+      - name: Build sdist and wheel
+        run: uv build
+
+      - name: Check the built metadata
+        run: uvx twine check dist/*
+
+      - name: Audit exact distribution membership and frozen bytes
+        run: >-
+          OPERATEBENCH_DIST_DIR=$PWD/dist
+          uv run --python 3.11 pytest -q
+          tests/test_artifact8_evidence_freeze.py::test_distribution_membership_and_sdist_bytes
+
+      # Run after `uv build`, deliberately. The wheel and the sdist are built
+      # from a different selection of the tree than the tree itself, so "the
+      # tree is clean" and "the artefact is clean" are two claims — and the
+      # artefact is what a user downloads. With dist/ present, the gate's
+      # built-distribution check reads inside both archives and fails on any
+      # credential shape or private-provenance marker it finds there.
+      - name: Public-release checks, including the built distribution
+        run: uv run --python 3.11 python -m tools.check_public_release
+
+      - name: Upload the distribution as an artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: operatebench-dist
+          path: dist/
+          if-no-files-found: error
+          retention-days: 14

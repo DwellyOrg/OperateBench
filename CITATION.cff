@@ -1,0 +1,57 @@
+# Citation metadata for OperateBench.
+# Human author: Dmitry Khanukov. Copyright owner and licensing principal:
+# PROSPIRE TECHNOLOGIES LTD (company 14991567).
+#
+# `version` is the distribution version in src/operatebench/version.py.
+#
+# There is deliberately no `date-released` and no `commit` field: this tree is a
+# publication candidate that has not been released, and a CFF file that carries
+# a release date asserts a publication that did not happen. Both fields are
+# added at the moment the release is actually cut, alongside the tag.
+#
+# `license` names the code licence. Non-code fixtures and documentation are
+# CC BY 4.0; imported or executable schemas are Apache-2.0 (see LICENSE-DATA).
+cff-version: 1.2.0
+message: >-
+  If you use OperateBench, please cite it using the metadata in this file, and
+  state the operation_version, engine_version and content digests your run
+  artefact recorded (see docs/VERSIONING.md).
+title: "OperateBench"
+abstract: >-
+  OperateBench evaluates whether an agent can keep a persistent business
+  operation safe and progressing while time, actors, evidence, authoritative
+  systems and external events change independently of the agent. It is a
+  deterministic, replayable benchmark in which the execution unit is one
+  business operation spanning many agent invocations, with simulated event
+  time, first-class WAIT, actor authority and provenance, typed human
+  checkpoints, reopen and guarded finality, and an operation-level result
+  vector including Human Load. It is a technical preview: one synthetic
+  operation, deterministic agents and no published benchmark model results.
+type: software
+version: 0.1.0
+license: Apache-2.0
+repository-code: "https://github.com/DwellyOrg/OperateBench"
+url: "https://github.com/DwellyOrg/OperateBench"
+authors:
+  - family-names: "Khanukov"
+    given-names: "Dmitry"
+    email: "dmitry@dwelly.group"
+    affiliation: "PROSPIRE TECHNOLOGIES LTD"
+identifiers:
+  - type: other
+    value: "PROSPIRE TECHNOLOGIES LTD (company 14991567)"
+    description: "Copyright owner and licensing principal"
+contact:
+  - family-names: "Khanukov"
+    given-names: "Dmitry"
+    email: "dmitry@dwelly.group"
+    affiliation: "PROSPIRE TECHNOLOGIES LTD"
+keywords:
+  - agent benchmark
+  - business operations
+  - longitudinal evaluation
+  - event-driven agents
+  - deterministic replay
+  - human-in-the-loop
+  - authority and provenance
+  - synthetic fixtures

@@ -1,0 +1,22 @@
+{
+  "schema": "operatebench.identity_compatibility_registry.v1",
+  "schema_version": 1,
+  "contract": {
+    "schema": "operatebench.compatibility_contract.v1",
+    "schema_version": 1,
+    "requirement_kinds": {
+      "exact_digest": 1,
+      "closed_schema_version_range": 1,
+      "named_predicate": 1
+    },
+    "decision_predicates": {
+      "can_runtime_replay": 1,
+      "can_evaluator_regrade": 1,
+      "can_analysis_recompute": 1,
+      "can_compare": 1,
+      "can_pool": 1
+    },
+    "named_requirement_predicates": []
+  },
+  "reason_codes": []
+}

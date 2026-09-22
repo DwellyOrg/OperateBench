@@ -1,0 +1,2874 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "schema_version",
+    "protocol_id",
+    "declaration_schema",
+    "evidence_vocabulary_schema",
+    "evidence_record_capacity",
+    "v1_declared_event_capacity",
+    "counted_kinds",
+    "excluded_kinds",
+    "integrity_codes",
+    "refusal_mapping",
+    "identity_accounting",
+    "assigned_accepted_declaration_mismatch",
+    "assigned_over_capacity_defect",
+    "owners",
+    "dependency_order",
+    "runtime_status",
+    "no_time_status",
+    "maintenance_source_declaration_status",
+    "episode_outcome_successor_status",
+    "executed_evidence_successor_status",
+    "card_v2_schema_change",
+    "runtime_identity_adapter_v1_change"
+  ],
+  "properties": {
+    "schema": {
+      "const": "operatebench.domain_generated_audit_budget_registry.v1"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "protocol_id": {
+      "const": "operatebench.domain-generated-audit-budget.v1"
+    },
+    "declaration_schema": {
+      "const": "operatebench.domain_generated_audit_budget.v1"
+    },
+    "evidence_vocabulary_schema": {
+      "const": "operatebench.domain_generated_audit_budget_evidence.v1"
+    },
+    "evidence_record_capacity": {
+      "const": 100000
+    },
+    "v1_declared_event_capacity": {
+      "const": 99998
+    },
+    "runtime_status": {
+      "const": "unimplemented"
+    },
+    "no_time_status": {
+      "const": "specified_only_unauthorized"
+    },
+    "maintenance_source_declaration_status": {
+      "const": "unresolved"
+    },
+    "episode_outcome_successor_status": {
+      "const": "hard_dependency_unimplemented"
+    },
+    "executed_evidence_successor_status": {
+      "const": "hard_dependency_unimplemented"
+    },
+    "card_v2_schema_change": {
+      "const": false
+    },
+    "runtime_identity_adapter_v1_change": {
+      "const": false
+    },
+    "counted_kinds": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "prefixItems": [
+        {
+          "const": "scheduled_audit_event_intent"
+        },
+        {
+          "const": "immediate_audit_event_intent"
+        }
+      ],
+      "items": false
+    },
+    "excluded_kinds": {
+      "type": "array",
+      "minItems": 32,
+      "maxItems": 32,
+      "prefixItems": [
+        {
+          "const": "authored_absolute_event"
+        },
+        {
+          "const": "authored_conditional_event"
+        },
+        {
+          "const": "authored_conditional_activation"
+        },
+        {
+          "const": "authored_conditional_queueing"
+        },
+        {
+          "const": "authored_audit_only_delivery"
+        },
+        {
+          "const": "authored_non_triggering_delivery"
+        },
+        {
+          "const": "authored_rejected_delivery"
+        },
+        {
+          "const": "authored_post_terminal_delivery"
+        },
+        {
+          "const": "generic_business_state_record"
+        },
+        {
+          "const": "generic_evidence_record"
+        },
+        {
+          "const": "checkpoint_lifecycle"
+        },
+        {
+          "const": "obligation_lifecycle"
+        },
+        {
+          "const": "proposal_record"
+        },
+        {
+          "const": "refusal_record"
+        },
+        {
+          "const": "accepted_effect_record"
+        },
+        {
+          "const": "retrieval_record"
+        },
+        {
+          "const": "agent_record"
+        },
+        {
+          "const": "invocation_record"
+        },
+        {
+          "const": "scaffold_record"
+        },
+        {
+          "const": "provider_record"
+        },
+        {
+          "const": "execution_ledger_record"
+        },
+        {
+          "const": "side_effect_record"
+        },
+        {
+          "const": "wait_record"
+        },
+        {
+          "const": "wake_record"
+        },
+        {
+          "const": "existing_timer_lifecycle"
+        },
+        {
+          "const": "finality_cut"
+        },
+        {
+          "const": "untriggered_at_finality"
+        },
+        {
+          "const": "transition_horizon_finding"
+        },
+        {
+          "const": "budget_integrity_finding"
+        },
+        {
+          "const": "observability_finding"
+        },
+        {
+          "const": "terminal_budget_finding"
+        },
+        {
+          "const": "terminal_budget_summary"
+        }
+      ],
+      "items": false
+    },
+    "integrity_codes": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "prefixItems": [
+        {
+          "const": "DOMAIN_AUDIT_BUDGET_EXCEEDED"
+        },
+        {
+          "const": "DOMAIN_AUDIT_CONTRACT_VIOLATION"
+        },
+        {
+          "const": "DOMAIN_AUDIT_COUNTER_INTEGRITY"
+        }
+      ],
+      "items": false
+    },
+    "owners": {
+      "type": "array",
+      "minItems": 9,
+      "maxItems": 9,
+      "prefixItems": [
+        {
+          "const": "operation_core"
+        },
+        {
+          "const": "core_runtime"
+        },
+        {
+          "const": "card"
+        },
+        {
+          "const": "semantic_scenario"
+        },
+        {
+          "const": "variant"
+        },
+        {
+          "const": "scaffold"
+        },
+        {
+          "const": "provider"
+        },
+        {
+          "const": "evaluator"
+        },
+        {
+          "const": "no_time"
+        }
+      ],
+      "items": false
+    },
+    "dependency_order": {
+      "type": "array",
+      "minItems": 8,
+      "maxItems": 8,
+      "prefixItems": [
+        {
+          "const": "contract_resources_v1"
+        },
+        {
+          "const": "operation_source_declaration_and_literal_maxima"
+        },
+        {
+          "const": "core_reservation_counter_and_integrity_runtime"
+        },
+        {
+          "const": "episode_outcome_successor_with_integrity_error"
+        },
+        {
+          "const": "executed_runtime_evidence_successor"
+        },
+        {
+          "const": "runtime_identity_adapter_additive_registry"
+        },
+        {
+          "const": "evaluator_and_measurement_alignment"
+        },
+        {
+          "const": "separately_authorized_no_time_implementation"
+        }
+      ],
+      "items": false
+    },
+    "refusal_mapping": {
+      "type": "array",
+      "minItems": 14,
+      "maxItems": 14,
+      "prefixItems": [
+        {
+          "allOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "refusal_class",
+                "integrity_code",
+                "stage",
+                "source_id_rule",
+                "requested_count_rule",
+                "transition_id_rule",
+                "invocation_index_rule",
+                "pre_operation_count_rule",
+                "pre_source_count_rule",
+                "declared_max_source",
+                "finding_required",
+                "finding_integrity_code"
+              ],
+              "properties": {
+                "refusal_class": {
+                  "enum": [
+                    "unsupported_or_wrong_contract",
+                    "non_exact_type_or_boolean",
+                    "negative_value",
+                    "duplicate_or_unauthorized_order",
+                    "source_or_aggregate_mismatch",
+                    "v1_capacity_exceeded",
+                    "unknown_source_or_kind",
+                    "invalid_batch_or_identity",
+                    "reservation_lifecycle_violation",
+                    "post_finality_attempt",
+                    "checked_signed_int64_arithmetic_overflow",
+                    "malformed_runtime_counter",
+                    "valid_reservation_above_declared_aggregate",
+                    "valid_reservation_above_declared_source"
+                  ]
+                },
+                "integrity_code": {
+                  "enum": [
+                    "DOMAIN_AUDIT_BUDGET_EXCEEDED",
+                    "DOMAIN_AUDIT_CONTRACT_VIOLATION",
+                    "DOMAIN_AUDIT_COUNTER_INTEGRITY"
+                  ]
+                },
+                "stage": {
+                  "enum": [
+                    "assigned_preexecution",
+                    "assigned_transition",
+                    "pre_identity"
+                  ]
+                },
+                "source_id_rule": {
+                  "enum": [
+                    "exact_attempted_source",
+                    "exact_reservation_source",
+                    "no_evidence",
+                    "null"
+                  ]
+                },
+                "requested_count_rule": {
+                  "enum": [
+                    "no_evidence",
+                    "positive_exact_attempted_batch_size",
+                    "positive_exact_reservation_size",
+                    "zero"
+                  ]
+                },
+                "transition_id_rule": {
+                  "enum": [
+                    "exact_attempted_transition",
+                    "exact_reservation_transition",
+                    "no_evidence",
+                    "null"
+                  ]
+                },
+                "invocation_index_rule": {
+                  "enum": [
+                    "exact_current_or_null_when_not_invocation_scoped",
+                    "no_evidence",
+                    "null"
+                  ]
+                },
+                "pre_operation_count_rule": {
+                  "enum": [
+                    "exact_authoritative_committed_before",
+                    "no_evidence",
+                    "zero_untrusted_counter"
+                  ]
+                },
+                "pre_source_count_rule": {
+                  "enum": [
+                    "exact_authoritative_source_committed_before",
+                    "exact_authoritative_source_committed_before_or_null_if_unknown",
+                    "no_evidence",
+                    "null"
+                  ]
+                },
+                "declared_max_source": {
+                  "enum": [
+                    "accepted_card_value",
+                    "eligibility_candidate_only_no_evidence"
+                  ]
+                },
+                "finding_required": {
+                  "type": "boolean"
+                },
+                "finding_integrity_code": {
+                  "oneOf": [
+                    {
+                      "enum": [
+                        "DOMAIN_AUDIT_BUDGET_EXCEEDED",
+                        "DOMAIN_AUDIT_CONTRACT_VIOLATION",
+                        "DOMAIN_AUDIT_COUNTER_INTEGRITY"
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "properties": {
+                "refusal_class": {
+                  "const": "unsupported_or_wrong_contract"
+                },
+                "integrity_code": {
+                  "const": "DOMAIN_AUDIT_CONTRACT_VIOLATION"
+                },
+                "stage": {
+                  "const": "pre_identity"
+                },
+                "source_id_rule": {
+                  "const": "no_evidence"
+                },
+                "requested_count_rule": {
+                  "const": "no_evidence"
+                },
+                "transition_id_rule": {
+                  "const": "no_evidence"
+                },
+                "invocation_index_rule": {
+                  "const": "no_evidence"
+                },
+                "pre_operation_count_rule": {
+                  "const": "no_evidence"
+                },
+                "pre_source_count_rule": {
+                  "const": "no_evidence"
+                },
+                "declared_max_source": {
+                  "const": "eligibility_candidate_only_no_evidence"
+                },
+                "finding_required": {
+                  "const": false
+                },
+                "finding_integrity_code": {
+                  "const": null
+                }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "refusal_class",
+                "integrity_code",
+                "stage",
+                "source_id_rule",
+                "requested_count_rule",
+                "transition_id_rule",
+                "invocation_index_rule",
+                "pre_operation_count_rule",
+                "pre_source_count_rule",
+                "declared_max_source",
+                "finding_required",
+                "finding_integrity_code"
+              ],
+              "properties": {
+                "refusal_class": {
+                  "enum": [
+                    "unsupported_or_wrong_contract",
+                    "non_exact_type_or_boolean",
+                    "negative_value",
+                    "duplicate_or_unauthorized_order",
+                    "source_or_aggregate_mismatch",
+                    "v1_capacity_exceeded",
+                    "unknown_source_or_kind",
+                    "invalid_batch_or_identity",
+                    "reservation_lifecycle_violation",
+                    "post_finality_attempt",
+                    "checked_signed_int64_arithmetic_overflow",
+                    "malformed_runtime_counter",
+                    "valid_reservation_above_declared_aggregate",
+                    "valid_reservation_above_declared_source"
+                  ]
+                },
+                "integrity_code": {
+                  "enum": [
+                    "DOMAIN_AUDIT_BUDGET_EXCEEDED",
+                    "DOMAIN_AUDIT_CONTRACT_VIOLATION",
+                    "DOMAIN_AUDIT_COUNTER_INTEGRITY"
+                  ]
+                },
+                "stage": {
+                  "enum": [
+                    "assigned_preexecution",
+                    "assigned_transition",
+                    "pre_identity"
+                  ]
+                },
+                "source_id_rule": {
+                  "enum": [
+                    "exact_attempted_source",
+                    "exact_reservation_source",
+                    "no_evidence",
+                    "null"
+                  ]
+                },
+                "requested_count_rule": {
+                  "enum": [
+                    "no_evidence",
+                    "positive_exact_attempted_batch_size",
+                    "positive_exact_reservation_size",
+                    "zero"
+                  ]
+                },
+                "transition_id_rule": {
+                  "enum": [
+                    "exact_attempted_transition",
+                    "exact_reservation_transition",
+                    "no_evidence",
+                    "null"
+                  ]
+                },
+                "invocation_index_rule": {
+                  "enum": [
+                    "exact_current_or_null_when_not_invocation_scoped",
+                    "no_evidence",
+                    "null"
+                  ]
+                },
+                "pre_operation_count_rule": {
+                  "enum": [
+                    "exact_authoritative_committed_before",
+                    "no_evidence",
+                    "zero_untrusted_counter"
+                  ]
+                },
+                "pre_source_count_rule": {
+                  "enum": [
+                    "exact_authoritative_source_committed_before",
+                    "exact_authoritative_source_committed_before_or_null_if_unknown",
+                    "no_evidence",
+                    "null"
+                  ]
+                },
+                "declared_max_source": {
+                  "enum": [
+                    "accepted_card_value",
+                    "eligibility_candidate_only_no_evidence"
+                  ]
+                },
+                "finding_required": {
+                  "type": "boolean"
+                },
+                "finding_integrity_code": {
+                  "oneOf": [
+                    {
+                      "enum": [
+                        "DOMAIN_AUDIT_BUDGET_EXCEEDED",
+                        "DOMAIN_AUDIT_CONTRACT_VIOLATION",
+                        "DOMAIN_AUDIT_COUNTER_INTEGRITY"
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "properties": {
+                "refusal_class": {
+                  "const": "non_exact_type_or_boolean"
+                },
+                "integrity_code": {
+                  "const": "DOMAIN_AUDIT_CONTRACT_VIOLATION"
+                },
+                "stage": {
+                  "const": "pre_identity"
+                },
+                "source_id_rule": {
+                  "const": "no_evidence"
+                },
+                "requested_count_rule": {
+                  "const": "no_evidence"
+                },
+                "transition_id_rule": {
+                  "const": "no_evidence"
+                },
+                "invocation_index_rule": {
+                  "const": "no_evidence"
+                },
+                "pre_operation_count_rule": {
+                  "const": "no_evidence"
+                },
+                "pre_source_count_rule": {
+                  "const": "no_evidence"
+                },
+                "declared_max_source": {
+                  "const": "eligibility_candidate_only_no_evidence"
+                },
+                "finding_required": {
+                  "const": false
+                },
+                "finding_integrity_code": {
+                  "const": null
+                }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "refusal_class",
+                "integrity_code",
+                "stage",
+                "source_id_rule",
+                "requested_count_rule",
+                "transition_id_rule",
+                "invocation_index_rule",
+                "pre_operation_count_rule",
+                "pre_source_count_rule",
+                "declared_max_source",
+                "finding_required",
+                "finding_integrity_code"
+              ],
+              "properties": {
+                "refusal_class": {
+                  "enum": [
+                    "unsupported_or_wrong_contract",
+                    "non_exact_type_or_boolean",
+                    "negative_value",
+                    "duplicate_or_unauthorized_order",
+                    "source_or_aggregate_mismatch",
+                    "v1_capacity_exceeded",
+                    "unknown_source_or_kind",
+                    "invalid_batch_or_identity",
+                    "reservation_lifecycle_violation",
+                    "post_finality_attempt",
+                    "checked_signed_int64_arithmetic_overflow",
+                    "malformed_runtime_counter",
+                    "valid_reservation_above_declared_aggregate",
+                    "valid_reservation_above_declared_source"
+                  ]
+                },
+                "integrity_code": {
+                  "enum": [
+                    "DOMAIN_AUDIT_BUDGET_EXCEEDED",
+                    "DOMAIN_AUDIT_CONTRACT_VIOLATION",
+                    "DOMAIN_AUDIT_COUNTER_INTEGRITY"
+                  ]
+                },
+                "stage": {
+                  "enum": [
+                    "assigned_preexecution",
+                    "assigned_transition",
+                    "pre_identity"
+                  ]
+                },
+                "source_id_rule": {
+                  "enum": [
+                    "exact_attempted_source",
+                    "exact_reservation_source",
+                    "no_evidence",
+                    "null"
+                  ]
+                },
+                "requested_count_rule": {
+                  "enum": [
+                    "no_evidence",
+                    "positive_exact_attempted_batch_size",
+                    "positive_exact_reservation_size",
+                    "zero"
+                  ]
+                },
+                "transition_id_rule": {
+                  "enum": [
+                    "exact_attempted_transition",
+                    "exact_reservation_transition",
+                    "no_evidence",
+                    "null"
+                  ]
+                },
+                "invocation_index_rule": {
+                  "enum": [
+                    "exact_current_or_null_when_not_invocation_scoped",
+                    "no_evidence",
+                    "null"
+                  ]
+                },
+                "pre_operation_count_rule": {
+                  "enum": [
+                    "exact_authoritative_committed_before",
+                    "no_evidence",
+                    "zero_untrusted_counter"
+                  ]
+                },
+                "pre_source_count_rule": {
+                  "enum": [
+                    "exact_authoritative_source_committed_before",
+                    "exact_authoritative_source_committed_before_or_null_if_unknown",
+                    "no_evidence",
+                    "null"
+                  ]
+                },
+                "declared_max_source": {
+                  "enum": [
+                    "accepted_card_value",
+                    "eligibility_candidate_only_no_evidence"
+                  ]
+                },
+                "finding_required": {
+                  "type": "boolean"
+                },
+                "finding_integrity_code": {
+                  "oneOf": [
+                    {
+                      "enum": [
+                        "DOMAIN_AUDIT_BUDGET_EXCEEDED",
+                        "DOMAIN_AUDIT_CONTRACT_VIOLATION",
+                        "DOMAIN_AUDIT_COUNTER_INTEGRITY"
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "properties": {
+                "refusal_class": {
+                  "const": "negative_value"
+                },
+                "integrity_code": {
+                  "const": "DOMAIN_AUDIT_CONTRACT_VIOLATION"
+                },
+                "stage": {
+                  "const": "pre_identity"
+                },
+                "source_id_rule": {
+                  "const": "no_evidence"
+                },
+                "requested_count_rule": {
+                  "const": "no_evidence"
+                },
+                "transition_id_rule": {
+                  "const": "no_evidence"
+                },
+                "invocation_index_rule": {
+                  "const": "no_evidence"
+                },
+                "pre_operation_count_rule": {
+                  "const": "no_evidence"
+                },
+                "pre_source_count_rule": {
+                  "const": "no_evidence"
+                },
+                "declared_max_source": {
+                  "const": "eligibility_candidate_only_no_evidence"
+                },
+                "finding_required": {
+                  "const": false
+                },
+                "finding_integrity_code": {
+                  "const": null
+                }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "refusal_class",
+                "integrity_code",
+                "stage",
+                "source_id_rule",
+                "requested_count_rule",
+                "transition_id_rule",
+                "invocation_index_rule",
+                "pre_operation_count_rule",
+                "pre_source_count_rule",
+                "declared_max_source",
+                "finding_required",
+                "finding_integrity_code"
+              ],
+              "properties": {
+                "refusal_class": {
+                  "enum": [
+                    "unsupported_or_wrong_contract",
+                    "non_exact_type_or_boolean",
+                    "negative_value",
+                    "duplicate_or_unauthorized_order",
+                    "source_or_aggregate_mismatch",
+                    "v1_capacity_exceeded",
+                    "unknown_source_or_kind",
+                    "invalid_batch_or_identity",
+                    "reservation_lifecycle_violation",
+                    "post_finality_attempt",
+                    "checked_signed_int64_arithmetic_overflow",
+                    "malformed_runtime_counter",
+                    "valid_reservation_above_declared_aggregate",
+                    "valid_reservation_above_declared_source"
+                  ]
+                },
+                "integrity_code": {
+                  "enum": [
+                    "DOMAIN_AUDIT_BUDGET_EXCEEDED",
+                    "DOMAIN_AUDIT_CONTRACT_VIOLATION",
+                    "DOMAIN_AUDIT_COUNTER_INTEGRITY"
+                  ]
+                },
+                "stage": {
+                  "enum": [
+                    "assigned_preexecution",
+                    "assigned_transition",
+                    "pre_identity"
+                  ]
+                },
+                "source_id_rule": {
+                  "enum": [
+                    "exact_attempted_source",
+                    "exact_reservation_source",
+                    "no_evidence",
+                    "null"
+                  ]
+                },
+                "requested_count_rule": {
+                  "enum": [
+                    "no_evidence",
+                    "positive_exact_attempted_batch_size",
+                    "positive_exact_reservation_size",
+                    "zero"
+                  ]
+                },
+                "transition_id_rule": {
+                  "enum": [
+                    "exact_attempted_transition",
+                    "exact_reservation_transition",
+                    "no_evidence",
+                    "null"
+                  ]
+                },
+                "invocation_index_rule": {
+                  "enum": [
+                    "exact_current_or_null_when_not_invocation_scoped",
+                    "no_evidence",
+                    "null"
+                  ]
+                },
+                "pre_operation_count_rule": {
+                  "enum": [
+                    "exact_authoritative_committed_before",
+                    "no_evidence",
+                    "zero_untrusted_counter"
+                  ]
+                },
+                "pre_source_count_rule": {
+                  "enum": [
+                    "exact_authoritative_source_committed_before",
+                    "exact_authoritative_source_committed_before_or_null_if_unknown",
+                    "no_evidence",
+                    "null"
+                  ]
+                },
+                "declared_max_source": {
+                  "enum": [
+                    "accepted_card_value",
+                    "eligibility_candidate_only_no_evidence"
+                  ]
+                },
+                "finding_required": {
+                  "type": "boolean"
+                },
+                "finding_integrity_code": {
+                  "oneOf": [
+                    {
+                      "enum": [
+                        "DOMAIN_AUDIT_BUDGET_EXCEEDED",
+                        "DOMAIN_AUDIT_CONTRACT_VIOLATION",
+                        "DOMAIN_AUDIT_COUNTER_INTEGRITY"
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "properties": {
+                "refusal_class": {
+                  "const": "duplicate_or_unauthorized_order"
+                },
+                "integrity_code": {
+                  "const": "DOMAIN_AUDIT_CONTRACT_VIOLATION"
+                },
+                "stage": {
+                  "const": "pre_identity"
+                },
+                "source_id_rule": {
+                  "const": "no_evidence"
+                },
+                "requested_count_rule": {
+                  "const": "no_evidence"
+                },
+                "transition_id_rule": {
+                  "const": "no_evidence"
+                },
+                "invocation_index_rule": {
+                  "const": "no_evidence"
+                },
+                "pre_operation_count_rule": {
+                  "const": "no_evidence"
+                },
+                "pre_source_count_rule": {
+                  "const": "no_evidence"
+                },
+                "declared_max_source": {
+                  "const": "eligibility_candidate_only_no_evidence"
+                },
+                "finding_required": {
+                  "const": false
+                },
+                "finding_integrity_code": {
+                  "const": null
+                }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "refusal_class",
+                "integrity_code",
+                "stage",
+                "source_id_rule",
+                "requested_count_rule",
+                "transition_id_rule",
+                "invocation_index_rule",
+                "pre_operation_count_rule",
+                "pre_source_count_rule",
+                "declared_max_source",
+                "finding_required",
+                "finding_integrity_code"
+              ],
+              "properties": {
+                "refusal_class": {
+                  "enum": [
+                    "unsupported_or_wrong_contract",
+                    "non_exact_type_or_boolean",
+                    "negative_value",
+                    "duplicate_or_unauthorized_order",
+                    "source_or_aggregate_mismatch",
+                    "v1_capacity_exceeded",
+                    "unknown_source_or_kind",
+                    "invalid_batch_or_identity",
+                    "reservation_lifecycle_violation",
+                    "post_finality_attempt",
+                    "checked_signed_int64_arithmetic_overflow",
+                    "malformed_runtime_counter",
+                    "valid_reservation_above_declared_aggregate",
+                    "valid_reservation_above_declared_source"
+                  ]
+                },
+                "integrity_code": {
+                  "enum": [
+                    "DOMAIN_AUDIT_BUDGET_EXCEEDED",
+                    "DOMAIN_AUDIT_CONTRACT_VIOLATION",
+                    "DOMAIN_AUDIT_COUNTER_INTEGRITY"
+                  ]
+                },
+                "stage": {
+                  "enum": [
+                    "assigned_preexecution",
+                    "assigned_transition",
+                    "pre_identity"
+                  ]
+                },
+                "source_id_rule": {
+                  "enum": [
+                    "exact_attempted_source",
+                    "exact_reservation_source",
+                    "no_evidence",
+                    "null"
+                  ]
+                },
+                "requested_count_rule": {
+                  "enum": [
+                    "no_evidence",
+                    "positive_exact_attempted_batch_size",
+                    "positive_exact_reservation_size",
+                    "zero"
+                  ]
+                },
+                "transition_id_rule": {
+                  "enum": [
+                    "exact_attempted_transition",
+                    "exact_reservation_transition",
+                    "no_evidence",
+                    "null"
+                  ]
+                },
+                "invocation_index_rule": {
+                  "enum": [
+                    "exact_current_or_null_when_not_invocation_scoped",
+                    "no_evidence",
+                    "null"
+                  ]
+                },
+                "pre_operation_count_rule": {
+                  "enum": [
+                    "exact_authoritative_committed_before",
+                    "no_evidence",
+                    "zero_untrusted_counter"
+                  ]
+                },
+                "pre_source_count_rule": {
+                  "enum": [
+                    "exact_authoritative_source_committed_before",
+                    "exact_authoritative_source_committed_before_or_null_if_unknown",
+                    "no_evidence",
+                    "null"
+                  ]
+                },
+                "declared_max_source": {
+                  "enum": [
+                    "accepted_card_value",
+                    "eligibility_candidate_only_no_evidence"
+                  ]
+                },
+                "finding_required": {
+                  "type": "boolean"
+                },
+                "finding_integrity_code": {
+                  "oneOf": [
+                    {
+                      "enum": [
+                        "DOMAIN_AUDIT_BUDGET_EXCEEDED",
+                        "DOMAIN_AUDIT_CONTRACT_VIOLATION",
+                        "DOMAIN_AUDIT_COUNTER_INTEGRITY"
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "properties": {
+                "refusal_class": {
+                  "const": "source_or_aggregate_mismatch"
+                },
+                "integrity_code": {
+                  "const": "DOMAIN_AUDIT_CONTRACT_VIOLATION"
+                },
+                "stage": {
+                  "const": "pre_identity"
+                },
+                "source_id_rule": {
+                  "const": "no_evidence"
+                },
+                "requested_count_rule": {
+                  "const": "no_evidence"
+                },
+                "transition_id_rule": {
+                  "const": "no_evidence"
+                },
+                "invocation_index_rule": {
+                  "const": "no_evidence"
+                },
+                "pre_operation_count_rule": {
+                  "const": "no_evidence"
+                },
+                "pre_source_count_rule": {
+                  "const": "no_evidence"
+                },
+                "declared_max_source": {
+                  "const": "eligibility_candidate_only_no_evidence"
+                },
+                "finding_required": {
+                  "const": false
+                },
+                "finding_integrity_code": {
+                  "const": null
+                }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "refusal_class",
+                "integrity_code",
+                "stage",
+                "source_id_rule",
+                "requested_count_rule",
+                "transition_id_rule",
+                "invocation_index_rule",
+                "pre_operation_count_rule",
+                "pre_source_count_rule",
+                "declared_max_source",
+                "finding_required",
+                "finding_integrity_code"
+              ],
+              "properties": {
+                "refusal_class": {
+                  "enum": [
+                    "unsupported_or_wrong_contract",
+                    "non_exact_type_or_boolean",
+                    "negative_value",
+                    "duplicate_or_unauthorized_order",
+                    "source_or_aggregate_mismatch",
+                    "v1_capacity_exceeded",
+                    "unknown_source_or_kind",
+                    "invalid_batch_or_identity",
+                    "reservation_lifecycle_violation",
+                    "post_finality_attempt",
+                    "checked_signed_int64_arithmetic_overflow",
+                    "malformed_runtime_counter",
+                    "valid_reservation_above_declared_aggregate",
+                    "valid_reservation_above_declared_source"
+                  ]
+                },
+                "integrity_code": {
+                  "enum": [
+                    "DOMAIN_AUDIT_BUDGET_EXCEEDED",
+                    "DOMAIN_AUDIT_CONTRACT_VIOLATION",
+                    "DOMAIN_AUDIT_COUNTER_INTEGRITY"
+                  ]
+                },
+                "stage": {
+                  "enum": [
+                    "assigned_preexecution",
+                    "assigned_transition",
+                    "pre_identity"
+                  ]
+                },
+                "source_id_rule": {
+                  "enum": [
+                    "exact_attempted_source",
+                    "exact_reservation_source",
+                    "no_evidence",
+                    "null"
+                  ]
+                },
+                "requested_count_rule": {
+                  "enum": [
+                    "no_evidence",
+                    "positive_exact_attempted_batch_size",
+                    "positive_exact_reservation_size",
+                    "zero"
+                  ]
+                },
+                "transition_id_rule": {
+                  "enum": [
+                    "exact_attempted_transition",
+                    "exact_reservation_transition",
+                    "no_evidence",
+                    "null"
+                  ]
+                },
+                "invocation_index_rule": {
+                  "enum": [
+                    "exact_current_or_null_when_not_invocation_scoped",
+                    "no_evidence",
+                    "null"
+                  ]
+                },
+                "pre_operation_count_rule": {
+                  "enum": [
+                    "exact_authoritative_committed_before",
+                    "no_evidence",
+                    "zero_untrusted_counter"
+                  ]
+                },
+                "pre_source_count_rule": {
+                  "enum": [
+                    "exact_authoritative_source_committed_before",
+                    "exact_authoritative_source_committed_before_or_null_if_unknown",
+                    "no_evidence",
+                    "null"
+                  ]
+                },
+                "declared_max_source": {
+                  "enum": [
+                    "accepted_card_value",
+                    "eligibility_candidate_only_no_evidence"
+                  ]
+                },
+                "finding_required": {
+                  "type": "boolean"
+                },
+                "finding_integrity_code": {
+                  "oneOf": [
+                    {
+                      "enum": [
+                        "DOMAIN_AUDIT_BUDGET_EXCEEDED",
+                        "DOMAIN_AUDIT_CONTRACT_VIOLATION",
+                        "DOMAIN_AUDIT_COUNTER_INTEGRITY"
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "properties": {
+                "refusal_class": {
+                  "const": "v1_capacity_exceeded"
+                },
+                "integrity_code": {
+                  "const": "DOMAIN_AUDIT_CONTRACT_VIOLATION"
+                },
+                "stage": {
+                  "const": "pre_identity"
+                },
+                "source_id_rule": {
+                  "const": "no_evidence"
+                },
+                "requested_count_rule": {
+                  "const": "no_evidence"
+                },
+                "transition_id_rule": {
+                  "const": "no_evidence"
+                },
+                "invocation_index_rule": {
+                  "const": "no_evidence"
+                },
+                "pre_operation_count_rule": {
+                  "const": "no_evidence"
+                },
+                "pre_source_count_rule": {
+                  "const": "no_evidence"
+                },
+                "declared_max_source": {
+                  "const": "eligibility_candidate_only_no_evidence"
+                },
+                "finding_required": {
+                  "const": false
+                },
+                "finding_integrity_code": {
+                  "const": null
+                }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "refusal_class",
+                "integrity_code",
+                "stage",
+                "source_id_rule",
+                "requested_count_rule",
+                "transition_id_rule",
+                "invocation_index_rule",
+                "pre_operation_count_rule",
+                "pre_source_count_rule",
+                "declared_max_source",
+                "finding_required",
+                "finding_integrity_code"
+              ],
+              "properties": {
+                "refusal_class": {
+                  "enum": [
+                    "unsupported_or_wrong_contract",
+                    "non_exact_type_or_boolean",
+                    "negative_value",
+                    "duplicate_or_unauthorized_order",
+                    "source_or_aggregate_mismatch",
+                    "v1_capacity_exceeded",
+                    "unknown_source_or_kind",
+                    "invalid_batch_or_identity",
+                    "reservation_lifecycle_violation",
+                    "post_finality_attempt",
+                    "checked_signed_int64_arithmetic_overflow",
+                    "malformed_runtime_counter",
+                    "valid_reservation_above_declared_aggregate",
+                    "valid_reservation_above_declared_source"
+                  ]
+                },
+                "integrity_code": {
+                  "enum": [
+                    "DOMAIN_AUDIT_BUDGET_EXCEEDED",
+                    "DOMAIN_AUDIT_CONTRACT_VIOLATION",
+                    "DOMAIN_AUDIT_COUNTER_INTEGRITY"
+                  ]
+                },
+                "stage": {
+                  "enum": [
+                    "assigned_preexecution",
+                    "assigned_transition",
+                    "pre_identity"
+                  ]
+                },
+                "source_id_rule": {
+                  "enum": [
+                    "exact_attempted_source",
+                    "exact_reservation_source",
+                    "no_evidence",
+                    "null"
+                  ]
+                },
+                "requested_count_rule": {
+                  "enum": [
+                    "no_evidence",
+                    "positive_exact_attempted_batch_size",
+                    "positive_exact_reservation_size",
+                    "zero"
+                  ]
+                },
+                "transition_id_rule": {
+                  "enum": [
+                    "exact_attempted_transition",
+                    "exact_reservation_transition",
+                    "no_evidence",
+                    "null"
+                  ]
+                },
+                "invocation_index_rule": {
+                  "enum": [
+                    "exact_current_or_null_when_not_invocation_scoped",
+                    "no_evidence",
+                    "null"
+                  ]
+                },
+                "pre_operation_count_rule": {
+                  "enum": [
+                    "exact_authoritative_committed_before",
+                    "no_evidence",
+                    "zero_untrusted_counter"
+                  ]
+                },
+                "pre_source_count_rule": {
+                  "enum": [
+                    "exact_authoritative_source_committed_before",
+                    "exact_authoritative_source_committed_before_or_null_if_unknown",
+                    "no_evidence",
+                    "null"
+                  ]
+                },
+                "declared_max_source": {
+                  "enum": [
+                    "accepted_card_value",
+                    "eligibility_candidate_only_no_evidence"
+                  ]
+                },
+                "finding_required": {
+                  "type": "boolean"
+                },
+                "finding_integrity_code": {
+                  "oneOf": [
+                    {
+                      "enum": [
+                        "DOMAIN_AUDIT_BUDGET_EXCEEDED",
+                        "DOMAIN_AUDIT_CONTRACT_VIOLATION",
+                        "DOMAIN_AUDIT_COUNTER_INTEGRITY"
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "properties": {
+                "refusal_class": {
+                  "const": "unknown_source_or_kind"
+                },
+                "integrity_code": {
+                  "const": "DOMAIN_AUDIT_CONTRACT_VIOLATION"
+                },
+                "stage": {
+                  "const": "assigned_transition"
+                },
+                "source_id_rule": {
+                  "const": "exact_attempted_source"
+                },
+                "requested_count_rule": {
+                  "const": "positive_exact_attempted_batch_size"
+                },
+                "transition_id_rule": {
+                  "const": "exact_attempted_transition"
+                },
+                "invocation_index_rule": {
+                  "const": "exact_current_or_null_when_not_invocation_scoped"
+                },
+                "pre_operation_count_rule": {
+                  "const": "exact_authoritative_committed_before"
+                },
+                "pre_source_count_rule": {
+                  "const": "exact_authoritative_source_committed_before_or_null_if_unknown"
+                },
+                "declared_max_source": {
+                  "const": "accepted_card_value"
+                },
+                "finding_required": {
+                  "const": true
+                },
+                "finding_integrity_code": {
+                  "const": "DOMAIN_AUDIT_CONTRACT_VIOLATION"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "refusal_class",
+                "integrity_code",
+                "stage",
+                "source_id_rule",
+                "requested_count_rule",
+                "transition_id_rule",
+                "invocation_index_rule",
+                "pre_operation_count_rule",
+                "pre_source_count_rule",
+                "declared_max_source",
+                "finding_required",
+                "finding_integrity_code"
+              ],
+              "properties": {
+                "refusal_class": {
+                  "enum": [
+                    "unsupported_or_wrong_contract",
+                    "non_exact_type_or_boolean",
+                    "negative_value",
+                    "duplicate_or_unauthorized_order",
+                    "source_or_aggregate_mismatch",
+                    "v1_capacity_exceeded",
+                    "unknown_source_or_kind",
+                    "invalid_batch_or_identity",
+                    "reservation_lifecycle_violation",
+                    "post_finality_attempt",
+                    "checked_signed_int64_arithmetic_overflow",
+                    "malformed_runtime_counter",
+                    "valid_reservation_above_declared_aggregate",
+                    "valid_reservation_above_declared_source"
+                  ]
+                },
+                "integrity_code": {
+                  "enum": [
+                    "DOMAIN_AUDIT_BUDGET_EXCEEDED",
+                    "DOMAIN_AUDIT_CONTRACT_VIOLATION",
+                    "DOMAIN_AUDIT_COUNTER_INTEGRITY"
+                  ]
+                },
+                "stage": {
+                  "enum": [
+                    "assigned_preexecution",
+                    "assigned_transition",
+                    "pre_identity"
+                  ]
+                },
+                "source_id_rule": {
+                  "enum": [
+                    "exact_attempted_source",
+                    "exact_reservation_source",
+                    "no_evidence",
+                    "null"
+                  ]
+                },
+                "requested_count_rule": {
+                  "enum": [
+                    "no_evidence",
+                    "positive_exact_attempted_batch_size",
+                    "positive_exact_reservation_size",
+                    "zero"
+                  ]
+                },
+                "transition_id_rule": {
+                  "enum": [
+                    "exact_attempted_transition",
+                    "exact_reservation_transition",
+                    "no_evidence",
+                    "null"
+                  ]
+                },
+                "invocation_index_rule": {
+                  "enum": [
+                    "exact_current_or_null_when_not_invocation_scoped",
+                    "no_evidence",
+                    "null"
+                  ]
+                },
+                "pre_operation_count_rule": {
+                  "enum": [
+                    "exact_authoritative_committed_before",
+                    "no_evidence",
+                    "zero_untrusted_counter"
+                  ]
+                },
+                "pre_source_count_rule": {
+                  "enum": [
+                    "exact_authoritative_source_committed_before",
+                    "exact_authoritative_source_committed_before_or_null_if_unknown",
+                    "no_evidence",
+                    "null"
+                  ]
+                },
+                "declared_max_source": {
+                  "enum": [
+                    "accepted_card_value",
+                    "eligibility_candidate_only_no_evidence"
+                  ]
+                },
+                "finding_required": {
+                  "type": "boolean"
+                },
+                "finding_integrity_code": {
+                  "oneOf": [
+                    {
+                      "enum": [
+                        "DOMAIN_AUDIT_BUDGET_EXCEEDED",
+                        "DOMAIN_AUDIT_CONTRACT_VIOLATION",
+                        "DOMAIN_AUDIT_COUNTER_INTEGRITY"
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "properties": {
+                "refusal_class": {
+                  "const": "invalid_batch_or_identity"
+                },
+                "integrity_code": {
+                  "const": "DOMAIN_AUDIT_CONTRACT_VIOLATION"
+                },
+                "stage": {
+                  "const": "assigned_transition"
+                },
+                "source_id_rule": {
+                  "const": "exact_attempted_source"
+                },
+                "requested_count_rule": {
+                  "const": "zero"
+                },
+                "transition_id_rule": {
+                  "const": "exact_attempted_transition"
+                },
+                "invocation_index_rule": {
+                  "const": "exact_current_or_null_when_not_invocation_scoped"
+                },
+                "pre_operation_count_rule": {
+                  "const": "exact_authoritative_committed_before"
+                },
+                "pre_source_count_rule": {
+                  "const": "exact_authoritative_source_committed_before"
+                },
+                "declared_max_source": {
+                  "const": "accepted_card_value"
+                },
+                "finding_required": {
+                  "const": true
+                },
+                "finding_integrity_code": {
+                  "const": "DOMAIN_AUDIT_CONTRACT_VIOLATION"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "refusal_class",
+                "integrity_code",
+                "stage",
+                "source_id_rule",
+                "requested_count_rule",
+                "transition_id_rule",
+                "invocation_index_rule",
+                "pre_operation_count_rule",
+                "pre_source_count_rule",
+                "declared_max_source",
+                "finding_required",
+                "finding_integrity_code"
+              ],
+              "properties": {
+                "refusal_class": {
+                  "enum": [
+                    "unsupported_or_wrong_contract",
+                    "non_exact_type_or_boolean",
+                    "negative_value",
+                    "duplicate_or_unauthorized_order",
+                    "source_or_aggregate_mismatch",
+                    "v1_capacity_exceeded",
+                    "unknown_source_or_kind",
+                    "invalid_batch_or_identity",
+                    "reservation_lifecycle_violation",
+                    "post_finality_attempt",
+                    "checked_signed_int64_arithmetic_overflow",
+                    "malformed_runtime_counter",
+                    "valid_reservation_above_declared_aggregate",
+                    "valid_reservation_above_declared_source"
+                  ]
+                },
+                "integrity_code": {
+                  "enum": [
+                    "DOMAIN_AUDIT_BUDGET_EXCEEDED",
+                    "DOMAIN_AUDIT_CONTRACT_VIOLATION",
+                    "DOMAIN_AUDIT_COUNTER_INTEGRITY"
+                  ]
+                },
+                "stage": {
+                  "enum": [
+                    "assigned_preexecution",
+                    "assigned_transition",
+                    "pre_identity"
+                  ]
+                },
+                "source_id_rule": {
+                  "enum": [
+                    "exact_attempted_source",
+                    "exact_reservation_source",
+                    "no_evidence",
+                    "null"
+                  ]
+                },
+                "requested_count_rule": {
+                  "enum": [
+                    "no_evidence",
+                    "positive_exact_attempted_batch_size",
+                    "positive_exact_reservation_size",
+                    "zero"
+                  ]
+                },
+                "transition_id_rule": {
+                  "enum": [
+                    "exact_attempted_transition",
+                    "exact_reservation_transition",
+                    "no_evidence",
+                    "null"
+                  ]
+                },
+                "invocation_index_rule": {
+                  "enum": [
+                    "exact_current_or_null_when_not_invocation_scoped",
+                    "no_evidence",
+                    "null"
+                  ]
+                },
+                "pre_operation_count_rule": {
+                  "enum": [
+                    "exact_authoritative_committed_before",
+                    "no_evidence",
+                    "zero_untrusted_counter"
+                  ]
+                },
+                "pre_source_count_rule": {
+                  "enum": [
+                    "exact_authoritative_source_committed_before",
+                    "exact_authoritative_source_committed_before_or_null_if_unknown",
+                    "no_evidence",
+                    "null"
+                  ]
+                },
+                "declared_max_source": {
+                  "enum": [
+                    "accepted_card_value",
+                    "eligibility_candidate_only_no_evidence"
+                  ]
+                },
+                "finding_required": {
+                  "type": "boolean"
+                },
+                "finding_integrity_code": {
+                  "oneOf": [
+                    {
+                      "enum": [
+                        "DOMAIN_AUDIT_BUDGET_EXCEEDED",
+                        "DOMAIN_AUDIT_CONTRACT_VIOLATION",
+                        "DOMAIN_AUDIT_COUNTER_INTEGRITY"
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "properties": {
+                "refusal_class": {
+                  "const": "reservation_lifecycle_violation"
+                },
+                "integrity_code": {
+                  "const": "DOMAIN_AUDIT_CONTRACT_VIOLATION"
+                },
+                "stage": {
+                  "const": "assigned_transition"
+                },
+                "source_id_rule": {
+                  "const": "exact_reservation_source"
+                },
+                "requested_count_rule": {
+                  "const": "positive_exact_reservation_size"
+                },
+                "transition_id_rule": {
+                  "const": "exact_reservation_transition"
+                },
+                "invocation_index_rule": {
+                  "const": "exact_current_or_null_when_not_invocation_scoped"
+                },
+                "pre_operation_count_rule": {
+                  "const": "exact_authoritative_committed_before"
+                },
+                "pre_source_count_rule": {
+                  "const": "exact_authoritative_source_committed_before"
+                },
+                "declared_max_source": {
+                  "const": "accepted_card_value"
+                },
+                "finding_required": {
+                  "const": true
+                },
+                "finding_integrity_code": {
+                  "const": "DOMAIN_AUDIT_CONTRACT_VIOLATION"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "refusal_class",
+                "integrity_code",
+                "stage",
+                "source_id_rule",
+                "requested_count_rule",
+                "transition_id_rule",
+                "invocation_index_rule",
+                "pre_operation_count_rule",
+                "pre_source_count_rule",
+                "declared_max_source",
+                "finding_required",
+                "finding_integrity_code"
+              ],
+              "properties": {
+                "refusal_class": {
+                  "enum": [
+                    "unsupported_or_wrong_contract",
+                    "non_exact_type_or_boolean",
+                    "negative_value",
+                    "duplicate_or_unauthorized_order",
+                    "source_or_aggregate_mismatch",
+                    "v1_capacity_exceeded",
+                    "unknown_source_or_kind",
+                    "invalid_batch_or_identity",
+                    "reservation_lifecycle_violation",
+                    "post_finality_attempt",
+                    "checked_signed_int64_arithmetic_overflow",
+                    "malformed_runtime_counter",
+                    "valid_reservation_above_declared_aggregate",
+                    "valid_reservation_above_declared_source"
+                  ]
+                },
+                "integrity_code": {
+                  "enum": [
+                    "DOMAIN_AUDIT_BUDGET_EXCEEDED",
+                    "DOMAIN_AUDIT_CONTRACT_VIOLATION",
+                    "DOMAIN_AUDIT_COUNTER_INTEGRITY"
+                  ]
+                },
+                "stage": {
+                  "enum": [
+                    "assigned_preexecution",
+                    "assigned_transition",
+                    "pre_identity"
+                  ]
+                },
+                "source_id_rule": {
+                  "enum": [
+                    "exact_attempted_source",
+                    "exact_reservation_source",
+                    "no_evidence",
+                    "null"
+                  ]
+                },
+                "requested_count_rule": {
+                  "enum": [
+                    "no_evidence",
+                    "positive_exact_attempted_batch_size",
+                    "positive_exact_reservation_size",
+                    "zero"
+                  ]
+                },
+                "transition_id_rule": {
+                  "enum": [
+                    "exact_attempted_transition",
+                    "exact_reservation_transition",
+                    "no_evidence",
+                    "null"
+                  ]
+                },
+                "invocation_index_rule": {
+                  "enum": [
+                    "exact_current_or_null_when_not_invocation_scoped",
+                    "no_evidence",
+                    "null"
+                  ]
+                },
+                "pre_operation_count_rule": {
+                  "enum": [
+                    "exact_authoritative_committed_before",
+                    "no_evidence",
+                    "zero_untrusted_counter"
+                  ]
+                },
+                "pre_source_count_rule": {
+                  "enum": [
+                    "exact_authoritative_source_committed_before",
+                    "exact_authoritative_source_committed_before_or_null_if_unknown",
+                    "no_evidence",
+                    "null"
+                  ]
+                },
+                "declared_max_source": {
+                  "enum": [
+                    "accepted_card_value",
+                    "eligibility_candidate_only_no_evidence"
+                  ]
+                },
+                "finding_required": {
+                  "type": "boolean"
+                },
+                "finding_integrity_code": {
+                  "oneOf": [
+                    {
+                      "enum": [
+                        "DOMAIN_AUDIT_BUDGET_EXCEEDED",
+                        "DOMAIN_AUDIT_CONTRACT_VIOLATION",
+                        "DOMAIN_AUDIT_COUNTER_INTEGRITY"
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "properties": {
+                "refusal_class": {
+                  "const": "post_finality_attempt"
+                },
+                "integrity_code": {
+                  "const": "DOMAIN_AUDIT_CONTRACT_VIOLATION"
+                },
+                "stage": {
+                  "const": "assigned_preexecution"
+                },
+                "source_id_rule": {
+                  "const": "null"
+                },
+                "requested_count_rule": {
+                  "const": "zero"
+                },
+                "transition_id_rule": {
+                  "const": "null"
+                },
+                "invocation_index_rule": {
+                  "const": "null"
+                },
+                "pre_operation_count_rule": {
+                  "const": "exact_authoritative_committed_before"
+                },
+                "pre_source_count_rule": {
+                  "const": "null"
+                },
+                "declared_max_source": {
+                  "const": "accepted_card_value"
+                },
+                "finding_required": {
+                  "const": true
+                },
+                "finding_integrity_code": {
+                  "const": "DOMAIN_AUDIT_CONTRACT_VIOLATION"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "refusal_class",
+                "integrity_code",
+                "stage",
+                "source_id_rule",
+                "requested_count_rule",
+                "transition_id_rule",
+                "invocation_index_rule",
+                "pre_operation_count_rule",
+                "pre_source_count_rule",
+                "declared_max_source",
+                "finding_required",
+                "finding_integrity_code"
+              ],
+              "properties": {
+                "refusal_class": {
+                  "enum": [
+                    "unsupported_or_wrong_contract",
+                    "non_exact_type_or_boolean",
+                    "negative_value",
+                    "duplicate_or_unauthorized_order",
+                    "source_or_aggregate_mismatch",
+                    "v1_capacity_exceeded",
+                    "unknown_source_or_kind",
+                    "invalid_batch_or_identity",
+                    "reservation_lifecycle_violation",
+                    "post_finality_attempt",
+                    "checked_signed_int64_arithmetic_overflow",
+                    "malformed_runtime_counter",
+                    "valid_reservation_above_declared_aggregate",
+                    "valid_reservation_above_declared_source"
+                  ]
+                },
+                "integrity_code": {
+                  "enum": [
+                    "DOMAIN_AUDIT_BUDGET_EXCEEDED",
+                    "DOMAIN_AUDIT_CONTRACT_VIOLATION",
+                    "DOMAIN_AUDIT_COUNTER_INTEGRITY"
+                  ]
+                },
+                "stage": {
+                  "enum": [
+                    "assigned_preexecution",
+                    "assigned_transition",
+                    "pre_identity"
+                  ]
+                },
+                "source_id_rule": {
+                  "enum": [
+                    "exact_attempted_source",
+                    "exact_reservation_source",
+                    "no_evidence",
+                    "null"
+                  ]
+                },
+                "requested_count_rule": {
+                  "enum": [
+                    "no_evidence",
+                    "positive_exact_attempted_batch_size",
+                    "positive_exact_reservation_size",
+                    "zero"
+                  ]
+                },
+                "transition_id_rule": {
+                  "enum": [
+                    "exact_attempted_transition",
+                    "exact_reservation_transition",
+                    "no_evidence",
+                    "null"
+                  ]
+                },
+                "invocation_index_rule": {
+                  "enum": [
+                    "exact_current_or_null_when_not_invocation_scoped",
+                    "no_evidence",
+                    "null"
+                  ]
+                },
+                "pre_operation_count_rule": {
+                  "enum": [
+                    "exact_authoritative_committed_before",
+                    "no_evidence",
+                    "zero_untrusted_counter"
+                  ]
+                },
+                "pre_source_count_rule": {
+                  "enum": [
+                    "exact_authoritative_source_committed_before",
+                    "exact_authoritative_source_committed_before_or_null_if_unknown",
+                    "no_evidence",
+                    "null"
+                  ]
+                },
+                "declared_max_source": {
+                  "enum": [
+                    "accepted_card_value",
+                    "eligibility_candidate_only_no_evidence"
+                  ]
+                },
+                "finding_required": {
+                  "type": "boolean"
+                },
+                "finding_integrity_code": {
+                  "oneOf": [
+                    {
+                      "enum": [
+                        "DOMAIN_AUDIT_BUDGET_EXCEEDED",
+                        "DOMAIN_AUDIT_CONTRACT_VIOLATION",
+                        "DOMAIN_AUDIT_COUNTER_INTEGRITY"
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "properties": {
+                "refusal_class": {
+                  "const": "checked_signed_int64_arithmetic_overflow"
+                },
+                "integrity_code": {
+                  "const": "DOMAIN_AUDIT_COUNTER_INTEGRITY"
+                },
+                "stage": {
+                  "const": "assigned_transition"
+                },
+                "source_id_rule": {
+                  "const": "exact_attempted_source"
+                },
+                "requested_count_rule": {
+                  "const": "positive_exact_attempted_batch_size"
+                },
+                "transition_id_rule": {
+                  "const": "exact_attempted_transition"
+                },
+                "invocation_index_rule": {
+                  "const": "exact_current_or_null_when_not_invocation_scoped"
+                },
+                "pre_operation_count_rule": {
+                  "const": "exact_authoritative_committed_before"
+                },
+                "pre_source_count_rule": {
+                  "const": "exact_authoritative_source_committed_before"
+                },
+                "declared_max_source": {
+                  "const": "accepted_card_value"
+                },
+                "finding_required": {
+                  "const": true
+                },
+                "finding_integrity_code": {
+                  "const": "DOMAIN_AUDIT_COUNTER_INTEGRITY"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "refusal_class",
+                "integrity_code",
+                "stage",
+                "source_id_rule",
+                "requested_count_rule",
+                "transition_id_rule",
+                "invocation_index_rule",
+                "pre_operation_count_rule",
+                "pre_source_count_rule",
+                "declared_max_source",
+                "finding_required",
+                "finding_integrity_code"
+              ],
+              "properties": {
+                "refusal_class": {
+                  "enum": [
+                    "unsupported_or_wrong_contract",
+                    "non_exact_type_or_boolean",
+                    "negative_value",
+                    "duplicate_or_unauthorized_order",
+                    "source_or_aggregate_mismatch",
+                    "v1_capacity_exceeded",
+                    "unknown_source_or_kind",
+                    "invalid_batch_or_identity",
+                    "reservation_lifecycle_violation",
+                    "post_finality_attempt",
+                    "checked_signed_int64_arithmetic_overflow",
+                    "malformed_runtime_counter",
+                    "valid_reservation_above_declared_aggregate",
+                    "valid_reservation_above_declared_source"
+                  ]
+                },
+                "integrity_code": {
+                  "enum": [
+                    "DOMAIN_AUDIT_BUDGET_EXCEEDED",
+                    "DOMAIN_AUDIT_CONTRACT_VIOLATION",
+                    "DOMAIN_AUDIT_COUNTER_INTEGRITY"
+                  ]
+                },
+                "stage": {
+                  "enum": [
+                    "assigned_preexecution",
+                    "assigned_transition",
+                    "pre_identity"
+                  ]
+                },
+                "source_id_rule": {
+                  "enum": [
+                    "exact_attempted_source",
+                    "exact_reservation_source",
+                    "no_evidence",
+                    "null"
+                  ]
+                },
+                "requested_count_rule": {
+                  "enum": [
+                    "no_evidence",
+                    "positive_exact_attempted_batch_size",
+                    "positive_exact_reservation_size",
+                    "zero"
+                  ]
+                },
+                "transition_id_rule": {
+                  "enum": [
+                    "exact_attempted_transition",
+                    "exact_reservation_transition",
+                    "no_evidence",
+                    "null"
+                  ]
+                },
+                "invocation_index_rule": {
+                  "enum": [
+                    "exact_current_or_null_when_not_invocation_scoped",
+                    "no_evidence",
+                    "null"
+                  ]
+                },
+                "pre_operation_count_rule": {
+                  "enum": [
+                    "exact_authoritative_committed_before",
+                    "no_evidence",
+                    "zero_untrusted_counter"
+                  ]
+                },
+                "pre_source_count_rule": {
+                  "enum": [
+                    "exact_authoritative_source_committed_before",
+                    "exact_authoritative_source_committed_before_or_null_if_unknown",
+                    "no_evidence",
+                    "null"
+                  ]
+                },
+                "declared_max_source": {
+                  "enum": [
+                    "accepted_card_value",
+                    "eligibility_candidate_only_no_evidence"
+                  ]
+                },
+                "finding_required": {
+                  "type": "boolean"
+                },
+                "finding_integrity_code": {
+                  "oneOf": [
+                    {
+                      "enum": [
+                        "DOMAIN_AUDIT_BUDGET_EXCEEDED",
+                        "DOMAIN_AUDIT_CONTRACT_VIOLATION",
+                        "DOMAIN_AUDIT_COUNTER_INTEGRITY"
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "properties": {
+                "refusal_class": {
+                  "const": "malformed_runtime_counter"
+                },
+                "integrity_code": {
+                  "const": "DOMAIN_AUDIT_COUNTER_INTEGRITY"
+                },
+                "stage": {
+                  "const": "assigned_preexecution"
+                },
+                "source_id_rule": {
+                  "const": "null"
+                },
+                "requested_count_rule": {
+                  "const": "zero"
+                },
+                "transition_id_rule": {
+                  "const": "null"
+                },
+                "invocation_index_rule": {
+                  "const": "null"
+                },
+                "pre_operation_count_rule": {
+                  "const": "zero_untrusted_counter"
+                },
+                "pre_source_count_rule": {
+                  "const": "null"
+                },
+                "declared_max_source": {
+                  "const": "accepted_card_value"
+                },
+                "finding_required": {
+                  "const": true
+                },
+                "finding_integrity_code": {
+                  "const": "DOMAIN_AUDIT_COUNTER_INTEGRITY"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "refusal_class",
+                "integrity_code",
+                "stage",
+                "source_id_rule",
+                "requested_count_rule",
+                "transition_id_rule",
+                "invocation_index_rule",
+                "pre_operation_count_rule",
+                "pre_source_count_rule",
+                "declared_max_source",
+                "finding_required",
+                "finding_integrity_code"
+              ],
+              "properties": {
+                "refusal_class": {
+                  "enum": [
+                    "unsupported_or_wrong_contract",
+                    "non_exact_type_or_boolean",
+                    "negative_value",
+                    "duplicate_or_unauthorized_order",
+                    "source_or_aggregate_mismatch",
+                    "v1_capacity_exceeded",
+                    "unknown_source_or_kind",
+                    "invalid_batch_or_identity",
+                    "reservation_lifecycle_violation",
+                    "post_finality_attempt",
+                    "checked_signed_int64_arithmetic_overflow",
+                    "malformed_runtime_counter",
+                    "valid_reservation_above_declared_aggregate",
+                    "valid_reservation_above_declared_source"
+                  ]
+                },
+                "integrity_code": {
+                  "enum": [
+                    "DOMAIN_AUDIT_BUDGET_EXCEEDED",
+                    "DOMAIN_AUDIT_CONTRACT_VIOLATION",
+                    "DOMAIN_AUDIT_COUNTER_INTEGRITY"
+                  ]
+                },
+                "stage": {
+                  "enum": [
+                    "assigned_preexecution",
+                    "assigned_transition",
+                    "pre_identity"
+                  ]
+                },
+                "source_id_rule": {
+                  "enum": [
+                    "exact_attempted_source",
+                    "exact_reservation_source",
+                    "no_evidence",
+                    "null"
+                  ]
+                },
+                "requested_count_rule": {
+                  "enum": [
+                    "no_evidence",
+                    "positive_exact_attempted_batch_size",
+                    "positive_exact_reservation_size",
+                    "zero"
+                  ]
+                },
+                "transition_id_rule": {
+                  "enum": [
+                    "exact_attempted_transition",
+                    "exact_reservation_transition",
+                    "no_evidence",
+                    "null"
+                  ]
+                },
+                "invocation_index_rule": {
+                  "enum": [
+                    "exact_current_or_null_when_not_invocation_scoped",
+                    "no_evidence",
+                    "null"
+                  ]
+                },
+                "pre_operation_count_rule": {
+                  "enum": [
+                    "exact_authoritative_committed_before",
+                    "no_evidence",
+                    "zero_untrusted_counter"
+                  ]
+                },
+                "pre_source_count_rule": {
+                  "enum": [
+                    "exact_authoritative_source_committed_before",
+                    "exact_authoritative_source_committed_before_or_null_if_unknown",
+                    "no_evidence",
+                    "null"
+                  ]
+                },
+                "declared_max_source": {
+                  "enum": [
+                    "accepted_card_value",
+                    "eligibility_candidate_only_no_evidence"
+                  ]
+                },
+                "finding_required": {
+                  "type": "boolean"
+                },
+                "finding_integrity_code": {
+                  "oneOf": [
+                    {
+                      "enum": [
+                        "DOMAIN_AUDIT_BUDGET_EXCEEDED",
+                        "DOMAIN_AUDIT_CONTRACT_VIOLATION",
+                        "DOMAIN_AUDIT_COUNTER_INTEGRITY"
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "properties": {
+                "refusal_class": {
+                  "const": "valid_reservation_above_declared_aggregate"
+                },
+                "integrity_code": {
+                  "const": "DOMAIN_AUDIT_BUDGET_EXCEEDED"
+                },
+                "stage": {
+                  "const": "assigned_transition"
+                },
+                "source_id_rule": {
+                  "const": "exact_attempted_source"
+                },
+                "requested_count_rule": {
+                  "const": "positive_exact_attempted_batch_size"
+                },
+                "transition_id_rule": {
+                  "const": "exact_attempted_transition"
+                },
+                "invocation_index_rule": {
+                  "const": "exact_current_or_null_when_not_invocation_scoped"
+                },
+                "pre_operation_count_rule": {
+                  "const": "exact_authoritative_committed_before"
+                },
+                "pre_source_count_rule": {
+                  "const": "exact_authoritative_source_committed_before"
+                },
+                "declared_max_source": {
+                  "const": "accepted_card_value"
+                },
+                "finding_required": {
+                  "const": true
+                },
+                "finding_integrity_code": {
+                  "const": "DOMAIN_AUDIT_BUDGET_EXCEEDED"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "refusal_class",
+                "integrity_code",
+                "stage",
+                "source_id_rule",
+                "requested_count_rule",
+                "transition_id_rule",
+                "invocation_index_rule",
+                "pre_operation_count_rule",
+                "pre_source_count_rule",
+                "declared_max_source",
+                "finding_required",
+                "finding_integrity_code"
+              ],
+              "properties": {
+                "refusal_class": {
+                  "enum": [
+                    "unsupported_or_wrong_contract",
+                    "non_exact_type_or_boolean",
+                    "negative_value",
+                    "duplicate_or_unauthorized_order",
+                    "source_or_aggregate_mismatch",
+                    "v1_capacity_exceeded",
+                    "unknown_source_or_kind",
+                    "invalid_batch_or_identity",
+                    "reservation_lifecycle_violation",
+                    "post_finality_attempt",
+                    "checked_signed_int64_arithmetic_overflow",
+                    "malformed_runtime_counter",
+                    "valid_reservation_above_declared_aggregate",
+                    "valid_reservation_above_declared_source"
+                  ]
+                },
+                "integrity_code": {
+                  "enum": [
+                    "DOMAIN_AUDIT_BUDGET_EXCEEDED",
+                    "DOMAIN_AUDIT_CONTRACT_VIOLATION",
+                    "DOMAIN_AUDIT_COUNTER_INTEGRITY"
+                  ]
+                },
+                "stage": {
+                  "enum": [
+                    "assigned_preexecution",
+                    "assigned_transition",
+                    "pre_identity"
+                  ]
+                },
+                "source_id_rule": {
+                  "enum": [
+                    "exact_attempted_source",
+                    "exact_reservation_source",
+                    "no_evidence",
+                    "null"
+                  ]
+                },
+                "requested_count_rule": {
+                  "enum": [
+                    "no_evidence",
+                    "positive_exact_attempted_batch_size",
+                    "positive_exact_reservation_size",
+                    "zero"
+                  ]
+                },
+                "transition_id_rule": {
+                  "enum": [
+                    "exact_attempted_transition",
+                    "exact_reservation_transition",
+                    "no_evidence",
+                    "null"
+                  ]
+                },
+                "invocation_index_rule": {
+                  "enum": [
+                    "exact_current_or_null_when_not_invocation_scoped",
+                    "no_evidence",
+                    "null"
+                  ]
+                },
+                "pre_operation_count_rule": {
+                  "enum": [
+                    "exact_authoritative_committed_before",
+                    "no_evidence",
+                    "zero_untrusted_counter"
+                  ]
+                },
+                "pre_source_count_rule": {
+                  "enum": [
+                    "exact_authoritative_source_committed_before",
+                    "exact_authoritative_source_committed_before_or_null_if_unknown",
+                    "no_evidence",
+                    "null"
+                  ]
+                },
+                "declared_max_source": {
+                  "enum": [
+                    "accepted_card_value",
+                    "eligibility_candidate_only_no_evidence"
+                  ]
+                },
+                "finding_required": {
+                  "type": "boolean"
+                },
+                "finding_integrity_code": {
+                  "oneOf": [
+                    {
+                      "enum": [
+                        "DOMAIN_AUDIT_BUDGET_EXCEEDED",
+                        "DOMAIN_AUDIT_CONTRACT_VIOLATION",
+                        "DOMAIN_AUDIT_COUNTER_INTEGRITY"
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "properties": {
+                "refusal_class": {
+                  "const": "valid_reservation_above_declared_source"
+                },
+                "integrity_code": {
+                  "const": "DOMAIN_AUDIT_BUDGET_EXCEEDED"
+                },
+                "stage": {
+                  "const": "assigned_transition"
+                },
+                "source_id_rule": {
+                  "const": "exact_attempted_source"
+                },
+                "requested_count_rule": {
+                  "const": "positive_exact_attempted_batch_size"
+                },
+                "transition_id_rule": {
+                  "const": "exact_attempted_transition"
+                },
+                "invocation_index_rule": {
+                  "const": "exact_current_or_null_when_not_invocation_scoped"
+                },
+                "pre_operation_count_rule": {
+                  "const": "exact_authoritative_committed_before"
+                },
+                "pre_source_count_rule": {
+                  "const": "exact_authoritative_source_committed_before"
+                },
+                "declared_max_source": {
+                  "const": "accepted_card_value"
+                },
+                "finding_required": {
+                  "const": true
+                },
+                "finding_integrity_code": {
+                  "const": "DOMAIN_AUDIT_BUDGET_EXCEEDED"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "items": false
+    },
+    "identity_accounting": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "prefixItems": [
+        {
+          "allOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "identity_state",
+                "primary_result",
+                "finding_required",
+                "terminal_summary_required",
+                "denominator_claim",
+                "disposition"
+              ],
+              "properties": {
+                "identity_state": {
+                  "enum": [
+                    "before_identity",
+                    "assigned"
+                  ]
+                },
+                "primary_result": {
+                  "oneOf": [
+                    {
+                      "const": "ERROR"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "finding_required": {
+                  "type": "boolean"
+                },
+                "terminal_summary_required": {
+                  "type": "boolean"
+                },
+                "denominator_claim": {
+                  "type": "boolean"
+                },
+                "disposition": {
+                  "enum": [
+                    "configuration_refusal",
+                    "integrity_refusal"
+                  ]
+                }
+              }
+            },
+            {
+              "properties": {
+                "identity_state": {
+                  "const": "before_identity"
+                },
+                "primary_result": {
+                  "const": null
+                },
+                "finding_required": {
+                  "const": false
+                },
+                "terminal_summary_required": {
+                  "const": false
+                },
+                "denominator_claim": {
+                  "const": false
+                },
+                "disposition": {
+                  "const": "configuration_refusal"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "identity_state",
+                "primary_result",
+                "finding_required",
+                "terminal_summary_required",
+                "denominator_claim",
+                "disposition"
+              ],
+              "properties": {
+                "identity_state": {
+                  "enum": [
+                    "before_identity",
+                    "assigned"
+                  ]
+                },
+                "primary_result": {
+                  "oneOf": [
+                    {
+                      "const": "ERROR"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "finding_required": {
+                  "type": "boolean"
+                },
+                "terminal_summary_required": {
+                  "type": "boolean"
+                },
+                "denominator_claim": {
+                  "type": "boolean"
+                },
+                "disposition": {
+                  "enum": [
+                    "configuration_refusal",
+                    "integrity_refusal"
+                  ]
+                }
+              }
+            },
+            {
+              "properties": {
+                "identity_state": {
+                  "const": "assigned"
+                },
+                "primary_result": {
+                  "const": "ERROR"
+                },
+                "finding_required": {
+                  "const": true
+                },
+                "terminal_summary_required": {
+                  "const": true
+                },
+                "denominator_claim": {
+                  "const": true
+                },
+                "disposition": {
+                  "const": "integrity_refusal"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "items": false
+    },
+    "assigned_accepted_declaration_mismatch": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "stage",
+        "refusal_class",
+        "integrity_code",
+        "source_id",
+        "requested_count",
+        "transition_id",
+        "invocation_index",
+        "operation_committed_before",
+        "source_committed_before",
+        "declared_max_source",
+        "committed_intents",
+        "finding_count",
+        "summary_count",
+        "summary_result"
+      ],
+      "properties": {
+        "stage": {
+          "const": "assigned_preexecution"
+        },
+        "refusal_class": {
+          "const": "source_or_aggregate_mismatch"
+        },
+        "integrity_code": {
+          "const": "DOMAIN_AUDIT_CONTRACT_VIOLATION"
+        },
+        "source_id": {
+          "type": "null"
+        },
+        "requested_count": {
+          "const": 0
+        },
+        "transition_id": {
+          "type": "null"
+        },
+        "invocation_index": {
+          "type": "null"
+        },
+        "operation_committed_before": {
+          "const": 0
+        },
+        "source_committed_before": {
+          "type": "null"
+        },
+        "declared_max_source": {
+          "const": "accepted_card_value"
+        },
+        "committed_intents": {
+          "const": 0
+        },
+        "finding_count": {
+          "const": 1
+        },
+        "summary_count": {
+          "const": 1
+        },
+        "summary_result": {
+          "const": "ERROR"
+        }
+      }
+    },
+    "assigned_over_capacity_defect": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "stage",
+        "refusal_class",
+        "integrity_code",
+        "source_id",
+        "requested_count",
+        "transition_id",
+        "invocation_index",
+        "operation_committed_before",
+        "source_committed_before",
+        "declared_max_source",
+        "committed_intents",
+        "finding_count",
+        "summary_count",
+        "summary_result"
+      ],
+      "properties": {
+        "stage": {
+          "const": "assigned_preexecution"
+        },
+        "refusal_class": {
+          "const": "v1_capacity_exceeded"
+        },
+        "integrity_code": {
+          "const": "DOMAIN_AUDIT_CONTRACT_VIOLATION"
+        },
+        "source_id": {
+          "type": "null"
+        },
+        "requested_count": {
+          "const": 0
+        },
+        "transition_id": {
+          "type": "null"
+        },
+        "invocation_index": {
+          "type": "null"
+        },
+        "operation_committed_before": {
+          "const": 0
+        },
+        "source_committed_before": {
+          "type": "null"
+        },
+        "declared_max_source": {
+          "const": "accepted_card_value"
+        },
+        "committed_intents": {
+          "const": 0
+        },
+        "finding_count": {
+          "const": 1
+        },
+        "summary_count": {
+          "const": 1
+        },
+        "summary_result": {
+          "const": "ERROR"
+        }
+      }
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://operatebench.org/schemas/domain-generated-audit-budget-registry-v1.schema.json",
+  "title": "OperateBench Domain-Generated Audit Budget Registry v1"
+}

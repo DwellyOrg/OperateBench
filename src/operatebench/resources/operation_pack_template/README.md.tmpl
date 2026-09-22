@@ -1,0 +1,32 @@
+<!-- SPDX-FileCopyrightText: the contributor -->
+<!-- SPDX-License-Identifier: CC-BY-4.0 -->
+
+# {{PACK_ID}} operation-pack scaffold
+
+This directory is an **unregistered incubator scaffold**, not an executable or
+official benchmark case. It was generated without importing or running any of
+its code.
+
+Before registration:
+
+1. Replace every `TODO` with fully synthetic semantics. Never copy production
+   records, messages, policies, thresholds, identifiers, prompts, or code.
+2. Implement a strict pack-owned spec loader. There is no universal OperateBench
+   workflow DSL.
+3. Implement every `OperationDomain` method, deterministic reference agent and
+   targeted negative agents.
+4. Have an independent reviewer author the negative-control oracle. Do not
+   generate it from the agents or evaluator.
+5. Implement pack-owned run serialization and replay. SDK v2 does not make
+   Artifact 8 generic.
+6. Keep the partner PR wholly within its owner-namespaced package, tests,
+   fixture and documentation. Do not edit `operatebench/sdk/builtins.py`.
+7. Make `test_pack.py` pass, then ask a maintainer for a separate static
+   registration admission change.
+
+Registration means the development commands can dispatch to the pack. It does
+not make the pack sealed, confirmatory, leaderboard-eligible, or model evidence.
+See the repository's
+[Partner Contribution Kit](https://github.com/DwellyOrg/OperateBench/blob/main/docs/PARTNER_CONTRIBUTION_KIT.md),
+[operation contribution guide](https://github.com/DwellyOrg/OperateBench/blob/main/docs/CONTRIBUTING_OPERATIONS.md),
+and [Operation Pack SDK](https://github.com/DwellyOrg/OperateBench/blob/main/docs/OPERATION_PACK_SDK.md).

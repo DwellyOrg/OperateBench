@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: 2026 PROSPIRE TECHNOLOGIES LTD
+# SPDX-License-Identifier: CC-BY-4.0
+schema_version: 1
+operation_id: lettings_property_compliance_synthetic_v1
+operation_type: lettings.property_compliance.synthetic
+operation_version: 0.1.0
+semantic_scenario_id: property_compliance_certificate_renewal_synthetic_v1
+privacy_status: SYNTHETIC_ONLY
+disclaimer: Fully synthetic maintainer-authored incubator example; not policy, legal advice, an actual compliance requirement, or benchmark evidence.
+data_provenance: Entirely invented for OperateBench; contains no production data, real people, addresses, suppliers, messages, statutory names, legal thresholds, or operational numbers.
+actors:
+  tenant_synthetic: tenant
+  inspection_supplier_synthetic: inspection_supplier
+  compliance_reviewer_synthetic: compliance_reviewer
+  property_record_system_synthetic: property_record_system
+  certificate_registry_synthetic: certificate_registry
+  scheduler_synthetic: scheduler
+  agent_synthetic: agent
+scenarios:
+  - scenario_id: V1
+    path: normal_renewal
+    expected_terminal: certificate_renewed_final
+  - scenario_id: V2
+    path: remediation_reinspection
+    expected_terminal: certificate_renewed_final
+  - scenario_id: V3
+    path: no_access_expiry_exception
+    expected_terminal: human_exception_final

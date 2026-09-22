@@ -1,0 +1,1207 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://operatebench.org/schemas/identity-manifest-v1.schema.json",
+  "title": "OperateBench Identity Manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "schema_version",
+    "components",
+    "composites",
+    "compatibility_contract",
+    "manifest_digest_sha256"
+  ],
+  "properties": {
+    "schema": {
+      "const": "operatebench.identity_manifest.v1"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "components": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "card_schema_content",
+        "build_provenance_content",
+        "operation_core_content",
+        "semantic_scenario_content",
+        "variant_content",
+        "runtime_contract_content",
+        "scaffold_content",
+        "arm_protocol_content",
+        "provider_run_plan_content",
+        "evaluator_bundle_content",
+        "analysis_contract_content"
+      ],
+      "properties": {
+        "card_schema_content": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/componentIdentity"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "domain": {
+                  "const": "operatebench.digest.component.card_schema_content.v1"
+                },
+                "requires": {
+                  "type": "array",
+                  "minItems": 0,
+                  "maxItems": 0,
+                  "items": false
+                }
+              }
+            }
+          ]
+        },
+        "build_provenance_content": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/componentIdentity"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "domain": {
+                  "const": "operatebench.digest.component.build_provenance_content.v1"
+                },
+                "requires": {
+                  "type": "array",
+                  "minItems": 0,
+                  "maxItems": 0,
+                  "items": false
+                }
+              }
+            }
+          ]
+        },
+        "operation_core_content": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/componentIdentity"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "domain": {
+                  "const": "operatebench.digest.component.operation_core_content.v1"
+                },
+                "requires": {
+                  "type": "array",
+                  "minItems": 1,
+                  "maxItems": 1,
+                  "prefixItems": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "component",
+                        "compatible"
+                      ],
+                      "properties": {
+                        "component": {
+                          "const": "card_schema_content"
+                        },
+                        "compatible": {
+                          "oneOf": [
+                            {
+                              "$ref": "#/$defs/exactDigestRequirement"
+                            },
+                            {
+                              "$ref": "#/$defs/closedSchemaVersionRangeRequirement"
+                            },
+                            {
+                              "$ref": "#/$defs/namedPredicateRequirement"
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ],
+                  "items": false
+                }
+              }
+            }
+          ]
+        },
+        "semantic_scenario_content": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/componentIdentity"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "domain": {
+                  "const": "operatebench.digest.component.semantic_scenario_content.v1"
+                },
+                "requires": {
+                  "type": "array",
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "prefixItems": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "component",
+                        "compatible"
+                      ],
+                      "properties": {
+                        "component": {
+                          "const": "operation_core_content"
+                        },
+                        "compatible": {
+                          "oneOf": [
+                            {
+                              "$ref": "#/$defs/exactDigestRequirement"
+                            },
+                            {
+                              "$ref": "#/$defs/closedSchemaVersionRangeRequirement"
+                            },
+                            {
+                              "$ref": "#/$defs/namedPredicateRequirement"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "component",
+                        "compatible"
+                      ],
+                      "properties": {
+                        "component": {
+                          "const": "card_schema_content"
+                        },
+                        "compatible": {
+                          "oneOf": [
+                            {
+                              "$ref": "#/$defs/exactDigestRequirement"
+                            },
+                            {
+                              "$ref": "#/$defs/closedSchemaVersionRangeRequirement"
+                            },
+                            {
+                              "$ref": "#/$defs/namedPredicateRequirement"
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ],
+                  "items": false
+                }
+              }
+            }
+          ]
+        },
+        "variant_content": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/componentIdentity"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "domain": {
+                  "const": "operatebench.digest.component.variant_content.v1"
+                },
+                "requires": {
+                  "type": "array",
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "prefixItems": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "component",
+                        "compatible"
+                      ],
+                      "properties": {
+                        "component": {
+                          "const": "semantic_scenario_content"
+                        },
+                        "compatible": {
+                          "oneOf": [
+                            {
+                              "$ref": "#/$defs/exactDigestRequirement"
+                            },
+                            {
+                              "$ref": "#/$defs/closedSchemaVersionRangeRequirement"
+                            },
+                            {
+                              "$ref": "#/$defs/namedPredicateRequirement"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "component",
+                        "compatible"
+                      ],
+                      "properties": {
+                        "component": {
+                          "const": "card_schema_content"
+                        },
+                        "compatible": {
+                          "oneOf": [
+                            {
+                              "$ref": "#/$defs/exactDigestRequirement"
+                            },
+                            {
+                              "$ref": "#/$defs/closedSchemaVersionRangeRequirement"
+                            },
+                            {
+                              "$ref": "#/$defs/namedPredicateRequirement"
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ],
+                  "items": false
+                }
+              }
+            }
+          ]
+        },
+        "runtime_contract_content": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/componentIdentity"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "domain": {
+                  "const": "operatebench.digest.component.runtime_contract_content.v1"
+                },
+                "requires": {
+                  "type": "array",
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "prefixItems": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "component",
+                        "compatible"
+                      ],
+                      "properties": {
+                        "component": {
+                          "const": "operation_core_content"
+                        },
+                        "compatible": {
+                          "oneOf": [
+                            {
+                              "$ref": "#/$defs/exactDigestRequirement"
+                            },
+                            {
+                              "$ref": "#/$defs/closedSchemaVersionRangeRequirement"
+                            },
+                            {
+                              "$ref": "#/$defs/namedPredicateRequirement"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "component",
+                        "compatible"
+                      ],
+                      "properties": {
+                        "component": {
+                          "const": "card_schema_content"
+                        },
+                        "compatible": {
+                          "oneOf": [
+                            {
+                              "$ref": "#/$defs/exactDigestRequirement"
+                            },
+                            {
+                              "$ref": "#/$defs/closedSchemaVersionRangeRequirement"
+                            },
+                            {
+                              "$ref": "#/$defs/namedPredicateRequirement"
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ],
+                  "items": false
+                }
+              }
+            }
+          ]
+        },
+        "scaffold_content": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/componentIdentity"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "domain": {
+                  "const": "operatebench.digest.component.scaffold_content.v1"
+                },
+                "requires": {
+                  "type": "array",
+                  "minItems": 1,
+                  "maxItems": 1,
+                  "prefixItems": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "component",
+                        "compatible"
+                      ],
+                      "properties": {
+                        "component": {
+                          "const": "runtime_contract_content"
+                        },
+                        "compatible": {
+                          "oneOf": [
+                            {
+                              "$ref": "#/$defs/exactDigestRequirement"
+                            },
+                            {
+                              "$ref": "#/$defs/closedSchemaVersionRangeRequirement"
+                            },
+                            {
+                              "$ref": "#/$defs/namedPredicateRequirement"
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ],
+                  "items": false
+                }
+              }
+            }
+          ]
+        },
+        "arm_protocol_content": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/componentIdentity"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "domain": {
+                  "const": "operatebench.digest.component.arm_protocol_content.v1"
+                },
+                "requires": {
+                  "type": "array",
+                  "minItems": 3,
+                  "maxItems": 3,
+                  "prefixItems": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "component",
+                        "compatible"
+                      ],
+                      "properties": {
+                        "component": {
+                          "const": "runtime_contract_content"
+                        },
+                        "compatible": {
+                          "oneOf": [
+                            {
+                              "$ref": "#/$defs/exactDigestRequirement"
+                            },
+                            {
+                              "$ref": "#/$defs/closedSchemaVersionRangeRequirement"
+                            },
+                            {
+                              "$ref": "#/$defs/namedPredicateRequirement"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "component",
+                        "compatible"
+                      ],
+                      "properties": {
+                        "component": {
+                          "const": "semantic_scenario_content"
+                        },
+                        "compatible": {
+                          "oneOf": [
+                            {
+                              "$ref": "#/$defs/exactDigestRequirement"
+                            },
+                            {
+                              "$ref": "#/$defs/closedSchemaVersionRangeRequirement"
+                            },
+                            {
+                              "$ref": "#/$defs/namedPredicateRequirement"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "component",
+                        "compatible"
+                      ],
+                      "properties": {
+                        "component": {
+                          "const": "variant_content"
+                        },
+                        "compatible": {
+                          "oneOf": [
+                            {
+                              "$ref": "#/$defs/exactDigestRequirement"
+                            },
+                            {
+                              "$ref": "#/$defs/closedSchemaVersionRangeRequirement"
+                            },
+                            {
+                              "$ref": "#/$defs/namedPredicateRequirement"
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ],
+                  "items": false
+                }
+              }
+            }
+          ]
+        },
+        "provider_run_plan_content": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/componentIdentity"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "domain": {
+                  "const": "operatebench.digest.component.provider_run_plan_content.v1"
+                },
+                "requires": {
+                  "type": "array",
+                  "minItems": 3,
+                  "maxItems": 3,
+                  "prefixItems": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "component",
+                        "compatible"
+                      ],
+                      "properties": {
+                        "component": {
+                          "const": "runtime_contract_content"
+                        },
+                        "compatible": {
+                          "oneOf": [
+                            {
+                              "$ref": "#/$defs/exactDigestRequirement"
+                            },
+                            {
+                              "$ref": "#/$defs/closedSchemaVersionRangeRequirement"
+                            },
+                            {
+                              "$ref": "#/$defs/namedPredicateRequirement"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "component",
+                        "compatible"
+                      ],
+                      "properties": {
+                        "component": {
+                          "const": "scaffold_content"
+                        },
+                        "compatible": {
+                          "oneOf": [
+                            {
+                              "$ref": "#/$defs/exactDigestRequirement"
+                            },
+                            {
+                              "$ref": "#/$defs/closedSchemaVersionRangeRequirement"
+                            },
+                            {
+                              "$ref": "#/$defs/namedPredicateRequirement"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "component",
+                        "compatible"
+                      ],
+                      "properties": {
+                        "component": {
+                          "const": "build_provenance_content"
+                        },
+                        "compatible": {
+                          "oneOf": [
+                            {
+                              "$ref": "#/$defs/exactDigestRequirement"
+                            },
+                            {
+                              "$ref": "#/$defs/closedSchemaVersionRangeRequirement"
+                            },
+                            {
+                              "$ref": "#/$defs/namedPredicateRequirement"
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ],
+                  "items": false
+                }
+              }
+            }
+          ]
+        },
+        "evaluator_bundle_content": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/componentIdentity"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "domain": {
+                  "const": "operatebench.digest.component.evaluator_bundle_content.v1"
+                },
+                "requires": {
+                  "type": "array",
+                  "minItems": 3,
+                  "maxItems": 3,
+                  "prefixItems": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "component",
+                        "compatible"
+                      ],
+                      "properties": {
+                        "component": {
+                          "const": "operation_core_content"
+                        },
+                        "compatible": {
+                          "oneOf": [
+                            {
+                              "$ref": "#/$defs/exactDigestRequirement"
+                            },
+                            {
+                              "$ref": "#/$defs/closedSchemaVersionRangeRequirement"
+                            },
+                            {
+                              "$ref": "#/$defs/namedPredicateRequirement"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "component",
+                        "compatible"
+                      ],
+                      "properties": {
+                        "component": {
+                          "const": "card_schema_content"
+                        },
+                        "compatible": {
+                          "oneOf": [
+                            {
+                              "$ref": "#/$defs/exactDigestRequirement"
+                            },
+                            {
+                              "$ref": "#/$defs/closedSchemaVersionRangeRequirement"
+                            },
+                            {
+                              "$ref": "#/$defs/namedPredicateRequirement"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "component",
+                        "compatible"
+                      ],
+                      "properties": {
+                        "component": {
+                          "const": "runtime_contract_content"
+                        },
+                        "compatible": {
+                          "oneOf": [
+                            {
+                              "$ref": "#/$defs/exactDigestRequirement"
+                            },
+                            {
+                              "$ref": "#/$defs/closedSchemaVersionRangeRequirement"
+                            },
+                            {
+                              "$ref": "#/$defs/namedPredicateRequirement"
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ],
+                  "items": false
+                }
+              }
+            }
+          ]
+        },
+        "analysis_contract_content": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/componentIdentity"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "domain": {
+                  "const": "operatebench.digest.component.analysis_contract_content.v1"
+                },
+                "requires": {
+                  "type": "array",
+                  "minItems": 1,
+                  "maxItems": 1,
+                  "prefixItems": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "component",
+                        "compatible"
+                      ],
+                      "properties": {
+                        "component": {
+                          "const": "evaluator_bundle_content"
+                        },
+                        "compatible": {
+                          "oneOf": [
+                            {
+                              "$ref": "#/$defs/exactDigestRequirement"
+                            },
+                            {
+                              "$ref": "#/$defs/closedSchemaVersionRangeRequirement"
+                            },
+                            {
+                              "$ref": "#/$defs/namedPredicateRequirement"
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ],
+                  "items": false
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "composites": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "runtime_bundle",
+        "experiment_bundle"
+      ],
+      "properties": {
+        "runtime_bundle": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/compositeIdentity"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "domain": {
+                  "const": "operatebench.digest.composite.runtime_bundle.v1"
+                },
+                "members": {
+                  "type": "array",
+                  "minItems": 8,
+                  "maxItems": 8,
+                  "prefixItems": [
+                    {
+                      "const": "operation_core_content"
+                    },
+                    {
+                      "const": "semantic_scenario_content"
+                    },
+                    {
+                      "const": "variant_content"
+                    },
+                    {
+                      "const": "runtime_contract_content"
+                    },
+                    {
+                      "const": "scaffold_content"
+                    },
+                    {
+                      "const": "arm_protocol_content"
+                    },
+                    {
+                      "const": "provider_run_plan_content"
+                    },
+                    {
+                      "const": "build_provenance_content"
+                    }
+                  ],
+                  "items": false
+                }
+              }
+            }
+          ]
+        },
+        "experiment_bundle": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/compositeIdentity"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "domain": {
+                  "const": "operatebench.digest.composite.experiment_bundle.v1"
+                },
+                "members": {
+                  "type": "array",
+                  "minItems": 3,
+                  "maxItems": 3,
+                  "prefixItems": [
+                    {
+                      "const": "runtime_bundle"
+                    },
+                    {
+                      "const": "evaluator_bundle_content"
+                    },
+                    {
+                      "const": "analysis_contract_content"
+                    }
+                  ],
+                  "items": false
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "compatibility_contract": {
+      "$ref": "#/$defs/compatibilityContract"
+    },
+    "manifest_digest_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+    }
+  },
+  "$defs": {
+    "exactDigestRequirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "content_digest_sha256"
+      ],
+      "properties": {
+        "kind": {
+          "const": "exact_digest"
+        },
+        "content_digest_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+        }
+      }
+    },
+    "closedSchemaVersionRangeRequirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "minimum_schema_version",
+        "maximum_schema_version"
+      ],
+      "properties": {
+        "kind": {
+          "const": "closed_schema_version_range"
+        },
+        "minimum_schema_version": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "maximum_schema_version": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        }
+      }
+    },
+    "namedPredicateRequirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "predicate",
+        "predicate_version"
+      ],
+      "properties": {
+        "kind": {
+          "const": "named_predicate"
+        },
+        "predicate": {
+          "type": "string",
+          "maxLength": 262144,
+          "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)+(?![\\s\\S])"
+        },
+        "predicate_version": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        }
+      }
+    },
+    "dependencyRequirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "component",
+        "compatible"
+      ],
+      "properties": {
+        "component": {
+          "enum": [
+            "card_schema_content",
+            "build_provenance_content",
+            "operation_core_content",
+            "semantic_scenario_content",
+            "variant_content",
+            "runtime_contract_content",
+            "scaffold_content",
+            "arm_protocol_content",
+            "provider_run_plan_content",
+            "evaluator_bundle_content",
+            "analysis_contract_content"
+          ]
+        },
+        "compatible": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/exactDigestRequirement"
+            },
+            {
+              "$ref": "#/$defs/closedSchemaVersionRangeRequirement"
+            },
+            {
+              "$ref": "#/$defs/namedPredicateRequirement"
+            }
+          ]
+        }
+      }
+    },
+    "componentIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "schema_version",
+        "domain",
+        "content_digest_sha256",
+        "owned_fields",
+        "owned_projection",
+        "excludes",
+        "requires"
+      ],
+      "properties": {
+        "schema": {
+          "const": "operatebench.component_identity.v1"
+        },
+        "schema_version": {
+          "const": 1
+        },
+        "domain": {
+          "enum": [
+            "operatebench.digest.component.card_schema_content.v1",
+            "operatebench.digest.component.build_provenance_content.v1",
+            "operatebench.digest.component.operation_core_content.v1",
+            "operatebench.digest.component.semantic_scenario_content.v1",
+            "operatebench.digest.component.variant_content.v1",
+            "operatebench.digest.component.runtime_contract_content.v1",
+            "operatebench.digest.component.scaffold_content.v1",
+            "operatebench.digest.component.arm_protocol_content.v1",
+            "operatebench.digest.component.provider_run_plan_content.v1",
+            "operatebench.digest.component.evaluator_bundle_content.v1",
+            "operatebench.digest.component.analysis_contract_content.v1"
+          ]
+        },
+        "content_digest_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+        },
+        "owned_fields": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^/(?:[^/~*]|~0|~1)+(?:/(?:[^/~*]|~0|~1)+)*(?![\\s\\S])",
+            "maxLength": 1024,
+            "description": "Escaped concrete non-root RFC 6901 pointer with non-empty reference tokens; / and /a/ are invalid."
+          },
+          "maxItems": 4096
+        },
+        "owned_projection": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^/(?:[^/~*]|~0|~1)+(?:/(?:[^/~*]|~0|~1)+)*(?![\\s\\S])",
+            "maxLength": 1024,
+            "description": "Escaped concrete non-root RFC 6901 pointer with non-empty reference tokens; / and /a/ are invalid."
+          },
+          "maxProperties": 4096,
+          "additionalProperties": {
+            "$ref": "#/$defs/strictJsonValue"
+          }
+        },
+        "excludes": {
+          "type": "array",
+          "maxItems": 0,
+          "items": {
+            "type": "string",
+            "pattern": "^/(?:[^/~*]|~0|~1)+(?:/(?:[^/~*]|~0|~1)+)*(?![\\s\\S])",
+            "maxLength": 1024
+          }
+        },
+        "requires": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/dependencyRequirement"
+          }
+        }
+      }
+    },
+    "compositeIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "schema_version",
+        "domain",
+        "members",
+        "bundle_digest_sha256"
+      ],
+      "properties": {
+        "schema": {
+          "const": "operatebench.composite_identity.v1"
+        },
+        "schema_version": {
+          "const": 1
+        },
+        "domain": {
+          "enum": [
+            "operatebench.digest.composite.runtime_bundle.v1",
+            "operatebench.digest.composite.experiment_bundle.v1"
+          ]
+        },
+        "members": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "card_schema_content",
+              "build_provenance_content",
+              "operation_core_content",
+              "semantic_scenario_content",
+              "variant_content",
+              "runtime_contract_content",
+              "scaffold_content",
+              "arm_protocol_content",
+              "provider_run_plan_content",
+              "evaluator_bundle_content",
+              "analysis_contract_content",
+              "runtime_bundle",
+              "experiment_bundle"
+            ]
+          }
+        },
+        "bundle_digest_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+        }
+      }
+    },
+    "compatibilityContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "schema_version",
+        "requirement_kinds",
+        "decision_predicates",
+        "named_requirement_predicates"
+      ],
+      "properties": {
+        "schema": {
+          "const": "operatebench.compatibility_contract.v1"
+        },
+        "schema_version": {
+          "const": 1
+        },
+        "requirement_kinds": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "exact_digest",
+            "closed_schema_version_range",
+            "named_predicate"
+          ],
+          "properties": {
+            "exact_digest": {
+              "const": 1
+            },
+            "closed_schema_version_range": {
+              "const": 1
+            },
+            "named_predicate": {
+              "const": 1
+            }
+          }
+        },
+        "decision_predicates": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "can_runtime_replay",
+            "can_evaluator_regrade",
+            "can_analysis_recompute",
+            "can_compare",
+            "can_pool"
+          ],
+          "properties": {
+            "can_runtime_replay": {
+              "const": 1
+            },
+            "can_evaluator_regrade": {
+              "const": 1
+            },
+            "can_analysis_recompute": {
+              "const": 1
+            },
+            "can_compare": {
+              "const": 1
+            },
+            "can_pool": {
+              "const": 1
+            }
+          }
+        },
+        "named_requirement_predicates": {
+          "type": "array",
+          "maxItems": 0,
+          "items": {
+            "type": "string",
+            "maxLength": 262144,
+            "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)+(?![\\s\\S])"
+          }
+        }
+      }
+    },
+    "strictJsonValue": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        {
+          "type": "string",
+          "maxLength": 262144,
+          "pattern": "^[^\\uD800-\\uDFFF]*(?![\\s\\S])"
+        },
+        {
+          "type": "array",
+          "maxItems": 4096,
+          "items": {
+            "$ref": "#/$defs/strictJsonValue"
+          }
+        },
+        {
+          "type": "object",
+          "maxProperties": 4096,
+          "propertyNames": {
+            "type": "string",
+            "maxLength": 262144,
+            "pattern": "^[^\\uD800-\\uDFFF]*(?![\\s\\S])"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/strictJsonValue"
+          }
+        }
+      ],
+      "description": "Recursive Identity v1 JSON value with safe interoperable semantic integers, safe non-surrogate strings, bounded arrays, and bounded objects. Integral JSON numbers are normalized to integers; fractional and non-finite numbers are forbidden."
+    }
+  }
+}

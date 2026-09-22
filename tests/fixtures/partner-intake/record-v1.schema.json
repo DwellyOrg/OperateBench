@@ -1,0 +1,457 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://operatebench.org/schemas/partner-intake/record-v1.schema.json",
+  "title": "OperateBench managed-intake partner record v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "company_id",
+    "owner",
+    "identity",
+    "contact",
+    "provenance",
+    "starter_kit",
+    "access"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "company_id": {
+      "$ref": "#/$defs/owner_component"
+    },
+    "owner": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "owner_id",
+        "display_name"
+      ],
+      "properties": {
+        "owner_id": {
+          "$ref": "#/$defs/owner_component"
+        },
+        "display_name": {
+          "$ref": "#/$defs/nonempty_text"
+        }
+      }
+    },
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "brand",
+        "website_url",
+        "legal_entity",
+        "identity_source_url",
+        "identity_checked_on",
+        "registered_office",
+        "commercial_register"
+      ],
+      "properties": {
+        "brand": {
+          "$ref": "#/$defs/nonempty_text"
+        },
+        "website_url": {
+          "$ref": "#/$defs/https_url"
+        },
+        "legal_entity": {
+          "$ref": "#/$defs/nonempty_text"
+        },
+        "identity_source_url": {
+          "$ref": "#/$defs/https_url"
+        },
+        "identity_checked_on": {
+          "$ref": "#/$defs/iso_date"
+        },
+        "registered_office": {
+          "$ref": "#/$defs/nonempty_text"
+        },
+        "commercial_register": {
+          "$ref": "#/$defs/nonempty_text"
+        }
+      }
+    },
+    "contact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "email",
+        "contact_source"
+      ],
+      "properties": {
+        "email": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 254,
+          "pattern": "^(?:[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9](?:[A-Za-z0-9.-]{0,251}[A-Za-z0-9])?)$"
+        },
+        "contact_source": {
+          "enum": [
+            "owner_supplied"
+          ]
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "partner_confirmed",
+        "publication_consent"
+      ],
+      "properties": {
+        "partner_confirmed": {
+          "type": "boolean"
+        },
+        "publication_consent": {
+          "$ref": "#/$defs/pending_status"
+        }
+      }
+    },
+    "starter_kit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "filename",
+        "sha256"
+      ],
+      "properties": {
+        "filename": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "pattern": "^(?:[A-Za-z0-9][A-Za-z0-9._-]*\\.zip)$"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^(?:[0-9a-f]{64})$"
+        }
+      }
+    },
+    "access": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "managed_intake",
+        "proposal_return_bundle",
+        "private_repository_read",
+        "executable_repository_pr",
+        "provider_model_execution",
+        "development_registration",
+        "evidence_admission",
+        "publication_publicity",
+        "github",
+        "repository_access_approval",
+        "partner_confirmation"
+      ],
+      "properties": {
+        "managed_intake": {
+          "$ref": "#/$defs/permission_status"
+        },
+        "proposal_return_bundle": {
+          "$ref": "#/$defs/permission_status"
+        },
+        "private_repository_read": {
+          "$ref": "#/$defs/permission_status"
+        },
+        "executable_repository_pr": {
+          "$ref": "#/$defs/permission_status"
+        },
+        "provider_model_execution": {
+          "$ref": "#/$defs/permission_status"
+        },
+        "development_registration": {
+          "$ref": "#/$defs/permission_status"
+        },
+        "evidence_admission": {
+          "$ref": "#/$defs/permission_status"
+        },
+        "publication_publicity": {
+          "$ref": "#/$defs/permission_status"
+        },
+        "github": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "actors",
+            "status"
+          ],
+          "properties": {
+            "actors": {
+              "type": "array",
+              "maxItems": 32,
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "pattern": "^(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?)$"
+              }
+            },
+            "status": {
+              "$ref": "#/$defs/approval_status"
+            }
+          }
+        },
+        "repository_access_approval": {
+          "$ref": "#/$defs/approval_status"
+        },
+        "partner_confirmation": {
+          "$ref": "#/$defs/approval_status"
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "provenance": {
+            "properties": {
+              "partner_confirmed": {
+                "const": false
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "access": {
+            "properties": {
+              "private_repository_read": {
+                "const": "HOLD"
+              },
+              "executable_repository_pr": {
+                "const": "HOLD"
+              },
+              "provider_model_execution": {
+                "const": "HOLD"
+              },
+              "development_registration": {
+                "const": "HOLD"
+              },
+              "evidence_admission": {
+                "const": "HOLD"
+              },
+              "publication_publicity": {
+                "const": "HOLD"
+              },
+              "partner_confirmation": {
+                "enum": [
+                  "PENDING",
+                  "REJECTED"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "provenance": {
+            "properties": {
+              "partner_confirmed": {
+                "const": true
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "access": {
+            "properties": {
+              "partner_confirmation": {
+                "const": "APPROVED"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "access": {
+            "properties": {
+              "partner_confirmation": {
+                "const": "APPROVED"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "provenance": {
+            "properties": {
+              "partner_confirmed": {
+                "const": true
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "access": {
+            "properties": {
+              "publication_publicity": {
+                "const": "GO"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "provenance": {
+            "properties": {
+              "partner_confirmed": {
+                "const": true
+              },
+              "publication_consent": {
+                "const": "GRANTED"
+              }
+            }
+          },
+          "access": {
+            "properties": {
+              "repository_access_approval": {
+                "const": "APPROVED"
+              },
+              "partner_confirmation": {
+                "const": "APPROVED"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "access": {
+            "properties": {
+              "private_repository_read": {
+                "const": "GO"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "$ref": "#/$defs/repository_permission_prerequisites"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "access": {
+            "properties": {
+              "executable_repository_pr": {
+                "const": "GO"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "allOf": [
+          {
+            "$ref": "#/$defs/repository_permission_prerequisites"
+          },
+          {
+            "properties": {
+              "access": {
+                "properties": {
+                  "private_repository_read": {
+                    "const": "GO"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "$defs": {
+    "owner_component": {
+      "type": "string",
+      "pattern": "^(?:[a-z][a-z0-9_]{0,62})$"
+    },
+    "nonempty_text": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "pattern": "^(?:[^\\r\\n]+)$"
+    },
+    "https_url": {
+      "type": "string",
+      "minLength": 9,
+      "maxLength": 2048,
+      "pattern": "^(?:https://[^\\s]+)$"
+    },
+    "iso_date": {
+      "type": "string",
+      "pattern": "^(?:(?:[0-9]{3}[1-9]|[0-9]{2}[1-9][0-9]|[0-9][1-9][0-9]{2}|[1-9][0-9]{3})-(?:(?:01|03|05|07|08|10|12)-(?:0[1-9]|[12][0-9]|3[01])|(?:04|06|09|11)-(?:0[1-9]|[12][0-9]|30)|02-(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)-02-29)$(?![\\s\\S])"
+    },
+    "permission_status": {
+      "enum": [
+        "GO",
+        "HOLD"
+      ]
+    },
+    "approval_status": {
+      "enum": [
+        "PENDING",
+        "APPROVED",
+        "REJECTED"
+      ]
+    },
+    "pending_status": {
+      "enum": [
+        "PENDING",
+        "GRANTED",
+        "DECLINED"
+      ]
+    },
+    "repository_permission_prerequisites": {
+      "properties": {
+        "provenance": {
+          "properties": {
+            "partner_confirmed": {
+              "const": true
+            }
+          }
+        },
+        "access": {
+          "properties": {
+            "github": {
+              "properties": {
+                "actors": {
+                  "minItems": 1
+                },
+                "status": {
+                  "const": "APPROVED"
+                }
+              }
+            },
+            "repository_access_approval": {
+              "const": "APPROVED"
+            },
+            "partner_confirmation": {
+              "const": "APPROVED"
+            }
+          }
+        }
+      }
+    }
+  }
+}
