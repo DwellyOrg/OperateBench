@@ -168,7 +168,7 @@ def make_plan(config: dict[str, Any], root: Path) -> dict[str, Any]:
                 if money(given[field]) < money(floor):
                     raise ValueError("live rate below historical profile rate floor")
 
-    plan = {
+    plan: dict[str, Any] = {
         "schema": SCHEMA,
         "config": config,
         "source": source_identity(),
@@ -747,7 +747,7 @@ def rebuild_report(root: Path) -> dict[str, Any]:
         for state in states.values():
             if state["status"] not in ("scored", "non-scored"):
                 continue
-            checkpoint = state.get("accounting_checkpoint", {})
+            checkpoint: str | dict[str, Any] = state.get("accounting_checkpoint", {})
             if not isinstance(checkpoint, dict):
                 raise ValueError("invalid accounting checkpoint")
             seq = checkpoint.get("seq")
