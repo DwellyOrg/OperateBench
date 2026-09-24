@@ -133,7 +133,8 @@ class Budget:
             # Stable lifetime lock; append journal is never replaced or reset.
             self.fd = os.open(
                 root / "successor-events.jsonl",
-                os.O_RDWR | os.O_NOFOLLOW | (os.O_CREAT | os.O_EXCL if create else 0),
+                (os.O_RDWR | os.O_CREAT | os.O_EXCL if create else os.O_RDONLY)
+                | os.O_NOFOLLOW,
                 0o600,
             )
             fcntl.flock(self.fd, fcntl.LOCK_EX | fcntl.LOCK_NB)

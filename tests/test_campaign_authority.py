@@ -151,6 +151,34 @@ def test_failed_fsync_never_releases_dummy_key(tmp_path, monkeypatch):
     assert (tmp_path / "CAMPAIGN-CONSUMED").exists()
 
 
+def test_helper_double_consumption_hits_marker_before_credential_read(
+    tmp_path, monkeypatch
+):
+    from tools import run_episode100 as primitive
+
+    _, plan, root, authority, credential, _ = prepare(tmp_path, monkeypatch)
+    root.mkdir(mode=0o700)
+    assert c.consume_authority(authority, plan, mock=True) == dict.fromkeys(
+        c.PROFILE_KEYS, c.PLACEHOLDER
+    )
+    marker = tmp_path / "CAMPAIGN-CONSUMED"
+    before = marker.read_bytes()
+    # Remove the receipt to isolate the actual authority-directory marker.
+    (root / "authority-receipt.json").unlink()
+    original = primitive.read_json
+
+    def no_key_read(fd):
+        assert os.fstat(fd).st_ino != credential.stat().st_ino
+        return original(fd)
+
+    monkeypatch.setattr(primitive, "read_json", no_key_read)
+    with pytest.raises(FileExistsError) as exc:
+        c.consume_authority(authority, plan, mock=True)
+    assert exc.value.filename == str(marker)
+    assert marker.read_bytes() == before
+    assert not (root / "authority-receipt.json").exists()
+
+
 def test_ambient_credential_presence_refused_without_logging_value(
     tmp_path, monkeypatch, capsys
 ):

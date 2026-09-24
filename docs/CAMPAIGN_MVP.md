@@ -78,6 +78,29 @@ rewrite the entire directory**. Keep the original report/input digests separatel
 if comparing later reconstructions. A partial cannot become a score merely by
 editing its status. Torn or inconsistent records fail closed.
 
+Campaign evidence/report schema is now `operatebench.campaign.v2`; the input
+configuration remains `operatebench.campaign.v1`. The reader explicitly refuses
+legacy v1 evidence (no accounting binding), rather than upgrading it to a trusted
+success. Preserve old evidence unchanged and use its original source for historical
+inspection only; it does not gain the v2 integrity guarantee.
+
+Every terminal campaign status binds the durable accounting sequence length and
+hash-chain tip. Reconstruction requires that exact prefix, so truncating only the
+accounting file—even to a valid genesis or earlier prefix—is refused. Later valid
+accounting records are allowed, retaining their pending/unknown liabilities.
+Audit opens the journal read-only and still forbids resume.
+
+An unfinished `started` trial has no terminal accounting checkpoint. Its financial
+status is explicitly `unknown_incomplete_start`: measured cost and total exposure
+are null, never an inferred zero. Campaign `financial_complete` is false and
+`accounting` values are null; `observed_accounting` and per-trial observed measured/
+exposure fields retain the available prefix. Pending/unknown exposure fields are
+observed liabilities, not proof that no additional liability exists. Partial ledger
+counters are labeled `lower_bound`; missing counters are `unknown`, and both count
+in `incomplete_counter_trials`. Aggregate counters are lower bounds if any started
+trial has incomplete counters. These safeguards detect local inconsistency, not
+coherent rewrites of all evidence and its bindings.
+
 Exit status: 0 means all assignments scored (not necessarily reliable); 1 means a
 readable incomplete campaign; 2 means refusal or evidence failure. `--help` lists
 `run`, `report`, and inert `proposal`. Proposal output is never authorization.

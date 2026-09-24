@@ -43,7 +43,8 @@ from tools.track_scorecard import partial_prefix
 SOURCE = Path(__file__).resolve().parents[1]
 EXAMPLE = SOURCE / "examples/campaign-offline.json"
 FIXTURE = SOURCE / "examples/operatebench/maintenance_v0_1.yaml"
-SCHEMA = "operatebench.campaign.v1"
+SCHEMA = "operatebench.campaign.v2"
+CONFIG_SCHEMA = "operatebench.campaign.v1"
 PROFILE_KEYS = ("haiku45", "luna56")
 
 
@@ -132,7 +133,7 @@ def make_plan(config: dict[str, Any], root: Path) -> dict[str, Any]:
         "rate_provenance",
     }:
         raise ValueError("exact campaign config fields required")
-    if config["schema"] != SCHEMA or config["mode"] not in ("offline", "live"):
+    if config["schema"] != CONFIG_SCHEMA or config["mode"] not in ("offline", "live"):
         raise ValueError("unsupported campaign schema/mode")
     if not isinstance(config["campaign_id"], str) or not re.fullmatch(
         r"[a-z0-9][a-z0-9-]{0,63}", config["campaign_id"]
@@ -606,6 +607,10 @@ def run_campaign(
                     if directory.exists()
                     else {}
                 )
+            result["accounting_checkpoint"] = {
+                "seq": budget.seq,
+                "sha256": budget.previous,
+            }
             append_status(root, digest(plan), trial["trial_id"], **result)
             if result["status"] != "scored" or result["reason"] != "evaluated":
                 break
@@ -630,6 +635,10 @@ def rebuild_report(root: Path) -> dict[str, Any]:
     plan, plan_hash = envelope["plan"], envelope["sha256"]
     if digest(plan) != plan_hash or plan["output"] != str(root.absolute()):
         raise ValueError("plan identity/hash mismatch")
+    if plan.get("schema") != SCHEMA:
+        raise ValueError(
+            "unsupported campaign evidence schema: accounting binding required"
+        )
     if source_identity()["files_sha256"] != plan["source"]["files_sha256"]:
         raise ValueError("report requires matching source files")
     if file_digest(FIXTURE) != plan["spec"]["file_sha256"]:
@@ -670,6 +679,24 @@ def rebuild_report(root: Path) -> dict[str, Any]:
         limits=limits,
     )
     try:
+        # Read the locked, reducer-validated journal descriptor, not another path.
+        assert budget.fd is not None
+        lines = os.pread(budget.fd, os.fstat(budget.fd).st_size, 0).splitlines(
+            keepends=True
+        )
+        for state in states.values():
+            if state["status"] not in ("scored", "non-scored"):
+                continue
+            checkpoint = state.get("accounting_checkpoint", {})
+            if not isinstance(checkpoint, dict):
+                raise ValueError("invalid accounting checkpoint")
+            seq = checkpoint.get("seq")
+            if (
+                type(seq) is not int
+                or not 1 <= seq <= len(lines)
+                or hashlib.sha256(lines[seq - 1]).hexdigest() != checkpoint.get("sha256")
+            ):
+                raise ValueError("terminal accounting checkpoint mismatch/truncation")
         totals = {k: str(decimal(v)) for k, v in budget.totals().items()}
         trials = []
         for assigned in plan["trials"]:
@@ -686,6 +713,7 @@ def rebuild_report(root: Path) -> dict[str, Any]:
                 reliable=None,
                 terminal=None,
                 dimensions=None,
+                counter_status="unknown",
                 requests=None,
                 actions=None,
                 reads=None,
@@ -723,6 +751,11 @@ def rebuild_report(root: Path) -> dict[str, Any]:
                     execution_run_id=h.execution_run_id,
                     operation_instance_id=h.operation_instance_id,
                     ledger_status=ledger.status,
+                    counter_status=(
+                        "complete"
+                        if ledger.complete and not ledger.truncated_tail
+                        else "lower_bound"
+                    ),
                     requests=ledger.totals.attempts,
                     actions=sum(
                         c.decision is not None and c.decision.kind == "ACT"
@@ -806,6 +839,16 @@ def rebuild_report(root: Path) -> dict[str, Any]:
             t["unknown_cost"] = any(
                 r["state"] in ("reserved", "sent", "unknown") for r in rows
             )
+            t["financial_status"] = "bound"
+            if t["status"] == "started":
+                # No terminal checkpoint: even a valid accounting prefix cannot
+                # prove absence of missing dispatch/settlement after a crash.
+                # Retain observed liabilities, never publish a zero-cost claim.
+                t["financial_status"] = "unknown_incomplete_start"
+                t["observed_measured_usd"] = t["measured_usd"]
+                t["observed_budget_exposure_usd"] = t["budget_exposure_usd"]
+                t["measured_usd"] = t["budget_exposure_usd"] = None
+                t["unknown_cost"] = True
             trials.append(t)
     finally:
         budget.close()
@@ -834,7 +877,11 @@ def rebuild_report(root: Path) -> dict[str, Any]:
             for k in ("requests", "actions", "reads", "retries")
         }
         result["incomplete_counter_trials"] = sum(
-            t["status"] != "not_started" and t["requests"] is None for t in items
+            t["status"] != "not_started" and t["counter_status"] != "complete"
+            for t in items
+        )
+        result["counter_status"] = (
+            "lower_bound" if result["incomplete_counter_trials"] else "complete"
         )
         for k in (
             "measured_usd",
@@ -842,9 +889,14 @@ def rebuild_report(root: Path) -> dict[str, Any]:
             "pending_exposure_usd",
             "budget_exposure_usd",
         ):
-            result[k] = str(decimal(sum((money(t[k]) for t in items), Fraction(0))))
+            result[k] = (
+                None
+                if any(t[k] is None for t in items)
+                else str(decimal(sum((money(t[k]) for t in items), Fraction(0))))
+            )
         return result
 
+    financial_complete = all(t["status"] != "started" for t in trials)
     overall = counts(trials)
     return {
         "schema": SCHEMA,
@@ -874,7 +926,9 @@ def rebuild_report(root: Path) -> dict[str, Any]:
         },
         "counts": overall,
         "fractions": fractions(overall),
-        "accounting": totals,
+        "financial_complete": financial_complete,
+        "observed_accounting": totals,
+        "accounting": totals if financial_complete else dict.fromkeys(totals),
         "totals": trial_totals(trials),
         "profiles": {
             key: {
@@ -899,7 +953,10 @@ def render_report(report: dict[str, Any]) -> str:
         "",
         "Assigned/started/scored/reliable: " + json.dumps(report["counts"]),
         "Success fractions: " + json.dumps(report["fractions"]),
-        "Accounting (known measured + pending + unknown = exposure): "
+        "Financially complete: " + str(report["financial_complete"]),
+        "Observed accounting prefix (retained liabilities, not proof of completeness): "
+        + json.dumps(report["observed_accounting"]),
+        "Accounting (null when financial completeness is unknown): "
         + json.dumps(report["accounting"]),
         "Units: " + json.dumps(report["units"]),
         "All-attempt totals: " + json.dumps(report["totals"]),
