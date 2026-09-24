@@ -151,8 +151,8 @@ def test_legacy_evidence_schema_is_explicitly_refused(tmp_path):
 def test_socket_tripwire_blocks_direct_connect():
     import socket
 
-    c.network_tripwire()
     with (
+        c.network_tripwire(),
         socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock,
         pytest.raises(RuntimeError, match="offline internet access forbidden"),
     ):

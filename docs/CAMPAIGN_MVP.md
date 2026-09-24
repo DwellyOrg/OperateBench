@@ -15,6 +15,14 @@ ambient credentials and provider routing; both real SDKs use HTTPX MockTransport
 public placeholder keys, and a process-local network tripwire. No authorization
 record or real credential file is needed or read.
 
+The CLI and library use the same scoped tripwire during offline execution,
+including setup and report publication. It denies ordinary Python IPv4/IPv6
+connect/send and DNS operations and restores every patched function on exit,
+including interruption or setup failure; it installs no permanent audit hook.
+This is a process-local accidental-network guard, not a hostile-code/native-code
+sandbox. While active it also denies other threads' internet socket operations;
+do not embed an offline campaign alongside concurrent networking work.
+
 ```sh
 campaign_output="$(mktemp -d /tmp/operatebench-campaign.XXXXXXXX)"
 env -i PATH="$PATH" HOME="$HOME" PYTHONPATH="$PWD/src:$PWD" \
@@ -117,3 +125,14 @@ rehearsals accept only public placeholders and offline mode. There are no paid
 launch instructions or credential-store changes in this quickstart. Moving to a
 new campaign after a stop requires fresh approval and reconciliation of prior
 unknown liabilities; a fresh directory is not permission to reset spending.
+
+Live config rates must be at least the respective profile module's fixed
+historical `FIXED_CANARY_INPUT_USD_PER_MTOK` and
+`FIXED_CANARY_OUTPUT_USD_PER_MTOK` floors. Underpricing is refused before authority
+or credential access. Passing this conservative historical minimum is **not
+current-price verification**: fresh owner-reviewed current rates must separately
+be approved before any live launch, and higher applicable rates must be used.
+The offline example's simulated rates are not live price guidance. The exact
+declared rates and source pins are hash-bound in the plan; all execution config,
+including per-trial limits, aggregate ceiling and accounting namespace, is taken
+from that detached canonical plan, not the mutable caller config.

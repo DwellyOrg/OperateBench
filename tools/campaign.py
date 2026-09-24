@@ -14,7 +14,10 @@ import re
 import socket
 import subprocess
 import sys
+import threading
 import time
+from collections.abc import Iterator
+from contextlib import ExitStack, contextmanager, nullcontext
 from decimal import Decimal
 from fractions import Fraction
 from pathlib import Path
@@ -46,6 +49,7 @@ FIXTURE = SOURCE / "examples/operatebench/maintenance_v0_1.yaml"
 SCHEMA = "operatebench.campaign.v2"
 CONFIG_SCHEMA = "operatebench.campaign.v1"
 PROFILE_KEYS = ("haiku45", "luna56")
+_NETWORK_GUARD_LOCK = threading.RLock()
 
 
 def digest(value: Any) -> str:
@@ -123,6 +127,7 @@ def profiles() -> list[dict[str, Any]]:
 
 
 def make_plan(config: dict[str, Any], root: Path) -> dict[str, Any]:
+    config = json.loads(canonical(config))  # detach before validation/callbacks
     if set(config) != {
         "schema",
         "campaign_id",
@@ -157,7 +162,12 @@ def make_plan(config: dict[str, Any], root: Path) -> dict[str, Any]:
         for field in ("input_usd_per_mtok", "output_usd_per_mtok"):
             if money(given[field]) <= 0:
                 raise ValueError("positive explicit rates required")
-    config = json.loads(canonical(config))  # freeze caller-owned mutable input
+            if config["mode"] == "live":
+                m = module(fixed["key"])
+                floor = getattr(m, "FIXED_CANARY_" + field.upper())
+                if money(given[field]) < money(floor):
+                    raise ValueError("live rate below historical profile rate floor")
+
     plan = {
         "schema": SCHEMA,
         "config": config,
@@ -271,15 +281,46 @@ def offline_environment() -> None:
         raise ValueError("ambient provider credentials/routing forbidden")
 
 
-def network_tripwire() -> None:
-    def deny(event: str, args: tuple[Any, ...]) -> None:
-        if event == "socket.connect" and args[0].family in (
-            socket.AF_INET,
-            socket.AF_INET6,
-        ):
-            raise RuntimeError("offline internet access forbidden")
+@contextmanager
+def network_tripwire() -> Iterator[None]:
+    """Scoped process-local guard, not a sandbox for hostile/native code.
 
-    sys.addaudithook(deny)
+    Offline campaigns are sequential. While active, other threads' ordinary
+    Python internet socket operations are also denied. Nested guards restore in
+    LIFO order; overlapping guards serialize. No irreversible audit hook.
+    """
+
+    def deny(*args: Any, **kwargs: Any) -> Any:
+        raise RuntimeError("offline internet access forbidden")
+
+    def guarded(original: Any) -> Any:
+        def call(sock: socket.socket, *args: Any, **kwargs: Any) -> Any:
+            if sock.family in (socket.AF_INET, socket.AF_INET6):
+                return deny()
+            return original(sock, *args, **kwargs)
+
+        return call
+
+    with _NETWORK_GUARD_LOCK, ExitStack() as restore:
+        for owner, names in (
+            (
+                socket.socket,
+                ("connect", "connect_ex", "send", "sendall", "sendto", "sendmsg"),
+            ),
+            (
+                socket,
+                ("getaddrinfo", "gethostbyname", "gethostbyname_ex", "gethostbyaddr"),
+            ),
+        ):
+            for name in names:
+                if not hasattr(owner, name):
+                    continue
+                original = getattr(owner, name)
+                restore.callback(setattr, owner, name, original)
+                setattr(
+                    owner, name, guarded(original) if owner is socket.socket else deny
+                )
+        yield
 
 
 def failure_result(exc: BaseException) -> dict[str, Any]:
@@ -530,7 +571,12 @@ def run_campaign(
     mock_authority: bool = False,
 ) -> dict[str, Any]:
     offline_environment()
-    offline = config.get("mode") == "offline"
+    root = root.absolute()
+    if root.parent != root.parent.resolve(strict=True):
+        raise ValueError("canonical private output required")
+    plan = make_plan(config, root)
+    config = plan["config"]
+    offline = config["mode"] == "offline"
     if not offline and (authority is None or mock_authority or handlers is not None):
         raise ValueError(
             "live requires fresh external campaign authority and no injected handlers"
@@ -539,12 +585,26 @@ def run_campaign(
         raise ValueError("dummy authority requires offline mode and explicit authority")
     if offline and authority is not None and not mock_authority:
         raise ValueError("offline cannot consume paid authority")
-    if offline:
-        network_tripwire()
-    root = root.absolute()
-    if root.parent != root.parent.resolve(strict=True):
-        raise ValueError("canonical private output required")
-    plan = make_plan(config, root)
+    with network_tripwire() if offline else nullcontext():
+        return _execute_campaign(
+            plan,
+            root,
+            handlers=handlers,
+            authority=authority,
+            mock_authority=mock_authority,
+        )
+
+
+def _execute_campaign(
+    plan: dict[str, Any],
+    root: Path,
+    *,
+    handlers: dict[str, Any] | None,
+    authority: Path | None,
+    mock_authority: bool,
+) -> dict[str, Any]:
+    config = plan["config"]
+    offline = config["mode"] == "offline"
     root.mkdir(mode=0o700)
     publish(root / "plan.json", {"plan": plan, "sha256": digest(plan)})
     (root / "status").mkdir(mode=0o700)
