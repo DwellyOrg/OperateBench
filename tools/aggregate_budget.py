@@ -106,7 +106,9 @@ class Budget:
     ) -> None:
         # Namespace is accounting identity, never launch authorization. The new
         # CLI consumes external one-shot authority before selecting live HTTP.
-        if not namespace.startswith(("offline-test-", "episode100-paid-")):
+        if not namespace.startswith(
+            ("offline-test-", "episode100-paid-", "campaign-paid-")
+        ):
             raise ValueError("unsupported controller namespace")
         if root != root.resolve(strict=True) or root.is_symlink():
             raise ValueError("canonical root required")

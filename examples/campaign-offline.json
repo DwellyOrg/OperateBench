@@ -1,0 +1,36 @@
+{
+  "schema": "operatebench.campaign.v1",
+  "campaign_id": "offline-two-sdk",
+  "mode": "offline",
+  "repeats": 2,
+  "aggregate_usd": "1.00",
+  "rate_provenance": "SIMULATED offline prices, not current provider prices or billing evidence",
+  "profiles": [
+    {
+      "key": "haiku45",
+      "model": "claude-haiku-4-5-20251001",
+      "profile": "haiku45_temperature_zero_thinking_omitted_v1",
+      "calls": 50,
+      "tokens": 1498850,
+      "output": 4096,
+      "request_seconds": 30.0,
+      "wall_seconds": 2700.0,
+      "money": "2.32",
+      "input_usd_per_mtok": "0.20",
+      "output_usd_per_mtok": "1.20"
+    },
+    {
+      "key": "luna56",
+      "model": "gpt-5.6-luna",
+      "profile": "gpt56luna_reasoning_none_sampling_omitted_v2",
+      "calls": 50,
+      "tokens": 1566850,
+      "output": 4096,
+      "request_seconds": 30.0,
+      "wall_seconds": 2700.0,
+      "money": "0.52",
+      "input_usd_per_mtok": "0.20",
+      "output_usd_per_mtok": "1.20"
+    }
+  ]
+}
