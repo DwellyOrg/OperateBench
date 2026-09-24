@@ -458,6 +458,9 @@ alone is not proof of benchmark validity.
 - [docs/REPOSITORY_GOVERNANCE.md](docs/REPOSITORY_GOVERNANCE.md) — intended
   pull-request, review, required-check and candidate-tag policy, distinct from
   forge-side ruleset configuration.
+- [docs/CAMPAIGN_MVP.md](docs/CAMPAIGN_MVP.md) — the sequential Maintenance V1
+  campaign CLI, offline preflight, and descriptive outcomes, steps, and cost
+  reports; no causal, leaderboard, or model-validation claims.
 - [docs/PROVIDER_MATRIX.md](docs/PROVIDER_MATRIX.md) — the private five-model
   methodology spike: what two semantic units can and cannot support, what each
   provider adapter pins, where the prices came from, and why live credentials
