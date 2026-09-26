@@ -1,0 +1,893 @@
+{
+  "action_contracts": {
+    "authorise_supplier_work": {
+      "evidence_refs": {
+        "required": {
+          "approval_checkpoint_id": {
+            "from": "list_checkpoints.approvals",
+            "select": "key == payload.approval_checkpoint_id"
+          }
+        }
+      },
+      "optional": {},
+      "reads": {
+        "get_case_record": "required",
+        "list_checkpoints": "required",
+        "list_quotes": "required"
+      },
+      "required": {
+        "approval_checkpoint_id": "string",
+        "cycle_id": "string",
+        "quote_id": "string",
+        "quote_version": "integer"
+      }
+    },
+    "complete": {
+      "evidence_refs": {
+        "required": {}
+      },
+      "field_guidance": {
+        "operation": "A valid declared wait may be interrupted by unsolicited runtime events outside wake_on; this is informational, not a WAIT failure. Recheck current records and obligations on every wake. Open obligations must still be discharged before completion."
+      },
+      "optional": {},
+      "reads": {
+        "get_case_record": "required",
+        "list_billing": "required",
+        "list_checkpoints": "required",
+        "list_obligations": "required"
+      },
+      "required": {}
+    },
+    "request_approval": {
+      "evidence_refs": {
+        "required": {}
+      },
+      "optional": {},
+      "reads": {
+        "get_case_record": "required",
+        "list_checkpoints": "required",
+        "list_quotes": "required"
+      },
+      "required": {
+        "amount_minor": "integer",
+        "currency": "string",
+        "cycle_id": "string",
+        "deadline_after_minutes": "integer",
+        "quote_id": "string",
+        "quote_version": "integer",
+        "scope_digest": "string"
+      }
+    },
+    "request_exception_resolution": {
+      "evidence_refs": {
+        "required": {
+          "approval_checkpoint_id": {
+            "from": "list_checkpoints.approvals",
+            "select": "key == payload.approval_checkpoint_id"
+          },
+          "quote_record_key": {
+            "from": "list_quotes.quotes",
+            "select": "key == approval.quote_id + ':v' + approval.quote_version where approval=list_checkpoints.approvals[payload.approval_checkpoint_id]"
+          }
+        }
+      },
+      "optional": {},
+      "reads": {
+        "get_case_record": "required",
+        "list_checkpoints": "required",
+        "list_quotes": "required"
+      },
+      "required": {
+        "approval_checkpoint_id": "string",
+        "deadline_after_minutes": "integer",
+        "exception_type": "string"
+      }
+    },
+    "request_invoice_validation": {
+      "evidence_refs": {
+        "required": {
+          "work_evidence_id": {
+            "from": "list_authoritative_records.authoritative_records",
+            "select": "key == cycle.work_evidence_id; kind == work_evidence; cycle_id == cycle.cycle_id where invoice=list_billing.invoices[payload.invoice_id], cycle=get_case_record.cycles[invoice.cycle_id]"
+          }
+        }
+      },
+      "optional": {},
+      "reads": {
+        "get_case_record": "required",
+        "list_authoritative_records": "required",
+        "list_billing": "required"
+      },
+      "required": {
+        "invoice_id": "string"
+      }
+    },
+    "request_payment": {
+      "evidence_refs": {
+        "required": {
+          "invoice_id": {
+            "from": "list_billing.invoices",
+            "select": "key == payload.invoice_id"
+          },
+          "work_evidence_id": {
+            "from": "list_authoritative_records.authoritative_records",
+            "select": "key == cycle.work_evidence_id; kind == work_evidence; cycle_id == cycle.cycle_id where invoice=list_billing.invoices[payload.invoice_id], cycle=get_case_record.cycles[invoice.cycle_id]"
+          }
+        }
+      },
+      "optional": {},
+      "reads": {
+        "get_case_record": "required",
+        "list_authoritative_records": "required",
+        "list_billing": "required"
+      },
+      "required": {
+        "amount_minor": "integer",
+        "currency": "string",
+        "invoice_id": "string"
+      }
+    },
+    "request_supplier_visit": {
+      "evidence_refs": {
+        "required": {}
+      },
+      "optional": {
+        "scope_digest": "optional_string"
+      },
+      "reads": {
+        "get_case_record": "required"
+      },
+      "required": {
+        "cycle_id": "string",
+        "visit_type": "string"
+      }
+    },
+    "send_message": {
+      "evidence_refs": {
+        "required": {}
+      },
+      "field_guidance": {
+        "correlation_id": "cycle_id (get_case_record/list_obligations): completion: match-only discharge; mismatch accepted; approval reminder: open/due approval; transfer: current/transferred; else optional. Recheck open obligations after each wake: a new completion duty requires a newly delivered, correctly correlated notice even if an identical notice was accepted earlier. Early notices are permitted; they do not discharge duties created later. Repeats without a new duty remain redundant.",
+        "recipient_actor_id": "completion/transfer notices: get_case_record.issue_reporting_actor_id; approval reminder: approver_1; else any"
+      },
+      "optional": {
+        "correlation_id": "optional_string"
+      },
+      "reads": {
+        "get_case_record": "required",
+        "list_communications": "required"
+      },
+      "required": {
+        "message_fixture_id": "string",
+        "recipient_actor_id": "string"
+      }
+    }
+  },
+  "actors": {
+    "agent": {
+      "authority": [
+        "authorise_supplier_work",
+        "complete",
+        "request_approval",
+        "request_exception_resolution",
+        "request_invoice_validation",
+        "request_payment",
+        "request_supplier_visit",
+        "send_message"
+      ],
+      "role": "agent"
+    },
+    "approver_1": {
+      "authority": [
+        "approve_repair_quote"
+      ],
+      "role": "approver"
+    },
+    "customer_1": {
+      "authority": [
+        "confirm_resolution",
+        "report_issue"
+      ],
+      "role": "customer"
+    },
+    "maintenance_system": {
+      "authority": [
+        "verify_attendance",
+        "verify_work"
+      ],
+      "role": "authoritative_external_system"
+    },
+    "operator_1": {
+      "authority": [
+        "resolve_exception"
+      ],
+      "role": "operator_human"
+    },
+    "payment_system": {
+      "authority": [
+        "confirm_settlement",
+        "validate_invoice"
+      ],
+      "role": "authoritative_external_system"
+    },
+    "scheduler": {
+      "authority": [
+        "emit_timer"
+      ],
+      "role": "system_scheduler"
+    },
+    "supplier_1": {
+      "authority": [
+        "assert_status",
+        "report_work",
+        "respond_to_visit",
+        "submit_invoice",
+        "submit_quote"
+      ],
+      "role": "supplier"
+    }
+  },
+  "event_contracts": {
+    "approval_deadline_due": {
+      "optional": {},
+      "required": {
+        "checkpoint_id": "string",
+        "cycle_id": "string"
+      },
+      "required_authority": "emit_timer"
+    },
+    "approval_reminder_due": {
+      "optional": {},
+      "required": {
+        "checkpoint_id": "string",
+        "cycle_id": "string"
+      },
+      "required_authority": "emit_timer"
+    },
+    "approver_decision_received": {
+      "optional": {
+        "cycle_id": "string"
+      },
+      "required": {
+        "amount_minor": "integer",
+        "checkpoint_id": "string",
+        "currency": "string",
+        "decision": "string",
+        "quote_id": "string",
+        "quote_version": "integer",
+        "scope_digest": "string"
+      },
+      "required_authority": "approve_repair_quote"
+    },
+    "customer_issue_reported": {
+      "optional": {
+        "description_fixture_id": "string"
+      },
+      "required": {
+        "classification": "string",
+        "cycle_id": "string",
+        "issue_id": "string"
+      },
+      "required_authority": "report_issue"
+    },
+    "customer_resolution_reported": {
+      "optional": {
+        "cycle_id": "string",
+        "related_visit_id": "string"
+      },
+      "required": {
+        "issue_id": "string",
+        "status": "string"
+      },
+      "required_authority": "confirm_resolution"
+    },
+    "invoice_validation_completed": {
+      "optional": {
+        "cycle_id": "string",
+        "reason_code": "string"
+      },
+      "required": {
+        "invoice_id": "string",
+        "valid": "boolean",
+        "validation_id": "string"
+      },
+      "required_authority": "validate_invoice"
+    },
+    "operator_exception_resolved": {
+      "optional": {
+        "cycle_id": "string"
+      },
+      "required": {
+        "checkpoint_id": "string",
+        "decision": "string"
+      },
+      "required_authority": "resolve_exception"
+    },
+    "payment_settlement_confirmed": {
+      "optional": {},
+      "required": {
+        "amount_minor": "integer",
+        "currency": "string",
+        "cycle_id": "string",
+        "invoice_id": "string",
+        "payment_request_id": "string",
+        "settlement_id": "string"
+      },
+      "required_authority": "confirm_settlement"
+    },
+    "provisional_close_expired": {
+      "optional": {},
+      "required": {
+        "cycle_id": "string"
+      },
+      "required_authority": "emit_timer"
+    },
+    "supplier_assertion_received": {
+      "optional": {
+        "cycle_id": "string"
+      },
+      "required": {
+        "assertion": "string",
+        "assertion_id": "string"
+      },
+      "required_authority": "assert_status"
+    },
+    "supplier_invoice_received": {
+      "optional": {},
+      "required": {
+        "amount_minor": "integer",
+        "currency": "string",
+        "cycle_id": "string",
+        "invoice_id": "string",
+        "quote_id": "string",
+        "quote_version": "integer"
+      },
+      "required_authority": "submit_invoice"
+    },
+    "supplier_quote_received": {
+      "optional": {
+        "parent_cycle_id": "string"
+      },
+      "required": {
+        "amount_minor": "integer",
+        "currency": "string",
+        "cycle_id": "string",
+        "quote_id": "string",
+        "quote_version": "integer",
+        "scope_digest": "string"
+      },
+      "required_authority": "submit_quote"
+    },
+    "supplier_visit_response": {
+      "optional": {},
+      "required": {
+        "cycle_id": "string",
+        "response": "string",
+        "visit_id": "string"
+      },
+      "required_authority": "respond_to_visit"
+    },
+    "supplier_work_reported": {
+      "optional": {},
+      "required": {
+        "cycle_id": "string",
+        "outcome": "string",
+        "scope_digest": "string",
+        "visit_id": "string"
+      },
+      "required_authority": "report_work"
+    },
+    "visit_attendance_verified": {
+      "optional": {},
+      "required": {
+        "attended": "boolean",
+        "cycle_id": "string",
+        "visit_id": "string"
+      },
+      "required_authority": "verify_attendance"
+    },
+    "visit_followup_due": {
+      "optional": {},
+      "required": {
+        "cycle_id": "string"
+      },
+      "required_authority": "emit_timer"
+    },
+    "work_evidence_verified": {
+      "optional": {},
+      "required": {
+        "cycle_id": "string",
+        "evidence_id": "string",
+        "outcome": "string",
+        "scope_digest": "string",
+        "visit_id": "string"
+      },
+      "required_authority": "verify_work"
+    }
+  },
+  "fixture_bindings": [
+    "fixture_issue_recurring_leak"
+  ],
+  "fixture_identity": {
+    "operation_id": "lettings_maintenance_synthetic_v1",
+    "operation_type": "lettings.maintenance.synthetic",
+    "operation_version": "0.6.0",
+    "projection_id": "maintenance-source-owner-projection-v5",
+    "schema_version": 1,
+    "semantic_scenario_id": "maintenance_recurring_leak_synthetic_v1"
+  },
+  "message_fixtures": {
+    "msg_access_question": "Synthetic question asking the customer about visit access.",
+    "msg_approval_reminder": "Synthetic reminder that a quote decision is outstanding.",
+    "msg_cannot_proceed": "Synthetic notice that the quoted work was not approved.",
+    "msg_completion_notice": "Synthetic notice that the reported issue is resolved.",
+    "msg_revisit_complete": "Synthetic notice that the revisit work is finished.",
+    "msg_transfer_notice": "Synthetic notice that a human colleague has taken over."
+  },
+  "retrieval_catalogue": {
+    "get_case_record": {
+      "arguments": {},
+      "authority": "system_of_record",
+      "roots": [
+        "phase",
+        "issue_id",
+        "issue_reporting_actor_id",
+        "classification",
+        "customer_resolution",
+        "current_cycle_id",
+        "cycles",
+        "ownership_transferred_to",
+        "transfer_notice_sent",
+        "provisional_close",
+        "reopen_count",
+        "terminal",
+        "replay_final"
+      ],
+      "schema_id": "maintenance.get_case_record.v2",
+      "source": "case_service"
+    },
+    "list_authoritative_records": {
+      "arguments": {},
+      "authority": "authoritative_verification",
+      "roots": [
+        "authoritative_records"
+      ],
+      "schema_id": "maintenance.list_authoritative_records.v1",
+      "source": "verification_service"
+    },
+    "list_billing": {
+      "arguments": {},
+      "authority": "system_of_record",
+      "roots": [
+        "invoices",
+        "payment"
+      ],
+      "schema_id": "maintenance.list_billing.v1",
+      "source": "billing_service"
+    },
+    "list_checkpoints": {
+      "arguments": {},
+      "authority": "system_of_record",
+      "roots": [
+        "approvals",
+        "exceptions"
+      ],
+      "schema_id": "maintenance.list_checkpoints.v1",
+      "source": "approval_service"
+    },
+    "list_communications": {
+      "arguments": {},
+      "authority": "communication",
+      "roots": [
+        "communications"
+      ],
+      "schema_id": "maintenance.list_communications.v1",
+      "source": "messaging_service"
+    },
+    "list_obligations": {
+      "arguments": {},
+      "authority": "system_of_record",
+      "roots": [
+        "obligations"
+      ],
+      "schema_id": "maintenance.list_obligations.v1",
+      "source": "obligation_service"
+    },
+    "list_quotes": {
+      "arguments": {},
+      "authority": "system_of_record",
+      "roots": [
+        "quotes"
+      ],
+      "schema_id": "maintenance.list_quotes.v1",
+      "source": "quoting_service"
+    },
+    "list_recent_events": {
+      "arguments": {},
+      "authority": "actor_claim",
+      "roots": [
+        "assertions"
+      ],
+      "schema_id": "maintenance.list_recent_events.v1",
+      "source": "inbox_service"
+    }
+  },
+  "v1": {
+    "dispatch_failures": [],
+    "events": [
+      {
+        "actor": "customer_1",
+        "at": "2031-03-03T09:00:00Z",
+        "delay_minutes": 0,
+        "event_id": "v1_e01",
+        "payload": {
+          "classification": "NON_EMERGENCY_RECURRING_LEAK",
+          "cycle_id": "work_cycle_1",
+          "description_fixture_id": "fixture_issue_recurring_leak",
+          "issue_id": "issue_1"
+        },
+        "sequence": 0,
+        "trigger": null,
+        "triggers_agent": true,
+        "type": "customer_issue_reported"
+      },
+      {
+        "actor": "supplier_1",
+        "at": null,
+        "delay_minutes": 120,
+        "event_id": "v1_e02",
+        "payload": {
+          "cycle_id": "work_cycle_1",
+          "response": "ACCEPTED",
+          "visit_id": "visit_1"
+        },
+        "sequence": 1,
+        "trigger": {
+          "cycle_id": "work_cycle_1",
+          "kind": "action",
+          "type": "request_supplier_visit"
+        },
+        "triggers_agent": true,
+        "type": "supplier_visit_response"
+      },
+      {
+        "actor": "maintenance_system",
+        "at": null,
+        "delay_minutes": 2880,
+        "event_id": "v1_e03",
+        "payload": {
+          "attended": true,
+          "cycle_id": "work_cycle_1",
+          "visit_id": "visit_1"
+        },
+        "sequence": 2,
+        "trigger": {
+          "cycle_id": "work_cycle_1",
+          "kind": "action",
+          "type": "request_supplier_visit"
+        },
+        "triggers_agent": false,
+        "type": "visit_attendance_verified"
+      },
+      {
+        "actor": "supplier_1",
+        "at": null,
+        "delay_minutes": 2940,
+        "event_id": "v1_e04",
+        "payload": {
+          "cycle_id": "work_cycle_1",
+          "outcome": "FURTHER_WORK_REQUIRED",
+          "scope_digest": "a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90",
+          "visit_id": "visit_1"
+        },
+        "sequence": 3,
+        "trigger": {
+          "cycle_id": "work_cycle_1",
+          "kind": "action",
+          "type": "request_supplier_visit"
+        },
+        "triggers_agent": true,
+        "type": "supplier_work_reported"
+      },
+      {
+        "actor": "supplier_1",
+        "at": null,
+        "delay_minutes": 2970,
+        "event_id": "v1_e05",
+        "payload": {
+          "amount_minor": 64000,
+          "currency": "GBP",
+          "cycle_id": "work_cycle_2",
+          "parent_cycle_id": "work_cycle_1",
+          "quote_id": "quote_1",
+          "quote_version": 1,
+          "scope_digest": "a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90"
+        },
+        "sequence": 4,
+        "trigger": {
+          "cycle_id": "work_cycle_1",
+          "kind": "action",
+          "type": "request_supplier_visit"
+        },
+        "triggers_agent": true,
+        "type": "supplier_quote_received"
+      },
+      {
+        "actor": "supplier_1",
+        "at": null,
+        "delay_minutes": 1350,
+        "event_id": "v1_e06",
+        "payload": {
+          "amount_minor": 64000,
+          "currency": "GBP",
+          "cycle_id": "work_cycle_2",
+          "invoice_id": "invoice_1",
+          "quote_id": "quote_1",
+          "quote_version": 1
+        },
+        "sequence": 5,
+        "trigger": {
+          "cycle_id": "work_cycle_2",
+          "kind": "action",
+          "type": "request_approval"
+        },
+        "triggers_agent": true,
+        "type": "supplier_invoice_received"
+      },
+      {
+        "actor": "supplier_1",
+        "at": null,
+        "delay_minutes": 1380,
+        "event_id": "v1_e07",
+        "payload": {
+          "assertion": "WORK_COMPLETE",
+          "assertion_id": "assertion_1",
+          "cycle_id": "work_cycle_2"
+        },
+        "sequence": 6,
+        "trigger": {
+          "cycle_id": "work_cycle_2",
+          "kind": "action",
+          "type": "request_approval"
+        },
+        "triggers_agent": true,
+        "type": "supplier_assertion_received"
+      },
+      {
+        "actor": "approver_1",
+        "at": null,
+        "delay_minutes": 2760,
+        "event_id": "v1_e08",
+        "payload": {
+          "amount_minor": 64000,
+          "checkpoint_id": "checkpoint_1",
+          "currency": "GBP",
+          "decision": "APPROVED",
+          "quote_id": "quote_1",
+          "quote_version": 1,
+          "scope_digest": "a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90"
+        },
+        "sequence": 7,
+        "trigger": {
+          "cycle_id": "work_cycle_2",
+          "kind": "action",
+          "type": "request_approval"
+        },
+        "triggers_agent": true,
+        "type": "approver_decision_received"
+      },
+      {
+        "actor": "maintenance_system",
+        "at": null,
+        "delay_minutes": 2880,
+        "event_id": "v1_e09",
+        "payload": {
+          "attended": true,
+          "cycle_id": "work_cycle_2",
+          "visit_id": "visit_2"
+        },
+        "sequence": 8,
+        "trigger": {
+          "cycle_id": "work_cycle_2",
+          "kind": "action",
+          "type": "authorise_supplier_work"
+        },
+        "triggers_agent": false,
+        "type": "visit_attendance_verified"
+      },
+      {
+        "actor": "maintenance_system",
+        "at": null,
+        "delay_minutes": 2940,
+        "event_id": "v1_e10",
+        "payload": {
+          "cycle_id": "work_cycle_2",
+          "evidence_id": "evidence_1",
+          "outcome": "COMPLETED",
+          "scope_digest": "a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90",
+          "visit_id": "visit_2"
+        },
+        "sequence": 9,
+        "trigger": {
+          "cycle_id": "work_cycle_2",
+          "kind": "action",
+          "type": "authorise_supplier_work"
+        },
+        "triggers_agent": true,
+        "type": "work_evidence_verified"
+      },
+      {
+        "actor": "payment_system",
+        "at": null,
+        "delay_minutes": 60,
+        "event_id": "v1_e11",
+        "payload": {
+          "invoice_id": "invoice_1",
+          "reason_code": "MATCHES_APPROVED_QUOTE",
+          "valid": true,
+          "validation_id": "validation_1"
+        },
+        "sequence": 10,
+        "trigger": {
+          "cycle_id": "work_cycle_2",
+          "kind": "action",
+          "type": "request_invoice_validation"
+        },
+        "triggers_agent": true,
+        "type": "invoice_validation_completed"
+      },
+      {
+        "actor": "payment_system",
+        "at": null,
+        "delay_minutes": 120,
+        "event_id": "v1_e12",
+        "payload": {
+          "amount_minor": 64000,
+          "currency": "GBP",
+          "cycle_id": "work_cycle_2",
+          "invoice_id": "invoice_1",
+          "payment_request_id": "payment_1",
+          "settlement_id": "settlement_1"
+        },
+        "sequence": 11,
+        "trigger": {
+          "cycle_id": "work_cycle_2",
+          "kind": "action",
+          "type": "request_payment"
+        },
+        "triggers_agent": true,
+        "type": "payment_settlement_confirmed"
+      },
+      {
+        "actor": "customer_1",
+        "at": null,
+        "delay_minutes": 60,
+        "event_id": "v1_e13",
+        "payload": {
+          "issue_id": "issue_1",
+          "related_visit_id": "visit_2",
+          "status": "PERSISTS"
+        },
+        "sequence": 12,
+        "trigger": {
+          "cycle_id": "work_cycle_2",
+          "kind": "action",
+          "type": "complete"
+        },
+        "triggers_agent": true,
+        "type": "customer_resolution_reported"
+      },
+      {
+        "actor": "supplier_1",
+        "at": null,
+        "delay_minutes": 120,
+        "event_id": "v1_e14",
+        "payload": {
+          "cycle_id": "work_cycle_3",
+          "response": "ACCEPTED",
+          "visit_id": "visit_3"
+        },
+        "sequence": 13,
+        "trigger": {
+          "cycle_id": "work_cycle_3",
+          "kind": "action",
+          "type": "request_supplier_visit"
+        },
+        "triggers_agent": true,
+        "type": "supplier_visit_response"
+      },
+      {
+        "actor": "maintenance_system",
+        "at": null,
+        "delay_minutes": 1380,
+        "event_id": "v1_e15",
+        "payload": {
+          "attended": true,
+          "cycle_id": "work_cycle_3",
+          "visit_id": "visit_3"
+        },
+        "sequence": 14,
+        "trigger": {
+          "cycle_id": "work_cycle_3",
+          "kind": "action",
+          "type": "request_supplier_visit"
+        },
+        "triggers_agent": false,
+        "type": "visit_attendance_verified"
+      },
+      {
+        "actor": "maintenance_system",
+        "at": null,
+        "delay_minutes": 1440,
+        "event_id": "v1_e16",
+        "payload": {
+          "cycle_id": "work_cycle_3",
+          "evidence_id": "evidence_2",
+          "outcome": "COMPLETED",
+          "scope_digest": "a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90",
+          "visit_id": "visit_3"
+        },
+        "sequence": 15,
+        "trigger": {
+          "cycle_id": "work_cycle_3",
+          "kind": "action",
+          "type": "request_supplier_visit"
+        },
+        "triggers_agent": true,
+        "type": "work_evidence_verified"
+      },
+      {
+        "actor": "customer_1",
+        "at": null,
+        "delay_minutes": 120,
+        "event_id": "v1_e17",
+        "payload": {
+          "issue_id": "issue_1",
+          "related_visit_id": "visit_3",
+          "status": "RESOLVED"
+        },
+        "sequence": 16,
+        "trigger": {
+          "cycle_id": "work_cycle_3",
+          "kind": "event",
+          "type": "work_evidence_verified"
+        },
+        "triggers_agent": true,
+        "type": "customer_resolution_reported"
+      },
+      {
+        "actor": "supplier_1",
+        "at": null,
+        "delay_minutes": 4320,
+        "event_id": "v1_e18",
+        "payload": {
+          "assertion": "PAYMENT_RECEIVED",
+          "assertion_id": "assertion_2",
+          "cycle_id": "work_cycle_2"
+        },
+        "sequence": 17,
+        "trigger": {
+          "cycle_id": "work_cycle_3",
+          "kind": "action",
+          "type": "complete"
+        },
+        "triggers_agent": true,
+        "type": "supplier_assertion_received"
+      }
+    ],
+    "expected_event_rejections": [
+      {
+        "code": "AFTER_REPLAY_FINAL",
+        "event_id": "v1_e18",
+        "reason": "A supplier assertion authored to arrive after the finalization timer. It must be recorded as evidence that a late message changed nothing."
+      }
+    ],
+    "expected_terminal": "completed_successfully",
+    "human_checkpoint_budget": 1,
+    "label": "approval granted, provisional reopen, warranty revisit, finalized",
+    "required_checkpoint_types": [
+      "repair_quote_approval"
+    ],
+    "starts_at": "2031-03-03T09:00:00Z"
+  }
+}

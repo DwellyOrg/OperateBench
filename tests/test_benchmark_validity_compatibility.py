@@ -27,7 +27,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_current_and_historical_request_mapping_identities_are_independent() -> None:
-    assert OPERATEBENCH_VERSION == "0.12.0"
+    assert OPERATEBENCH_VERSION == "0.13.0"
     assert openai_responses.LIFECYCLE_OPENAI_REQUEST_MAPPING_VERSION == (
         "lifecycle_openai_responses_model_request_v9"
     )

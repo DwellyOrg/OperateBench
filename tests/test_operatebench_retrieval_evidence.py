@@ -129,7 +129,7 @@ class TestTheArtefactContractMoves:
         assert REPRODUCIBLE_ARTIFACT_VERSIONS == (8,)
 
     def test_the_runtime_version_moves_with_the_rows_it_writes(self) -> None:
-        assert OPERATEBENCH_VERSION == "0.12.0"
+        assert OPERATEBENCH_VERSION == "0.13.0"
 
     def test_every_row_and_outcome_shape_is_covered(self) -> None:
         assert row_shape_coverage_problem() is None

@@ -125,7 +125,7 @@ and is not renumbered into the OperateBench line — see
 [docs/VERSIONING.md](docs/VERSIONING.md).
 
 The engine is versioned separately from the distribution that ships it. This
-build records `engine_version` **0.12.0** — the runtime and the evaluator
+build records `engine_version` **0.13.0** — the runtime and the evaluator
 together — inside distribution 0.1.0. Every artefact carries the engine
 version; none carries the distribution version. That is deliberate:
 comparability is a property of the execution and grading semantics, and an

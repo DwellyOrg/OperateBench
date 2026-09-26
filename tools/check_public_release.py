@@ -63,7 +63,7 @@ DISTRIBUTION_VERSION = "0.1.0"
 #: The runtime-and-evaluator identity recorded as ``engine_version`` in every
 #: artefact. Deliberately not derived from the distribution version: the two
 #: answer different questions and move on different schedules (docs/VERSIONING.md).
-ENGINE_VERSION = "0.12.0"
+ENGINE_VERSION = "0.13.0"
 #: The artefact contract this build writes, recorded as ``artifact_version`` in
 #: every artefact. A fourth identity, pinned the same way and for the same
 #: reason: contract 3 requires every accepted effect to record the canonical

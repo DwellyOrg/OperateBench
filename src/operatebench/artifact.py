@@ -2662,7 +2662,7 @@ def validate_artifact(payload: Any, source: str = "run artefact") -> dict[str, A
         validate_canonical_state(
             body["final_state"],
             f"{source}.final_state",
-            reporting_actor=body["engine_version"] in {"0.11.0", "0.12.0"},
+            reporting_actor=body["engine_version"] in {"0.11.0", "0.12.0", "0.13.0"},
         )
     else:
         state_validator(body["final_state"], f"{source}.final_state")

@@ -193,7 +193,7 @@ class SDKFault(unittest.TestCase):
                     rows[0]["identity"]["execution_run_id"],
                     ledger.header.execution_run_id,
                 )
-                self.assertEqual(rows[0]["engine_version"], "0.12.0")
+                self.assertEqual(rows[0]["engine_version"], "0.13.0")
                 self.assertTrue(any(row["kind"] == "decision" for row in rows))
                 self.assertTrue(any(row["kind"] == "state" for row in rows))
             finally:

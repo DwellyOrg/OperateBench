@@ -189,8 +189,11 @@ def outcome_contract_problem(outcome: Any) -> str | None:
                 "Use a declared tool name, not an inner retrieval name."
             ),
             "ModelToolArgumentsMalformed": (
-                "Check the declared argument types and required fields; retrieve "
-                "requires requests, an array of tool/arguments objects."
+                "Check the selected tool's declared argument types and required "
+                "fields. For act, evidence_refs must be an array of non-empty "
+                "strings, not an object; payload must be an object. For retrieve, "
+                "requests must be an array of objects, each naming a tool and "
+                "optionally its arguments object."
             ),
         }.get(name, "Return one structured decision with all required fields.")
         tools = [kind.lower() for kind in (*OUTCOME_KINDS, "RETRIEVE")]

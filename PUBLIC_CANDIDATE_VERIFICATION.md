@@ -1,5 +1,10 @@
 # Public candidate verification — local successor
 
+The execution evidence below describes the historical 0.12.0 base only. Engine 0.13.0
+contains focused Maintenance repairs and has not received a full acceptance
+run or hosted CI. Historical digests and PASS statements below do not attest
+to the changed source.
+
 This technical preview separates accepted base evidence from candidate acceptance.
 The verified base completed technical acceptance on 2026-09-21 and was staged
 privately under the approved project identity. This is not public publication.
@@ -11,7 +16,7 @@ controlled acceptance record, rather than embedded self-referentially here.
 | Identity | Current value |
 | --- | --- |
 | Distribution | 0.1.0 |
-| Lifecycle engine | 0.12.0 |
+| Lifecycle engine | 0.13.0 |
 | Artefact contract | 8 |
 | Execution ledger | 3 |
 | Result dimensions | 11 |
@@ -20,7 +25,7 @@ controlled acceptance record, rather than embedded self-referentially here.
 
 ## Bounded offline evidence
 
-The current maintenance check was exercised from source with provider credential
+The historical 0.12.0 maintenance check was exercised from source with provider credential
 environment variables absent and networking isolated, using:
 
 ```sh

@@ -40,13 +40,13 @@ SEMANTIC_ORACLE = (
     REPO / "tests/fixtures/maintenance-card-v2/profile-v2-semantic-oracle.json"
 )
 SOURCE_ORACLE = (
-    REPO / "tests/fixtures/maintenance-card-v2/source-owner-projection-v4.json"
+    REPO / "tests/fixtures/maintenance-card-v2/source-owner-projection-v5.json"
 )
 GOLDEN_SHA256 = "94756713e2044c187f6ab8f47c02b17bc4038332cdb6f07699e9ee0eec479bcc"
 SEMANTIC_ORACLE_SHA256 = (
     "6f205220245340e8203fad94612a4c0747ae207a3dd2260ad244e398d6fbd179"
 )
-SOURCE_ORACLE_SHA256 = "da486727678648f356387ad7f8003734b7da878588db8b5403916d4bf6104a15"
+SOURCE_ORACLE_SHA256 = "f6733266be3869c8b6685245e7231aca3eb4ce2b27d5cb83a9fbcaf65bbacbce"
 
 EXPECTED_CAUSAL_NODES = (
     ("initial_report", "decision_point"),
@@ -149,7 +149,7 @@ def _source_owner_projection() -> dict[str, object]:
     v1 = spec.scenario("V1")
     return {
         "fixture_identity": {
-            "projection_id": "maintenance-source-owner-projection-v4",
+            "projection_id": "maintenance-source-owner-projection-v5",
             "schema_version": 1,
             "operation_id": spec.operation_id,
             "operation_type": spec.operation_type,
@@ -523,6 +523,7 @@ def test_source_owner_projection_is_complete_exact_and_separately_pinned() -> No
         ("v1", "04976c1fbbe5fbd04a42ff497db240dbfd6b515fa32d660670e2d1d9b1cfe0be"),
         ("v2", "9379aa118f8c29f58587c977dce9311b5ca5264a266a092fdaa2fcb477d0241d"),
         ("v3", "1c6359a9ba22a3395f4981f05d811e1bacee5e96825fc58a0026037358ad07a3"),
+        ("v4", "da486727678648f356387ad7f8003734b7da878588db8b5403916d4bf6104a15"),
     ):
         historical = SOURCE_ORACLE.with_name(f"source-owner-projection-{version}.json")
         assert hashlib.sha256(historical.read_bytes()).hexdigest() == digest

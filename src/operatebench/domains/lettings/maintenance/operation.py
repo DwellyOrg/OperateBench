@@ -246,6 +246,14 @@ class MaintenanceOperation:
 
     def policy_view(self) -> Mapping[str, Any]:
         return {
+            "human_checkpoint_budget": self.scenario.human_checkpoint_budget,
+            "human_checkpoint_guidance": (
+                "human_checkpoint_budget is the maximum total number of human "
+                "checkpoints opened during this episode, including approval and "
+                "exception checkpoints. Exceeding it fails the human-checkpoint "
+                "evaluation. Read current checkpoints before requesting human "
+                "intervention to avoid redundant requests."
+            ),
             "currency": self.policy.currency,
             "issue_classification": self.policy.issue_classification,
             "approval_threshold_minor": self.policy.approval_threshold_minor,

@@ -88,9 +88,33 @@ reservation projection; the controller journal owns full wire-adjusted exposure.
 No historical identity or authority is reused. See [AGGREGATE_BUDGET.md](AGGREGATE_BUDGET.md)
 for the accounting distinction and unimplemented live activation boundary.
 
+### Engine 0.13.0: Maintenance wait, notice and guidance repairs
+
+For Maintenance only, unsolicited runtime events interrupting a valid declared
+wait are informational. Invalid waits, missing yields, unresolved waits, SLA
+failures and unsafe actions retain their checks. Event delivery is unchanged.
+
+An identical completion notice is required again when a new open duty arose
+after its prior accepted effect. The evaluator independently binds the reporting
+recipient, cycle, authoritative verification, obligation creation and actual
+current delivery/discharge to accepted proposals. Early notices remain allowed;
+they cannot discharge later duties. Wasted notices, duplicate business actions
+and forged or unrelated obligations remain failures.
+
+Maintenance exposes the enforced scenario checkpoint budget. Malformed decision
+feedback distinguishes ACT evidence references from RETRIEVE requests. These
+model-visible changes are bound to engine 0.13.0. Provider mapping algorithms,
+Artifact 8, ledger shape and operation fixture 0.6.0 are unchanged. Source-owner
+projection v5 is additive; v1–v4 remain frozen. Commerce grading is unchanged.
+
+Historical artifacts remain readable with stored grades; replay requires the
+original engine identity and refuses older engines before execution. These
+changes do not authorize relabelling historical results. Focused synthetic
+regressions do not establish full-suite, hosted-CI or live-model acceptance.
+
 ### Engine 0.12.0: communication obligations
 
-This current combined runtime/evaluator identity corrects recipient, correlation,
+This historical combined runtime/evaluator identity corrects recipient, correlation,
 and actual-delivery semantics for reminder and transfer notices. V2 deliberately
 retains its permanent transfer-notice fault: legitimate human transfer survives,
 but `reliable=false` with exactly recovery and obligations failing. The diagnostic
@@ -176,7 +200,7 @@ execution settings, not a new operation or published benchmark result. See
 
 ### Unpublished engine 0.12.0 guidance correction
 
-The current unpublished engine 0.12.0 candidate removes repeated message-type
+The historical engine 0.12.0 candidate removes repeated message-type
 spelling from the two `send_message` guidance fields. Completion, approval-reminder
 and transfer rules still specify their recipients and cycle conditions; an
 accepted completion mismatch still does not discharge an obligation. All other
@@ -378,7 +402,7 @@ carry three.** What a run artefact actually records is:
 |---|---|---|
 | `operation.operation_version` | the fixture, echoed into every artefact | `0.6.0` |
 | `operation.spec_digest_sha256` | derived from the fixture's parsed semantic content | pinned per fixture |
-| `engine_version` | `OPERATEBENCH_VERSION` in `src/operatebench/version.py` | `0.12.0` |
+| `engine_version` | `OPERATEBENCH_VERSION` in `src/operatebench/version.py` | `0.13.0` |
 | `artifact_version` | the artefact contract itself | `8` |
 | Card schema contract | `CARD_SCHEMA_VERSION` in `src/operatebench/version.py` | `1` |
 | `final_state_digest_sha256`, `trajectory_digest_sha256` | derived per run | pinned per run |
@@ -443,7 +467,7 @@ numbers is derived from the distribution version, and a distribution bump moves
 none of them.
 
 The preview ships `operation_version 0.6.0` for one synthetic operation, under a
-runtime and evaluator that are expected to change (`engine_version 0.12.0`). Until
+runtime and evaluator that are expected to change (`engine_version 0.13.0`). Until
 the construct is validated, treat every
 version boundary as breaking, and expect that early results will need re-running
 rather than regrading — including across the 0.1.0 → 0.2.0 → 0.3.0 → 0.4.0 → 0.5.0 → 0.6.0 → 0.7.0 → 0.8.0 → 0.9.0 → 0.10.0 engine
