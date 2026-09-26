@@ -42,7 +42,7 @@ ARTIFACT_FILE = REPO_ROOT / "src" / "operatebench" / "artifact.py"
 #: What this branch ships, stated once. Every assertion below reads from here so
 #: a deliberate bump is one edit and an accidental one is a failure.
 DISTRIBUTION_VERSION = "0.1.0"
-ENGINE_VERSION = "0.12.0"
+ENGINE_VERSION = "0.13.0"
 OPERATION_VERSION = "0.6.0"
 #: The artefact contract this build writes. Moved to 2 when the record grew the
 #: decision tape, its digest and the agent execution record, to 3 when every
@@ -92,7 +92,7 @@ def artifact() -> dict[str, object]:
 class TestTheIdentitiesAreSeparate:
     def test_card_contract_version_is_independent_literal(self) -> None:
         assert CARD_SCHEMA_VERSION == 1
-        assert OPERATEBENCH_VERSION == "0.12.0"
+        assert OPERATEBENCH_VERSION == "0.13.0"
         assert ARTIFACT_VERSION == 8
 
     def test_the_distribution_version_is_the_wheel_version(self) -> None:
@@ -452,7 +452,7 @@ def test_current_engine_replays_its_own_ordinary_reference() -> None:
 
     spec = load_spec(FIXTURE)
     artifact = build_artifact(run_episode(spec, "V1", "reference"))
-    assert artifact["engine_version"] == "0.12.0"
+    assert artifact["engine_version"] == "0.13.0"
     assert replay_artifact(spec, artifact).ok
 
 
@@ -470,7 +470,7 @@ def test_historical_engine_is_readable_but_refused_before_execution(monkeypatch)
 
     monkeypatch.setattr(artifacts, "_reproduce", forbidden)
     with pytest.raises(
-        artifacts.ArtifactError, match=r"engine version.*0\.9\.0.*0\.12\.0"
+        artifacts.ArtifactError, match=r"engine version.*0\.9\.0.*0\.13\.0"
     ):
         artifacts.replay_artifact(load_spec(FIXTURE), historical)
 

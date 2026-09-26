@@ -104,7 +104,7 @@ def tampered(payload: dict[str, Any], **changes: Any) -> dict[str, Any]:
 class TestTheContractBump:
     def test_artifact_and_lifecycle_request_versions_are_pinned(self) -> None:
         assert ARTIFACT_VERSION == 8
-        assert OPERATEBENCH_VERSION == "0.12.0"
+        assert OPERATEBENCH_VERSION == "0.13.0"
         assert MODEL_PROTOCOL_VERSION == "operatebench.model.v4"
         assert LIFECYCLE_OPENAI_REQUEST_MAPPING_VERSION == (
             "lifecycle_openai_responses_model_request_v9"

@@ -38,7 +38,7 @@ FIXTURE = Path("examples/operatebench/maintenance_v0_1.yaml")
 
 def test_phase2_identity_matrix_moves_only_semantic_surfaces() -> None:
     spec = load_spec(FIXTURE)
-    assert OPERATEBENCH_VERSION == "0.12.0"
+    assert OPERATEBENCH_VERSION == "0.13.0"
     assert spec.operation_version == "0.6.0"
     assert MODEL_PROTOCOL_VERSION == "operatebench.model.v4"
     assert LIFECYCLE_OPENAI_REQUEST_MAPPING_VERSION == (

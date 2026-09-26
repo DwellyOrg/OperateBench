@@ -55,7 +55,10 @@ from operatebench.execution_ledger import (
 )
 from operatebench.providers.anthropic_messages import TOOL_CHOICE
 from operatebench.version import OPERATEBENCH_VERSION
+from tests.historical_canary_controls import historical_canary_gate_build  # noqa: F401
 from tools import run_lifecycle_v1_anthropic_haiku_canary as canary
+
+pytestmark = pytest.mark.usefixtures("historical_canary_gate_build")
 
 FAKE_API_KEY = "invented-not-a-credential"
 LIVE_KEY = "-".join(("sk", "ant", "api03", "0" * 90))
@@ -533,7 +536,8 @@ class TestTheToolIsOneCellWide:
     def test_the_runtime_interface_versions_are_pinned(self) -> None:
         spec = canary.load_spec(canary.FIXTURE)
 
-        assert OPERATEBENCH_VERSION == "0.12.0"
+        assert OPERATEBENCH_VERSION == "0.13.0"
+        assert canary.OPERATEBENCH_VERSION == "0.12.0"
         assert spec.operation_version == "0.6.0"
         assert MODEL_PROTOCOL_VERSION == "operatebench.model.v4"
         assert (

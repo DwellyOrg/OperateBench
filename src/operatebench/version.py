@@ -73,7 +73,10 @@ __version__ = "0.1.0"
 #: 0.10.0 enforces invocation admission before event and fallback wakes.
 #: Artifact 8 remains readable across engines, but replay requires exact engine
 #: identity and refuses older trajectories before re-execution.
-OPERATEBENCH_VERSION = "0.12.0"
+#: 0.13.0 repairs Maintenance unsolicited-wake grading and new completion duties.
+#: Domain guidance moves with this identity; old reads preserve stored grades
+#: and replay refuses foreign engines rather than silently regrading.
+OPERATEBENCH_VERSION = "0.13.0"
 
 #: Frozen legacy alias for the original packaged Card/Census contract.  It stays
 #: at one so existing root imports and v1 callers remain byte- and API-stable;

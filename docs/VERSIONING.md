@@ -88,9 +88,99 @@ reservation projection; the controller journal owns full wire-adjusted exposure.
 No historical identity or authority is reused. See [AGGREGATE_BUDGET.md](AGGREGATE_BUDGET.md)
 for the accounting distinction and unimplemented live activation boundary.
 
+### Engine 0.13.0: Maintenance wait, notice and guidance repairs
+
+For Maintenance only, unsolicited runtime events interrupting a valid declared
+wait are informational only when the diagnostic binds to a unique accepted,
+agent-triggering delivery and its immediately preceding event observation, with
+matching identity, type, actor, instant and verdict. The delivery must interrupt
+the current nonempty WAIT outside its `wake_on`, no later than its fallback;
+cleared waits, cancelled events and ambiguous identities do not qualify.
+Unproven diagnostics produce `WAIT_INTERRUPT_PROVENANCE_INVALID` and do not
+increase `unsolicited_interrupts`. This is a record-integrity failure, not blame
+for the runtime's choice to interrupt. A subsequent invocation is not required:
+the runtime can reach its invocation limit after recording the delivery.
+Invalid waits, missing yields, unresolved waits, SLA
+failures and unsafe actions retain their checks. Event delivery is unchanged.
+
+An identical completion notice is required again when a new open duty arose
+after its prior accepted effect. The evaluator independently binds the reporting
+recipient, cycle, authoritative verification, obligation creation and actual
+current delivery/discharge to accepted proposals. Early notices remain allowed;
+they cannot discharge later duties. Wasted notices, duplicate business actions
+and forged or unrelated obligations remain failures.
+
+Maintenance exposes the enforced scenario checkpoint budget. Malformed decision
+feedback distinguishes ACT evidence references from RETRIEVE requests. These
+model-visible changes are bound to engine 0.13.0. Provider mapping algorithms,
+Artifact 8, ledger shape and operation fixture 0.6.0 are unchanged. Source-owner
+projection v5 is additive; v1–v4 remain frozen. Commerce grading is unchanged.
+
+Historical artifacts remain readable with stored grades; replay requires the
+original engine identity and refuses older engines before execution. These
+changes do not authorize relabelling historical results. Focused synthetic
+regressions do not establish full-suite, hosted-CI or live-model acceptance.
+
+#### Engine 0.13.0 projection byte budget decision
+
+The product decision is to retain the required policy and action guidance and
+revise only the offline Maintenance reference projection budget. Runtime
+compaction and a general projection redesign are outside this decision.
+The **historical contract** remains a 295,404-byte V1 baseline and a strict
+1.25 ratio ceiling: **369,255 bytes**. Historical results are not relabelled.
+
+Only engine **`0.13.0`**, scenario **V1**, receives a fixed incremental allowance
+of **30,000 bytes**: at most **17,000 policy bytes** and **13,000 action-schema
+bytes** above the independently recorded initial field totals of 15,732 and
+79,793 bytes. Each increment is `max(0, current_field_bytes - initial_field_bytes)`;
+shrinking one field cannot finance growth in another. After subtracting these
+bounded increments, the initial full projection must still be **< 369,255**.
+The corresponding initial field sum must be **< 358,215**, preserving the
+11,040-byte initial envelope. Thus full bytes must be **< 399,255** and field
+bytes **< 388,215**, with both initial and incremental checks required. The
+ceilings are fixed policy numbers, never calculated from the current result.
+A different engine version requires explicit review; it does not inherit this
+allowance. V2/V3 receive no incremental allowance and are checked against the
+unchanged historical full-projection ceiling.
+
+The initial census was recorded before engine `0.13.0`, using the deterministic
+reference agent and the test census identity `opinst_test_0000000000000000`.
+The census uses `json.dumps(..., sort_keys=True, default=str)` with its default
+ASCII escaping and separators, summed over every reference observation. Full
+bytes include field names and envelope punctuation; field sum counts serialized
+values only. These are offline projection metrics, not provider wire/token caps.
+
+| Variant | Initial full | 0.13 full | Initial field sum | 0.13 field sum | Calls |
+|---|---:|---:|---:|---:|---:|
+| V1 | 368,239 | 397,021 | 357,199 | 385,981 | 46 |
+| V2 | 174,947 | 189,693 | 169,187 | 183,933 | 24 |
+| V3 | 198,592 | 214,758 | 191,872 | 208,038 | 28 |
+
+| V1 field | Initial bytes | 0.13 bytes | Increment |
+|---|---:|---:|---:|
+| policy | 15,732 | 31,924 | 16,192 |
+| action_schemas | 79,793 | 92,383 | 12,590 |
+| all other field values | 261,674 | 261,674 | 0 |
+
+The 28,782-byte measured increase consists entirely of policy and action
+schemas; action-schema growth splits into `complete` (5,943) and
+`send_message` (6,647). Retrieval, event, wake-event and call counts did not
+grow. The fixed 30,000 allowance leaves 1,218 bytes of guidance headroom
+(808 policy, 410 action schemas), approximately 4.2% of the measured increment.
+The initial full projection retains its existing 1,016-byte margin; total
+full/field margins are each 2,234 bytes, with strict ceilings. Even the numeric
+checkpoint-budget field alone costs 1,380 bytes across 46 observations and
+exceeds that initial full margin; removing the required prose is not a solution.
+
+Regression checks reject future guidance overflow, unrelated projection growth
+and reuse by another engine version, and retain the checkpoint and new-duty
+notice disclosures. G01/G02/G03/G04 semantics, wake provenance, provider
+financial/call/output/time limits, historical canary pins and vectors, fixtures
+and stored results are unchanged. This decision adds no live-model evidence.
+
 ### Engine 0.12.0: communication obligations
 
-This current combined runtime/evaluator identity corrects recipient, correlation,
+This historical combined runtime/evaluator identity corrects recipient, correlation,
 and actual-delivery semantics for reminder and transfer notices. V2 deliberately
 retains its permanent transfer-notice fault: legitimate human transfer survives,
 but `reliable=false` with exactly recovery and obligations failing. The diagnostic
@@ -176,7 +266,7 @@ execution settings, not a new operation or published benchmark result. See
 
 ### Unpublished engine 0.12.0 guidance correction
 
-The current unpublished engine 0.12.0 candidate removes repeated message-type
+The historical engine 0.12.0 candidate removes repeated message-type
 spelling from the two `send_message` guidance fields. Completion, approval-reminder
 and transfer rules still specify their recipients and cycle conditions; an
 accepted completion mismatch still does not discharge an obligation. All other
@@ -378,7 +468,7 @@ carry three.** What a run artefact actually records is:
 |---|---|---|
 | `operation.operation_version` | the fixture, echoed into every artefact | `0.6.0` |
 | `operation.spec_digest_sha256` | derived from the fixture's parsed semantic content | pinned per fixture |
-| `engine_version` | `OPERATEBENCH_VERSION` in `src/operatebench/version.py` | `0.12.0` |
+| `engine_version` | `OPERATEBENCH_VERSION` in `src/operatebench/version.py` | `0.13.0` |
 | `artifact_version` | the artefact contract itself | `8` |
 | Card schema contract | `CARD_SCHEMA_VERSION` in `src/operatebench/version.py` | `1` |
 | `final_state_digest_sha256`, `trajectory_digest_sha256` | derived per run | pinned per run |
@@ -443,7 +533,7 @@ numbers is derived from the distribution version, and a distribution bump moves
 none of them.
 
 The preview ships `operation_version 0.6.0` for one synthetic operation, under a
-runtime and evaluator that are expected to change (`engine_version 0.12.0`). Until
+runtime and evaluator that are expected to change (`engine_version 0.13.0`). Until
 the construct is validated, treat every
 version boundary as breaking, and expect that early results will need re-running
 rather than regrading — including across the 0.1.0 → 0.2.0 → 0.3.0 → 0.4.0 → 0.5.0 → 0.6.0 → 0.7.0 → 0.8.0 → 0.9.0 → 0.10.0 engine

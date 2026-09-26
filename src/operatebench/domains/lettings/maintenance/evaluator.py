@@ -28,7 +28,11 @@ from typing import Any
 from operatebench.core.clock import parse_timestamp
 from operatebench.core.errors import MalformedTimestampError
 from operatebench.core.evaluation import Dimension, Finding, OperationEvaluation
-from operatebench.core.events import VERDICT_AFTER_REPLAY_FINAL
+from operatebench.core.events import (
+    DISPOSITION_ACCEPTED,
+    DISPOSITION_AUDIT,
+    VERDICT_AFTER_REPLAY_FINAL,
+)
 from operatebench.core.ledger import RECORD_TYPES
 from operatebench.core.read_contract import (
     ACTED_ON_CLAIM_WITHOUT_RECORD,
@@ -1625,13 +1629,234 @@ def _required_citations_from_prior_records(
     return _CitationResolution(_CitationResolutionStatus.RESOLVED, tuple(required))
 
 
+def _new_completion_duty(
+    trajectory: Sequence[Mapping[str, Any]],
+    events: Sequence[Mapping[str, Any]],
+    previous: int,
+    position: int,
+) -> bool:
+    """A narrow causal exception, never a final-state or arbitrary-discharge one.
+
+    Evidence about eligibility stops at the proposal. Only its own immediate
+    effect interval may establish delivery/discharge afterwards. The delivered
+    event tape independently binds the domain cause of obligation creation.
+    Missing/ambiguous evidence leaves the ordinary repetition finding intact.
+    """
+    proposal = trajectory[position]
+    payload = proposal.get("payload", {})
+    if (
+        proposal.get("action_type") != "send_message"
+        or not isinstance(payload, Mapping)
+        or payload.get("message_fixture_id") != "msg_completion_notice"
+    ):
+        return False
+    cycle = payload.get("correlation_id")
+    if not isinstance(cycle, str) or not cycle:
+        return False
+    prefix = trajectory[:position]
+    if any(
+        row.get("record_type") == "action_proposed"
+        and row.get("proposal_id") == proposal.get("proposal_id")
+        for row in prefix
+    ):
+        return False
+    reporters = {
+        row.get("actor_id")
+        for row in prefix
+        if row.get("record_type") == "event_observed"
+        and row.get("event_type") == "customer_issue_reported"
+        and row.get("code") == "ACCEPTED"
+    }
+    if len(reporters) != 1 or payload.get("recipient_actor_id") not in reporters:
+        return False
+    obligation = f"completion_notice:{cycle}"
+    created = [
+        i
+        for i, row in enumerate(prefix)
+        if row.get("record_type") == "obligation_created"
+        and row.get("obligation_id") == obligation
+    ]
+    if len(created) != 1 or not previous < created[0] < position:
+        return False
+    start = created[0]
+    if prefix[start].get("kind") != "customer_completion_notice":
+        return False
+    if any(
+        row.get("obligation_id") == obligation
+        and row.get("record_type")
+        in {"obligation_discharged", "obligation_cancelled", "obligation_breached"}
+        for row in prefix[start + 1 :]
+    ):
+        return False
+
+    def delivery_at(i: int) -> Mapping[str, Any] | None:
+        row = prefix[i]
+        if (
+            row.get("record_type") not in {"event_observed", "event_audit_only"}
+            or row.get("code") != "ACCEPTED"
+        ):
+            return None
+        matches = [
+            event for event in events if event.get("event_id") == row.get("event_id")
+        ]
+        if len(matches) != 1:
+            return None
+        event = matches[0]
+        if (
+            any(
+                event.get(key) != row.get(key) for key in ("event_type", "actor_id", "at")
+            )
+            or event.get("disposition") not in {DISPOSITION_ACCEPTED, DISPOSITION_AUDIT}
+            or event.get("verdict_code") != "ACCEPTED"
+            or not isinstance(event.get("payload"), Mapping)
+        ):
+            return None
+        return event
+
+    # This reducer emits creation immediately before its accepted event row.
+    if start + 1 >= position:
+        return False
+    cause = delivery_at(start + 1)
+    if (
+        cause is None
+        or cause.get("at") != prefix[start].get("at")
+        or cause["payload"].get("cycle_id") != cycle
+    ):
+        return False
+    verified = [
+        event
+        for i in range(start + 2)
+        if (event := delivery_at(i)) is not None
+        and event.get("event_type") == "work_evidence_verified"
+        and event["payload"].get("cycle_id") == cycle
+    ]
+    if not verified:
+        return False
+    if cause.get("event_type") == "payment_settlement_confirmed":
+        money = cause["payload"]
+        payments = [
+            row
+            for row in prefix[:start]
+            if row.get("record_type") == "effect_accepted"
+            and row.get("action_type") == "request_payment"
+            and row.get("code") == "ACCEPTED"
+            and row.get("cycle_id") == cycle
+            and row.get("bindings", {}).get("payment_request_id")
+            == money.get("payment_request_id")
+        ]
+        if len(payments) != 1:
+            return False
+        payment = payments[0]
+        requests = [
+            row
+            for row in prefix[: prefix.index(payment)]
+            if row.get("record_type") == "action_proposed"
+            and row.get("proposal_id") == payment.get("proposal_id")
+            and row.get("action_type") == "request_payment"
+            and row.get("at") == payment.get("at")
+        ]
+        if len(requests) != 1 or any(
+            requests[0].get("payload", {}).get(key) != money.get(key)
+            for key in ("invoice_id", "amount_minor", "currency")
+        ):
+            return False
+    elif cause.get("event_type") == "work_evidence_verified":
+        # Only a non-payable visit opens its notice duty at verification.
+        # Re-derive that from the visit request, not a forged creation label.
+        visit = cause["payload"].get("visit_id")
+        visits = [
+            row
+            for row in prefix[:start]
+            if row.get("record_type") == "effect_accepted"
+            and row.get("action_type") == "request_supplier_visit"
+            and row.get("code") == "ACCEPTED"
+            and row.get("cycle_id") == cycle
+            and row.get("bindings", {}).get("visit_id") == visit
+        ]
+        if len(visits) != 1 or not any(
+            row.get("record_type") == "action_proposed"
+            and row.get("action_type") == "request_supplier_visit"
+            and row.get("proposal_id") == visits[0].get("proposal_id")
+            and row.get("at") == visits[0].get("at")
+            and row.get("payload", {}).get("cycle_id") == cycle
+            and row.get("payload", {}).get("visit_type")
+            in {"DIAGNOSTIC", "WARRANTY_REVISIT"}
+            for row in prefix[: prefix.index(visits[0])]
+        ):
+            return False
+    else:
+        return False
+
+    # The earlier identical proposal must itself have a real accepted effect.
+    old_effect = trajectory[previous]
+    old_proposals = [
+        i
+        for i, row in enumerate(trajectory[:previous])
+        if row.get("record_type") == "action_proposed"
+        and row.get("proposal_id") == old_effect.get("proposal_id")
+    ]
+    if (
+        len(old_proposals) != 1
+        or old_effect.get("code") != "ACCEPTED"
+        or old_effect.get("action_type") != "send_message"
+        or old_effect.get("cycle_id") != cycle
+    ):
+        return False
+    old = trajectory[old_proposals[0]]
+    if (
+        old.get("at") != old_effect.get("at")
+        or old.get("action_type") != "send_message"
+        or _payload_key(old.get("payload")) != _payload_key(payload)
+    ):
+        return False
+
+    discharged = delivered = False
+    for row in trajectory[position + 1 :]:
+        kind = row.get("record_type")
+        if row.get("at") != proposal.get("at"):
+            return False
+        if kind == "obligation_discharged":
+            if (
+                discharged
+                or row.get("obligation_id") != obligation
+                or row.get("kind") != "customer_completion_notice"
+            ):
+                return False
+            discharged = True
+        elif kind == "side_effect":
+            if (
+                delivered
+                or row.get("channel") != "message_dispatch"
+                or row.get("status") != "DELIVERED"
+                or row.get("message_fixture_id") != "msg_completion_notice"
+                or row.get("recipient_actor_id") != payload.get("recipient_actor_id")
+            ):
+                return False
+            delivered = True
+        elif kind == "effect_accepted":
+            return (
+                discharged
+                and delivered
+                and row.get("proposal_id") == proposal.get("proposal_id")
+                and row.get("action_type") == "send_message"
+                and row.get("code") == "ACCEPTED"
+                and row.get("cycle_id") == cycle
+            )
+        else:
+            return False
+    return False
+
+
 def _retrieval_discipline(
-    trajectory: Sequence[Mapping[str, Any]], malformed_positions: Sequence[int] = ()
+    trajectory: Sequence[Mapping[str, Any]],
+    malformed_positions: Sequence[int] = (),
+    *,
+    events: Sequence[Mapping[str, Any]] = (),
 ) -> Dimension:
     """Did each business outcome rest on reads this agent actually performed?
 
-    Reconstructed from the trajectory and the canonical read contract, and from
-    nothing else. In particular it never reads ``action_rejected`` or
+    Reconstructed from the trajectory, delivered events and canonical read contract.
+    In particular it never reads ``action_rejected`` or
     ``terminal_rejected``: a guard refusal is the runtime's opinion about a
     proposal, and a dimension that graded the opinion would be grading the guard
     rather than the agent. Delete every refusal row from a record and this
@@ -1669,7 +1894,7 @@ def _retrieval_discipline(
     claim_values: set[str] = set()
     authoritative_trigger = False
     proposals: dict[str, tuple[str, str, int]] = {}
-    accepted: dict[tuple[str, str], int] = {}
+    accepted: dict[tuple[str, str], tuple[int, int]] = {}
     outcomes = 0
 
     def report(code: str, detail: str, at: Any) -> None:
@@ -1746,7 +1971,7 @@ def _retrieval_discipline(
                 row.get("at"),
             )
 
-    for row in trajectory:
+    for position, row in enumerate(trajectory):
         record_type = row.get("record_type")
         if record_type == "agent_invoked":
             raw = row.get("invocation_index")
@@ -1795,11 +2020,15 @@ def _retrieval_discipline(
             check(action_type, _evidence_of(row), row.get("at"), action_type)
             check_citations(row, action_type)
             earlier = accepted.get((action_type, key))
-            if earlier is not None and earlier < invocation:
+            if (
+                earlier is not None
+                and earlier[0] < invocation
+                and not _new_completion_duty(trajectory, events, earlier[1], position)
+            ):
                 report(
                     REPEATED_ACTION_AFTER_WAKE,
                     f"{action_type} was proposed again in invocation {invocation} with "
-                    f"the payload its own accepted effect in invocation {earlier} "
+                    f"the payload its own accepted effect in invocation {earlier[0]} "
                     "already performed; the agent was woken in between and the record "
                     "it read says the effect is already there",
                     row.get("at"),
@@ -1818,7 +2047,7 @@ def _retrieval_discipline(
             known = proposals.get(str(row.get("proposal_id")))
             if known is not None:
                 action_type, key, at_invocation = known
-                accepted[(action_type, key)] = at_invocation
+                accepted[(action_type, key)] = (at_invocation, position)
             continue
 
     return Dimension(
@@ -1871,7 +2100,7 @@ def _evaluate_fields(
         _obligations(safe_trajectory, final_state, status),
         _replay(replay_ok),
         _environment(events, scenario, integrity),
-        _retrieval_discipline(safe_trajectory, malformed_positions),
+        _retrieval_discipline(safe_trajectory, malformed_positions, events=events),
     )
     return OperationEvaluation(
         terminal_outcome=status,
@@ -2204,6 +2433,97 @@ def _settlement_binding_findings(final_state: Mapping[str, Any]) -> list[Finding
     return findings
 
 
+def _proven_unsolicited_interrupts(
+    trajectory: Sequence[Mapping[str, Any]],
+    events: Sequence[Mapping[str, Any]],
+) -> set[int]:
+    """Bind diagnostics to the delivery that consumed the current WAIT.
+
+    Engine._deliver writes event_observed immediately before the diagnostic;
+    _invoke clears the wait afterwards. Do not require an invocation: the
+    invocation budget can stop execution after an actual accepted delivery.
+    """
+    proven: set[int] = set()
+    active: Mapping[str, Any] | None = None
+    pending: Mapping[str, Any] | None = None
+    cancelled: list[Any] = []
+    for position, row in enumerate(trajectory):
+        kind = row.get("record_type")
+        if kind == "wait_rejected" and row.get("code") == "UNDECLARED_WAKE_EVENT":
+            event_id = row.get("event_id")
+            deliveries = [
+                event
+                for event in events
+                if isinstance(event, Mapping) and event.get("event_id") == event_id
+            ]
+            records = [
+                record
+                for record in trajectory
+                if record.get("record_type") in _EVENT_RECORD_DISPOSITIONS
+                and record.get("event_id") == event_id
+            ]
+            if (
+                pending is not None
+                and isinstance(event_id, str)
+                and bool(event_id)
+                and event_id not in cancelled
+                and len(deliveries) == len(records) == 1
+                and position > 0
+                and records[0] is trajectory[position - 1]
+            ):
+                event, observed = deliveries[0], records[0]
+                wake_on = pending.get("wake_on")
+                fallback = pending.get("fallback_at")
+                try:
+                    delivered_at = parse_timestamp(event.get("at"), "wait interrupt")
+                    declared_at = parse_timestamp(pending.get("at"), "standing wait")
+                    fallback_at = (
+                        None
+                        if fallback is None
+                        else parse_timestamp(fallback, "fallback")
+                    )
+                except MalformedTimestampError:
+                    timing_valid = False
+                else:
+                    timing_valid = declared_at <= delivered_at and (
+                        fallback_at is None or delivered_at <= fallback_at
+                    )
+                if (
+                    timing_valid
+                    and isinstance(wake_on, (list, tuple))
+                    and bool(wake_on)
+                    and all(isinstance(name, str) and name for name in wake_on)
+                    and isinstance(event.get("event_type"), str)
+                    and bool(event["event_type"])
+                    and event["event_type"] not in wake_on
+                    and isinstance(event.get("actor_id"), str)
+                    and bool(event["actor_id"])
+                    and event.get("disposition") == "accepted"
+                    and event.get("triggers_agent") is True
+                    and observed.get("record_type") == "event_observed"
+                    and all(
+                        observed.get(key) == event.get(key)
+                        for key in ("event_id", "event_type", "actor_id", "at")
+                    )
+                    and row.get("at") == event.get("at")
+                    and _is_verdict_code(observed.get("code"))
+                    and observed.get("code") == event.get("verdict_code")
+                ):
+                    proven.add(position)
+        # A delivery consumes the standing wait for provenance purposes, even
+        # if a forged trace omits the invocation which normally clears it.
+        pending = None
+        if kind == "event_observed":
+            pending, active = active, None
+        elif kind == "wait_declared":
+            active = row if "wake_on" in row and "fallback_fired" not in row else None
+        elif kind in {"agent_invoked", "wait_unresolved_at_horizon", "episode_ended"}:
+            active = None
+        elif kind == "timer_cancelled":
+            cancelled.append(row.get("event_id"))
+    return proven
+
+
 def _temporal(
     trajectory: Sequence[Mapping[str, Any]],
     events: Sequence[Mapping[str, Any]],
@@ -2221,7 +2541,21 @@ def _temporal(
                 "run without waiting correctly at least once",
             )
         )
-    for row in _rows(trajectory, "wait_rejected"):
+    interrupts = _proven_unsolicited_interrupts(trajectory, events)
+    for position, row in enumerate(trajectory):
+        if row.get("record_type") != "wait_rejected":
+            continue
+        if row.get("code") == "UNDECLARED_WAKE_EVENT":
+            if position not in interrupts:
+                findings.append(
+                    Finding(
+                        "WAIT_INTERRUPT_PROVENANCE_INVALID",
+                        "unsolicited-wake diagnostic is not bound to a unique accepted "
+                        "agent-triggering delivery interrupting its standing WAIT",
+                        at=str(row.get("at")),
+                    )
+                )
+            continue
         findings.append(Finding(str(row["code"]), str(row["detail"]), at=str(row["at"])))
     for row in _rows(trajectory, "wait_unresolved_at_horizon"):
         # A wait that was still standing when the operation ran out of horizon.
@@ -2246,8 +2580,9 @@ def _temporal(
     reminders = [
         event
         for event in events
-        if event["event_type"] == "approval_reminder_due"
-        and event["disposition"] == "accepted"
+        if isinstance(event, Mapping)
+        and event.get("event_type") == "approval_reminder_due"
+        and event.get("disposition") == "accepted"
     ]
     if len(reminders) > 1:
         findings.append(
@@ -2260,7 +2595,11 @@ def _temporal(
         name="temporal_correctness",
         ok=not findings,
         findings=tuple(findings),
-        counts={"waits_declared": len(waits), "reminders_fired": len(reminders)},
+        counts={
+            "waits_declared": len(waits),
+            "reminders_fired": len(reminders),
+            "unsolicited_interrupts": len(interrupts),
+        },
     )
 
 

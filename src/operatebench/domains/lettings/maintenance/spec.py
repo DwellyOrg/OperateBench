@@ -594,7 +594,12 @@ def action_schema_view() -> dict[str, dict[str, Any]]:
         "correlation_id": (
             "cycle_id (get_case_record/list_obligations): completion: "
             "match-only discharge; mismatch accepted; approval reminder: "
-            "open/due approval; transfer: current/transferred; else optional"
+            "open/due approval; transfer: current/transferred; else optional. "
+            "Recheck open obligations after each wake: a new completion duty "
+            "requires a newly delivered, correctly correlated notice even if an "
+            "identical notice was accepted earlier. Early notices are permitted; "
+            "they do not discharge duties created later. Repeats without a new "
+            "duty remain redundant."
         ),
         "recipient_actor_id": (
             "completion/transfer notices: "
@@ -607,6 +612,14 @@ def action_schema_view() -> dict[str, dict[str, Any]]:
     # the record exactly as an action's does, so its read requirement is
     # disclosed rather than discovered by being refused.
     published[COMPLETE_OUTCOME_KEY] = {
+        "field_guidance": {
+            "operation": (
+                "A valid declared wait may be interrupted by unsolicited runtime "
+                "events outside wake_on; this is informational, not a WAIT failure. "
+                "Recheck current records and obligations on every wake. "
+                "Open obligations must still be discharged before completion."
+            ),
+        },
         "required": {},
         "optional": {},
         "reads": maintenance_action_evidence_contract().schema_part(COMPLETE_OUTCOME_KEY),

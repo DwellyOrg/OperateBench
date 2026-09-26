@@ -70,9 +70,10 @@ convenience projections, not additional crash-resumption authority.
 
 ## Version decision and activation boundary
 
-No engine, evaluator, request mapping, model output ceiling, call/turn/token or
-wall-clock profile is relaxed or bumped. Successful execution uses engine 0.12.0
-and existing Artifact 8 / ledger 3 records. Existing measured-breach guards keep
+The historical accounting implementation used engine 0.12.0 without relaxing
+or bumping the engine, evaluator, request mapping, model output ceiling, or
+call/turn/token or wall-clock profiles; this is not current-engine acceptance.
+It used existing Artifact 8 / ledger 3 records. Existing measured-breach guards keep
 their accounting behavior; dedicated reservation breaches now reach the existing
 budget exclusion rather than an incorrect transport exclusion. No durable
 taxonomy or ledger validation changes are needed: `provider_budget` already

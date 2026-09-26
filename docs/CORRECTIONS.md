@@ -1,5 +1,20 @@
 # Private repository corrections
 
+## OB-CORR-2026-09-26-MAINTENANCE-WAIT-NOTICE
+
+Engine 0.13.0 corrects two Maintenance scoring defects: safe unsolicited
+interrupts were penalized as invalid waits, and notices discharging a causally
+new completion duty were penalized as redundant. Invalid waits and genuinely
+redundant actions remain failures. Synthetic regressions cover causal tampering,
+wrong recipients/proposals, and a required second versus wasted third notice.
+
+Maintenance now discloses its enforced checkpoint budget; malformed decision
+feedback explains ACT reference arrays separately from RETRIEVE request arrays.
+Historical artifacts and grades remain unchanged and readable; replay refuses a
+different engine identity. See [versioning](VERSIONING.md) for scope. No new
+provider evaluation or complete release acceptance is claimed.
+
+
 ## OB-CORR-2026-09-17-COMMUNICATION-OBLIGATIONS
 
 - **Affected:** engine 0.11.0 and earlier maintenance reminder/transfer grading.

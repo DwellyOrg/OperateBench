@@ -118,7 +118,7 @@ def test_alpha_build_pin_does_not_accept_current_runtime() -> None:
     from operatebench.version import OPERATEBENCH_VERSION
     from tools import matched_arm_alpha as alpha
 
-    assert OPERATEBENCH_VERSION == "0.12.0"
+    assert OPERATEBENCH_VERSION == "0.13.0"
     assert alpha.ENGINE_VERSION == "0.9.0"
     with pytest.raises(alpha.AlphaRefusal, match="pinned_build_control_changed"):
         alpha.check_pinned_build()
