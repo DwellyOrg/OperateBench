@@ -291,7 +291,7 @@ def test_actual_invalid_waits_stay_failures(code):
     }
 
 
-def test_unsolicited_interrupt_is_informational():
+def test_unsolicited_interrupt_without_provenance_fails():
     rows = [
         {
             "index": 0,
@@ -309,7 +309,8 @@ def test_unsolicited_interrupt_is_informational():
     ]
     before = deepcopy(rows)
     result = _temporal(rows, [], _record_integrity(rows, []))
-    assert "UNDECLARED_WAKE_EVENT" not in {f.code for f in result.findings}
+    assert "WAIT_INTERRUPT_PROVENANCE_INVALID" in {f.code for f in result.findings}
+    assert result.counts["unsolicited_interrupts"] == 0
     assert rows == before
 
 
@@ -422,7 +423,8 @@ def test_two_reporting_actors_cannot_authorise_the_recipient(notice_trace):
     assert len(repeats(rows, events)) == 1
 
 
-def test_selected_wait_interrupt_keeps_business_effects(monkeypatch):
+@pytest.fixture(scope="module")
+def runtime_wait_interrupt():
     from dataclasses import replace
     from pathlib import Path
 
@@ -441,14 +443,302 @@ def test_selected_wait_interrupt_keeps_business_effects(monkeypatch):
             return replace(outcome, wake_on=("customer_issue_reported",))
         return outcome
 
-    monkeypatch.setattr(RetrievingReferenceAgent, "decide", selected)
-    interrupted = run_episode(spec, "V1", "reference")
+    with pytest.MonkeyPatch.context() as patch:
+        patch.setattr(RetrievingReferenceAgent, "decide", selected)
+        interrupted = run_episode(spec, "V1", "reference")
+    return baseline, interrupted
+
+
+def test_selected_wait_interrupt_keeps_business_effects(runtime_wait_interrupt):
+    baseline, interrupted = runtime_wait_interrupt
+    from operatebench.artifact import build_artifact, validate_artifact
+
     assert interrupted.reliable
+    validate_artifact(build_artifact(interrupted))
+    rows, events = interrupted.outcome.trajectory, interrupted.outcome.events
+    result = _temporal(rows, events, _record_integrity(rows, events))
+    assert result.ok
+    assert result.counts["unsolicited_interrupts"] == sum(
+        row.get("code") == "UNDECLARED_WAKE_EVENT" for row in rows
+    )
+    assert result.counts["waits_declared"] == sum(
+        row["record_type"] == "wait_declared" and "wake_on" in row for row in rows
+    )
+    assert result.counts["reminders_fired"] == sum(
+        event["event_type"] == "approval_reminder_due"
+        and event["disposition"] == "accepted"
+        for event in events
+    )
     assert interrupted.outcome.final_state == baseline.outcome.final_state
     assert any(
         row.get("code") == "UNDECLARED_WAKE_EVENT"
         for row in interrupted.outcome.trajectory
     )
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        "missing_id",
+        "unknown_id",
+        "malformed_id",
+        "unrelated_id",
+        "no_delivery",
+        "duplicate_delivery",
+        "duplicate_record",
+        "no_observed",
+        "audit_record",
+        "rejected",
+        "audit",
+        "post_terminal",
+        "no_trigger",
+        "malformed_trigger",
+        "wrong_actor",
+        "wrong_type",
+        "wrong_time",
+        "wrong_verdict",
+        "diagnostic_time",
+        "cancelled",
+        "no_wait",
+        "in_wake_on",
+        "empty_wake",
+        "malformed_wake",
+        "fallback_fired",
+        "expired_fallback",
+        "malformed_fallback",
+        "old_wait",
+        "intervening_delivery",
+        "duplicate_diagnostic",
+        "missing_trigger",
+        "missing_type",
+        "missing_actor",
+        "missing_time",
+        "malformed_delivery",
+        "missing_verdict",
+        "replacement_wait",
+    ],
+)
+def test_runtime_interrupt_requires_current_delivery_provenance(
+    runtime_wait_interrupt, mutation
+):
+    _, run = runtime_wait_interrupt
+    rows = deepcopy(list(run.outcome.trajectory))
+    events = deepcopy(list(run.outcome.events))
+    position = next(
+        i for i, row in enumerate(rows) if row.get("code") == "UNDECLARED_WAKE_EVENT"
+    )
+    # Keep the real prefix through the first interrupt, isolating its count.
+    rows = rows[: position + 1]
+    recorded_ids = {
+        row.get("event_id") for row in rows if row["record_type"].startswith("event_")
+    }
+    events = [event for event in events if event["event_id"] in recorded_ids]
+    diagnostic, observed = rows[-1], rows[-2]
+    event = next(event for event in events if event["event_id"] == diagnostic["event_id"])
+    wait = next(
+        row
+        for row in reversed(rows[:-2])
+        if row["record_type"] == "wait_declared" and "wake_on" in row
+    )
+    valid = _temporal(rows, events, _record_integrity(rows, events))
+    assert valid.ok
+    assert valid.counts["unsolicited_interrupts"] == 1
+    if mutation in {
+        "missing_trigger",
+        "missing_type",
+        "missing_actor",
+        "missing_time",
+        "missing_verdict",
+    }:
+        key = {
+            "missing_trigger": "triggers_agent",
+            "missing_type": "event_type",
+            "missing_actor": "actor_id",
+            "missing_time": "at",
+            "missing_verdict": "verdict_code",
+        }[mutation]
+        event.pop(key)
+    elif mutation == "malformed_delivery":
+        events[events.index(event)] = None
+    elif mutation == "replacement_wait":
+        replacement = deepcopy(wait)
+        replacement["wake_on"] = [event["event_type"]]
+        replacement["at"] = observed["at"]
+        rows.insert(-2, replacement)
+    elif mutation == "missing_id":
+        diagnostic.pop("event_id")
+    elif mutation == "unknown_id":
+        diagnostic["event_id"] = "absent"
+    elif mutation == "malformed_id":
+        diagnostic["event_id"] = []
+    elif mutation == "unrelated_id":
+        diagnostic["event_id"] = events[0]["event_id"]
+    elif mutation == "no_delivery":
+        events.remove(event)
+    elif mutation == "duplicate_delivery":
+        events.append(deepcopy(event))
+    elif mutation == "duplicate_record":
+        rows.insert(-1, deepcopy(observed))
+    elif mutation == "no_observed":
+        rows.remove(observed)
+    elif mutation == "audit_record":
+        observed["record_type"] = "event_audit_only"
+    elif mutation in {"rejected", "audit", "post_terminal"}:
+        event["disposition"] = mutation
+    elif mutation in {"no_trigger", "malformed_trigger"}:
+        event["triggers_agent"] = False if mutation == "no_trigger" else 1
+    elif mutation.startswith("wrong_"):
+        key = {
+            "wrong_actor": "actor_id",
+            "wrong_type": "event_type",
+            "wrong_time": "at",
+            "wrong_verdict": "verdict_code",
+        }[mutation]
+        event[key] = "2030-01-01T00:00:00Z" if key == "at" else "other"
+    elif mutation == "diagnostic_time":
+        diagnostic["at"] = "2030-01-01T00:00:00Z"
+    elif mutation == "cancelled":
+        rows.insert(
+            -2,
+            {
+                "record_type": "timer_cancelled",
+                "at": observed["at"],
+                "event_id": event["event_id"],
+            },
+        )
+    elif mutation == "no_wait":
+        rows.remove(wait)
+    elif mutation in {"in_wake_on", "empty_wake", "malformed_wake"}:
+        wait["wake_on"] = {
+            "in_wake_on": [event["event_type"]],
+            "empty_wake": [],
+            "malformed_wake": 7,
+        }[mutation]
+    elif mutation == "fallback_fired":
+        rows.insert(
+            -2,
+            {
+                "record_type": "wait_declared",
+                "at": observed["at"],
+                "fallback_fired": True,
+            },
+        )
+    elif mutation in {"expired_fallback", "malformed_fallback"}:
+        wait["fallback_at"] = (
+            "2030-01-01T00:00:00Z" if mutation == "expired_fallback" else []
+        )
+    elif mutation == "old_wait":
+        rows.insert(-2, {"record_type": "agent_invoked", "at": observed["at"]})
+    elif mutation == "intervening_delivery":
+        rows.insert(-2, deepcopy(observed))
+        rows[-3]["event_id"] = "another_delivery"
+    elif mutation == "duplicate_diagnostic":
+        rows.append(deepcopy(diagnostic))
+    else:
+        raise AssertionError(mutation)
+    for index, row in enumerate(rows):
+        row["index"] = index
+    before = deepcopy((rows, events))
+    result = _temporal(rows, events, _record_integrity(rows, events))
+    assert "WAIT_INTERRUPT_PROVENANCE_INVALID" in {f.code for f in result.findings}
+    assert not result.ok
+    assert result.counts["unsolicited_interrupts"] == (
+        1 if mutation == "duplicate_diagnostic" else 0
+    )
+    assert (rows, events) == before
+
+
+@pytest.mark.parametrize("intervening", ["event_audit_only", "event_rejected"])
+def test_nontrigger_delivery_preserves_standing_wait(runtime_wait_interrupt, intervening):
+    _, run = runtime_wait_interrupt
+    rows = deepcopy(list(run.outcome.trajectory))
+    events = deepcopy(list(run.outcome.events))
+    position = next(
+        i for i, row in enumerate(rows) if row.get("code") == "UNDECLARED_WAKE_EVENT"
+    )
+    observed = deepcopy(rows[position - 1])
+    event = deepcopy(
+        next(event for event in events if event["event_id"] == observed["event_id"])
+    )
+    observed.update(record_type=intervening, event_id="nontrigger")
+    event.update(
+        event_id="nontrigger",
+        triggers_agent=False,
+        disposition="audit" if intervening == "event_audit_only" else "rejected",
+    )
+    rows.insert(position - 1, observed)
+    events.append(event)
+    # Equal-instant event delivery wins over a fallback (the engine uses <).
+    wait = next(
+        row
+        for row in reversed(rows[: position - 1])
+        if row["record_type"] == "wait_declared" and "wake_on" in row
+    )
+    wait["fallback_at"] = observed["at"]
+    for index, row in enumerate(rows):
+        row["index"] = index
+    result = _temporal(rows, events, _record_integrity(rows, events))
+    assert result.ok
+    assert result.counts["unsolicited_interrupts"] == sum(
+        row.get("code") == "UNDECLARED_WAKE_EVENT" for row in rows
+    )
+
+
+def test_interrupt_provenance_does_not_swallow_internal_bugs(
+    runtime_wait_interrupt, monkeypatch
+):
+    from operatebench.domains.lettings.maintenance import evaluator
+
+    _, run = runtime_wait_interrupt
+    rows, events = run.outcome.trajectory, run.outcome.events
+    integrity = _record_integrity(rows, events)
+
+    def broken_clock(*args):
+        raise RuntimeError("internal bug")
+
+    monkeypatch.setattr(evaluator, "parse_timestamp", broken_clock)
+    with pytest.raises(RuntimeError, match="internal bug"):
+        _temporal(rows, events, integrity)
+
+
+def test_actual_interrupt_at_invocation_limit_is_still_informational(monkeypatch):
+    from dataclasses import replace
+    from pathlib import Path
+
+    from operatebench.core.outcomes import Wait
+    from operatebench.domains.lettings.maintenance.agents import RetrievingReferenceAgent
+    from operatebench.domains.lettings.maintenance.operation import MaintenanceOperation
+    from operatebench.domains.lettings.maintenance.spec import load_spec
+    from operatebench.runner import run_episode
+
+    original_plan = MaintenanceOperation.build_plan
+    original_decide = RetrievingReferenceAgent.decide
+
+    def limited_plan(self):
+        return replace(original_plan(self), max_invocations=1)
+
+    def selected(self, observation):
+        outcome = original_decide(self, observation)
+        return (
+            replace(outcome, wake_on=("customer_issue_reported",))
+            if isinstance(outcome, Wait)
+            else outcome
+        )
+
+    monkeypatch.setattr(MaintenanceOperation, "build_plan", limited_plan)
+    monkeypatch.setattr(RetrievingReferenceAgent, "decide", selected)
+    run = run_episode(
+        load_spec(Path("examples/operatebench/maintenance_v0_1.yaml")),
+        "V1",
+        "reference",
+        self_check=False,
+    )
+    rows, events = run.outcome.trajectory, run.outcome.events
+    result = _temporal(rows, events, _record_integrity(rows, events))
+    assert result.counts["unsolicited_interrupts"] == 1
+    assert "WAIT_INTERRUPT_PROVENANCE_INVALID" not in {f.code for f in result.findings}
+    assert "NEVER_YIELDED_CONTROL" in {f.code for f in result.findings}
+    assert sum(row["record_type"] == "agent_invoked" for row in rows) == 1
 
 
 def test_payment_settlement_requires_a_second_completion_notice(monkeypatch):

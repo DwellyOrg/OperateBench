@@ -91,7 +91,16 @@ for the accounting distinction and unimplemented live activation boundary.
 ### Engine 0.13.0: Maintenance wait, notice and guidance repairs
 
 For Maintenance only, unsolicited runtime events interrupting a valid declared
-wait are informational. Invalid waits, missing yields, unresolved waits, SLA
+wait are informational only when the diagnostic binds to a unique accepted,
+agent-triggering delivery and its immediately preceding event observation, with
+matching identity, type, actor, instant and verdict. The delivery must interrupt
+the current nonempty WAIT outside its `wake_on`, no later than its fallback;
+cleared waits, cancelled events and ambiguous identities do not qualify.
+Unproven diagnostics produce `WAIT_INTERRUPT_PROVENANCE_INVALID` and do not
+increase `unsolicited_interrupts`. This is a record-integrity failure, not blame
+for the runtime's choice to interrupt. A subsequent invocation is not required:
+the runtime can reach its invocation limit after recording the delivery.
+Invalid waits, missing yields, unresolved waits, SLA
 failures and unsafe actions retain their checks. Event delivery is unchanged.
 
 An identical completion notice is required again when a new open duty arose

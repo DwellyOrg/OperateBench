@@ -2433,6 +2433,97 @@ def _settlement_binding_findings(final_state: Mapping[str, Any]) -> list[Finding
     return findings
 
 
+def _proven_unsolicited_interrupts(
+    trajectory: Sequence[Mapping[str, Any]],
+    events: Sequence[Mapping[str, Any]],
+) -> set[int]:
+    """Bind diagnostics to the delivery that consumed the current WAIT.
+
+    Engine._deliver writes event_observed immediately before the diagnostic;
+    _invoke clears the wait afterwards. Do not require an invocation: the
+    invocation budget can stop execution after an actual accepted delivery.
+    """
+    proven: set[int] = set()
+    active: Mapping[str, Any] | None = None
+    pending: Mapping[str, Any] | None = None
+    cancelled: list[Any] = []
+    for position, row in enumerate(trajectory):
+        kind = row.get("record_type")
+        if kind == "wait_rejected" and row.get("code") == "UNDECLARED_WAKE_EVENT":
+            event_id = row.get("event_id")
+            deliveries = [
+                event
+                for event in events
+                if isinstance(event, Mapping) and event.get("event_id") == event_id
+            ]
+            records = [
+                record
+                for record in trajectory
+                if record.get("record_type") in _EVENT_RECORD_DISPOSITIONS
+                and record.get("event_id") == event_id
+            ]
+            if (
+                pending is not None
+                and isinstance(event_id, str)
+                and bool(event_id)
+                and event_id not in cancelled
+                and len(deliveries) == len(records) == 1
+                and position > 0
+                and records[0] is trajectory[position - 1]
+            ):
+                event, observed = deliveries[0], records[0]
+                wake_on = pending.get("wake_on")
+                fallback = pending.get("fallback_at")
+                try:
+                    delivered_at = parse_timestamp(event.get("at"), "wait interrupt")
+                    declared_at = parse_timestamp(pending.get("at"), "standing wait")
+                    fallback_at = (
+                        None
+                        if fallback is None
+                        else parse_timestamp(fallback, "fallback")
+                    )
+                except MalformedTimestampError:
+                    timing_valid = False
+                else:
+                    timing_valid = declared_at <= delivered_at and (
+                        fallback_at is None or delivered_at <= fallback_at
+                    )
+                if (
+                    timing_valid
+                    and isinstance(wake_on, (list, tuple))
+                    and bool(wake_on)
+                    and all(isinstance(name, str) and name for name in wake_on)
+                    and isinstance(event.get("event_type"), str)
+                    and bool(event["event_type"])
+                    and event["event_type"] not in wake_on
+                    and isinstance(event.get("actor_id"), str)
+                    and bool(event["actor_id"])
+                    and event.get("disposition") == "accepted"
+                    and event.get("triggers_agent") is True
+                    and observed.get("record_type") == "event_observed"
+                    and all(
+                        observed.get(key) == event.get(key)
+                        for key in ("event_id", "event_type", "actor_id", "at")
+                    )
+                    and row.get("at") == event.get("at")
+                    and _is_verdict_code(observed.get("code"))
+                    and observed.get("code") == event.get("verdict_code")
+                ):
+                    proven.add(position)
+        # A delivery consumes the standing wait for provenance purposes, even
+        # if a forged trace omits the invocation which normally clears it.
+        pending = None
+        if kind == "event_observed":
+            pending, active = active, None
+        elif kind == "wait_declared":
+            active = row if "wake_on" in row and "fallback_fired" not in row else None
+        elif kind in {"agent_invoked", "wait_unresolved_at_horizon", "episode_ended"}:
+            active = None
+        elif kind == "timer_cancelled":
+            cancelled.append(row.get("event_id"))
+    return proven
+
+
 def _temporal(
     trajectory: Sequence[Mapping[str, Any]],
     events: Sequence[Mapping[str, Any]],
@@ -2450,9 +2541,20 @@ def _temporal(
                 "run without waiting correctly at least once",
             )
         )
-    for row in _rows(trajectory, "wait_rejected"):
-        # Runtime delivery interrupts valid waits; this legacy row is diagnostic.
+    interrupts = _proven_unsolicited_interrupts(trajectory, events)
+    for position, row in enumerate(trajectory):
+        if row.get("record_type") != "wait_rejected":
+            continue
         if row.get("code") == "UNDECLARED_WAKE_EVENT":
+            if position not in interrupts:
+                findings.append(
+                    Finding(
+                        "WAIT_INTERRUPT_PROVENANCE_INVALID",
+                        "unsolicited-wake diagnostic is not bound to a unique accepted "
+                        "agent-triggering delivery interrupting its standing WAIT",
+                        at=str(row.get("at")),
+                    )
+                )
             continue
         findings.append(Finding(str(row["code"]), str(row["detail"]), at=str(row["at"])))
     for row in _rows(trajectory, "wait_unresolved_at_horizon"):
@@ -2478,8 +2580,9 @@ def _temporal(
     reminders = [
         event
         for event in events
-        if event["event_type"] == "approval_reminder_due"
-        and event["disposition"] == "accepted"
+        if isinstance(event, Mapping)
+        and event.get("event_type") == "approval_reminder_due"
+        and event.get("disposition") == "accepted"
     ]
     if len(reminders) > 1:
         findings.append(
@@ -2495,10 +2598,7 @@ def _temporal(
         counts={
             "waits_declared": len(waits),
             "reminders_fired": len(reminders),
-            "unsolicited_interrupts": sum(
-                row.get("code") == "UNDECLARED_WAKE_EVENT"
-                for row in _rows(trajectory, "wait_rejected")
-            ),
+            "unsolicited_interrupts": len(interrupts),
         },
     )
 
