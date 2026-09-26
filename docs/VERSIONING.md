@@ -143,9 +143,8 @@ A different engine version requires explicit review; it does not inherit this
 allowance. V2/V3 receive no incremental allowance and are checked against the
 unchanged historical full-projection ceiling.
 
-The initial census is from public source commit
-`cbe0510b378962175ea5c5fc6221cfd65a55447b`, using the deterministic reference
-agent and the test census identity `opinst_test_0000000000000000`.
+The initial census was recorded before engine `0.13.0`, using the deterministic
+reference agent and the test census identity `opinst_test_0000000000000000`.
 The census uses `json.dumps(..., sort_keys=True, default=str)` with its default
 ASCII escaping and separators, summed over every reference observation. Full
 bytes include field names and envelope punctuation; field sum counts serialized
