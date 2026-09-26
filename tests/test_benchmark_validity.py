@@ -7,7 +7,7 @@ import pytest
 
 from operatebench.agents.model import ModelAgent
 from operatebench.agents.outcome_contract import AGENT_TOOL_NAMES
-from tests.test_lifecycle_openai_bridge import observation
+from tests.test_lifecycle_anthropic_messages import observation
 
 
 @pytest.mark.parametrize(

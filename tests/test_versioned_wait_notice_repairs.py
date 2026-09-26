@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: Apache-2.0
 """Independent causal controls for engine 0.13, including adversarial ledgers."""
 
-import inspect
 from copy import deepcopy
 
 import pytest
@@ -17,14 +16,10 @@ REPEATED = "REPEATED_ACTION_AFTER_WAKE"
 
 
 def repeats(rows, events=()):
-    # Run the same independent oracle on the preserved pre-repair source too.
-    kwargs = (
-        {"events": events}
-        if "events" in inspect.signature(_retrieval_discipline).parameters
-        else {}
-    )
     return [
-        f for f in _retrieval_discipline(rows, **kwargs).findings if f.code == REPEATED
+        f
+        for f in _retrieval_discipline(rows, events=events).findings
+        if f.code == REPEATED
     ]
 
 
@@ -454,3 +449,87 @@ def test_selected_wait_interrupt_keeps_business_effects(monkeypatch):
         row.get("code") == "UNDECLARED_WAKE_EVENT"
         for row in interrupted.outcome.trajectory
     )
+
+
+def test_payment_settlement_requires_a_second_completion_notice(monkeypatch):
+    from pathlib import Path
+
+    from operatebench.core.outcomes import Act
+    from operatebench.domains.lettings.maintenance.agents import (
+        CUSTOMER,
+        MSG_COMPLETION_NOTICE,
+        ReferenceAgent,
+        _message,
+    )
+    from operatebench.domains.lettings.maintenance.spec import load_spec
+    from operatebench.runner import run_episode
+
+    original_decide = ReferenceAgent.decide_from
+    original_close = ReferenceAgent._close_out
+
+    def decide(self, state, policy):
+        outcome = original_decide(self, state, policy)
+        if (
+            isinstance(outcome, Act)
+            and outcome.action_type == "request_payment"
+            and not getattr(self, "_early_notice_sent", False)
+        ):
+            # Instance-local state gives the deterministic rerun its own early notice.
+            self._early_notice_sent = True
+            return _message(CUSTOMER, MSG_COMPLETION_NOTICE, state["current_cycle_id"])
+        return outcome
+
+    def close_out(self, state, cycle, cycle_id):
+        obligation = state["obligations"].get(f"completion_notice:{cycle_id}")
+        if obligation and obligation["status"] == "OPEN":
+            return _message(CUSTOMER, MSG_COMPLETION_NOTICE, cycle_id)
+        return original_close(self, state, cycle, cycle_id)
+
+    monkeypatch.setattr(ReferenceAgent, "decide_from", decide)
+    monkeypatch.setattr(ReferenceAgent, "_close_out", close_out)
+    spec = load_spec(
+        Path(__file__).parents[1] / "examples/operatebench/maintenance_v0_1.yaml"
+    )
+    run = run_episode(spec, "V1", "reference")
+    assert run.reliable
+    assert next(
+        d for d in run.evaluation.dimensions if d.name == "deterministic_replay"
+    ).ok
+    rows, events = run.outcome.trajectory, run.outcome.events
+    notices = [
+        row
+        for row in rows
+        if row["record_type"] == "action_proposed"
+        and row.get("payload", {}).get("message_fixture_id") == MSG_COMPLETION_NOTICE
+    ]
+    early = notices[0]
+    early, required = [
+        row
+        for row in notices
+        if row["payload"]["correlation_id"] == early["payload"]["correlation_id"]
+    ]
+    assert early["payload"] == required["payload"]
+    obligation_id = f"completion_notice:{required['payload']['correlation_id']}"
+    created, discharged = [
+        row for row in rows if row.get("obligation_id") == obligation_id
+    ]
+    assert created["record_type"] == "obligation_created"
+    assert created["kind"] == "customer_completion_notice"
+    assert discharged["record_type"] == "obligation_discharged"
+    early_accepted, required_accepted = [
+        row
+        for row in rows
+        if row["record_type"] == "effect_accepted"
+        and row.get("proposal_id") in {early["proposal_id"], required["proposal_id"]}
+    ]
+    assert rows.index(early_accepted) < rows.index(created) < rows.index(required)
+    assert rows.index(required) < rows.index(discharged) < rows.index(required_accepted)
+    cause = rows[rows.index(created) + 1]
+    assert cause["event_type"] == "payment_settlement_confirmed"
+    assert not repeats(rows, events)
+    # The real event tape must establish the cause, not just the obligation rows.
+    unmatched = repeats(
+        rows, [event for event in events if event["event_id"] != cause["event_id"]]
+    )
+    assert len(unmatched) == 1
+    assert unmatched[0].at == required["at"]
