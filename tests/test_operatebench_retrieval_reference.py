@@ -8,8 +8,8 @@ accepted own effect. The six shipped negatives keep their exact oracle closures.
 
 The budget assertions are the ones the owner adjudicated: V1 costs no more agent
 calls than the shipped baseline of 46, spends nothing on top-up batches, and
-keeps the model-visible projection under 1.25x of the 295,404 B that baseline
-measured.
+keeps the initial projection under the historical 1.25x of 295,404 B contract.
+Engine 0.13.0 has a separate, fixed allowance for disclosed guidance.
 """
 
 from __future__ import annotations
@@ -45,13 +45,13 @@ from operatebench.domains.lettings.maintenance.agents import (
 from operatebench.domains.lettings.maintenance.operation import MaintenanceOperation
 from operatebench.domains.lettings.maintenance.spec import load_spec
 from operatebench.runner import check_maintenance, run_episode
+from operatebench.version import OPERATEBENCH_VERSION
+from tests.test_projection_budget_contract import assert_projection_budget
 
 SPEC = "examples/operatebench/maintenance_v0_1.yaml"
 
 #: Probe 1, the shipped reference at V1 on the pre-retrieval observation.
 BASELINE_CALLS_V1 = 46
-BASELINE_BYTES_V1 = 295_404
-BYTE_RATIO_CEILING = 1.25
 
 #: Probe 4, variant A (agent re-request), the variant the owner adjudicated.
 TARGET_CALLS = {"V1": 46, "V2": 24, "V3": 28}
@@ -525,15 +525,11 @@ class TestTheReferenceRunsThroughReads:
     def test_v1_without_the_retained_state_is_under_the_adjudicated_ceiling(
         self, spec
     ) -> None:
-        # The ceiling is met by the *design*: the reduced observation this
-        # migration is heading for — the one Phase 2 ships, with the normalized
-        # projection gone — costs less than 1.25x the adjudicated baseline at V1.
         _outcome, agent = census_run(spec, "V1")
         assert agent.calls <= BASELINE_CALLS_V1
-        ratio = agent.projection_bytes_without_state / BASELINE_BYTES_V1
-        assert ratio < BYTE_RATIO_CEILING, (
-            agent.projection_bytes_without_state,
-            ratio,
+        assert agent.projection_bytes_without_state == agent.projection_bytes
+        assert_projection_budget(
+            agent.projections, engine_version=OPERATEBENCH_VERSION, scenario_id="V1"
         )
 
     def test_the_duplication_phase_1a_measured_is_gone(self, spec) -> None:
@@ -543,14 +539,16 @@ class TestTheReferenceRunsThroughReads:
         through the catalogue, so the two overlapped by construction and the
         total sat over the adjudicated ceiling by exactly the retained
         projection. Phase 2 publishes the collections once, through reads only,
-        and the whole projection is under the ceiling.
+        and engine 0.13.0 separately budgets the incremental guidance.
         """
         _outcome, agent = census_run(spec, "V1")
         totals = agent.projection_field_bytes
         assert "state" not in totals
         assert "trigger" not in totals
         assert agent.projection_bytes == agent.projection_bytes_without_state
-        assert agent.projection_bytes / BASELINE_BYTES_V1 < BYTE_RATIO_CEILING
+        assert_projection_budget(
+            agent.projections, engine_version=OPERATEBENCH_VERSION, scenario_id="V1"
+        )
 
     def test_the_call_cost_is_two_per_business_decision_and_says_so(self, spec) -> None:
         """What 46 calls actually count, stated rather than inherited.

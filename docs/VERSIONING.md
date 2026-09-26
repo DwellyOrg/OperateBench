@@ -121,6 +121,64 @@ original engine identity and refuses older engines before execution. These
 changes do not authorize relabelling historical results. Focused synthetic
 regressions do not establish full-suite, hosted-CI or live-model acceptance.
 
+#### Engine 0.13.0 projection byte budget decision
+
+The product decision is to retain the required policy and action guidance and
+revise only the offline Maintenance reference projection budget. Runtime
+compaction and a general projection redesign are outside this decision.
+The **historical contract** remains a 295,404-byte V1 baseline and a strict
+1.25 ratio ceiling: **369,255 bytes**. Historical results are not relabelled.
+
+Only engine **`0.13.0`**, scenario **V1**, receives a fixed incremental allowance
+of **30,000 bytes**: at most **17,000 policy bytes** and **13,000 action-schema
+bytes** above the independently recorded initial field totals of 15,732 and
+79,793 bytes. Each increment is `max(0, current_field_bytes - initial_field_bytes)`;
+shrinking one field cannot finance growth in another. After subtracting these
+bounded increments, the initial full projection must still be **< 369,255**.
+The corresponding initial field sum must be **< 358,215**, preserving the
+11,040-byte initial envelope. Thus full bytes must be **< 399,255** and field
+bytes **< 388,215**, with both initial and incremental checks required. The
+ceilings are fixed policy numbers, never calculated from the current result.
+A different engine version requires explicit review; it does not inherit this
+allowance. V2/V3 receive no incremental allowance and are checked against the
+unchanged historical full-projection ceiling.
+
+The initial census is from public source commit
+`cbe0510b378962175ea5c5fc6221cfd65a55447b`, using the deterministic reference
+agent and the test census identity `opinst_test_0000000000000000`.
+The census uses `json.dumps(..., sort_keys=True, default=str)` with its default
+ASCII escaping and separators, summed over every reference observation. Full
+bytes include field names and envelope punctuation; field sum counts serialized
+values only. These are offline projection metrics, not provider wire/token caps.
+
+| Variant | Initial full | 0.13 full | Initial field sum | 0.13 field sum | Calls |
+|---|---:|---:|---:|---:|---:|
+| V1 | 368,239 | 397,021 | 357,199 | 385,981 | 46 |
+| V2 | 174,947 | 189,693 | 169,187 | 183,933 | 24 |
+| V3 | 198,592 | 214,758 | 191,872 | 208,038 | 28 |
+
+| V1 field | Initial bytes | 0.13 bytes | Increment |
+|---|---:|---:|---:|
+| policy | 15,732 | 31,924 | 16,192 |
+| action_schemas | 79,793 | 92,383 | 12,590 |
+| all other field values | 261,674 | 261,674 | 0 |
+
+The 28,782-byte measured increase consists entirely of policy and action
+schemas; action-schema growth splits into `complete` (5,943) and
+`send_message` (6,647). Retrieval, event, wake-event and call counts did not
+grow. The fixed 30,000 allowance leaves 1,218 bytes of guidance headroom
+(808 policy, 410 action schemas), approximately 4.2% of the measured increment.
+The initial full projection retains its existing 1,016-byte margin; total
+full/field margins are each 2,234 bytes, with strict ceilings. Even the numeric
+checkpoint-budget field alone costs 1,380 bytes across 46 observations and
+exceeds that initial full margin; removing the required prose is not a solution.
+
+Regression checks reject future guidance overflow, unrelated projection growth
+and reuse by another engine version, and retain the checkpoint and new-duty
+notice disclosures. G01/G02/G03/G04 semantics, wake provenance, provider
+financial/call/output/time limits, historical canary pins and vectors, fixtures
+and stored results are unchanged. This decision adds no live-model evidence.
+
 ### Engine 0.12.0: communication obligations
 
 This historical combined runtime/evaluator identity corrects recipient, correlation,

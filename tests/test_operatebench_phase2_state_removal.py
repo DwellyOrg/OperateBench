@@ -32,6 +32,8 @@ from operatebench.domains.lettings.maintenance.operation import MaintenanceOpera
 from operatebench.domains.lettings.maintenance.spec import load_spec
 from operatebench.domains.lettings.maintenance.state import MaintenanceState
 from operatebench.runner import run_episode
+from operatebench.version import OPERATEBENCH_VERSION
+from tests.test_projection_budget_contract import assert_projection_budget
 
 SPEC = "examples/operatebench/maintenance_v0_1.yaml"
 
@@ -41,8 +43,6 @@ MODEL_AGENT_ID = "model_under_test"
 
 #: Probe 1, the shipped reference at V1 on the pre-retrieval observation.
 BASELINE_CALLS_V1 = 46
-BASELINE_BYTES_V1 = 295_404
-BYTE_RATIO_CEILING = 1.25
 
 #: Probe 4 variant A, the variant the owner adjudicated. One agent batch per
 #: business decision: 23 -> 46 at V1, honestly 2x the legacy 23-call episode.
@@ -280,8 +280,9 @@ class TestTheAdjudicatedBudgets:
 
     def test_the_reduced_v1_projection_is_under_the_ceiling(self, spec) -> None:
         _outcome, agent = census_run(spec, "V1")
-        ratio = agent.projection_bytes / BASELINE_BYTES_V1
-        assert ratio < BYTE_RATIO_CEILING, (agent.projection_bytes, ratio)
+        assert_projection_budget(
+            agent.projections, engine_version=OPERATEBENCH_VERSION, scenario_id="V1"
+        )
 
     def test_every_accepted_effect_is_followed_by_an_agent_batch(self, spec) -> None:
         outcome, _agent = census_run(spec, "V1")
