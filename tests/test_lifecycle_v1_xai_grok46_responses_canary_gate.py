@@ -14,8 +14,11 @@ import httpx
 import pytest
 
 from operatebench.agents.pricing import RATE_SOURCE_OPERATOR, LifecyclePricingPolicy
+from tests.historical_canary_controls import historical_canary_gate_build  # noqa: F401
 from tools import run_lifecycle_v1_openai_luna_canary as openai_canary
 from tools import run_lifecycle_v1_xai_grok_4_6_responses_canary as canary
+
+pytestmark = pytest.mark.usefixtures("historical_canary_gate_build")
 
 
 def policy() -> LifecyclePricingPolicy:

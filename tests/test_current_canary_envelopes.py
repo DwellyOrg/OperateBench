@@ -1,4 +1,4 @@
-"""Exact current SDK bounds and reserved, non-scored sidecar contract."""
+"""Frozen mock SDK bounds and unshimmed current-build refusal contracts."""
 
 from __future__ import annotations
 
@@ -10,6 +10,8 @@ from typing import Any
 
 import httpx
 import pytest
+
+from tests.historical_canary_controls import historical_canary_gate_build  # noqa: F401
 
 # Pinned canonical UTF-8 SDK request ceilings. Keep these numeric controls fixed.
 # Engine 0.12 guidance shortens only the 23 business requests by 30 bytes.
@@ -398,6 +400,7 @@ def policy(mod: Any) -> Any:
     )
 
 
+@pytest.mark.usefixtures("historical_canary_gate_build")
 @pytest.mark.parametrize("name", VECTORS)
 def test_exact_sdk_vector_and_independent_decimal_envelope(
     name: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -444,6 +447,10 @@ def test_exact_sdk_vector_and_independent_decimal_envelope(
         cap=mod.FIXED_CANARY_COST_CAP_USD,
         environ={},
     )
+    from operatebench.artifact import OPERATEBENCH_VERSION, read_artifact
+
+    assert OPERATEBENCH_VERSION == "0.13.0"
+    assert read_artifact(directory / mod.ARTIFACT_NAME)["engine_version"] == "0.13.0"
     # Check every actual SDK request, not just the episode sum or maximum.
     assert len(observed) == len(expected) == 46
     assert all(wire <= bound for wire, bound in zip(observed, expected, strict=True)), (
@@ -482,6 +489,7 @@ def test_exact_sdk_vector_and_independent_decimal_envelope(
     assert summary["replay"]["provider_calls"] == 0
 
 
+@pytest.mark.usefixtures("historical_canary_gate_build")
 @pytest.mark.parametrize("name", VECTORS)
 def test_guidance_growth_cannot_admit_an_understated_wire_budget(
     name: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -507,6 +515,7 @@ def test_guidance_growth_cannot_admit_an_understated_wire_budget(
         )
 
 
+@pytest.mark.usefixtures("historical_canary_gate_build")
 @pytest.mark.parametrize("name", VECTORS)
 @pytest.mark.parametrize("kind", ["file", "symlink", "reservation"])
 def test_occupied_partial_name_refuses_before_client_or_current_files(
@@ -549,6 +558,7 @@ def test_occupied_partial_name_refuses_before_client_or_current_files(
     assert not (directory / mod.ARTIFACT_NAME).exists()
 
 
+@pytest.mark.usefixtures("historical_canary_gate_build")
 @pytest.mark.parametrize("name", VECTORS)
 def test_original_numeric_controls_cannot_be_reused(
     name: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -580,6 +590,7 @@ def test_original_numeric_controls_cannot_be_reused(
     assert list(directory.iterdir()) == []
 
 
+@pytest.mark.usefixtures("historical_canary_gate_build")
 @pytest.mark.parametrize("name", VECTORS)
 def test_fault_retains_well_formed_non_scored_sidecar(
     name: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -623,3 +634,83 @@ def test_fault_retains_well_formed_non_scored_sidecar(
     assert rows[-1]["classification"] == "excluded"
     with pytest.raises(ArtifactError):
         read_artifact(partial)
+
+
+@pytest.mark.parametrize("name", VECTORS)
+@pytest.mark.parametrize("mode", ["--offline-preflight", "--live"])
+def test_unshimmed_current_build_refuses_before_keys_claims_or_sdk(
+    name: str,
+    mode: str,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    from types import SimpleNamespace
+
+    from operatebench.version import OPERATEBENCH_VERSION
+
+    mod = importlib.import_module("tools." + name)
+    assert mod.OPERATEBENCH_VERSION == OPERATEBENCH_VERSION == "0.13.0"
+    with pytest.raises(mod.CanaryRefusal, match="pinned_exact_cell_envelope_changed"):
+        mod.check_pinned_controls()
+    directory = tmp_path / "out"
+    directory.mkdir(mode=0o700)
+    reached = []
+
+    def forbidden(*args: Any, **kwargs: Any) -> Any:
+        reached.append("keys, claims or SDK")
+        pytest.fail("current build crossed frozen operator gate")
+
+    class UnreadEnvironment(dict):
+        def __getitem__(self, key):
+            if key == mod.CREDENTIAL_VARIABLE:
+                forbidden()
+            return super().__getitem__(key)
+
+        def get(self, key, default=None):
+            if key == mod.CREDENTIAL_VARIABLE:
+                forbidden()
+            return super().get(key, default)
+
+    # An isolated synthetic environment; never read the process's credentials.
+    monkeypatch.setattr(
+        mod,
+        "os",
+        SimpleNamespace(environ=UnreadEnvironment() if mode == "--live" else {}),
+    )
+    for boundary in ("reserve_output_names", "open_live_client", "open_offline_client"):
+        monkeypatch.setattr(mod, boundary, forbidden)
+    monkeypatch.setattr(mod, "ScriptedProvider", forbidden)
+    if "anthropic" in name:
+        monkeypatch.setattr(mod.anthropic, "Anthropic", forbidden)
+    elif "mistral" in name:
+        monkeypatch.setattr(mod, "build_mistral_client", forbidden)
+    else:
+        monkeypatch.setattr(mod.openai, "OpenAI", forbidden)
+    code = mod.main(
+        [
+            mode,
+            "--output-dir",
+            str(directory),
+            "--cost-cap-usd",
+            str(mod.FIXED_CANARY_COST_CAP_USD),
+            "--input-usd-per-mtok",
+            str(mod.FIXED_CANARY_INPUT_USD_PER_MTOK),
+            "--output-usd-per-mtok",
+            str(mod.FIXED_CANARY_OUTPUT_USD_PER_MTOK),
+        ]
+    )
+    report = json.loads(capsys.readouterr().out)
+    assert code == 1
+    expected_code = (
+        "xai_grok46_responses_preregistration_refused"
+        if mode == "--live" and name == "run_lifecycle_v1_xai_grok_4_6_responses_canary"
+        else "pinned_exact_cell_envelope_changed"
+    )
+    assert report["failure"]["code"] == expected_code
+    if name not in {"run_lifecycle_v1_canary", "run_lifecycle_v1_anthropic_haiku_canary"}:
+        assert report["provider_calls_dispatched"] == 0
+        assert report["credential_read"] is False
+        assert report["network_access"] is False
+    assert reached == []
+    assert list(directory.iterdir()) == []
