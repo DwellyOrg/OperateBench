@@ -224,6 +224,10 @@ def test_invalid_rpc_retains_liability(tmp_path, assets, fault, model):
         with pytest.raises(ProviderFailure):
             run_trial(trial, transport, output=tmp_path / "trial")
         assert len(channel.submissions) == 1
+        assert transport.local_failure is None
+        assert transport.last_turn["classification"] == (
+            "provider_timeout" if fault == "network" else "provider_response_invalid"
+        )
         assert budget.totals()["unknown"] > 0
         assert budget.totals()["pending"] == 0
     finally:
@@ -636,6 +640,87 @@ def test_scheduler_river_local_persistence_failure(
     # allocated records must stay unknown, never be dispatched on resume.
     if stage != "settle":
         assert Decimal(resumed["unknown_liability_usd"]) > 0
+
+
+@pytest.mark.parametrize("asset_state", ["missing", "digest"])
+@pytest.mark.parametrize("stage", ["render", "response"])
+def test_scheduler_native_asset_failure(
+    tmp_path, assets, monkeypatch, asset_state, stage
+):
+    from tools import three_flow_campaign as campaign
+    from tools import three_flow_river as river
+    from tools.three_flow_river_native import _asset
+
+    slot = next(
+        r
+        for r in campaign.assignments("asset")
+        if r["provider"] == "river" and r["flow"] == "commerce" and "Qwen" in r["model"]
+    )
+    local_assets = tmp_path / "assets"
+    if asset_state == "digest":
+        target = local_assets / slot["model"] / "chat_template.jinja"
+        target.parent.mkdir(parents=True)
+        target.write_bytes(b"invalid local template")
+    render = river.family_render
+    response = RiverCampaignTransport.response
+    send = RiverCampaignTransport.send
+    observed = []
+
+    def render_fault(model, prompt, asset_root, **kwargs):
+        return render(model, prompt, local_assets, **kwargs)
+
+    def response_fault(self, *args, **kwargs):
+        _asset(self.model, local_assets, "chat_template.jinja")
+        return response(self, *args, **kwargs)
+
+    def observe(self, request):
+        try:
+            return send(self, request)
+        finally:
+            observed.append((self.local_failure, self.last_turn))
+
+    monkeypatch.setattr(RiverCampaignTransport, "send", observe)
+    if stage == "render":
+        monkeypatch.setattr(river, "family_render", render_fault)
+    else:
+        monkeypatch.setattr(RiverCampaignTransport, "response", response_fault)
+    root = tmp_path / "campaign"
+    row = campaign.run_offline(
+        root, campaign_id="asset", slots=[slot], river_assets=assets
+    )[0]
+    assert row["classification"] == "aborted"
+    assert row["fault"] == "internal_error"
+    assert row["local_failure"] == "native_asset_error"
+    marker, turn = observed[0]
+    assert marker == "native_asset_error"
+    assert turn["classification"] == "infrastructure_failure"
+    assert turn["network_rpcs"] == (0 if stage == "render" else 2)
+    partial = [
+        json.loads(line)
+        for line in (root / slot["trial_id"] / "partial.ndjson").read_text().splitlines()
+    ]
+    assert partial[-1]["classification"] == "aborted"
+    assert partial[-2]["local_failure"] == "native_asset_error"
+    assert not (root / slot["trial_id"] / "record.json").exists()
+    unknown = Decimal(row["unknown_liability_usd"])
+    assert unknown == 0 if stage == "render" else unknown > 0
+    budget = CampaignBudget(root, campaign_id="asset", cap=Decimal("1000"))
+    try:
+        assert budget.totals()["pending"] == 0
+        assert budget.totals()["unknown"] == unknown
+        if stage == "render":
+            assert not budget.records
+    finally:
+        budget.close()
+    closure = (root / (slot["trial_id"] + ".closure.json")).read_bytes()
+    journal = (root / "campaign-budget.jsonl").read_bytes()
+    resumed = campaign.run_offline(
+        root, campaign_id="asset", slots=[slot], resume=True, river_assets=assets
+    )[0]
+    assert resumed == row
+    assert (root / (slot["trial_id"] + ".closure.json")).read_bytes() == closure
+    assert (root / "campaign-budget.jsonl").read_bytes() == journal
+    assert len(observed) == 1
 
 
 @pytest.mark.parametrize("model", RIVER_MODELS)

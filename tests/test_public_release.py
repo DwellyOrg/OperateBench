@@ -2189,6 +2189,34 @@ class TestHuggingFacePublicationPins:
         assert len(list(checks.BARE_COMMIT_IDENTIFIER.finditer(text))) == 64
         assert self.scan(text) == []
 
+    def test_model_slug_preserves_catalog_values(self) -> None:
+        import hashlib
+        import json
+
+        from tools.three_flow_river_native import _row
+
+        data = json.loads((REPO_ROOT / self.path).read_text())
+        assert all("model_slug" in row and "key" not in row for row in data["models"])
+        # Canonical semantic snapshot: field rename only, every value unchanged.
+        canonical = json.dumps(data, sort_keys=True, separators=(",", ":")).encode()
+        assert hashlib.sha256(canonical).hexdigest() == (
+            "53ee337cccdb75e2624ff92c1a430137976045e45e41c5af87e8934ca0e7b4fc"
+        )
+        for row in data["models"]:
+            assert _row(row["model_slug"]) == _row(row["model"]) == row
+
+    @pytest.mark.parametrize("retain_slug", [False, True])
+    def test_legacy_identifier_field_is_not_exempt(self, retain_slug: bool) -> None:
+        import json
+
+        data = json.loads((REPO_ROOT / self.path).read_text())
+        for row in data["models"]:
+            row["key"] = row["model_slug"]
+            if not retain_slug:
+                del row["model_slug"]
+        assert not checks._valid_hf_asset_manifest(data)
+        assert len(self.scan(json.dumps(data))) == 64
+
     def test_consistent_new_pins_and_json_whitespace(self) -> None:
         import json
 
@@ -2256,7 +2284,7 @@ class TestHuggingFacePublicationPins:
             "comment",
             "trailing",
             "model",
-            "key",
+            "model_slug",
             "tokenizer",
             "filename",
             "revision",
@@ -2304,7 +2332,7 @@ class TestHuggingFacePublicationPins:
             text += "\n// " + token
         elif mutation == "trailing":
             text += json.dumps(token)
-        elif mutation in {"model", "key", "tokenizer"}:
+        elif mutation in {"model", "model_slug", "tokenizer"}:
             row[{"tokenizer": "tokenizer_model"}.get(mutation, mutation)] = (
                 "rogue/identity"
             )

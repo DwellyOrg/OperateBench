@@ -352,7 +352,7 @@ def run_trial(trial: Trial, transport: Any, *, output: Path) -> dict[str, Any]:
         return record
     except BaseException as exc:
         failure = exc
-        local_failure = getattr(transport, "local_failure", None)
+        local_failure = transport.local_failure
         if local_failure is not None:
             failure = RuntimeError("local campaign infrastructure failed")
         try:

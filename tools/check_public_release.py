@@ -792,7 +792,7 @@ def _is_allowed_pinned_action_uses_line(line: str) -> bool:
 
 
 # Publication schema, independent of the manifest being inspected. Repository,
-# row key and asset-name sets are closed; revisions and content metadata are data.
+# model slug and asset-name sets are closed; revisions and content metadata are data.
 HF_ASSET_MANIFEST = "tools/three_flow_river_assets.json"
 HF_STANDARD_ASSETS = frozenset(
     {
@@ -878,11 +878,11 @@ def _valid_hf_asset_manifest(data: Any) -> bool:
         if not isinstance(model, str) or model not in HF_ASSET_ROSTER or model in seen:
             return False
         seen.add(model)
-        key, tokenizer, filenames = HF_ASSET_ROSTER[model]
-        fields = {"model", "key", "revision", "assets"}
+        model_slug, tokenizer, filenames = HF_ASSET_ROSTER[model]
+        fields = {"model", "model_slug", "revision", "assets"}
         if tokenizer is not None:
             fields.add("tokenizer_model")
-        if set(row) != fields or row["key"] != key:
+        if set(row) != fields or row["model_slug"] != model_slug:
             return False
         if tokenizer is not None and row["tokenizer_model"] != tokenizer:
             return False

@@ -72,10 +72,29 @@ def test_one_partial_decision_per_sealed_decision_and_inner_call():
     assert decisions == sealed
     assert result.tape == recorder.tape()
     assert len(decisions) == inner.calls
+    assert result.execution.outcome_source == "deterministic"
+
+
+def test_unrelated_inner_attribute_is_not_provenance():
+    class Independent(RetrievingReferenceAgent):
+        @property
+        def inner(self):
+            pytest.fail("only RecordingAgent may be unwrapped")
+
+    result = _execute(
+        load_spec(FIXTURE),
+        "V1",
+        "reference",
+        Independent,
+        f"opinst_{uuid4().hex}",
+    )
+    assert result.execution.outcome_source == "deterministic"
 
 
 @pytest.mark.parametrize("scenario", ["V2", "V3"])
-def test_sdk_mock_has_one_call_partial_decision_and_canonical_tape(scenario, monkeypatch):
+def test_sdk_mock_has_one_call_partial_decision_and_canonical_tape(
+    scenario, monkeypatch, tmp_path
+):
     import socket
 
     from tests.test_lifecycle_openai_bridge import (
@@ -91,6 +110,7 @@ def test_sdk_mock_has_one_call_partial_decision_and_canonical_tape(scenario, mon
     monkeypatch.setattr(socket.socket, "connect", forbidden)
     wire = ReferenceDrivenOpenAI()
     partial = PartialExecutionEvidence({})
+    instance_id = f"opinst_{uuid4().hex}"
     with wire.client() as client:
         model = ModelAgent(transport_for(client), model=MODEL)
         recorder = RecordingAgent(model, observer=partial.decision)
@@ -99,12 +119,37 @@ def test_sdk_mock_has_one_call_partial_decision_and_canonical_tape(scenario, mon
             scenario,
             "offline",
             lambda: recorder,
-            f"opinst_{uuid4().hex}",
+            instance_id,
             partial,
         )
     decisions = [r["decision"] for r in partial.rows if r["kind"] == "decision"]
     assert decisions == [d.as_dict() for d in result.tape.decisions]
     assert result.tape == recorder.tape()
+    assert result.execution == model.execution_record()
+    from operatebench.agents.playback import tape_from_records
+    from operatebench.runner import playback_episode
+
+    saved = tmp_path / "execution.json"
+    saved.write_text(
+        json.dumps(
+            {
+                "execution": result.execution.as_dict(),
+                "tape": result.tape.as_list(),
+            }
+        )
+    )
+    loaded = json.loads(saved.read_text())
+    assert loaded["execution"] == model.execution_record().as_dict()
+    calls = wire.calls
+    replay = playback_episode(
+        load_spec(FIXTURE),
+        scenario,
+        "offline",
+        tape_from_records(loaded["tape"]),
+        operation_instance_id=instance_id,
+    )
+    assert replay.outcome == result.outcome
+    assert wire.calls == calls
     assert len(decisions) == wire.calls == len(model.execution_record().attempts)
     prompts = [json.loads(user_text(b)) for b in wire.bodies]
     ready = [

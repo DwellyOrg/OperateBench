@@ -92,6 +92,139 @@ def test_four_worker_sdk_dispatch_overlap_and_reports(tmp_path, monkeypatch):
         run_offline(root, campaign_id="test", slots=slots)
 
 
+@pytest.mark.parametrize(
+    "origins,scope",
+    [
+        (["SDK_MOCK_NOT_LLM"], "OFFLINE_SDK_MOCK_NOT_LLM_RESULTS"),
+        (["PROVIDER_CANDIDATE"], "PROVIDER_CANDIDATE"),
+        (["SDK_MOCK_NOT_LLM", "PROVIDER_CANDIDATE"], "MIXED_MOCK_AND_PROVIDER_CANDIDATE"),
+    ],
+)
+def test_report_scope_preserves_row_eligibility(tmp_path, origins, scope):
+    from tools.three_flow_campaign import reports, score_row
+
+    slot = _http_slot("maintenance")
+    root = tmp_path / "execution"
+    run_offline(root, campaign_id="test", slots=[slot])
+    record = json.loads((root / slot["trial_id"] / "record.json").read_text())
+    rows = [score_row(slot, {**record, "evidence_origin": origin}) for origin in origins]
+    report = tmp_path / "report"
+    report.mkdir()
+    reports(report, rows, {})
+    loaded = json.loads((report / "scorecard.json").read_text())
+    assert loaded["scope"] == scope
+    assert scope in (report / "scorecard.md").read_text()
+    assert loaded["rows"] == rows
+    assert [r["eligible_for_live_results"] for r in loaded["rows"]] == [
+        origin == "PROVIDER_CANDIDATE" for origin in origins
+    ]
+
+
+@pytest.mark.parametrize(
+    "damage",
+    [
+        "unassigned",
+        "duplicate",
+        "model",
+        "reason",
+        "identity",
+        "evidence",
+        "extra",
+        "empty",
+    ],
+)
+def test_direct_correction_refused_before_any_side_effect(tmp_path, monkeypatch, damage):
+    from tools import three_flow_campaign as campaign
+
+    original = _http_slot("maintenance")
+    correction = {
+        **original,
+        "trial_id": original["trial_id"] + "-fix-second",
+        "rerun_of": original["trial_id"],
+        "correction_reason": "runtime_fix",
+        "fix_evidence_sha256": "a" * 64,
+    }
+    selected = [correction]
+    if damage == "unassigned":
+        correction["rerun_of"] = "unassigned"
+    elif damage == "duplicate":
+        selected.append(dict(correction))
+    elif damage == "model":
+        correction["model"] = "foreign-model"
+    elif damage == "reason":
+        correction["correction_reason"] = "better_score"
+    elif damage == "identity":
+        correction["trial_id"] = "unassigned"
+    elif damage == "evidence":
+        correction["fix_evidence_sha256"] = "not-a-digest"
+    elif damage == "extra":
+        correction["extra"] = True
+    else:
+        selected = []
+
+    def forbidden(*args, **kwargs):
+        pytest.fail("invalid correction reached manifest, worker, wallet or transport")
+
+    for name in (
+        "campaign_manifest",
+        "ThreadPoolExecutor",
+        "CampaignBudget",
+        "run_trial",
+    ):
+        monkeypatch.setattr(campaign, name, forbidden)
+    root = tmp_path / "campaign"
+    with pytest.raises(ValueError, match="correction"):
+        campaign.run_campaign(
+            root,
+            campaign_id="test",
+            slots=[original],
+            resume=True,
+            attempt_id="second",
+            selected_corrections=selected,
+            transport_factory=forbidden,
+        )
+    assert not root.exists()
+
+
+def test_direct_canonical_correction_executes_and_replays(tmp_path, monkeypatch):
+    from tools.three_flow_campaign import correction_slot, run_campaign
+    from tools.three_flow_runtime import Trial, replay_trial
+
+    original = _http_slot("maintenance")
+    root = tmp_path / "campaign"
+    handler = SDKMockTransport.handle
+
+    def interrupted(self, request):
+        raise TimeoutError("offline interruption")
+
+    monkeypatch.setattr(SDKMockTransport, "handle", interrupted)
+    initial = run_offline(root, campaign_id="test", slots=[original])
+    assert initial[0]["classification"] == "excluded"
+    monkeypatch.setattr(SDKMockTransport, "handle", handler)
+    correction = correction_slot(original, "second", "runtime_fix", "a" * 64)
+    rows = run_campaign(
+        root,
+        campaign_id="test",
+        slots=[original],
+        resume=True,
+        attempt_id="second",
+        selected_corrections=[correction],
+    )
+    assert rows[0]["classification"] == "scored"
+    assert not rows[0]["eligible_for_live_results"]
+    manifest = json.loads((root / "resume-second" / "assignment.json").read_text())
+    assert manifest["selected"] == [correction]
+    ident = correction["trial_id"]
+    record = json.loads((root / ident / "record.json").read_text())
+    trial = Trial(**json.loads((root / (ident + ".binding.json")).read_text()))
+    assert (
+        replay_trial(trial, record, expected_record_digest=record["record_digest"])[
+            "provider_calls"
+        ]
+        == 0
+    )
+
+
 def test_duplicate_slot_refused_before_output(tmp_path):
     slot = assignments("test")[-1]
     with pytest.raises(ValueError, match="duplicate"):

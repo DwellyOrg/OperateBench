@@ -12,6 +12,7 @@ import hashlib
 import io
 import json
 import os
+import re
 import socket
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
@@ -204,13 +205,19 @@ def reports(
     grouped: bool = True,
     limit_policy: dict[str, Any] | None = None,
 ) -> None:
+    origins = {r.get("evidence_origin") for r in rows}
+    scope = (
+        "MIXED_MOCK_AND_PROVIDER_CANDIDATE"
+        if {"SDK_MOCK_NOT_LLM", "PROVIDER_CANDIDATE"} <= origins
+        else "PROVIDER_CANDIDATE"
+        if "PROVIDER_CANDIDATE" in origins
+        else "OFFLINE_SDK_MOCK_NOT_LLM_RESULTS"
+    )
     write_private(
         root / "scorecard.json",
         canonical(
             {
-                "scope": "PROVIDER_CANDIDATE"
-                if any(r.get("evidence_origin") == "PROVIDER_CANDIDATE" for r in rows)
-                else "OFFLINE_SDK_MOCK_NOT_LLM_RESULTS",
+                "scope": scope,
                 "rows": rows,
                 **({"limit_policy": limit_policy} if limit_policy is not None else {}),
                 "global_budget": {
@@ -233,6 +240,8 @@ def reports(
     write_private(root / "scorecard.csv", stream.getvalue().encode())
     lines = [
         "# Three-flow candidate scorecards (see per-row evidence origin)",
+        "",
+        f"Scope: {scope}",
         "",
         "| Trial | Model | Flow/scenario | Classification |",
         "|---|---|---|---|",
@@ -398,6 +407,39 @@ def reconcile_closure(
     }
 
 
+def correction_slot(
+    original: dict[str, Any],
+    tag: str,
+    reason: str,
+    evidence_sha256: str | None = None,
+) -> dict[str, Any]:
+    """Canonical correction identity; original admission remains separate."""
+    from tools.three_flow_admission import identifier
+
+    if not identifier(tag) or reason not in (
+        "provider_fix",
+        "runtime_fix",
+        "evaluator_fix",
+    ):
+        raise ValueError("invalid correction identity or reason")
+    if evidence_sha256 is not None and (
+        not isinstance(evidence_sha256, str)
+        or re.fullmatch(r"[a-f0-9]{64}", evidence_sha256) is None
+    ):
+        raise ValueError("invalid correction evidence")
+    return {
+        **original,
+        "trial_id": original["trial_id"] + "-fix-" + tag,
+        "rerun_of": original["trial_id"],
+        "correction_reason": reason,
+        **(
+            {"fix_evidence_sha256": evidence_sha256}
+            if evidence_sha256 is not None
+            else {}
+        ),
+    }
+
+
 def campaign_manifest(
     campaign_id: str,
     selected: list[dict[str, Any]],
@@ -451,6 +493,32 @@ def run_campaign(
         raise ValueError("unknown assigned slot")
     if len({s["trial_id"] for s in selected}) != len(selected):
         raise ValueError("duplicate assigned trial slot")
+    if selected_corrections is not None:
+        if (
+            not resume
+            or corrections is not None
+            or not selected_corrections
+            or attempt_id is None
+        ):
+            raise ValueError("selected corrections require one explicit continuation")
+        originals = {s["trial_id"]: s for s in selected}
+        seen = set()
+        for slot in selected_corrections:
+            original = originals.get(slot.get("rerun_of"))
+            if original is None or original["trial_id"] in seen:
+                raise ValueError("unknown or duplicate correction original")
+            expected = correction_slot(
+                original,
+                attempt_id,
+                slot.get("correction_reason", ""),
+                slot.get("fix_evidence_sha256"),
+            )
+            if "fix_evidence_sha256" not in slot or canonical(slot) != canonical(
+                expected
+            ):
+                raise ValueError("correction differs from assigned original or identity")
+            seen.add(original["trial_id"])
+        selected = selected_corrections
     if (
         transport_factory is None
         and any(s["provider"] == "river" for s in selected)
@@ -481,16 +549,7 @@ def run_campaign(
                         "scored model behavior cannot be rerun by this controller"
                     )
                 tag = content_digest({"source": source_binding(), "reason": reason})[:16]
-                selected.append(
-                    {
-                        **original_slot,
-                        "trial_id": original_id + "-fix-" + tag,
-                        "rerun_of": original_id,
-                        "correction_reason": reason,
-                    }
-                )
-        if selected_corrections is not None:
-            selected = selected_corrections
+                selected.append(correction_slot(original_slot, tag, reason))
         manifest = campaign_manifest(
             campaign_id,
             selected,

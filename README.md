@@ -486,6 +486,8 @@ alone is not proof of benchmark validity.
 - [Three-flow campaign](docs/THREE_FLOW_CAMPAIGN.md) — reference-driven offline
   SDK mock execution, shared accounting and replay; not paid-launch approval or
   model-performance evidence.
+- [Three-flow latest HTTP roster](docs/THREE_FLOW_LATEST_HTTP.md) — explicit
+  roster and mode profile selection, pricing safeguards and compatibility boundaries.
 - [Three-flow River](docs/THREE_FLOW_RIVER.md) — optional SDK, pinned tokenizer
   assets and native protobuf mock transport; full-matrix qualification remains
   pending.

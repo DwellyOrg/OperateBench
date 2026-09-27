@@ -14,7 +14,8 @@ The command never creates a network channel or loads credentials.
 
 The eleven exact River identities are fixed in the campaign roster. Tokenizer
 revisions, public asset URLs and SHA256 hashes are in
-`tools/three_flow_river_assets.json`. Put those files under
+`tools/three_flow_river_assets.json`. Its `model_slug` field is the public catalog
+identifier, not a credential. Put those files under
 `<asset-cache>/<tokenizer_model-or-model>/<filename>`. Only pinned data is read:
 Rust tokenizer JSON, sandboxed Jinja templates and Kimi tiktoken ranks; no
 `trust_remote_code` or downloaded Python is executed. Strict native parsers
@@ -27,7 +28,7 @@ model syntax remains an invalid model decision. No domain is cast to Maintenance
 The release checker permits immutable Hugging Face revision and URL values only
 in the exact `tools/three_flow_river_assets.json` path. This is a closed JSON
 schema: duplicate keys, extra fields, missing or duplicate roster rows, unknown
-asset names and mismatched model/key/tokenizer repository bindings receive no
+asset names and mismatched model/model_slug/tokenizer repository bindings receive no
 exception. Each asset requires a lowercase 64-hex SHA256, a positive integer byte
 length, string HTTP status `200` and integer exit status zero. These metadata
 checks validate structure, not downloaded bytes or hosted model weights.

@@ -19,6 +19,10 @@ from pathlib import Path
 from typing import Any
 
 
+class NativeAssetError(RuntimeError):
+    """Trusted local pinned asset unavailable or corrupt; never a provider fault."""
+
+
 class InterfaceAmbiguityError(Exception):
     """Non-scored interface exclusion, NEVER a malformed model decision."""
 
@@ -46,7 +50,7 @@ def _row(model: str) -> dict[str, Any]:
     from tools.three_flow_river_assets import catalog
 
     for row in catalog()["models"]:
-        if model in (row["model"], row["key"]):
+        if model in (row["model"], row["model_slug"]):
             return dict(row)
     raise InterfaceAmbiguityError("Unknown catalog identity")
 
@@ -393,9 +397,9 @@ def _asset(model: str, assets: Path, name: str) -> bytes:
         data = (Path(assets) / source / name).read_bytes()
         expected = row["assets"][name]["sha256"]
     except (OSError, KeyError) as exc:
-        raise InterfaceAmbiguityError("Pinned native asset unavailable") from exc
+        raise NativeAssetError("Pinned native asset unavailable") from exc
     if hashlib.sha256(data).hexdigest() != expected:
-        raise InterfaceAmbiguityError("Pinned native asset digest mismatch")
+        raise NativeAssetError("Pinned native asset digest mismatch")
     return bytes(data)
 
 

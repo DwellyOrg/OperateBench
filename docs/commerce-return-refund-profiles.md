@@ -83,8 +83,7 @@ source set.
   M0 offers no voluntary benefit. These named policies are invented.
 - Every refund requires authenticated simulated supervisor authority after
   carrier proof. The grant binds order, profile, exact amount, currency, original
-  tender and proof. This deliberately narrows the research proposal; there is
-  no statutory or executable low-value approval exemption.
+  tender and proof. There is no statutory or executable low-value approval exemption.
 - All amounts are integer minor units, one item/capture/intent, no FX. UK/DE
   include standard outbound delivery; premium excess is excluded. AU/CA item-only
   allocation is the synthetic fixture convention, not a general legal formula.
@@ -234,10 +233,9 @@ provider calls are zero. This proves parser/projection/tape compatibility, not
 real-model capability. Shared persisted run codecs/registration remain the
 integration owner's responsibility; this namespace defines no competing format.
 
-## Researched but not implemented
+## Not implemented
 
-The broader research contains 35 proposals; this slice does **not** claim all of
-them. Deferred branches include UK CRA faulty-goods rejection/installation/repair
+Unimplemented branches include UK CRA faulty-goods rejection/installation/repair
 pause, physical-receipt-first or collection refund triggers, automatic extended
 missing-disclosure calculation, custom/perishable/hygiene exceptions; German
 collection offers, split deliveries, fault cure/rescission and diminished-value

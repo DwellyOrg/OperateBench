@@ -622,6 +622,7 @@ def _execute(
         if partial_evidence is not None and agent._observer != partial_evidence.decision:
             raise ValueError("supplied recorder must own the partial decision observer")
         recorder = agent
+        agent = recorder.inner
     else:
         recorder = RecordingAgent(
             agent,

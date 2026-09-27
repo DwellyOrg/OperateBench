@@ -187,6 +187,7 @@ def consume(path: Path, sha: str, *, network: Any = None) -> list[dict[str, Any]
     from tools.three_flow_campaign import (
         assignments,
         campaign_manifest,
+        correction_slot,
         run_campaign,
         write_private,
     )
@@ -297,13 +298,9 @@ def consume(path: Path, sha: str, *, network: Any = None) -> list[dict[str, Any]
                     if closure["classification"] not in ("aborted", "excluded"):
                         raise ValueError("scored model behavior is not a technical rerun")
                     corrections.append(
-                        {
-                            **slot,
-                            "trial_id": ident + "-fix-" + a["attempt_id"],
-                            "rerun_of": ident,
-                            "correction_reason": fix["reason"],
-                            "fix_evidence_sha256": fix["evidence_sha256"],
-                        }
+                        correction_slot(
+                            slot, a["attempt_id"], fix["reason"], fix["evidence_sha256"]
+                        )
                     )
         # Pin descriptor only after all nonsecret admission checks.
         credential_parent = private_directory(

@@ -29,7 +29,11 @@ from tools.three_flow_budget import CampaignBudget
 from tools.three_flow_errors import grpc_error, river_failed
 from tools.three_flow_river_assets import catalog, family_render, family_tokenizer
 from tools.three_flow_river_kimi import parse_kimi
-from tools.three_flow_river_native import InterfaceAmbiguityError, decode_response
+from tools.three_flow_river_native import (
+    InterfaceAmbiguityError,
+    NativeAssetError,
+    decode_response,
+)
 
 RPC_PREFIX = "/river.api.v1.RiverService/"
 GRPC_OPTIONS = (("grpc.enable_retries", 0),)
@@ -493,6 +497,8 @@ class RiverCampaignTransport:
                 }
                 return result
             except BaseException as exc:
+                if isinstance(exc, NativeAssetError):
+                    self.wire.local_failure = "native_asset_error"
                 if self.guard.ticket is not None and not self.guard.budget.broken:
                     self.guard.forfeit(self.wire.reservation)
                 self.last_turn = {

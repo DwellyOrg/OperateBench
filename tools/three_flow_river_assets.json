@@ -2,7 +2,7 @@
   "models": [
     {
       "model": "Qwen/Qwen3.8-27B-FP8",
-      "key": "river-qwen3.8-27b-fp8",
+      "model_slug": "river-qwen3.8-27b-fp8",
       "revision": "017b9c7af6b5689d5dd426a76e0bc077eb5ca20a",
       "assets": {
         "config.json": {
@@ -44,7 +44,7 @@
     },
     {
       "model": "Qwen/Qwen3.6-35B-A3B-FP8",
-      "key": "river-qwen3.6-35b-a3b-fp8",
+      "model_slug": "river-qwen3.6-35b-a3b-fp8",
       "revision": "95a723d08a9490559dae23d0cff1d9466213d989",
       "assets": {
         "config.json": {
@@ -86,7 +86,7 @@
     },
     {
       "model": "Qwen/Qwen3.5-397B-A17B-FP8",
-      "key": "river-qwen3.5-397b-a17b-fp8",
+      "model_slug": "river-qwen3.5-397b-a17b-fp8",
       "revision": "ea5b4f81096f3901c91dea97f81324302495781d",
       "assets": {
         "config.json": {
@@ -128,7 +128,7 @@
     },
     {
       "model": "Qwen/Qwen3.5-122B-A10B-FP8",
-      "key": "river-qwen3.5-122b-a10b-fp8",
+      "model_slug": "river-qwen3.5-122b-a10b-fp8",
       "revision": "a099dee70ccfcd8d5dda56aaa0b60cb8ecadabc9",
       "assets": {
         "config.json": {
@@ -170,7 +170,7 @@
     },
     {
       "model": "Qwen/Qwen3.5-9B",
-      "key": "river-qwen3.5-9b",
+      "model_slug": "river-qwen3.5-9b",
       "revision": "c202236235762e1c871ad0ccb60c8ee5ba337b9a",
       "assets": {
         "config.json": {
@@ -205,7 +205,7 @@
     },
     {
       "model": "nvidia/Kimi-K2.6-NVFP4",
-      "key": "river-kimi-k2.6-nvfp4",
+      "model_slug": "river-kimi-k2.6-nvfp4",
       "revision": "2fd3a800dedd098b8327eb49e93ebc75f85da19f",
       "assets": {
         "config.json": {
@@ -254,7 +254,7 @@
     },
     {
       "model": "nvidia/GLM-5.2-NVFP4-262K",
-      "key": "river-glm-5.2-nvfp4-262k",
+      "model_slug": "river-glm-5.2-nvfp4-262k",
       "revision": "53e0691e21895a3863a606dfd12910c69eba94ab",
       "tokenizer_model": "nvidia/GLM-5.2-NVFP4",
       "assets": {
@@ -297,7 +297,7 @@
     },
     {
       "model": "zai-org/GLM-5.3-Flash",
-      "key": "river-glm-5.3-flash",
+      "model_slug": "river-glm-5.3-flash",
       "revision": "eb9eb208eb0d988989d07a6a12d0fdeb5f52574a",
       "assets": {
         "config.json": {
@@ -339,7 +339,7 @@
     },
     {
       "model": "deepseek-ai/DeepSeek-V4-Flash-0731",
-      "key": "river-deepseek-v4-flash-0731",
+      "model_slug": "river-deepseek-v4-flash-0731",
       "revision": "7872f01b1d1fe23eabc4c98b48bffcef5a386062",
       "assets": {
         "config.json": {
@@ -374,7 +374,7 @@
     },
     {
       "model": "deepseek-ai/DeepSeek-V4.1-Flash",
-      "key": "river-deepseek-v4.1-flash",
+      "model_slug": "river-deepseek-v4.1-flash",
       "revision": "dba1be0a40aa45a94ad051997016db3960a90277",
       "assets": {
         "config.json": {
@@ -402,7 +402,7 @@
     },
     {
       "model": "nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4",
-      "key": "river-nvidia-nemotron-3.5-lightning-30b-a3b-nvfp4",
+      "model_slug": "river-nvidia-nemotron-3.5-lightning-30b-a3b-nvfp4",
       "revision": "bee7596271d1495f6992ae224aefde4410e816b8",
       "assets": {
         "config.json": {
