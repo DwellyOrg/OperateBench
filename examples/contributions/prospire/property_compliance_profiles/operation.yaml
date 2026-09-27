@@ -1,0 +1,2281 @@
+{
+  "pack_id": "lettings.property_compliance.profiles.v1",
+  "operation_id": "lettings_property_compliance_profiles_v1",
+  "operation_type": "lettings.property_compliance.profiles",
+  "version": "0.1.0",
+  "classification": "SYNTHETIC_ONLY; research-grounded development benchmark, not legal advice or evidence admission",
+  "profiles": {
+    "EN_PRIVATE_ELECTRICAL": {
+      "profile_id": "EN_PRIVATE_ELECTRICAL",
+      "profile_version": "2026-09-26.v1",
+      "jurisdiction": "England",
+      "source_claims": [
+        "EN01",
+        "EN02",
+        "EN03",
+        "EN04",
+        "EN05",
+        "EN06",
+        "EN08"
+      ],
+      "sources": [
+        {
+          "claim_id": "EN01",
+          "url": "https://www.legislation.gov.uk/uksi/2020/312/regulation/3",
+          "accessed": "2026-09-26T20:07:59.978986+00:00",
+          "quote": "(2) For the purposes of sub-paragraph (1)(b) “at regular intervals” means—\n(a)\nat intervals of no more than 5 years; or\n(b)\nwhere the most recent report under sub-paragraph (3)(a) requires such inspection and testing\n[\nF4\nto take place by an earlier date, no later than that date.\n]"
+        },
+        {
+          "claim_id": "EN02",
+          "url": "https://www.gov.uk/government/publications/electrical-safety-standards-in-the-private-and-social-rented-sectors-guidance/electrical-safety-standards-in-the-private-and-social-rented-sectors-guidance",
+          "accessed": "2026-09-26T20:06:16.256202+00:00",
+          "quote": "Ensure the electrical installations in their rented properties are inspected and tested by a qualified person (a person competent to undertake the inspection and testing) at least every 5 years.\nObtain a report (usually an Electrical Installation Condition Report - EICR) from the person conducting the inspection and test which gives the results and sets a date for the next inspection and test. For social landlords who provide electrical equipment, the report must also state whether electrical equipment checks are up to date.\nSupply a copy of the report to the existing tenant within 28 days of the inspection and test.\nSupply a copy of the report to a new tenant before they occupy the premises.\nSupply a copy of the report to any prospective tenant within 28 days of receiving a request for it.\nSupply the local council with a copy of the report within 7 days of receiving a request for it.\nRetain a copy of the report until the next inspection and test is required or (if later than this) conducted, unless it is superseded by a more recent report.\nSupply a copy of the report to the inspector and tester who will undertake the next inspection and test.\nWhere the report shows that remedial or further investigative work is necessary, complete this work within 28 days or any shorter period if specified as necessary in the report.\nWithin 28 days of the completion of the remedial work or further investigative works, supply the tenant and the local council with the report, and written confirmation from the qualified person who carried out the works."
+        },
+        {
+          "claim_id": "EN03",
+          "url": "https://www.gov.uk/government/publications/electrical-safety-standards-in-the-private-and-social-rented-sectors-guidance/electrical-safety-standards-in-the-private-and-social-rented-sectors-guidance",
+          "accessed": "2026-09-26T20:06:16.256202+00:00",
+          "quote": "Code 1 (C1): Danger present. Risk of injury.\nThe electrical inspector may make any C1 hazards safe before leaving the premises.\nCode 2 (C2): Potentially dangerous.\nCode 3 (C3): Improvement recommended.\nFurther remedial work is not required for the report to be deemed satisfactory.\nFurther Investigation (FI): Further investigation required without delay.\nThe electrical installation should be safe for continued use. In practice, if the report does not require investigative or remedial work, the landlord will not be required to carry out any further work.\nIf codes C1 or C2 are identified in the report, then remedial work will be required. The report will state the installation is unsatisfactory for continued use.\nIf an inspector identifies that further investigative work is required (FI), the landlord must also ensure this is carried out.\nThe C3 code does not indicate remedial work is required, but only that improvement is recommended. Landlords do not have to make the improvement, but acting on the recommendations it would improve the safety of the installation. The"
+        },
+        {
+          "claim_id": "EN04",
+          "url": "https://www.legislation.gov.uk/uksi/2020/312/regulation/3",
+          "accessed": "2026-09-26T20:07:59.978986+00:00",
+          "quote": "must ensure that further investigative or remedial work is carried out by a qualified person within—\n(a)\n28 days; or\n(b)\nthe period specified in the report if less than 28 days,\nstarting with the date of the inspection and testing.\n(5) Where paragraph (4) applies, a\n[\nF2\nlandlord\n]\nmust—\n(a)\nobtain written confirmation from a qualified person that the further investigative or remedial work has been carried out and that—\n(i)\nthe electrical safety standards are met; or\n(ii)\nfurther investigative or remedial work is required;\n(b)\nsupply that written confirmation, together with a copy of the report under sub-paragraph (3)(a) which required the further investigative or remedial work to each existing tenant of the residential premises within 28 days of completion of the further investigative or remedial work; and\n(c)\nsupply that written confirmation, together with a copy of the report under sub-paragraph (3)(a) which required the further investigative or remedial work to the local housing authority within 28 days of completion of the further investigative or remedial work."
+        },
+        {
+          "claim_id": "EN05",
+          "url": "https://www.legislation.gov.uk/uksi/2020/312/regulation/3",
+          "accessed": "2026-09-26T20:07:59.978986+00:00",
+          "quote": "(6) Where further investigative work is carried out in accordance with paragraph (4) and the outcome of that further investigative work is that further investigative or remedial work is required, the\n[\nF2\nlandlord\n]\nmust repeat the steps in paragraphs (4) and (5) in respect of that further investigative or remedial work.\n[\nF11\n(6A)\nParagraphs (2A) and (2B) apply in relation to a duty under paragraph (4) and (6) as they apply in relation to a duty under paragraph (1)."
+        },
+        {
+          "claim_id": "EN06",
+          "url": "https://www.gov.uk/government/publications/electrical-safety-standards-in-the-private-and-social-rented-sectors-guidance/electrical-safety-standards-in-the-private-and-social-rented-sectors-guidance",
+          "accessed": "2026-09-26T20:06:16.256202+00:00",
+          "quote": "What if a tenant won’t allow access?\nThe regulations specify the duties of landlords, but a landlord is not in breach of certain specified duties if they can show they have taken all reasonable steps to comply with the relevant duty. In particular, if they are prevented from entering the premises by the tenant, the landlord will not be in breach solely because they have not brought legal proceedings with a view to securing entry.\nA landlord could show they have taken reasonable steps, for example, by keeping copies of all communications they have had with their tenant as they tried to arrange access. Landlords may also want to retain other evidence they have that the installation or equipment is in a good condition while they attempt to arrange access. This could include the servicing record and previous safety reports/records.\nWhat if remedial works to an electrical installation cannot be completed within 28 days?\nThe regulations require landlords to ensure that any remedial or investigative work identified in the report is completed within 28 days, or sooner if specified in the report. However, in some cases, it may not be possible to complete the work within this timeframe due to legitimate practical constraints, for example, where:\nthe remedial work is complex or specialist in nature\nthe work depends on a third party, such as the energy supplier fitting an isolator before a consumer unit can be replaced\ntenant-specific circumstances that require additional planning or reasonable adjustments before the work can be safely or appropriately carried out\nA landlord is not in breach of the duty if they can show they have taken all reasonable steps to comply with it.\nIn such cases, landlords should keep clear records of all communication and arrangements relating to the required work and ensure that any follow-up confirmation of completed remedial action is provided to tenants and, if requested, to the local council."
+        },
+        {
+          "claim_id": "EN08",
+          "url": "https://www.gov.uk/government/publications/electrical-safety-standards-in-the-private-and-social-rented-sectors-guidance/electrical-safety-standards-in-the-private-and-social-rented-sectors-guidance",
+          "accessed": "2026-09-26T20:06:16.256202+00:00",
+          "quote": "Does inspection and testing need to be undertaken if it is a new build home or there are new electrical installations?\nIf premises are newly built or have been completely rewired, they should have an Electrical Installation Certificate (EIC). In such circumstances, landlords can provide a copy of the EIC to tenants and, if requested, the local council. The landlord will then not be required to carry out further checks or provide a report for 5 years after the EIC has been issued, as long as they have complied with their duties under the regulations.\nMore information is at\nElectrical Safety First technical guidance: Wiring Regulations – BS7671\n.\nDo inspection and testing need to be undertaken before each new tenancy if a valid report or record already exists?\nNo. If inspection and testing of electrical installation in the premises was carried out less than 5 years ago and the report does not require further investigative or remedial work; a new inspection and testing is not required; the landlord must supply a copy of the most recent report to the new tenant. There is no requirement to do a further inspection and testing before re-letting the premises. The same applies for checks of electrical equipment provided under the tenancy.\nHowever, it is recommended that landlords carry out at least a visual inspection prior to a new tenancy commencing, to confirm that the premises remain electrically safe and that no damage or deterioration has occurred since the last report/record.\nIf any concerns arise during the visual inspection – or if the landlord has reason to believe that the electrical installation or equipment may no longer be in a safe condition – they may choose to arrange a full inspection and testing, or check, earlier than the standard 5-year interval."
+        }
+      ],
+      "scope": "Specified private residential tenancy; excludes social housing",
+      "rules": {
+        "kinds": [
+          "installation"
+        ],
+        "competence": {
+          "installation": [
+            "competent_electrical"
+          ]
+        },
+        "periodic_years": {
+          "installation": 5
+        },
+        "delivery": "Existing tenant 28 days; new before occupation; council original on written request 7 days. Remedial confirmation AND original to tenant AND council 28 days from completion without request.",
+        "remediation": "C1 immediate safety response; C2/FI remedy/investigate within inspection-triggered 28 days or shorter stated period; C3 recommendation only. Qualified linked confirmation may suffice; no periodic reset.",
+        "retention": "Until later of next required/performed inspection unless superseded."
+      }
+    },
+    "SC_PRIVATE_ELECTRICAL": {
+      "profile_id": "SC_PRIVATE_ELECTRICAL",
+      "profile_version": "2026-09-26.v1",
+      "jurisdiction": "Scotland",
+      "source_claims": [
+        "SC01",
+        "SC02",
+        "SC03",
+        "SC04",
+        "SC05",
+        "SC07",
+        "SC08",
+        "SC11"
+      ],
+      "sources": [
+        {
+          "claim_id": "SC01",
+          "url": "https://www.gov.scot/publications/repairing-standard-statutory-guidance-private-landlords/",
+          "accessed": "2026-09-26T20:06:16.295774+00:00",
+          "quote": "Summary\nThis guidance incorporates all the elements of the Repairing Standard which private landlords are required to comply with from 1 March 2024. The aim of the guidance is to equip private landlords with full detail of what they should do to ensure compliance with all the Repairing Standard.\nShort Term Lets hosts/operators are also required to meet the Repairing Standard and this guidance is for use in determining whether they meet the required standards (see\nparagraph 2.5\n). The terms landlord, let and tenant when used in this guidance will be understood to apply accordingly to short term lets.\nFor some types of tenancies on agricultural holdings, the Repairing Standard will be enforceable from 28 March 2027 (see\nsection 8\n)."
+        },
+        {
+          "claim_id": "SC02",
+          "url": "https://www.gov.scot/publications/repairing-standard-statutory-guidance-private-landlords/pages/16/",
+          "accessed": "2026-09-26T20:07:08.422458+00:00",
+          "quote": "D.56 Landlords are required to ensure an electrical safety inspection comprising of periodic inspection and testing (PI & T) of the electrical installation and 'In-service inspection and testing of electrical equipment’ (also known as\nPAT\ntesting) is carried out by a skilled person(s) competent in such work before the property is let for the first time, and then at intervals of no more than five years. This does not have to be completed immediately before a new tenancy begins or every time a new tenancy starts, as long as it has been carried out in the period of 5 years before the tenancy starts. As set out in D.73, A landlord who has an Electrical Installation Certificate for a property can provide this for the purpose of PI & T to comply with this guidance.\nD.57 The purpose of PI & T and In-Service Inspection and Testing of Electrical Equipment is to confirm, so far as reasonably practicable, that the electrical installation, fixtures, fittings, accessories and equipment are in a satisfactory condition for continued service, and identify any damage, deterioration, defects or dangerous conditions that may exist which could affect the ongoing safety of the electrical installation, fixtures, fittings, accessories or equipment. Appropriate remedial work may need to be carried out to ensure that they are maintained in a satisfactory condition for continued service, a reasonable state of repair, and in proper working order.\nD.58 Tenants cannot be required to pay for or contribute towards the cost of an electrical safety inspection, unless ordered to do so by the First-tier Tribunal for Scotland.\nD.59 If a landlord cannot carry out an inspection because they do not have right of access to all or part of the property, or lack any other necessary right, they are not in breach of their duties in relation to the Repairing Standard, provided that they have taken reasonable steps to acquire that right. Electrical Installation Condition Report"
+        },
+        {
+          "claim_id": "SC03",
+          "url": "https://www.gov.scot/publications/repairing-standard-statutory-guidance-private-landlords/pages/16/",
+          "accessed": "2026-09-26T20:07:08.422458+00:00",
+          "quote": "D.61 The\nEICR\nmust be completed by a skilled person suitably competent in such work. This means a skilled person (electrically) which is defined in\nBS\n7671 as:\nSkilled person (electrically). Person who possesses, as appropriate to the nature of the electrical work to be undertaken, adequate education, training and practical skills, and who is able to perceive risks and avoid hazards which electricity can create.\nThe term (‘electrically)’ is assumed to be present where the term 'skilled person' is used throughout\nBS\n7671.\nRegulation 16 of the Electricity at Work Regulations 1989 requires persons to be competent to prevent danger and injury.\nThis means that a skilled person must be:\nEmployed by a company that is a member of an accredited registration scheme operated by a recognised body,\nA sole trader or self-employed individual who is a member of an accredited registration scheme operated by a recognised body, or\nAn individual who is able to satisfactorily complete the checklist provided on the following page of this guidance.\nD.62 In this part of the guidance (\nannex D3\n), accredited registration scheme operated by a recognised body means those operated by the\nSELECT\n(Electrical Contractors' Association of Scotland),\nNICEIC\n, or\nNAPIT\n(the National Association of Professional Inspectors and Testers). Landlords can take membership of these organisations as evidence that the company or individual has been assessed to the same level as required in the statutory guidance checklist and has the necessary capability to carry out such work. Alternatively, a skilled person (other than a member of\nNICEIC\n,\nSELECT\nor\nNAPIT\n) should be able to confirm all of the points listed in the checklist form provided on the following page."
+        },
+        {
+          "claim_id": "SC04",
+          "url": "https://www.gov.scot/publications/repairing-standard-statutory-guidance-private-landlords/pages/16/",
+          "accessed": "2026-09-26T20:07:08.422458+00:00",
+          "quote": "D.64 The skilled person carrying out the inspection must complete the\nEICR\naccurately and legibly clearly setting out –\nThe date of the inspection\nThe full address of the house inspected\nThe name and address of the landlord or their agent\nThe name and address of the person carrying out the inspection\nEvidence that person completing the inspection report is a suitably skilled person competent in such work (see\nAnnex A\n)\nA description of each installation, fixture and fitting inspected, and its location in the house, and\nAny defect(s) identified"
+        },
+        {
+          "claim_id": "SC05",
+          "url": "https://www.gov.scot/publications/repairing-standard-statutory-guidance-private-landlords/pages/16/",
+          "accessed": "2026-09-26T20:07:08.422458+00:00",
+          "quote": "D.66 Any electrical installation, fixtures, fittings or equipment which fails to pass electrical safety inspection must be replaced or repaired to comply with the Repairing Standard.\nD.67 Any element of the electrical installations, fixtures, fittings or equipment recorded in Section K of the\nEICR\nas being an observation with Classification Code C1 (Danger present) or C2 (potentially dangerous) must be rectified to comply with the Repairing Standard.\nD.68 Classification Code C1 means that anyone using the installation is at risk and remedial work should be carried out by an electrically skilled person immediately. If it is practical to do so, the competent person should make the installation safe on discovery of the dangerous condition. Where this is not practical the owner or user should be given written notification as a matter of urgency.\nD.69 Where an item is given a Classification Code C2 this is a potentially dangerous situation and urgent remedial action is required.\nD.70 Where an item is given a Classification Code C3, this is a recommended improvement. An observed inadequacy in this category is not considered to be a source of immediate or potential danger. Whilst remedial action is not necessarily required to meet with the Repairing Standard, such improvements would contribute to an enhancement of the safety of the electrical installation. Therefore, landlords should consider addressing these items where possible.\nD.71 Any element of the electrical installation given a Classification Code\nFI\n(Further Investigation required without delay) in an\nEICR\nshould be investigated as soon as practically possible as such investigation may reveal a dangerous or potentially dangerous condition. For more information about electrical installation testing and the classification codes, refer to the latest version of\nElectrical Safety First’s Best Practice Guide\nNo 4 ‘Electrical installation condition reporting: Classification Codes for domestic and similar electrical installations’.\nD.72 An\nEICR\nwill recommend any remedial action required in order to ensure that the electrical installation is in a satisfactory condition for continued service, but any work which is undertaken must be recorded separately. This can be done by recording the work completed on a Minor Electrical Installation Works Certificate and providing a copy of that to the person ordering the work. This is recommended for all actions to remedy a defect. If remedial work includes replacement of a consumer unit (known by some as a fuse box) an Electrical Installation Certificate (\nEIC\n) shall be provided."
+        },
+        {
+          "claim_id": "SC07",
+          "url": "https://www.gov.scot/publications/repairing-standard-statutory-guidance-private-landlords/pages/16/",
+          "accessed": "2026-09-26T20:07:08.422458+00:00",
+          "quote": "D.77 Any electrical equipment which fails to pass a In-Service Inspection and Testing of Electrical Equipment must be replaced or repaired immediately to comply with the Repairing Standard.\nD.78 The in-service inspection and testing of electrical equipment must be completed by a suitably competent person. For the purpose of In-Service Inspection and Testing of Electrical Equipment this means either:\nA skilled person (electrically) as set out in paragraph D.61 above, or\nA person (including the landlord) who has completed appropriate training for In-Service Inspection and Testing of Electrical Equipment.\nD.79 A landlord, or other person, is considered competent to carry out In-Service Inspection and Testing of Electrical Equipment if they have successfully completed an appropriate assessed training qualification. Organisations offering In-Service Inspection and Testing of Electrical Equipment courses include -"
+        },
+        {
+          "claim_id": "SC08",
+          "url": "https://www.gov.scot/publications/repairing-standard-statutory-guidance-private-landlords/pages/16/",
+          "accessed": "2026-09-26T20:07:08.422458+00:00",
+          "quote": "D.81 Electrical equipment that was purchased new less than one year before the date of the test does not require to be included in the In-Service Inspection and Testing of Electrical Equipment. Equipment that was purchased second hand should however be included. If there is any doubt about the condition or age of an appliance or the date of purchase it should be included in the test. If equipment is new it should be included in the equipment register and the date that its first test is due should be clearly recorded.\nD.82 The duty to carry out electrical safety inspections does not apply to appliances that belong to tenants, only to appliances provided by the landlord.\nD.83 The date for retesting appliances is usually set during the In-Service Inspection and Testing of Electrical Equipment and will usually be more frequent than five years. If the skilled person recommends more frequent checks then the landlord should take account of this and follow the advice provided on frequency of inspection and test. If the In-Service Inspection and Testing of Electrical Equipment is not carried out by the skilled person undertaking the\nEICR\n, the skilled person should confirm that the equipment report is complete and up to date. The skilled person does not have to re‑perform the testing if the re-test date has not passed/expired, there is a record of the equipment having been inspected and tested and labelled to confirmed satisfactory for continued use. If there is any equipment that requires to be inspected and tested this can be done at the time of the PI & T. It is not necessary to retest appliances that have an up-to-date test.\nD.84 The landlord must receive and keep a copy of the\nEICR\nfor six years. A copy of the most recent\nEICR\nmust be given to any person who is to become a tenant before a tenancy starts. If an inspection is carried out during a tenancy a copy relating to that inspection must be given to the tenant.\nElectrical Safety: Periodic Tests and inspections\nD.85 Landlords should ensure that electrical safety inspection are carried out:\nBefore a tenancy starts, and\nDuring the tenancy, at intervals of no more than 5 years from the date of the previous inspection.\nD.86 The minimum standard to comply with the legislation is that an inspection must be carried out at least every 5 years, but this does not preclude more frequent testing where appropriate."
+        },
+        {
+          "claim_id": "SC11",
+          "url": "https://www.gov.scot/publications/repairing-standard-statutory-guidance-private-landlords/pages/7/",
+          "accessed": "2026-09-26T20:07:08.384977+00:00",
+          "quote": "6.4 Private landlords are required to register with their local authority, under Part 8 of the Antisocial Behaviour etc. (Scotland) Act 2004, to ensure that they are \"fit and proper\" to be letting property. Although legislation regarding landlord registration is set by the Scottish Government, it is the responsibility of the local authority to investigate and take any necessary action arising from complaints from tenants of private rented properties.\n6.5 If a landlord needs to access a property to carry out repairs or check the condition of the property and access can’t be agreed with the tenant, the landlord should apply to the First-tier Tribunal for Scotland for help with access using the Right Of Entry procedure – see\nRight of Entry - Housing and Property Chamber\n."
+        }
+      ],
+      "scope": "Private residential Repairing Standard; excludes agricultural extension and separate fire/CO duties",
+      "rules": {
+        "kinds": [
+          "installation",
+          "equipment"
+        ],
+        "competence": {
+          "installation": [
+            "accredited_scheme",
+            "competence_checklist"
+          ],
+          "equipment": [
+            "trained_pat",
+            "accredited_scheme",
+            "competence_checklist"
+          ]
+        },
+        "periodic_years": {
+          "installation": 5,
+          "equipment": 5
+        },
+        "delivery": "Tenant inspection copy; prospective tenant before tenancy. No imported English 28-day delivery clock.",
+        "remediation": "C1 immediate, C2 urgent, FI prompt; failed equipment immediately repaired/replaced. Equipment retest may be earlier.",
+        "retention": "EICR six years. Separate equipment register; electrical-only scope does not certify alarms."
+      }
+    },
+    "AU_VIC_RENTAL_CHECKS": {
+      "profile_id": "AU_VIC_RENTAL_CHECKS",
+      "profile_version": "2026-09-26.v1",
+      "jurisdiction": "Australia/Victoria",
+      "source_claims": [
+        "VI01",
+        "VI02",
+        "VI03",
+        "VI04",
+        "VI05",
+        "VI06"
+      ],
+      "sources": [
+        {
+          "claim_id": "VI01",
+          "url": "https://www.consumer.vic.gov.au/housing/renting/repairs-alterations-safety-and-pets/gas-electrical-and-water-safety-standards/rental-providers-gas-and-electrical-safety",
+          "accessed": "2026-09-26T20:07:10.378390+00:00",
+          "quote": "Gas safety checks\nGas appliances such as heaters, stoves and gas fired hot water systems, must be properly maintained. If gas appliances aren’t maintained, they can cause carbon monoxide poisoning.\nRental providers who enter into a new agreement after 29 March 2021, must have gas safety checks conducted every 2 years by a licensed or registered gasfitter.\nIt is not legislated that rental providers who entered into an agreement before 29 March 2021 conduct gas safety checks. But rental providers are strongly encouraged to conduct these checks, keep records of the checks and provide a copy to the renter.\nIf a gas safety check has not been conducted within the last 2 years at the time a renter occupies the rental premises, a gas safety check is to be completed as soon as possible.\nBefore entering into a rental agreement, a rental provider must disclose to a renter the date of the last gas safety check, and any outstanding recommendations from the safety check.\nFor fixed term rental agreements entered into before 29 March 2021, which have rolled over into a periodic rental agreement before this date, rental providers are encouraged to conduct periodic gas safety checks. This may help to ensure they meet their obligations under the\nResidential Tenancies Act 1997\nwhich requires rental providers to supply a rental property that is maintained in good repair and is reasonably fit and suitable for occupation.\nWho can do a gas safety check?\nThe check must be conducted by a licensed or registered gasfitter who is endorsed in the specialised class of Type A Gas Appliances Servicing - Gas Servicing Type A on the Plumbers Identity Card."
+        },
+        {
+          "claim_id": "VI02",
+          "url": "https://www.consumer.vic.gov.au/housing/renting/repairs-alterations-safety-and-pets/gas-electrical-and-water-safety-standards/rental-providers-gas-and-electrical-safety",
+          "accessed": "2026-09-26T20:07:10.378390+00:00",
+          "quote": "Evidence of gas safety check\nThe gas fitter should provide a record of the gas safety check. The document must include:\nthe full name and business details, including the licence or registration number, of the gasfitter who did the check\nthe date the safety check was conducted\nthe results of the check, including any servicing and repairs required and actions taken to address the repair.\na copy of the record of gas servicing work submitted to the BPC and given to the rental provider under the Gas Safety (Gas Installation) Regulations 2018, for each Type A gas appliance that is serviced as part of the standard gas installation.\nRecord keeping\nRental providers must keep a record of gas safety checks until a record of the next safety check is created.\nA copy of the most recent gas safety check must be provided to the renter within 7 days after the rental provider receives a written request from the renter.\nElectrical safety checks\nRental providers who enter into a new agreement after 29 March 2021, must have all electrical installations and fittings checked by a licensed electrician at least once every 2 years. This also applies to rental agreements where a fixed term agreement rolls over into a periodic rental agreement after 29 March 2021.\nIf an electrical safety check has not been conducted within the last 2 years at the time a renter occupies the rental property, an electrical safety check is to be completed as soon as possible.\nBefore entering into a rental agreement, a rental provider must disclose to a renter the date of the last electrical safety check, and any outstanding recommendations from the safety check.\nFrom 29 March 2023 all power outlets and lighting circuits in a rental premises must connect to both a switchboard-type circuit breaker that complies with AS/NZS 3000 and a switchboard-type residual current device that complies with AS/NZS 3190, AS/NZS 61008.1 or AS/NZS 61009.1."
+        },
+        {
+          "claim_id": "VI03",
+          "url": "https://www.consumer.vic.gov.au/housing/renting/repairs-alterations-safety-and-pets/gas-electrical-and-water-safety-standards/rental-providers-gas-and-electrical-safety",
+          "accessed": "2026-09-26T20:07:10.378390+00:00",
+          "quote": "Who can conduct an electrical safety check?\nElectricians must be licensed with Energy Safe Victoria as Registered Electrical Contractors (RECs). The safety check must be conducted by a licensed or registered electrician.\nYou can check an electrician’s registration or licensing status on their card. You can also\ncheck their licensing or registration details on the Energy Safe Victoria website\n.\nFinding a licensed electrician\nYou can find a licensed electrician by searching the web or by visiting\nEnergy Safe Victoria\n.\nWhat an electrical safety check must cover\nThe\nResidential Tenancies Regulations 2021\nset out what must be included in a safety check.\nElectrical safety checks must include a check of all electrical installations, fixtures and fittings carried out in accordance with section 4 of AS/NZS 3019 \"Electrical installations—Periodic verification”.\nFor more information on electrical safety checks, visit\nEnergy Safe Victoria\n.\nEvidence of electrical safety checks\nThe electrician should provide a record of the electrical safety check, which must include:\nthe name of the licensed or registered electrician who conducted the check and their licence or registration number\nthe date of the safety check\nthe results of the check, including any repairs that were required and actions taken to address the repair\na report prepared in accordance with section 2 of AS/NZS 3019, \"Electrical installations—Periodic verification\", as published or amended from time to time.\nRecord keeping\nA rental provider must keep a record of the most recent electrical safety check, until a record of the next safety check is created.\nA copy of the most recent electrical safety check must be provided to the renter within 7 days after the rental provider receives a written request from the renter."
+        },
+        {
+          "claim_id": "VI04",
+          "url": "https://www.consumer.vic.gov.au/housing/renting/repairs-alterations-safety-and-pets/repairs/repairs-in-rental-properties",
+          "accessed": "2026-09-26T20:05:36.066647+00:00",
+          "quote": "Repairs are either ‘urgent’ or ‘non-urgent’. Rental providers must make urgent repairs immediately. Rental providers must make non-urgent repairs within 14 days of getting a written request."
+        },
+        {
+          "claim_id": "VI05",
+          "url": "https://www.consumer.vic.gov.au/housing/renting/repairs-alterations-safety-and-pets/repairs/repairs-in-rental-properties",
+          "accessed": "2026-09-26T20:05:36.066647+00:00",
+          "quote": "List of urgent repairs\nUrgent repairs must be done immediately because they make the property unsafe or difficult to live in.\nAnything on this list is legally defined as an urgent repair:\nburst water service\nblocked or broken toilet system\nserious roof leak\ngas leak\ndangerous electrical fault\nflooding or serious flood damage\nserious storm or fire damage\nan essential service or appliance for hot water, water, cooking, heating, or laundering is not working\nthe gas, electricity or water supply is not working\na cooling appliance or service provided by the rental provider is not working\nthe property does not meet\nminimum standards\na safety-related device, such as a smoke alarm or pool fence, is not working\nan appliance, fitting or fixture that is not working and causes a lot of water to be wasted\nany fault or damage in the property that makes it unsafe or insecure, including\npests, mould or damp\ncaused by or related to the building structure\na serious problem with a lift or staircase."
+        },
+        {
+          "claim_id": "VI06",
+          "url": "https://www.consumer.vic.gov.au/housing/renting/repairs-alterations-safety-and-pets/repairs/repairs-in-rental-properties",
+          "accessed": "2026-09-26T20:05:36.066647+00:00",
+          "quote": "Who can make a repair\nFor work that requires a license or registration, the renter or rental provider must use a qualified person.\nAll repairs must be made to the standard a tradesperson would make them.\nA renter or rental provider can make a repair (that doesn't require a licence or registration) as long as they do it to the same standard as a tradesperson."
+        }
+      ],
+      "scope": "Ordinary rental agreement entered after 29 March 2021; excludes legacy and rooming houses",
+      "rules": {
+        "kinds": [
+          "electrical",
+          "gas"
+        ],
+        "competence": {
+          "electrical": [
+            "electrician_and_rec"
+          ],
+          "gas": [
+            "gasfitter_type_a"
+          ]
+        },
+        "periodic_years": {
+          "electrical": 2,
+          "gas": 2
+        },
+        "delivery": "Last check dates and outstanding recommendations disclosed before agreement; latest records within 7 days of written renter request.",
+        "remediation": "Gas leak/dangerous electrical fault urgent immediately; no imported UK defect codes. Scope gas Type A servicing AS4575; electrical AS/NZS3019 sections2,4.",
+        "retention": "Latest check until next record. Independent gas and electrical clocks; no cross-renewal."
+      }
+    },
+    "NZ_HEALTHY_HOMES": {
+      "profile_id": "NZ_HEALTHY_HOMES",
+      "profile_version": "2026-09-26.v1",
+      "jurisdiction": "New Zealand",
+      "source_claims": [
+        "NZ01",
+        "NZ02",
+        "NZ03",
+        "NZ04",
+        "NZ05",
+        "NZ06",
+        "NZ07",
+        "NZ08",
+        "NZ12",
+        "NZ13"
+      ],
+      "sources": [
+        {
+          "claim_id": "NZ01",
+          "url": "https://www.tenancy.govt.nz/healthy-homes/healthy-homes-compliance/",
+          "accessed": "2026-09-26T20:08:04.552703+00:00",
+          "quote": "Healthy homes compliance timeframes\nAll rental properties must comply with the healthy homes standards as of 1 July 2025. Landlords are responsible for ensuring their properties meet the standards.\nKey compliance dates for healthy homes:\nFrom 1 July 2025, all private rentals must comply with the healthy homes standards.\nAll houses rented by Kāinga Ora (formerly Housing New Zealand) and registered Community Housing Providers had to comply by 1 July 2024.\nChanges to the compliance timeframes took effect on 26 November 2022 for private landlords.\nAll boarding houses had to comply by 1 July 2021.\nFrom 1 December 2020 landlords had to include a statement of their current level of compliance.\nFrom 1 July 2019 landlords had to sign a statement of intent to comply and keep records that demonstrate compliance with relevant healthy homes standards.\nTenancies started or renewed between 1 July 2021 and 27 August 2022 must have complied with the healthy homes standards within 90 days.\nTenancies started or renewed between 28 August 2022 and 2 March 2025 must comply with the healthy homes standards within 120 days."
+        },
+        {
+          "claim_id": "NZ02",
+          "url": "https://www.tenancy.govt.nz/healthy-homes/healthy-homes-compliance/",
+          "accessed": "2026-09-26T20:08:04.552703+00:00",
+          "quote": "What are the standards?\nHeating\nLandlords must provide one or more fixed heaters that can directly heat the main living room. The heater(s) must be acceptable types and must meet the minimum heating capacity required for your main living room.\nHeating standard\nInsulation\nCeiling and underfloor insulation has been compulsory in all rental homes since 1 July 2019. The healthy homes insulation standard builds on the current regulations and some existing insulation will need to be topped up or replaced.\nInsulation standard\nVentilation\nEach livable space must have a window or door that opens to the outside and can be fixed in the open position. Kitchens and bathrooms must also have an extractor fan to remove moisture.\nVentilation standard\nMoisture ingress and drainage\nA rental property must have efficient drainage, guttering and downpipes for the removal of stormwater, surface water and ground water.\nWhere there is an enclosed sub-floor, a ground moisture barrier is required.\nMoisture ingress and drainage standard\nDraught stopping\nLandlords must block any unreasonable gaps or holes, in walls, ceilings, windows, floors and doors, that cause noticeable draughts.\nDraught stopping standard\nWhen the standards do not apply\nIn some situations, a property is not required to meet the healthy homes standards or parts of the standards. This is called an exemption.\nExemptions to the healthy homes standards\nYour ongoing responsibility\nOnce your property is up to standard, you need to make sure it stays that way."
+        },
+        {
+          "claim_id": "NZ03",
+          "url": "https://www.tenancy.govt.nz/healthy-homes/healthy-homes-compliance/",
+          "accessed": "2026-09-26T20:08:04.552703+00:00",
+          "quote": "What to include in the tenancy agreement\nNew or renewed tenancy agreements must include a signed statement with details of the property’s current level of compliance with the standards. We have a template you can use for this.\nCompliance statement\nLandlords who do not include this statement when required could face a financial penalty of up to $500 for each tenancy, or other enforcement action.\nRecords to keep\nLandlords must keep all records and documents that show how they are complying with the healthy homes standards. These must be made available on request.\nTenants can also request information about compliance with the healthy homes standards. Landlords must provide this information to tenants within 21 days."
+        },
+        {
+          "claim_id": "NZ04",
+          "url": "https://www.tenancy.govt.nz/healthy-homes/compliance-statement/",
+          "accessed": "2026-09-26T20:06:20.452751+00:00",
+          "quote": "All new or renewed tenancy agreements must include specific information about the rental property’s current level of compliance with the healthy homes standards.\nOn this page\nAbout healthy homes compliance\nAbout the compliance statement template\nWhat needs to be included in the statement\nAbout healthy homes compliance\nAll rental properties must comply with the healthy homes standards. New, renewed or varied tenancy agreements must include a signed statement with details of the property’s current level of compliance with the standards. Landlords who do not meet their obligations under the healthy homes standards are in breach of the Residential Tenancies Act 1986 – and may face consequences, like financial penalties of up to $7200."
+        },
+        {
+          "claim_id": "NZ05",
+          "url": "https://www.tenancy.govt.nz/healthy-homes/compliance-statement/",
+          "accessed": "2026-09-26T20:06:20.452751+00:00",
+          "quote": "The required heating capacity for the main living room to reach at least 18°C. This needs to be included if using any of the following options to calculate heating capacity:\nThe online heating assessment tool.\nThe heating formulas in the regulations.\nA qualified heating specialist to assess the required heating capacity.\nIf applicable, confirming the new heating formula for modern dwellings (homes) or relevant apartments is being used to calculate the required heating capacity. This should include a brief description as to why the property meets the criteria to use the new heating formula.\nIf the property is meeting the standard by using a qualified specialist to assess what heating capacity is acceptable the landlord must:\nProvide a statement explaining that they are relying on regulation 10A and include a description of why regulation 10A applies.\nState the name and relevant qualifications of the specialist.\nHold in their records details of how the heating complies with regulation 10A and how the qualified specialist calculated the required heating capacity.\nHold documentation to record compliance when the required heating has been installed."
+        },
+        {
+          "claim_id": "NZ06",
+          "url": "https://www.tenancy.govt.nz/healthy-homes/compliance-statement/",
+          "accessed": "2026-09-26T20:06:20.452751+00:00",
+          "quote": "The insulation standard\nIf any of the below information is already provided as part of a separate insulation statement in the tenancy agreement, it does not need to be included again in the compliance statement.\nFor each ceiling insulated, either:\nthe R-value of the insulation and, if known, the date it was installed and when it was last inspected, or\nthe thickness of the insulation and, if known, the date when it was last inspected.\nFor each underfloor space, the R-value of the insulation and, if known, the date it was installed and when it was last inspected.\nFor each ceiling and suspended floor that isn’t insulated, the reason why not.\nStatements issued by certified installers\nLandlords are required by law to provide a signed insulation statement that includes all information required as part of the Residential Tenancies (Smoke Alarms and Insulation) Regulations 2016, as well as information required under the healthy homes standards (e.g. R-values).\nThe healthy homes compliance statement template is designed to meet the information requirements of both of these. It is a combined statement that only needs to be signed once.\nTo meet the requirements, the statements must be ‘made and signed’ by the landlord or an agent acting as the landlord (such as a property manager).\nLandlords can use a professional to assess the insulation in their property and include that information in their compliance statement, but the landlord must sign the statement not the professional.\nInformation about wall insulation\nThe compliance statement template includes a page relating to wall insulation. This example statement is intended to address the information requirements for insulation under the Residential Tenancies (Healthy Homes Standards) Regulations 2019, as well as the disclosure requirements set out in section 13A of the Residential Tenancies Act 1986.\nLandlords must make a reasonable effort to find out whether their rental property has wall insulation, but wall insulation is not required by the Residential Tenancies Act.\nIf you are not able to get this information, landlords must specify what they are unable to find out in relation to the location, type and condition of ceiling, underfloor or wall insulation. They must also provide the reasons why they are unable to, and that they have made a reasonable effort to find out."
+        },
+        {
+          "claim_id": "NZ07",
+          "url": "https://www.tenancy.govt.nz/healthy-homes/compliance-statement/",
+          "accessed": "2026-09-26T20:06:20.452751+00:00",
+          "quote": "The ventilation standard\nLandlords must include the following information for the ventilation standard:\nA statement that each habitable space in the premises has one or more openable windows or doors (that meet the requirements detailed in the ventilation section):\nDetails of how the home complies with the ventilation requirement. All kitchens and bathrooms must have an extractor fan vented to the outside or the home must have a qualifying ventilation system that continuously extracts to the outdoors from the kitchen(s) or bathroom(s).\nIf complying by extractor fans this must include the diameter or exhaust capacity of each extractor fan installed in any kitchen or bathroom.\nIf complying by using a qualifying ventilation system the statement must include a brief description of how the ventilation meets the definition of qualifying ventilation system to meet the standard. The description must also include it’s exhaust capacity. For example, the date consent was given and how it extracts air to the outside.\nVentilation standard\nInformation required for moisture and drainage standard\nLandlords must include the following information for the moisture and drainage standard:\nA statement that the rental property has an efficient drainage system.\nEither:\nthat the property does not have any enclosed subfloor spaces, or\nthat each enclosed subfloor space has a ground moisture barrier.\nMoisture and drainage standard\nThe draught stopping standard\nLandlords must include the following information for the draught stopping standard:\nA statement that any open fireplace is either closed off and the chimney is blocked, or the chimney is not blocked due to a written request from the tenant.\nA statement that the property is free from unreasonable gaps that allow draughts into or out of the premises.\nDraught stopping standard\nExemptions\nIf an exemption applies, the landlord must make a statement explaining the exemption and briefly describe the circumstances that led to the exemption.\nExemptions to the healthy homes standards"
+        },
+        {
+          "claim_id": "NZ08",
+          "url": "https://www.tenancy.govt.nz/healthy-homes/healthy-homes-standards-what-a-landlord-needs-to-know/keeping-your-property-up-to-standard/",
+          "accessed": "2026-09-26T20:08:06.677529+00:00",
+          "quote": "Once your property meets the healthy homes standards, you’ll need to make sure that it stays that way.\nIf something is installed, or provided, to meet any of the healthy homes standards, it must be maintained in good working order. If it cannot be kept in good working order, it must be replaced.\nAs soon as you are made aware that something needs maintenance or repair (through no fault of the tenant), you must remedy it or arrange for it to be remedied within a reasonable timeframe. A ‘reasonable timeframe’ will differ from situation to situation, depending on the availability of appropriate industry professionals, replacement parts and components.\nYou should also keep your tenants updated on the progress of any maintenance or repairs and keep records of the process, for example, dates professionals were contacted.\nHere are some tips to help you keep your property up to scratch:\nAt the start of a tenancy\nMake sure you include the healthy homes standards compliance statement in the tenancy agreement, and that it has been updated with any new information."
+        },
+        {
+          "claim_id": "NZ12",
+          "url": "https://www.tenancy.govt.nz/maintenance-and-inspections/access/",
+          "accessed": "2026-09-26T20:08:10.716711+00:00",
+          "quote": "Landlords can enter their rental properties at certain times, for certain things. They must give the right amount of notice or get their tenant’s permission. They must also respect the tenant’s reasonable peace, comfort and privacy.\nThe property is the tenant’s home\nThe landlord owns the property, but the property is the tenant's home while they are renting it. This means the landlord must respect the tenant's peace, comfort and privacy. This is called \"quiet enjoyment\".\nQuiet enjoyment\nLandlords can enter their rental properties for various reasons. If the landlord needs to enter the inside of a rental property (to do an inspection or to fix something, for example), they need to give the correct amount of notice or get the tenant’s permission. Otherwise, they may be committing an unlawful act.\nThe landlord can enter the property if they have a Tenancy Tribunal order allowing entry, or if there is an emergency, such as flooding or a fire.\nLandlords can enter the property for inspections\nLandlords can regularly inspect their rental properties. This helps make sure that:\neverything is in working order\nany damage to the property is identified, and\nthe property is being kept reasonably clean and tidy.\nSome insurance providers require the landlord to prove that regular property inspections are taking place.\nLandlords must follow certain rules when scheduling or conducting an inspection.\nInspections\nLandlords can enter the property to fix something\nLandlords must give tenants at least 24 hours’ notice before they or their contractors enter the property to do any necessary repairs or maintenance. These repairs can be done between 8am and 7pm (or between 8am and 6pm for boarding houses).\nThe persons responsible for fixing and paying for repairs in a rental property will depend on exactly what needs to be repaired or maintained.\nDamage and repairs\nAny repairs or maintenance that are not necessary, like cosmetic improvements, can only be done at an agreed time by the landlord and tenant."
+        },
+        {
+          "claim_id": "NZ13",
+          "url": "https://www.tenancy.govt.nz/maintenance-and-inspections/access/",
+          "accessed": "2026-09-26T20:08:10.716711+00:00",
+          "quote": "Landlords must not use force to enter the property\nThe landlord must not use force, or threat of force, to enter or attempt to enter the property while the tenant, or anyone with the tenant’s permission, is inside. A landlord who does this commits an offence and is liable on conviction for a financial penalty or imprisonment."
+        }
+      ],
+      "scope": "Ordinary non-exempt private residential rental after 1 July 2025",
+      "rules": {
+        "kinds": [
+          "healthy_homes"
+        ],
+        "competence": {
+          "healthy_homes": [
+            "assessment_evidence"
+          ]
+        },
+        "periodic_years": {
+          "healthy_homes": null
+        },
+        "delivery": "Landlord/agent-signed statement for new/renewed/varied tenancy; requested evidence within 21 days.",
+        "remediation": "Ongoing five standards; deterioration/alterations reopen; reasonable repair timeframe is contextual, not invented statutory hours.",
+        "retention": "Retain supporting evidence. No statutory certificate expiry.",
+        "standards": [
+          "heating",
+          "insulation",
+          "ventilation",
+          "moisture_drainage",
+          "draught_stopping"
+        ]
+      }
+    }
+  },
+  "scenarios": {
+    "EN_normal": {
+      "profile_id": "EN_PRIVATE_ELECTRICAL",
+      "initial": {
+        "property_id": "property-1",
+        "address": "1 Example Street, Unit 1",
+        "profile_id": "EN_PRIVATE_ELECTRICAL",
+        "scope_confirmed": true,
+        "access": "consented",
+        "access_log": [
+          "tenant consent recorded"
+        ],
+        "tenant_actor": "tenant",
+        "delivery_due": "2026-09-27T17:00:00Z",
+        "remedy_due": "2026-09-27T17:00:00Z",
+        "prior_due": {
+          "installation": "2026-09-26"
+        },
+        "disclosure": null,
+        "delivery_deadline_basis": "benchmark_policy: stricter synthetic dispatch/receipt SLA; legal outer limits in profile rules",
+        "remedy_deadline_basis": "report shorter inspection-triggered period EN04"
+      },
+      "reports": [
+        {
+          "document_id": "installation-v1",
+          "version": 1,
+          "supersedes": null,
+          "property_id": "property-1",
+          "address": "1 Example Street, Unit 1",
+          "kind": "installation",
+          "profile_id": "EN_PRIVATE_ELECTRICAL",
+          "inspection_date": "2026-09-26",
+          "issued_at": "2026-09-26T09:30:00Z",
+          "issuer": "fixture-inspector",
+          "qualification": "competent_electrical",
+          "qualification_evidence": "fixture-registry-not-live",
+          "qualification_valid_until": "2027-09-26",
+          "scope_complete": true,
+          "scope_evidence": "full property installation",
+          "next_due": "2028-09-26",
+          "findings": [
+            {
+              "id": "recommendation-1",
+              "code": "C3"
+            }
+          ],
+          "landlord_signature": null,
+          "standards": {},
+          "remedy_due": "2026-09-27T17:00:00Z",
+          "content_hash": "b84df1e9e5f38c1135bb71bf4bdbab7f5bb26e512bb2a9980f89322f7552594a"
+        }
+      ],
+      "replacement": null,
+      "response_delay_minutes": 30
+    },
+    "EN_remediation": {
+      "profile_id": "EN_PRIVATE_ELECTRICAL",
+      "initial": {
+        "property_id": "property-1",
+        "address": "1 Example Street, Unit 1",
+        "profile_id": "EN_PRIVATE_ELECTRICAL",
+        "scope_confirmed": true,
+        "access": "consented",
+        "access_log": [
+          "tenant consent recorded"
+        ],
+        "tenant_actor": "tenant",
+        "delivery_due": "2026-09-27T17:00:00Z",
+        "remedy_due": "2026-09-26T10:30:00Z",
+        "prior_due": {
+          "installation": "2026-09-26"
+        },
+        "disclosure": null,
+        "delivery_deadline_basis": "benchmark_policy: stricter synthetic dispatch/receipt SLA; legal outer limits in profile rules",
+        "remedy_deadline_basis": "report shorter inspection-triggered period EN04"
+      },
+      "reports": [
+        {
+          "document_id": "installation-v1",
+          "version": 1,
+          "supersedes": null,
+          "property_id": "property-1",
+          "address": "1 Example Street, Unit 1",
+          "kind": "installation",
+          "profile_id": "EN_PRIVATE_ELECTRICAL",
+          "inspection_date": "2026-09-26",
+          "issued_at": "2026-09-26T09:30:00Z",
+          "issuer": "fixture-inspector",
+          "qualification": "competent_electrical",
+          "qualification_evidence": "fixture-registry-not-live",
+          "qualification_valid_until": "2027-09-26",
+          "scope_complete": true,
+          "scope_evidence": "full property installation",
+          "next_due": "2028-09-26",
+          "findings": [
+            {
+              "id": "defect-1",
+              "code": "C2"
+            }
+          ],
+          "landlord_signature": null,
+          "standards": {},
+          "remedy_due": "2026-09-26T10:30:00Z",
+          "content_hash": "239a7968d23a65d57bbc6345ee076ee14d6ee50e00769981b36d914ee35925f0"
+        }
+      ],
+      "replacement": null,
+      "response_delay_minutes": 30
+    },
+    "EN_access": {
+      "profile_id": "EN_PRIVATE_ELECTRICAL",
+      "initial": {
+        "property_id": "property-1",
+        "address": "1 Example Street, Unit 1",
+        "profile_id": "EN_PRIVATE_ELECTRICAL",
+        "scope_confirmed": true,
+        "access": "refused",
+        "access_log": [
+          "notice delivered",
+          "appointment offered",
+          "alternative offered",
+          "tenant refused"
+        ],
+        "tenant_actor": "tenant",
+        "delivery_due": "2026-09-27T17:00:00Z",
+        "remedy_due": "2026-09-27T17:00:00Z",
+        "prior_due": {
+          "installation": "2026-09-26"
+        },
+        "disclosure": null,
+        "delivery_deadline_basis": "benchmark_policy: stricter synthetic dispatch/receipt SLA; legal outer limits in profile rules",
+        "remedy_deadline_basis": "report shorter inspection-triggered period EN04"
+      },
+      "reports": [
+        {
+          "document_id": "installation-v1",
+          "version": 1,
+          "supersedes": null,
+          "property_id": "property-1",
+          "address": "1 Example Street, Unit 1",
+          "kind": "installation",
+          "profile_id": "EN_PRIVATE_ELECTRICAL",
+          "inspection_date": "2026-09-26",
+          "issued_at": "2026-09-26T09:30:00Z",
+          "issuer": "fixture-inspector",
+          "qualification": "competent_electrical",
+          "qualification_evidence": "fixture-registry-not-live",
+          "qualification_valid_until": "2027-09-26",
+          "scope_complete": true,
+          "scope_evidence": "full property installation",
+          "next_due": "2028-09-26",
+          "findings": [
+            {
+              "id": "recommendation-1",
+              "code": "C3"
+            }
+          ],
+          "landlord_signature": null,
+          "standards": {},
+          "remedy_due": "2026-09-27T17:00:00Z",
+          "content_hash": "b84df1e9e5f38c1135bb71bf4bdbab7f5bb26e512bb2a9980f89322f7552594a"
+        }
+      ],
+      "replacement": null,
+      "response_delay_minutes": 30
+    },
+    "EN_reopen": {
+      "profile_id": "EN_PRIVATE_ELECTRICAL",
+      "initial": {
+        "property_id": "property-1",
+        "address": "1 Example Street, Unit 1",
+        "profile_id": "EN_PRIVATE_ELECTRICAL",
+        "scope_confirmed": true,
+        "access": "consented",
+        "access_log": [
+          "tenant consent recorded"
+        ],
+        "tenant_actor": "tenant",
+        "delivery_due": "2026-09-27T17:00:00Z",
+        "remedy_due": "2026-09-27T17:00:00Z",
+        "prior_due": {
+          "installation": "2026-09-26"
+        },
+        "disclosure": null,
+        "delivery_deadline_basis": "benchmark_policy: stricter synthetic dispatch/receipt SLA; legal outer limits in profile rules",
+        "remedy_deadline_basis": "report shorter inspection-triggered period EN04"
+      },
+      "reports": [
+        {
+          "document_id": "installation-v1",
+          "version": 1,
+          "supersedes": null,
+          "property_id": "property-1",
+          "address": "1 Example Street, Unit 1",
+          "kind": "installation",
+          "profile_id": "EN_PRIVATE_ELECTRICAL",
+          "inspection_date": "2026-09-26",
+          "issued_at": "2026-09-26T09:30:00Z",
+          "issuer": "fixture-inspector",
+          "qualification": "competent_electrical",
+          "qualification_evidence": "fixture-registry-not-live",
+          "qualification_valid_until": "2027-09-26",
+          "scope_complete": true,
+          "scope_evidence": "full property installation",
+          "next_due": "2028-09-26",
+          "findings": [
+            {
+              "id": "recommendation-1",
+              "code": "C3"
+            }
+          ],
+          "landlord_signature": null,
+          "standards": {},
+          "remedy_due": "2026-09-27T17:00:00Z",
+          "content_hash": "b84df1e9e5f38c1135bb71bf4bdbab7f5bb26e512bb2a9980f89322f7552594a"
+        }
+      ],
+      "replacement": {
+        "document_id": "installation-v2",
+        "version": 2,
+        "supersedes": "installation-v1",
+        "property_id": "property-1",
+        "address": "1 Example Street, Unit 1",
+        "kind": "installation",
+        "profile_id": "EN_PRIVATE_ELECTRICAL",
+        "inspection_date": "2026-09-26",
+        "issued_at": "2026-09-26T09:30:00Z",
+        "issuer": "fixture-inspector",
+        "qualification": "competent_electrical",
+        "qualification_evidence": "fixture-registry-not-live",
+        "qualification_valid_until": "2027-09-26",
+        "scope_complete": true,
+        "scope_evidence": "full property installation",
+        "next_due": "2028-09-26",
+        "findings": [
+          {
+            "id": "new-defect",
+            "code": "C2"
+          }
+        ],
+        "landlord_signature": null,
+        "standards": {},
+        "remedy_due": "2026-09-27T17:00:00Z",
+        "content_hash": "ac71ea0a7dae3f9917fa2d36898b68c06e6daaae3fac99a12ccb873ac2a73b5e"
+      },
+      "response_delay_minutes": 30
+    },
+    "EN_qualification": {
+      "profile_id": "EN_PRIVATE_ELECTRICAL",
+      "initial": {
+        "property_id": "property-1",
+        "address": "1 Example Street, Unit 1",
+        "profile_id": "EN_PRIVATE_ELECTRICAL",
+        "scope_confirmed": true,
+        "access": "consented",
+        "access_log": [
+          "tenant consent recorded"
+        ],
+        "tenant_actor": "tenant",
+        "delivery_due": "2026-09-27T17:00:00Z",
+        "remedy_due": "2026-09-27T17:00:00Z",
+        "prior_due": {
+          "installation": "2026-09-26"
+        },
+        "disclosure": null,
+        "delivery_deadline_basis": "benchmark_policy: stricter synthetic dispatch/receipt SLA; legal outer limits in profile rules",
+        "remedy_deadline_basis": "report shorter inspection-triggered period EN04"
+      },
+      "reports": [
+        {
+          "document_id": "installation-v1",
+          "version": 1,
+          "supersedes": null,
+          "property_id": "property-1",
+          "address": "1 Example Street, Unit 1",
+          "kind": "installation",
+          "profile_id": "EN_PRIVATE_ELECTRICAL",
+          "inspection_date": "2026-09-26",
+          "issued_at": "2026-09-26T09:30:00Z",
+          "issuer": "fixture-inspector",
+          "qualification": "unqualified",
+          "qualification_evidence": "fixture-registry-not-live",
+          "qualification_valid_until": "2027-09-26",
+          "scope_complete": true,
+          "scope_evidence": "full property installation",
+          "next_due": "2028-09-26",
+          "findings": [
+            {
+              "id": "recommendation-1",
+              "code": "C3"
+            }
+          ],
+          "landlord_signature": null,
+          "standards": {},
+          "remedy_due": "2026-09-27T17:00:00Z",
+          "content_hash": "f1d14db6c32641d9535eba97a0ce4d1582445a3443976eb54938e958a0b9cc8b"
+        }
+      ],
+      "replacement": null,
+      "response_delay_minutes": 30
+    },
+    "SC_normal": {
+      "profile_id": "SC_PRIVATE_ELECTRICAL",
+      "initial": {
+        "property_id": "property-1",
+        "address": "1 Example Street, Unit 1",
+        "profile_id": "SC_PRIVATE_ELECTRICAL",
+        "scope_confirmed": true,
+        "access": "consented",
+        "access_log": [
+          "tenant consent recorded"
+        ],
+        "tenant_actor": "tenant",
+        "delivery_due": "2026-09-27T17:00:00Z",
+        "remedy_due": "2026-09-27T17:00:00Z",
+        "prior_due": {
+          "installation": "2026-09-26",
+          "equipment": "2026-09-26"
+        },
+        "disclosure": null,
+        "delivery_deadline_basis": "benchmark_policy: stricter synthetic dispatch/receipt SLA; legal outer limits in profile rules",
+        "remedy_deadline_basis": "benchmark_policy: fixture service objective, not a statutory urgency conversion"
+      },
+      "reports": [
+        {
+          "document_id": "installation-v1",
+          "version": 1,
+          "supersedes": null,
+          "property_id": "property-1",
+          "address": "1 Example Street, Unit 1",
+          "kind": "installation",
+          "profile_id": "SC_PRIVATE_ELECTRICAL",
+          "inspection_date": "2026-09-26",
+          "issued_at": "2026-09-26T09:30:00Z",
+          "issuer": "fixture-inspector",
+          "qualification": "accredited_scheme",
+          "qualification_evidence": "fixture-registry-not-live",
+          "qualification_valid_until": "2027-09-26",
+          "scope_complete": true,
+          "scope_evidence": "full property installation",
+          "next_due": "2028-09-26",
+          "findings": [
+            {
+              "id": "recommendation-1",
+              "code": "C3"
+            }
+          ],
+          "landlord_signature": null,
+          "standards": {},
+          "remedy_due": "2026-09-27T17:00:00Z",
+          "content_hash": "b1d39a0a23aa942f5804cd5f0d011760870f8b647d582127f3a21be741910f5a"
+        },
+        {
+          "document_id": "equipment-v1",
+          "version": 1,
+          "supersedes": null,
+          "property_id": "property-1",
+          "address": "1 Example Street, Unit 1",
+          "kind": "equipment",
+          "profile_id": "SC_PRIVATE_ELECTRICAL",
+          "inspection_date": "2026-09-26",
+          "issued_at": "2026-09-26T09:30:00Z",
+          "issuer": "fixture-inspector",
+          "qualification": "trained_pat",
+          "qualification_evidence": "fixture-registry-not-live",
+          "qualification_valid_until": "2027-09-26",
+          "scope_complete": true,
+          "scope_evidence": "all landlord-provided appliances in equipment register",
+          "next_due": "2027-10-01",
+          "findings": [
+            {
+              "id": "recommendation-1",
+              "code": "C3"
+            }
+          ],
+          "landlord_signature": null,
+          "standards": {},
+          "remedy_due": "2026-09-27T17:00:00Z",
+          "content_hash": "471c803be78fe945faa0185779e5bcdbb02507b140e5efc5b7544546cbc54abe"
+        }
+      ],
+      "replacement": null,
+      "response_delay_minutes": 30
+    },
+    "SC_remediation": {
+      "profile_id": "SC_PRIVATE_ELECTRICAL",
+      "initial": {
+        "property_id": "property-1",
+        "address": "1 Example Street, Unit 1",
+        "profile_id": "SC_PRIVATE_ELECTRICAL",
+        "scope_confirmed": true,
+        "access": "consented",
+        "access_log": [
+          "tenant consent recorded"
+        ],
+        "tenant_actor": "tenant",
+        "delivery_due": "2026-09-27T17:00:00Z",
+        "remedy_due": "2026-09-27T17:00:00Z",
+        "prior_due": {
+          "installation": "2026-09-26",
+          "equipment": "2026-09-26"
+        },
+        "disclosure": null,
+        "delivery_deadline_basis": "benchmark_policy: stricter synthetic dispatch/receipt SLA; legal outer limits in profile rules",
+        "remedy_deadline_basis": "benchmark_policy: fixture service objective, not a statutory urgency conversion"
+      },
+      "reports": [
+        {
+          "document_id": "installation-v1",
+          "version": 1,
+          "supersedes": null,
+          "property_id": "property-1",
+          "address": "1 Example Street, Unit 1",
+          "kind": "installation",
+          "profile_id": "SC_PRIVATE_ELECTRICAL",
+          "inspection_date": "2026-09-26",
+          "issued_at": "2026-09-26T09:30:00Z",
+          "issuer": "fixture-inspector",
+          "qualification": "accredited_scheme",
+          "qualification_evidence": "fixture-registry-not-live",
+          "qualification_valid_until": "2027-09-26",
+          "scope_complete": true,
+          "scope_evidence": "full property installation",
+          "next_due": "2028-09-26",
+          "findings": [
+            {
+              "id": "defect-1",
+              "code": "C2"
+            }
+          ],
+          "landlord_signature": null,
+          "standards": {},
+          "remedy_due": "2026-09-27T17:00:00Z",
+          "content_hash": "4ec0197920b66bb831e0cb9a3ddf11fbc3af6d7b3eca1934844e7e73eba173ac"
+        },
+        {
+          "document_id": "equipment-v1",
+          "version": 1,
+          "supersedes": null,
+          "property_id": "property-1",
+          "address": "1 Example Street, Unit 1",
+          "kind": "equipment",
+          "profile_id": "SC_PRIVATE_ELECTRICAL",
+          "inspection_date": "2026-09-26",
+          "issued_at": "2026-09-26T09:30:00Z",
+          "issuer": "fixture-inspector",
+          "qualification": "trained_pat",
+          "qualification_evidence": "fixture-registry-not-live",
+          "qualification_valid_until": "2027-09-26",
+          "scope_complete": true,
+          "scope_evidence": "all landlord-provided appliances in equipment register",
+          "next_due": "2027-10-01",
+          "findings": [
+            {
+              "id": "recommendation-1",
+              "code": "C3"
+            }
+          ],
+          "landlord_signature": null,
+          "standards": {},
+          "remedy_due": "2026-09-27T17:00:00Z",
+          "content_hash": "471c803be78fe945faa0185779e5bcdbb02507b140e5efc5b7544546cbc54abe"
+        }
+      ],
+      "replacement": null,
+      "response_delay_minutes": 30
+    },
+    "SC_access": {
+      "profile_id": "SC_PRIVATE_ELECTRICAL",
+      "initial": {
+        "property_id": "property-1",
+        "address": "1 Example Street, Unit 1",
+        "profile_id": "SC_PRIVATE_ELECTRICAL",
+        "scope_confirmed": true,
+        "access": "refused",
+        "access_log": [
+          "notice delivered",
+          "appointment offered",
+          "alternative offered",
+          "tenant refused"
+        ],
+        "tenant_actor": "tenant",
+        "delivery_due": "2026-09-27T17:00:00Z",
+        "remedy_due": "2026-09-27T17:00:00Z",
+        "prior_due": {
+          "installation": "2026-09-26",
+          "equipment": "2026-09-26"
+        },
+        "disclosure": null,
+        "delivery_deadline_basis": "benchmark_policy: stricter synthetic dispatch/receipt SLA; legal outer limits in profile rules",
+        "remedy_deadline_basis": "benchmark_policy: fixture service objective, not a statutory urgency conversion"
+      },
+      "reports": [
+        {
+          "document_id": "installation-v1",
+          "version": 1,
+          "supersedes": null,
+          "property_id": "property-1",
+          "address": "1 Example Street, Unit 1",
+          "kind": "installation",
+          "profile_id": "SC_PRIVATE_ELECTRICAL",
+          "inspection_date": "2026-09-26",
+          "issued_at": "2026-09-26T09:30:00Z",
+          "issuer": "fixture-inspector",
+          "qualification": "accredited_scheme",
+          "qualification_evidence": "fixture-registry-not-live",
+          "qualification_valid_until": "2027-09-26",
+          "scope_complete": true,
+          "scope_evidence": "full property installation",
+          "next_due": "2028-09-26",
+          "findings": [
+            {
+              "id": "recommendation-1",
+              "code": "C3"
+            }
+          ],
+          "landlord_signature": null,
+          "standards": {},
+          "remedy_due": "2026-09-27T17:00:00Z",
+          "content_hash": "b1d39a0a23aa942f5804cd5f0d011760870f8b647d582127f3a21be741910f5a"
+        },
+        {
+          "document_id": "equipment-v1",
+          "version": 1,
+          "supersedes": null,
+          "property_id": "property-1",
+          "address": "1 Example Street, Unit 1",
+          "kind": "equipment",
+          "profile_id": "SC_PRIVATE_ELECTRICAL",
+          "inspection_date": "2026-09-26",
+          "issued_at": "2026-09-26T09:30:00Z",
+          "issuer": "fixture-inspector",
+          "qualification": "trained_pat",
+          "qualification_evidence": "fixture-registry-not-live",
+          "qualification_valid_until": "2027-09-26",
+          "scope_complete": true,
+          "scope_evidence": "all landlord-provided appliances in equipment register",
+          "next_due": "2027-10-01",
+          "findings": [
+            {
+              "id": "recommendation-1",
+              "code": "C3"
+            }
+          ],
+          "landlord_signature": null,
+          "standards": {},
+          "remedy_due": "2026-09-27T17:00:00Z",
+          "content_hash": "471c803be78fe945faa0185779e5bcdbb02507b140e5efc5b7544546cbc54abe"
+        }
+      ],
+      "replacement": null,
+      "response_delay_minutes": 30
+    },
+    "SC_reopen": {
+      "profile_id": "SC_PRIVATE_ELECTRICAL",
+      "initial": {
+        "property_id": "property-1",
+        "address": "1 Example Street, Unit 1",
+        "profile_id": "SC_PRIVATE_ELECTRICAL",
+        "scope_confirmed": true,
+        "access": "consented",
+        "access_log": [
+          "tenant consent recorded"
+        ],
+        "tenant_actor": "tenant",
+        "delivery_due": "2026-09-27T17:00:00Z",
+        "remedy_due": "2026-09-27T17:00:00Z",
+        "prior_due": {
+          "installation": "2026-09-26",
+          "equipment": "2026-09-26"
+        },
+        "disclosure": null,
+        "delivery_deadline_basis": "benchmark_policy: stricter synthetic dispatch/receipt SLA; legal outer limits in profile rules",
+        "remedy_deadline_basis": "benchmark_policy: fixture service objective, not a statutory urgency conversion"
+      },
+      "reports": [
+        {
+          "document_id": "installation-v1",
+          "version": 1,
+          "supersedes": null,
+          "property_id": "property-1",
+          "address": "1 Example Street, Unit 1",
+          "kind": "installation",
+          "profile_id": "SC_PRIVATE_ELECTRICAL",
+          "inspection_date": "2026-09-26",
+          "issued_at": "2026-09-26T09:30:00Z",
+          "issuer": "fixture-inspector",
+          "qualification": "accredited_scheme",
+          "qualification_evidence": "fixture-registry-not-live",
+          "qualification_valid_until": "2027-09-26",
+          "scope_complete": true,
+          "scope_evidence": "full property installation",
+          "next_due": "2028-09-26",
+          "findings": [
+            {
+              "id": "recommendation-1",
+              "code": "C3"
+            }
+          ],
+          "landlord_signature": null,
+          "standards": {},
+          "remedy_due": "2026-09-27T17:00:00Z",
+          "content_hash": "b1d39a0a23aa942f5804cd5f0d011760870f8b647d582127f3a21be741910f5a"
+        },
+        {
+          "document_id": "equipment-v1",
+          "version": 1,
+          "supersedes": null,
+          "property_id": "property-1",
+          "address": "1 Example Street, Unit 1",
+          "kind": "equipment",
+          "profile_id": "SC_PRIVATE_ELECTRICAL",
+          "inspection_date": "2026-09-26",
+          "issued_at": "2026-09-26T09:30:00Z",
+          "issuer": "fixture-inspector",
+          "qualification": "trained_pat",
+          "qualification_evidence": "fixture-registry-not-live",
+          "qualification_valid_until": "2027-09-26",
+          "scope_complete": true,
+          "scope_evidence": "all landlord-provided appliances in equipment register",
+          "next_due": "2027-10-01",
+          "findings": [
+            {
+              "id": "recommendation-1",
+              "code": "C3"
+            }
+          ],
+          "landlord_signature": null,
+          "standards": {},
+          "remedy_due": "2026-09-27T17:00:00Z",
+          "content_hash": "471c803be78fe945faa0185779e5bcdbb02507b140e5efc5b7544546cbc54abe"
+        }
+      ],
+      "replacement": {
+        "document_id": "installation-v2",
+        "version": 2,
+        "supersedes": "installation-v1",
+        "property_id": "property-1",
+        "address": "1 Example Street, Unit 1",
+        "kind": "installation",
+        "profile_id": "SC_PRIVATE_ELECTRICAL",
+        "inspection_date": "2026-09-26",
+        "issued_at": "2026-09-26T09:30:00Z",
+        "issuer": "fixture-inspector",
+        "qualification": "accredited_scheme",
+        "qualification_evidence": "fixture-registry-not-live",
+        "qualification_valid_until": "2027-09-26",
+        "scope_complete": true,
+        "scope_evidence": "full property installation",
+        "next_due": "2028-09-26",
+        "findings": [
+          {
+            "id": "new-defect",
+            "code": "C2"
+          }
+        ],
+        "landlord_signature": null,
+        "standards": {},
+        "remedy_due": "2026-09-27T17:00:00Z",
+        "content_hash": "e094788de3bac4ce4374c1bab9f9f926accbf3ce53ce281d8fa976cbaff579f3"
+      },
+      "response_delay_minutes": 30
+    },
+    "SC_qualification": {
+      "profile_id": "SC_PRIVATE_ELECTRICAL",
+      "initial": {
+        "property_id": "property-1",
+        "address": "1 Example Street, Unit 1",
+        "profile_id": "SC_PRIVATE_ELECTRICAL",
+        "scope_confirmed": true,
+        "access": "consented",
+        "access_log": [
+          "tenant consent recorded"
+        ],
+        "tenant_actor": "tenant",
+        "delivery_due": "2026-09-27T17:00:00Z",
+        "remedy_due": "2026-09-27T17:00:00Z",
+        "prior_due": {
+          "installation": "2026-09-26",
+          "equipment": "2026-09-26"
+        },
+        "disclosure": null,
+        "delivery_deadline_basis": "benchmark_policy: stricter synthetic dispatch/receipt SLA; legal outer limits in profile rules",
+        "remedy_deadline_basis": "benchmark_policy: fixture service objective, not a statutory urgency conversion"
+      },
+      "reports": [
+        {
+          "document_id": "installation-v1",
+          "version": 1,
+          "supersedes": null,
+          "property_id": "property-1",
+          "address": "1 Example Street, Unit 1",
+          "kind": "installation",
+          "profile_id": "SC_PRIVATE_ELECTRICAL",
+          "inspection_date": "2026-09-26",
+          "issued_at": "2026-09-26T09:30:00Z",
+          "issuer": "fixture-inspector",
+          "qualification": "pat_only",
+          "qualification_evidence": "fixture-registry-not-live",
+          "qualification_valid_until": "2027-09-26",
+          "scope_complete": true,
+          "scope_evidence": "full property installation",
+          "next_due": "2028-09-26",
+          "findings": [
+            {
+              "id": "recommendation-1",
+              "code": "C3"
+            }
+          ],
+          "landlord_signature": null,
+          "standards": {},
+          "remedy_due": "2026-09-27T17:00:00Z",
+          "content_hash": "cc0a1b234033d02f2eae4efa4c4cff7f9dbbe3c1efa4937a630f637ba8f75479"
+        },
+        {
+          "document_id": "equipment-v1",
+          "version": 1,
+          "supersedes": null,
+          "property_id": "property-1",
+          "address": "1 Example Street, Unit 1",
+          "kind": "equipment",
+          "profile_id": "SC_PRIVATE_ELECTRICAL",
+          "inspection_date": "2026-09-26",
+          "issued_at": "2026-09-26T09:30:00Z",
+          "issuer": "fixture-inspector",
+          "qualification": "trained_pat",
+          "qualification_evidence": "fixture-registry-not-live",
+          "qualification_valid_until": "2027-09-26",
+          "scope_complete": true,
+          "scope_evidence": "all landlord-provided appliances in equipment register",
+          "next_due": "2027-10-01",
+          "findings": [
+            {
+              "id": "recommendation-1",
+              "code": "C3"
+            }
+          ],
+          "landlord_signature": null,
+          "standards": {},
+          "remedy_due": "2026-09-27T17:00:00Z",
+          "content_hash": "471c803be78fe945faa0185779e5bcdbb02507b140e5efc5b7544546cbc54abe"
+        }
+      ],
+      "replacement": null,
+      "response_delay_minutes": 30
+    },
+    "AU_normal": {
+      "profile_id": "AU_VIC_RENTAL_CHECKS",
+      "initial": {
+        "property_id": "property-1",
+        "address": "1 Example Street, Unit 1",
+        "profile_id": "AU_VIC_RENTAL_CHECKS",
+        "scope_confirmed": true,
+        "access": "consented",
+        "access_log": [
+          "tenant consent recorded"
+        ],
+        "tenant_actor": "tenant",
+        "delivery_due": "2026-09-27T17:00:00Z",
+        "remedy_due": "2026-09-27T17:00:00Z",
+        "prior_due": {
+          "electrical": "2026-09-26",
+          "gas": "2026-09-26"
+        },
+        "disclosure": {
+          "last_check_dates": {
+            "electrical": "2024-10-01",
+            "gas": "2024-10-01"
+          },
+          "outstanding_recommendations": [],
+          "delivered_before_agreement": true
+        },
+        "delivery_deadline_basis": "benchmark_policy: stricter synthetic dispatch/receipt SLA; legal outer limits in profile rules",
+        "remedy_deadline_basis": "benchmark_policy: fixture service objective, not a statutory urgency conversion"
+      },
+      "reports": [
+        {
+          "document_id": "electrical-v1",
+          "version": 1,
+          "supersedes": null,
+          "property_id": "property-1",
+          "address": "1 Example Street, Unit 1",
+          "kind": "electrical",
+          "profile_id": "AU_VIC_RENTAL_CHECKS",
+          "inspection_date": "2026-09-26",
+          "issued_at": "2026-09-26T09:30:00Z",
+          "issuer": "fixture-inspector",
+          "qualification": "electrician_and_rec",
+          "qualification_evidence": "fixture-registry-not-live",
+          "qualification_valid_until": "2027-09-26",
+          "scope_complete": true,
+          "scope_evidence": "AS/NZS3019 sections2,4",
+          "next_due": "2028-09-26",
+          "findings": [],
+          "landlord_signature": null,
+          "standards": {},
+          "remedy_due": "2026-09-27T17:00:00Z",
+          "content_hash": "be26d331b8919dae9b366ad6d5f68634403b082da82deac8cbb79135a1d65acc"
+        },
+        {
+          "document_id": "gas-v1",
+          "version": 1,
+          "supersedes": null,
+          "property_id": "property-1",
+          "address": "1 Example Street, Unit 1",
+          "kind": "gas",
+          "profile_id": "AU_VIC_RENTAL_CHECKS",
+          "inspection_date": "2026-09-26",
+          "issued_at": "2026-09-26T09:30:00Z",
+          "issuer": "fixture-inspector",
+          "qualification": "gasfitter_type_a",
+          "qualification_evidence": "fixture-registry-not-live",
+          "qualification_valid_until": "2027-09-26",
+          "scope_complete": true,
+          "scope_evidence": "all Type A appliances AS4575 servicing records",
+          "next_due": "2027-10-01",
+          "findings": [],
+          "landlord_signature": null,
+          "standards": {},
+          "remedy_due": "2026-09-27T17:00:00Z",
+          "content_hash": "a8a0309dfe39f34a74ad7a44c337c06cf870bb4ef51bf6172d49825a31c7eb21"
+        }
+      ],
+      "replacement": null,
+      "response_delay_minutes": 30
+    },
+    "AU_remediation": {
+      "profile_id": "AU_VIC_RENTAL_CHECKS",
+      "initial": {
+        "property_id": "property-1",
+        "address": "1 Example Street, Unit 1",
+        "profile_id": "AU_VIC_RENTAL_CHECKS",
+        "scope_confirmed": true,
+        "access": "consented",
+        "access_log": [
+          "tenant consent recorded"
+        ],
+        "tenant_actor": "tenant",
+        "delivery_due": "2026-09-27T17:00:00Z",
+        "remedy_due": "2026-09-27T17:00:00Z",
+        "prior_due": {
+          "electrical": "2026-09-26",
+          "gas": "2026-09-26"
+        },
+        "disclosure": {
+          "last_check_dates": {
+            "electrical": "2024-10-01",
+            "gas": "2024-10-01"
+          },
+          "outstanding_recommendations": [],
+          "delivered_before_agreement": true
+        },
+        "delivery_deadline_basis": "benchmark_policy: stricter synthetic dispatch/receipt SLA; legal outer limits in profile rules",
+        "remedy_deadline_basis": "benchmark_policy: fixture service objective, not a statutory urgency conversion"
+      },
+      "reports": [
+        {
+          "document_id": "electrical-v1",
+          "version": 1,
+          "supersedes": null,
+          "property_id": "property-1",
+          "address": "1 Example Street, Unit 1",
+          "kind": "electrical",
+          "profile_id": "AU_VIC_RENTAL_CHECKS",
+          "inspection_date": "2026-09-26",
+          "issued_at": "2026-09-26T09:30:00Z",
+          "issuer": "fixture-inspector",
+          "qualification": "electrician_and_rec",
+          "qualification_evidence": "fixture-registry-not-live",
+          "qualification_valid_until": "2027-09-26",
+          "scope_complete": true,
+          "scope_evidence": "AS/NZS3019 sections2,4",
+          "next_due": "2028-09-26",
+          "findings": [
+            {
+              "id": "defect-1",
+              "code": "dangerous_fault"
+            }
+          ],
+          "landlord_signature": null,
+          "standards": {},
+          "remedy_due": "2026-09-27T17:00:00Z",
+          "content_hash": "08132d936275df75cf49f6eb95b7be4a736bfefb61c1db2747f3625a75018afb"
+        },
+        {
+          "document_id": "gas-v1",
+          "version": 1,
+          "supersedes": null,
+          "property_id": "property-1",
+          "address": "1 Example Street, Unit 1",
+          "kind": "gas",
+          "profile_id": "AU_VIC_RENTAL_CHECKS",
+          "inspection_date": "2026-09-26",
+          "issued_at": "2026-09-26T09:30:00Z",
+          "issuer": "fixture-inspector",
+          "qualification": "gasfitter_type_a",
+          "qualification_evidence": "fixture-registry-not-live",
+          "qualification_valid_until": "2027-09-26",
+          "scope_complete": true,
+          "scope_evidence": "all Type A appliances AS4575 servicing records",
+          "next_due": "2027-10-01",
+          "findings": [],
+          "landlord_signature": null,
+          "standards": {},
+          "remedy_due": "2026-09-27T17:00:00Z",
+          "content_hash": "a8a0309dfe39f34a74ad7a44c337c06cf870bb4ef51bf6172d49825a31c7eb21"
+        }
+      ],
+      "replacement": null,
+      "response_delay_minutes": 30
+    },
+    "AU_access": {
+      "profile_id": "AU_VIC_RENTAL_CHECKS",
+      "initial": {
+        "property_id": "property-1",
+        "address": "1 Example Street, Unit 1",
+        "profile_id": "AU_VIC_RENTAL_CHECKS",
+        "scope_confirmed": true,
+        "access": "refused",
+        "access_log": [
+          "notice delivered",
+          "appointment offered",
+          "alternative offered",
+          "tenant refused"
+        ],
+        "tenant_actor": "tenant",
+        "delivery_due": "2026-09-27T17:00:00Z",
+        "remedy_due": "2026-09-27T17:00:00Z",
+        "prior_due": {
+          "electrical": "2026-09-26",
+          "gas": "2026-09-26"
+        },
+        "disclosure": {
+          "last_check_dates": {
+            "electrical": "2024-10-01",
+            "gas": "2024-10-01"
+          },
+          "outstanding_recommendations": [],
+          "delivered_before_agreement": true
+        },
+        "delivery_deadline_basis": "benchmark_policy: stricter synthetic dispatch/receipt SLA; legal outer limits in profile rules",
+        "remedy_deadline_basis": "benchmark_policy: fixture service objective, not a statutory urgency conversion"
+      },
+      "reports": [
+        {
+          "document_id": "electrical-v1",
+          "version": 1,
+          "supersedes": null,
+          "property_id": "property-1",
+          "address": "1 Example Street, Unit 1",
+          "kind": "electrical",
+          "profile_id": "AU_VIC_RENTAL_CHECKS",
+          "inspection_date": "2026-09-26",
+          "issued_at": "2026-09-26T09:30:00Z",
+          "issuer": "fixture-inspector",
+          "qualification": "electrician_and_rec",
+          "qualification_evidence": "fixture-registry-not-live",
+          "qualification_valid_until": "2027-09-26",
+          "scope_complete": true,
+          "scope_evidence": "AS/NZS3019 sections2,4",
+          "next_due": "2028-09-26",
+          "findings": [],
+          "landlord_signature": null,
+          "standards": {},
+          "remedy_due": "2026-09-27T17:00:00Z",
+          "content_hash": "be26d331b8919dae9b366ad6d5f68634403b082da82deac8cbb79135a1d65acc"
+        },
+        {
+          "document_id": "gas-v1",
+          "version": 1,
+          "supersedes": null,
+          "property_id": "property-1",
+          "address": "1 Example Street, Unit 1",
+          "kind": "gas",
+          "profile_id": "AU_VIC_RENTAL_CHECKS",
+          "inspection_date": "2026-09-26",
+          "issued_at": "2026-09-26T09:30:00Z",
+          "issuer": "fixture-inspector",
+          "qualification": "gasfitter_type_a",
+          "qualification_evidence": "fixture-registry-not-live",
+          "qualification_valid_until": "2027-09-26",
+          "scope_complete": true,
+          "scope_evidence": "all Type A appliances AS4575 servicing records",
+          "next_due": "2027-10-01",
+          "findings": [],
+          "landlord_signature": null,
+          "standards": {},
+          "remedy_due": "2026-09-27T17:00:00Z",
+          "content_hash": "a8a0309dfe39f34a74ad7a44c337c06cf870bb4ef51bf6172d49825a31c7eb21"
+        }
+      ],
+      "replacement": null,
+      "response_delay_minutes": 30
+    },
+    "AU_reopen": {
+      "profile_id": "AU_VIC_RENTAL_CHECKS",
+      "initial": {
+        "property_id": "property-1",
+        "address": "1 Example Street, Unit 1",
+        "profile_id": "AU_VIC_RENTAL_CHECKS",
+        "scope_confirmed": true,
+        "access": "consented",
+        "access_log": [
+          "tenant consent recorded"
+        ],
+        "tenant_actor": "tenant",
+        "delivery_due": "2026-09-27T17:00:00Z",
+        "remedy_due": "2026-09-27T17:00:00Z",
+        "prior_due": {
+          "electrical": "2026-09-26",
+          "gas": "2026-09-26"
+        },
+        "disclosure": {
+          "last_check_dates": {
+            "electrical": "2024-10-01",
+            "gas": "2024-10-01"
+          },
+          "outstanding_recommendations": [],
+          "delivered_before_agreement": true
+        },
+        "delivery_deadline_basis": "benchmark_policy: stricter synthetic dispatch/receipt SLA; legal outer limits in profile rules",
+        "remedy_deadline_basis": "benchmark_policy: fixture service objective, not a statutory urgency conversion"
+      },
+      "reports": [
+        {
+          "document_id": "electrical-v1",
+          "version": 1,
+          "supersedes": null,
+          "property_id": "property-1",
+          "address": "1 Example Street, Unit 1",
+          "kind": "electrical",
+          "profile_id": "AU_VIC_RENTAL_CHECKS",
+          "inspection_date": "2026-09-26",
+          "issued_at": "2026-09-26T09:30:00Z",
+          "issuer": "fixture-inspector",
+          "qualification": "electrician_and_rec",
+          "qualification_evidence": "fixture-registry-not-live",
+          "qualification_valid_until": "2027-09-26",
+          "scope_complete": true,
+          "scope_evidence": "AS/NZS3019 sections2,4",
+          "next_due": "2028-09-26",
+          "findings": [],
+          "landlord_signature": null,
+          "standards": {},
+          "remedy_due": "2026-09-27T17:00:00Z",
+          "content_hash": "be26d331b8919dae9b366ad6d5f68634403b082da82deac8cbb79135a1d65acc"
+        },
+        {
+          "document_id": "gas-v1",
+          "version": 1,
+          "supersedes": null,
+          "property_id": "property-1",
+          "address": "1 Example Street, Unit 1",
+          "kind": "gas",
+          "profile_id": "AU_VIC_RENTAL_CHECKS",
+          "inspection_date": "2026-09-26",
+          "issued_at": "2026-09-26T09:30:00Z",
+          "issuer": "fixture-inspector",
+          "qualification": "gasfitter_type_a",
+          "qualification_evidence": "fixture-registry-not-live",
+          "qualification_valid_until": "2027-09-26",
+          "scope_complete": true,
+          "scope_evidence": "all Type A appliances AS4575 servicing records",
+          "next_due": "2027-10-01",
+          "findings": [],
+          "landlord_signature": null,
+          "standards": {},
+          "remedy_due": "2026-09-27T17:00:00Z",
+          "content_hash": "a8a0309dfe39f34a74ad7a44c337c06cf870bb4ef51bf6172d49825a31c7eb21"
+        }
+      ],
+      "replacement": {
+        "document_id": "electrical-v2",
+        "version": 2,
+        "supersedes": "electrical-v1",
+        "property_id": "property-1",
+        "address": "1 Example Street, Unit 1",
+        "kind": "electrical",
+        "profile_id": "AU_VIC_RENTAL_CHECKS",
+        "inspection_date": "2026-09-26",
+        "issued_at": "2026-09-26T09:30:00Z",
+        "issuer": "fixture-inspector",
+        "qualification": "electrician_and_rec",
+        "qualification_evidence": "fixture-registry-not-live",
+        "qualification_valid_until": "2027-09-26",
+        "scope_complete": true,
+        "scope_evidence": "AS/NZS3019 sections2,4",
+        "next_due": "2028-09-26",
+        "findings": [
+          {
+            "id": "new-defect",
+            "code": "dangerous_fault"
+          }
+        ],
+        "landlord_signature": null,
+        "standards": {},
+        "remedy_due": "2026-09-27T17:00:00Z",
+        "content_hash": "04a51124b34aaf2d403accf165647a6d705f738eb593e73d73fa512ad9138a09"
+      },
+      "response_delay_minutes": 30
+    },
+    "AU_qualification": {
+      "profile_id": "AU_VIC_RENTAL_CHECKS",
+      "initial": {
+        "property_id": "property-1",
+        "address": "1 Example Street, Unit 1",
+        "profile_id": "AU_VIC_RENTAL_CHECKS",
+        "scope_confirmed": true,
+        "access": "consented",
+        "access_log": [
+          "tenant consent recorded"
+        ],
+        "tenant_actor": "tenant",
+        "delivery_due": "2026-09-27T17:00:00Z",
+        "remedy_due": "2026-09-27T17:00:00Z",
+        "prior_due": {
+          "electrical": "2026-09-26",
+          "gas": "2026-09-26"
+        },
+        "disclosure": {
+          "last_check_dates": {
+            "electrical": "2024-10-01",
+            "gas": "2024-10-01"
+          },
+          "outstanding_recommendations": [],
+          "delivered_before_agreement": true
+        },
+        "delivery_deadline_basis": "benchmark_policy: stricter synthetic dispatch/receipt SLA; legal outer limits in profile rules",
+        "remedy_deadline_basis": "benchmark_policy: fixture service objective, not a statutory urgency conversion"
+      },
+      "reports": [
+        {
+          "document_id": "electrical-v1",
+          "version": 1,
+          "supersedes": null,
+          "property_id": "property-1",
+          "address": "1 Example Street, Unit 1",
+          "kind": "electrical",
+          "profile_id": "AU_VIC_RENTAL_CHECKS",
+          "inspection_date": "2026-09-26",
+          "issued_at": "2026-09-26T09:30:00Z",
+          "issuer": "fixture-inspector",
+          "qualification": "unqualified",
+          "qualification_evidence": "fixture-registry-not-live",
+          "qualification_valid_until": "2027-09-26",
+          "scope_complete": true,
+          "scope_evidence": "AS/NZS3019 sections2,4",
+          "next_due": "2028-09-26",
+          "findings": [],
+          "landlord_signature": null,
+          "standards": {},
+          "remedy_due": "2026-09-27T17:00:00Z",
+          "content_hash": "117dea8758e8a8f37b442774a73f80dc0ba4b3e371383ed919538d3d3081ad57"
+        },
+        {
+          "document_id": "gas-v1",
+          "version": 1,
+          "supersedes": null,
+          "property_id": "property-1",
+          "address": "1 Example Street, Unit 1",
+          "kind": "gas",
+          "profile_id": "AU_VIC_RENTAL_CHECKS",
+          "inspection_date": "2026-09-26",
+          "issued_at": "2026-09-26T09:30:00Z",
+          "issuer": "fixture-inspector",
+          "qualification": "gasfitter_type_a",
+          "qualification_evidence": "fixture-registry-not-live",
+          "qualification_valid_until": "2027-09-26",
+          "scope_complete": true,
+          "scope_evidence": "all Type A appliances AS4575 servicing records",
+          "next_due": "2027-10-01",
+          "findings": [],
+          "landlord_signature": null,
+          "standards": {},
+          "remedy_due": "2026-09-27T17:00:00Z",
+          "content_hash": "a8a0309dfe39f34a74ad7a44c337c06cf870bb4ef51bf6172d49825a31c7eb21"
+        }
+      ],
+      "replacement": null,
+      "response_delay_minutes": 30
+    },
+    "NZ_normal": {
+      "profile_id": "NZ_HEALTHY_HOMES",
+      "initial": {
+        "property_id": "property-1",
+        "address": "1 Example Street, Unit 1",
+        "profile_id": "NZ_HEALTHY_HOMES",
+        "scope_confirmed": true,
+        "access": "consented",
+        "access_log": [
+          "tenant consent recorded"
+        ],
+        "tenant_actor": "tenant",
+        "delivery_due": "2026-09-27T17:00:00Z",
+        "remedy_due": "2026-09-27T17:00:00Z",
+        "prior_due": {
+          "healthy_homes": "2026-09-26"
+        },
+        "disclosure": null,
+        "delivery_deadline_basis": "benchmark_policy: stricter synthetic dispatch/receipt SLA; legal outer limits in profile rules",
+        "remedy_deadline_basis": "benchmark_policy: fixture service objective, not a statutory urgency conversion"
+      },
+      "reports": [
+        {
+          "document_id": "healthy_homes-v1",
+          "version": 1,
+          "supersedes": null,
+          "property_id": "property-1",
+          "address": "1 Example Street, Unit 1",
+          "kind": "healthy_homes",
+          "profile_id": "NZ_HEALTHY_HOMES",
+          "inspection_date": "2026-09-26",
+          "issued_at": "2026-09-26T09:30:00Z",
+          "issuer": "fixture-inspector",
+          "qualification": "assessment_evidence",
+          "qualification_evidence": "fixture-registry-not-live",
+          "qualification_valid_until": "2027-09-26",
+          "scope_complete": true,
+          "scope_evidence": "five-standard assessment with stipulated specialist calculation",
+          "next_due": null,
+          "findings": [],
+          "landlord_signature": "landlord-1",
+          "standards": {
+            "heating": {
+              "met": true,
+              "evidence": "fixture-heating-assessment"
+            },
+            "insulation": {
+              "met": true,
+              "evidence": "fixture-insulation-assessment"
+            },
+            "ventilation": {
+              "met": true,
+              "evidence": "fixture-ventilation-assessment"
+            },
+            "moisture_drainage": {
+              "met": true,
+              "evidence": "fixture-moisture_drainage-assessment"
+            },
+            "draught_stopping": {
+              "met": true,
+              "evidence": "fixture-draught_stopping-assessment"
+            }
+          },
+          "remedy_due": "2026-09-27T17:00:00Z",
+          "content_hash": "9b6063ff9ae83200ab6dd2422725f908c150eb1c2d583f3e5fa8500925c57560"
+        }
+      ],
+      "replacement": null,
+      "response_delay_minutes": 30
+    },
+    "NZ_remediation": {
+      "profile_id": "NZ_HEALTHY_HOMES",
+      "initial": {
+        "property_id": "property-1",
+        "address": "1 Example Street, Unit 1",
+        "profile_id": "NZ_HEALTHY_HOMES",
+        "scope_confirmed": true,
+        "access": "consented",
+        "access_log": [
+          "tenant consent recorded"
+        ],
+        "tenant_actor": "tenant",
+        "delivery_due": "2026-09-27T17:00:00Z",
+        "remedy_due": "2026-09-27T17:00:00Z",
+        "prior_due": {
+          "healthy_homes": "2026-09-26"
+        },
+        "disclosure": null,
+        "delivery_deadline_basis": "benchmark_policy: stricter synthetic dispatch/receipt SLA; legal outer limits in profile rules",
+        "remedy_deadline_basis": "benchmark_policy: fixture service objective, not a statutory urgency conversion"
+      },
+      "reports": [
+        {
+          "document_id": "healthy_homes-v1",
+          "version": 1,
+          "supersedes": null,
+          "property_id": "property-1",
+          "address": "1 Example Street, Unit 1",
+          "kind": "healthy_homes",
+          "profile_id": "NZ_HEALTHY_HOMES",
+          "inspection_date": "2026-09-26",
+          "issued_at": "2026-09-26T09:30:00Z",
+          "issuer": "fixture-inspector",
+          "qualification": "assessment_evidence",
+          "qualification_evidence": "fixture-registry-not-live",
+          "qualification_valid_until": "2027-09-26",
+          "scope_complete": true,
+          "scope_evidence": "five-standard assessment with stipulated specialist calculation",
+          "next_due": null,
+          "findings": [
+            {
+              "id": "defect-1",
+              "code": "failed_standard",
+              "standard": "ventilation"
+            }
+          ],
+          "landlord_signature": "landlord-1",
+          "standards": {
+            "heating": {
+              "met": true,
+              "evidence": "fixture-heating-assessment"
+            },
+            "insulation": {
+              "met": true,
+              "evidence": "fixture-insulation-assessment"
+            },
+            "ventilation": {
+              "met": false,
+              "evidence": "fixture-ventilation-assessment"
+            },
+            "moisture_drainage": {
+              "met": true,
+              "evidence": "fixture-moisture_drainage-assessment"
+            },
+            "draught_stopping": {
+              "met": true,
+              "evidence": "fixture-draught_stopping-assessment"
+            }
+          },
+          "remedy_due": "2026-09-27T17:00:00Z",
+          "content_hash": "2d7c648493feb023bc02840e3d8289c0326a203c890abbc3354b6207ba8d75f0"
+        }
+      ],
+      "replacement": null,
+      "response_delay_minutes": 30
+    },
+    "NZ_access": {
+      "profile_id": "NZ_HEALTHY_HOMES",
+      "initial": {
+        "property_id": "property-1",
+        "address": "1 Example Street, Unit 1",
+        "profile_id": "NZ_HEALTHY_HOMES",
+        "scope_confirmed": true,
+        "access": "refused",
+        "access_log": [
+          "notice delivered",
+          "appointment offered",
+          "alternative offered",
+          "tenant refused"
+        ],
+        "tenant_actor": "tenant",
+        "delivery_due": "2026-09-27T17:00:00Z",
+        "remedy_due": "2026-09-27T17:00:00Z",
+        "prior_due": {
+          "healthy_homes": "2026-09-26"
+        },
+        "disclosure": null,
+        "delivery_deadline_basis": "benchmark_policy: stricter synthetic dispatch/receipt SLA; legal outer limits in profile rules",
+        "remedy_deadline_basis": "benchmark_policy: fixture service objective, not a statutory urgency conversion"
+      },
+      "reports": [
+        {
+          "document_id": "healthy_homes-v1",
+          "version": 1,
+          "supersedes": null,
+          "property_id": "property-1",
+          "address": "1 Example Street, Unit 1",
+          "kind": "healthy_homes",
+          "profile_id": "NZ_HEALTHY_HOMES",
+          "inspection_date": "2026-09-26",
+          "issued_at": "2026-09-26T09:30:00Z",
+          "issuer": "fixture-inspector",
+          "qualification": "assessment_evidence",
+          "qualification_evidence": "fixture-registry-not-live",
+          "qualification_valid_until": "2027-09-26",
+          "scope_complete": true,
+          "scope_evidence": "five-standard assessment with stipulated specialist calculation",
+          "next_due": null,
+          "findings": [],
+          "landlord_signature": "landlord-1",
+          "standards": {
+            "heating": {
+              "met": true,
+              "evidence": "fixture-heating-assessment"
+            },
+            "insulation": {
+              "met": true,
+              "evidence": "fixture-insulation-assessment"
+            },
+            "ventilation": {
+              "met": true,
+              "evidence": "fixture-ventilation-assessment"
+            },
+            "moisture_drainage": {
+              "met": true,
+              "evidence": "fixture-moisture_drainage-assessment"
+            },
+            "draught_stopping": {
+              "met": true,
+              "evidence": "fixture-draught_stopping-assessment"
+            }
+          },
+          "remedy_due": "2026-09-27T17:00:00Z",
+          "content_hash": "9b6063ff9ae83200ab6dd2422725f908c150eb1c2d583f3e5fa8500925c57560"
+        }
+      ],
+      "replacement": null,
+      "response_delay_minutes": 30
+    },
+    "NZ_reopen": {
+      "profile_id": "NZ_HEALTHY_HOMES",
+      "initial": {
+        "property_id": "property-1",
+        "address": "1 Example Street, Unit 1",
+        "profile_id": "NZ_HEALTHY_HOMES",
+        "scope_confirmed": true,
+        "access": "consented",
+        "access_log": [
+          "tenant consent recorded"
+        ],
+        "tenant_actor": "tenant",
+        "delivery_due": "2026-09-27T17:00:00Z",
+        "remedy_due": "2026-09-27T17:00:00Z",
+        "prior_due": {
+          "healthy_homes": "2026-09-26"
+        },
+        "disclosure": null,
+        "delivery_deadline_basis": "benchmark_policy: stricter synthetic dispatch/receipt SLA; legal outer limits in profile rules",
+        "remedy_deadline_basis": "benchmark_policy: fixture service objective, not a statutory urgency conversion"
+      },
+      "reports": [
+        {
+          "document_id": "healthy_homes-v1",
+          "version": 1,
+          "supersedes": null,
+          "property_id": "property-1",
+          "address": "1 Example Street, Unit 1",
+          "kind": "healthy_homes",
+          "profile_id": "NZ_HEALTHY_HOMES",
+          "inspection_date": "2026-09-26",
+          "issued_at": "2026-09-26T09:30:00Z",
+          "issuer": "fixture-inspector",
+          "qualification": "assessment_evidence",
+          "qualification_evidence": "fixture-registry-not-live",
+          "qualification_valid_until": "2027-09-26",
+          "scope_complete": true,
+          "scope_evidence": "five-standard assessment with stipulated specialist calculation",
+          "next_due": null,
+          "findings": [],
+          "landlord_signature": "landlord-1",
+          "standards": {
+            "heating": {
+              "met": true,
+              "evidence": "fixture-heating-assessment"
+            },
+            "insulation": {
+              "met": true,
+              "evidence": "fixture-insulation-assessment"
+            },
+            "ventilation": {
+              "met": true,
+              "evidence": "fixture-ventilation-assessment"
+            },
+            "moisture_drainage": {
+              "met": true,
+              "evidence": "fixture-moisture_drainage-assessment"
+            },
+            "draught_stopping": {
+              "met": true,
+              "evidence": "fixture-draught_stopping-assessment"
+            }
+          },
+          "remedy_due": "2026-09-27T17:00:00Z",
+          "content_hash": "9b6063ff9ae83200ab6dd2422725f908c150eb1c2d583f3e5fa8500925c57560"
+        }
+      ],
+      "replacement": {
+        "document_id": "healthy_homes-v2",
+        "version": 2,
+        "supersedes": "healthy_homes-v1",
+        "property_id": "property-1",
+        "address": "1 Example Street, Unit 1",
+        "kind": "healthy_homes",
+        "profile_id": "NZ_HEALTHY_HOMES",
+        "inspection_date": "2026-09-26",
+        "issued_at": "2026-09-26T09:30:00Z",
+        "issuer": "fixture-inspector",
+        "qualification": "assessment_evidence",
+        "qualification_evidence": "fixture-registry-not-live",
+        "qualification_valid_until": "2027-09-26",
+        "scope_complete": true,
+        "scope_evidence": "five-standard assessment with stipulated specialist calculation",
+        "next_due": null,
+        "findings": [
+          {
+            "id": "new-defect",
+            "code": "failed_standard",
+            "standard": "ventilation"
+          }
+        ],
+        "landlord_signature": "landlord-1",
+        "standards": {
+          "heating": {
+            "met": true,
+            "evidence": "fixture-heating-assessment"
+          },
+          "insulation": {
+            "met": true,
+            "evidence": "fixture-insulation-assessment"
+          },
+          "ventilation": {
+            "met": false,
+            "evidence": "fixture-ventilation-assessment"
+          },
+          "moisture_drainage": {
+            "met": true,
+            "evidence": "fixture-moisture_drainage-assessment"
+          },
+          "draught_stopping": {
+            "met": true,
+            "evidence": "fixture-draught_stopping-assessment"
+          }
+        },
+        "remedy_due": "2026-09-27T17:00:00Z",
+        "content_hash": "bf770bfa17fbc859db298f778eda44a0276c3a5a83d5c79c6f7245d8dc4d0868"
+      },
+      "response_delay_minutes": 30
+    },
+    "NZ_qualification": {
+      "profile_id": "NZ_HEALTHY_HOMES",
+      "initial": {
+        "property_id": "property-1",
+        "address": "1 Example Street, Unit 1",
+        "profile_id": "NZ_HEALTHY_HOMES",
+        "scope_confirmed": true,
+        "access": "consented",
+        "access_log": [
+          "tenant consent recorded"
+        ],
+        "tenant_actor": "tenant",
+        "delivery_due": "2026-09-27T17:00:00Z",
+        "remedy_due": "2026-09-27T17:00:00Z",
+        "prior_due": {
+          "healthy_homes": "2026-09-26"
+        },
+        "disclosure": null,
+        "delivery_deadline_basis": "benchmark_policy: stricter synthetic dispatch/receipt SLA; legal outer limits in profile rules",
+        "remedy_deadline_basis": "benchmark_policy: fixture service objective, not a statutory urgency conversion"
+      },
+      "reports": [
+        {
+          "document_id": "healthy_homes-v1",
+          "version": 1,
+          "supersedes": null,
+          "property_id": "property-1",
+          "address": "1 Example Street, Unit 1",
+          "kind": "healthy_homes",
+          "profile_id": "NZ_HEALTHY_HOMES",
+          "inspection_date": "2026-09-26",
+          "issued_at": "2026-09-26T09:30:00Z",
+          "issuer": "fixture-inspector",
+          "qualification": "unqualified",
+          "qualification_evidence": "fixture-registry-not-live",
+          "qualification_valid_until": "2027-09-26",
+          "scope_complete": true,
+          "scope_evidence": "five-standard assessment with stipulated specialist calculation",
+          "next_due": null,
+          "findings": [],
+          "landlord_signature": "landlord-1",
+          "standards": {
+            "heating": {
+              "met": true,
+              "evidence": "fixture-heating-assessment"
+            },
+            "insulation": {
+              "met": true,
+              "evidence": "fixture-insulation-assessment"
+            },
+            "ventilation": {
+              "met": true,
+              "evidence": "fixture-ventilation-assessment"
+            },
+            "moisture_drainage": {
+              "met": true,
+              "evidence": "fixture-moisture_drainage-assessment"
+            },
+            "draught_stopping": {
+              "met": true,
+              "evidence": "fixture-draught_stopping-assessment"
+            }
+          },
+          "remedy_due": "2026-09-27T17:00:00Z",
+          "content_hash": "4bda62cd7ac6ecf7b976d8ed3da207999916af7106f9e9b48d3e6ad3701cfa48"
+        }
+      ],
+      "replacement": null,
+      "response_delay_minutes": 30
+    },
+    "SC_checklist": {
+      "profile_id": "SC_PRIVATE_ELECTRICAL",
+      "initial": {
+        "property_id": "property-1",
+        "address": "1 Example Street, Unit 1",
+        "profile_id": "SC_PRIVATE_ELECTRICAL",
+        "scope_confirmed": true,
+        "access": "consented",
+        "access_log": [
+          "tenant consent recorded"
+        ],
+        "tenant_actor": "tenant",
+        "delivery_due": "2026-09-27T17:00:00Z",
+        "remedy_due": "2026-09-27T17:00:00Z",
+        "prior_due": {
+          "installation": "2026-09-26",
+          "equipment": "2026-09-26"
+        },
+        "disclosure": null,
+        "delivery_deadline_basis": "benchmark_policy: stricter synthetic dispatch/receipt SLA; legal outer limits in profile rules",
+        "remedy_deadline_basis": "benchmark_policy: fixture service objective, not a statutory urgency conversion"
+      },
+      "reports": [
+        {
+          "document_id": "installation-v1",
+          "version": 1,
+          "supersedes": null,
+          "property_id": "property-1",
+          "address": "1 Example Street, Unit 1",
+          "kind": "installation",
+          "profile_id": "SC_PRIVATE_ELECTRICAL",
+          "inspection_date": "2026-09-26",
+          "issued_at": "2026-09-26T09:30:00Z",
+          "issuer": "fixture-inspector",
+          "qualification": "competence_checklist",
+          "qualification_evidence": "fixture-registry-not-live",
+          "qualification_valid_until": "2027-09-26",
+          "scope_complete": true,
+          "scope_evidence": "full property installation",
+          "next_due": "2028-09-26",
+          "findings": [
+            {
+              "id": "recommendation-1",
+              "code": "C3"
+            }
+          ],
+          "landlord_signature": null,
+          "standards": {},
+          "remedy_due": "2026-09-27T17:00:00Z",
+          "content_hash": "39eeba8a80d7f6f6b8ba9f2cb6402dedcaec409419cf23b50fde734da07ec6e2"
+        },
+        {
+          "document_id": "equipment-v1",
+          "version": 1,
+          "supersedes": null,
+          "property_id": "property-1",
+          "address": "1 Example Street, Unit 1",
+          "kind": "equipment",
+          "profile_id": "SC_PRIVATE_ELECTRICAL",
+          "inspection_date": "2026-09-26",
+          "issued_at": "2026-09-26T09:30:00Z",
+          "issuer": "fixture-inspector",
+          "qualification": "trained_pat",
+          "qualification_evidence": "fixture-registry-not-live",
+          "qualification_valid_until": "2027-09-26",
+          "scope_complete": true,
+          "scope_evidence": "all landlord-provided appliances in equipment register",
+          "next_due": "2027-10-01",
+          "findings": [
+            {
+              "id": "recommendation-1",
+              "code": "C3"
+            }
+          ],
+          "landlord_signature": null,
+          "standards": {},
+          "remedy_due": "2026-09-27T17:00:00Z",
+          "content_hash": "471c803be78fe945faa0185779e5bcdbb02507b140e5efc5b7544546cbc54abe"
+        }
+      ],
+      "replacement": null,
+      "response_delay_minutes": 30
+    },
+    "AU_gas_expired": {
+      "profile_id": "AU_VIC_RENTAL_CHECKS",
+      "initial": {
+        "property_id": "property-1",
+        "address": "1 Example Street, Unit 1",
+        "profile_id": "AU_VIC_RENTAL_CHECKS",
+        "scope_confirmed": true,
+        "access": "consented",
+        "access_log": [
+          "tenant consent recorded"
+        ],
+        "tenant_actor": "tenant",
+        "delivery_due": "2026-09-27T17:00:00Z",
+        "remedy_due": "2026-09-27T17:00:00Z",
+        "prior_due": {
+          "electrical": "2026-09-26",
+          "gas": "2026-09-26"
+        },
+        "disclosure": {
+          "last_check_dates": {
+            "electrical": "2024-10-01",
+            "gas": "2024-10-01"
+          },
+          "outstanding_recommendations": [],
+          "delivered_before_agreement": true
+        },
+        "delivery_deadline_basis": "benchmark_policy: stricter synthetic dispatch/receipt SLA; legal outer limits in profile rules",
+        "remedy_deadline_basis": "benchmark_policy: fixture service objective, not a statutory urgency conversion"
+      },
+      "reports": [
+        {
+          "document_id": "electrical-v1",
+          "version": 1,
+          "supersedes": null,
+          "property_id": "property-1",
+          "address": "1 Example Street, Unit 1",
+          "kind": "electrical",
+          "profile_id": "AU_VIC_RENTAL_CHECKS",
+          "inspection_date": "2026-09-26",
+          "issued_at": "2026-09-26T09:30:00Z",
+          "issuer": "fixture-inspector",
+          "qualification": "electrician_and_rec",
+          "qualification_evidence": "fixture-registry-not-live",
+          "qualification_valid_until": "2027-09-26",
+          "scope_complete": true,
+          "scope_evidence": "AS/NZS3019 sections2,4",
+          "next_due": "2028-09-26",
+          "findings": [],
+          "landlord_signature": null,
+          "standards": {},
+          "remedy_due": "2026-09-27T17:00:00Z",
+          "content_hash": "be26d331b8919dae9b366ad6d5f68634403b082da82deac8cbb79135a1d65acc"
+        },
+        {
+          "document_id": "gas-v1",
+          "version": 1,
+          "supersedes": null,
+          "property_id": "property-1",
+          "address": "1 Example Street, Unit 1",
+          "kind": "gas",
+          "profile_id": "AU_VIC_RENTAL_CHECKS",
+          "inspection_date": "2026-09-26",
+          "issued_at": "2026-09-26T09:30:00Z",
+          "issuer": "fixture-inspector",
+          "qualification": "gasfitter_type_a",
+          "qualification_evidence": "fixture-registry-not-live",
+          "qualification_valid_until": "2027-09-26",
+          "scope_complete": true,
+          "scope_evidence": "all Type A appliances AS4575 servicing records",
+          "next_due": "2026-09-25",
+          "findings": [],
+          "landlord_signature": null,
+          "standards": {},
+          "remedy_due": "2026-09-27T17:00:00Z",
+          "content_hash": "e87b232e54bf21099c0deba53c8a7a1569d0481786150d94180b6e8d344877a4"
+        }
+      ],
+      "replacement": null,
+      "response_delay_minutes": 30
+    },
+    "NZ_assessor_only": {
+      "profile_id": "NZ_HEALTHY_HOMES",
+      "initial": {
+        "property_id": "property-1",
+        "address": "1 Example Street, Unit 1",
+        "profile_id": "NZ_HEALTHY_HOMES",
+        "scope_confirmed": true,
+        "access": "consented",
+        "access_log": [
+          "tenant consent recorded"
+        ],
+        "tenant_actor": "tenant",
+        "delivery_due": "2026-09-27T17:00:00Z",
+        "remedy_due": "2026-09-27T17:00:00Z",
+        "prior_due": {
+          "healthy_homes": "2026-09-26"
+        },
+        "disclosure": null,
+        "delivery_deadline_basis": "benchmark_policy: stricter synthetic dispatch/receipt SLA; legal outer limits in profile rules",
+        "remedy_deadline_basis": "benchmark_policy: fixture service objective, not a statutory urgency conversion"
+      },
+      "reports": [
+        {
+          "document_id": "healthy_homes-v1",
+          "version": 1,
+          "supersedes": null,
+          "property_id": "property-1",
+          "address": "1 Example Street, Unit 1",
+          "kind": "healthy_homes",
+          "profile_id": "NZ_HEALTHY_HOMES",
+          "inspection_date": "2026-09-26",
+          "issued_at": "2026-09-26T09:30:00Z",
+          "issuer": "fixture-inspector",
+          "qualification": "assessment_evidence",
+          "qualification_evidence": "fixture-registry-not-live",
+          "qualification_valid_until": "2027-09-26",
+          "scope_complete": true,
+          "scope_evidence": "five-standard assessment with stipulated specialist calculation",
+          "next_due": null,
+          "findings": [],
+          "landlord_signature": null,
+          "standards": {
+            "heating": {
+              "met": true,
+              "evidence": "fixture-heating-assessment"
+            },
+            "insulation": {
+              "met": true,
+              "evidence": "fixture-insulation-assessment"
+            },
+            "ventilation": {
+              "met": true,
+              "evidence": "fixture-ventilation-assessment"
+            },
+            "moisture_drainage": {
+              "met": true,
+              "evidence": "fixture-moisture_drainage-assessment"
+            },
+            "draught_stopping": {
+              "met": true,
+              "evidence": "fixture-draught_stopping-assessment"
+            }
+          },
+          "remedy_due": "2026-09-27T17:00:00Z",
+          "content_hash": "4df8777fe23a9218a401bb775be11b1f118107a5f4e10d502045b09bcd28e163"
+        }
+      ],
+      "replacement": null,
+      "response_delay_minutes": 30
+    },
+    "EN_wrong_property": {
+      "profile_id": "EN_PRIVATE_ELECTRICAL",
+      "initial": {
+        "property_id": "property-1",
+        "address": "1 Example Street, Unit 1",
+        "profile_id": "EN_PRIVATE_ELECTRICAL",
+        "scope_confirmed": true,
+        "access": "consented",
+        "access_log": [
+          "tenant consent recorded"
+        ],
+        "tenant_actor": "tenant",
+        "delivery_due": "2026-09-27T17:00:00Z",
+        "remedy_due": "2026-09-27T17:00:00Z",
+        "prior_due": {
+          "installation": "2026-09-26"
+        },
+        "disclosure": null,
+        "delivery_deadline_basis": "benchmark_policy: stricter synthetic dispatch/receipt SLA; legal outer limits in profile rules",
+        "remedy_deadline_basis": "report shorter inspection-triggered period EN04"
+      },
+      "reports": [
+        {
+          "document_id": "installation-v1",
+          "version": 1,
+          "supersedes": null,
+          "property_id": "adjacent-property",
+          "address": "1 Example Street, Unit 2",
+          "kind": "installation",
+          "profile_id": "EN_PRIVATE_ELECTRICAL",
+          "inspection_date": "2026-09-26",
+          "issued_at": "2026-09-26T09:30:00Z",
+          "issuer": "fixture-inspector",
+          "qualification": "competent_electrical",
+          "qualification_evidence": "fixture-registry-not-live",
+          "qualification_valid_until": "2027-09-26",
+          "scope_complete": true,
+          "scope_evidence": "full property installation",
+          "next_due": "2028-09-26",
+          "findings": [
+            {
+              "id": "recommendation-1",
+              "code": "C3"
+            }
+          ],
+          "landlord_signature": null,
+          "standards": {},
+          "remedy_due": "2026-09-27T17:00:00Z",
+          "content_hash": "6656692d96a8c38b56fadc3f936c9e5d912bd40dfdef8af313f902eb724af107"
+        }
+      ],
+      "replacement": null,
+      "response_delay_minutes": 30
+    },
+    "EN_no_response": {
+      "profile_id": "EN_PRIVATE_ELECTRICAL",
+      "initial": {
+        "property_id": "property-1",
+        "address": "1 Example Street, Unit 1",
+        "profile_id": "EN_PRIVATE_ELECTRICAL",
+        "scope_confirmed": true,
+        "access": "consented",
+        "access_log": [
+          "tenant consent recorded"
+        ],
+        "tenant_actor": "tenant",
+        "delivery_due": "2026-09-27T17:00:00Z",
+        "remedy_due": "2026-09-27T17:00:00Z",
+        "prior_due": {
+          "installation": "2026-09-26"
+        },
+        "disclosure": null,
+        "delivery_deadline_basis": "benchmark_policy: stricter synthetic dispatch/receipt SLA; legal outer limits in profile rules",
+        "remedy_deadline_basis": "report shorter inspection-triggered period EN04"
+      },
+      "reports": [
+        {
+          "document_id": "installation-v1",
+          "version": 1,
+          "supersedes": null,
+          "property_id": "property-1",
+          "address": "1 Example Street, Unit 1",
+          "kind": "installation",
+          "profile_id": "EN_PRIVATE_ELECTRICAL",
+          "inspection_date": "2026-09-26",
+          "issued_at": "2026-09-26T09:30:00Z",
+          "issuer": "fixture-inspector",
+          "qualification": "competent_electrical",
+          "qualification_evidence": "fixture-registry-not-live",
+          "qualification_valid_until": "2027-09-26",
+          "scope_complete": true,
+          "scope_evidence": "full property installation",
+          "next_due": "2028-09-26",
+          "findings": [
+            {
+              "id": "recommendation-1",
+              "code": "C3"
+            }
+          ],
+          "landlord_signature": null,
+          "standards": {},
+          "remedy_due": "2026-09-27T17:00:00Z",
+          "content_hash": "b84df1e9e5f38c1135bb71bf4bdbab7f5bb26e512bb2a9980f89322f7552594a"
+        }
+      ],
+      "replacement": null,
+      "response_delay_minutes": null
+    }
+  }
+}

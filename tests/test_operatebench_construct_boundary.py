@@ -332,7 +332,7 @@ class TestTheOperationInstanceIdentity:
         assert run.evaluation.dimension("deterministic_replay").ok is True
         assert run.reliable is (scenario_id != "V2")
         assert run.evaluation.failed_dimensions == (
-            ("recovery", "obligations") if scenario_id == "V2" else ()
+            ("terminal_outcome", "recovery") if scenario_id == "V2" else ()
         )
 
     def test_a_model_run_replays_from_its_tape_under_one_instance_identity(

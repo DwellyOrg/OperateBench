@@ -35,6 +35,7 @@ from pathlib import Path
 from typing import Any
 
 from operatebench.jsonsafe import canonical_json_bytes, to_json
+from operatebench.providers.faults import PROVIDER_FAULTS
 from operatebench.version import OPERATEBENCH_VERSION
 
 
@@ -139,6 +140,7 @@ class PartialExecutionEvidence:
                 "provider_deadline",
                 "provider_protocol",
                 "provider_transport",
+                *PROVIDER_FAULTS,
             )
         ):
             exclusion_code = "unknown"

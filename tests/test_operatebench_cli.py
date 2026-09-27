@@ -240,7 +240,7 @@ class TestCheckMaintenance:
         assert "reference" in out
         assert "trust_actor_claim" in out
         assert "causal acceptance: OK" in out
-        assert "maintenance.reference.V2.permanent-notification-fault.v1" in out
+        assert "maintenance.reference.V2.permanent-notification-fault.v2" in out
         assert "reliable=False" in out
 
     def test_the_gate_emits_json(self, capsys: pytest.CaptureFixture[str]) -> None:
@@ -250,7 +250,7 @@ class TestCheckMaintenance:
         assert len(payload["checks"]) >= 9
         v2 = next(c for c in payload["checks"] if c["scenario_id"] == "V2")
         assert v2["ok"] is True and v2["reliable"] is False
-        assert v2["expected_targets"] == ["recovery", "obligations"]
+        assert v2["expected_targets"] == ["terminal_outcome", "recovery"]
 
     def test_the_gate_can_be_restricted_to_named_agents(
         self, capsys: pytest.CaptureFixture[str]

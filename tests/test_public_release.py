@@ -31,6 +31,7 @@ from pathlib import Path
 
 import pytest
 
+from tests.distribution_fixtures import DistributionFactory
 from tools import check_public_release as checks
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -972,10 +973,14 @@ class TestBuiltDistributions:
     @pytest.mark.parametrize("explicit", [False, True])
     @pytest.mark.parametrize("suffix", [".whl", ".tar.gz"])
     def test_existing_distribution_requires_exactly_one_archive_of_each_kind(
-        self, tmp_path: Path, explicit: bool, suffix: str
+        self,
+        tmp_path: Path,
+        canonical_distribution: DistributionFactory,
+        explicit: bool,
+        suffix: str,
     ) -> None:
         distribution = tmp_path / "dist"
-        _canonical_distribution(distribution)
+        canonical_distribution(distribution)
         (distribution / f"duplicate{suffix}").write_bytes(b"duplicate")
         problems = checks.check_built_distributions(
             tmp_path if not explicit else REPO_ROOT,
@@ -1016,28 +1021,36 @@ class TestBuiltDistributions:
         ],
     )
     def test_archive_filenames_preserve_reviewed_distribution_identity(
-        self, tmp_path: Path, kind: str, renamed: str
+        self,
+        tmp_path: Path,
+        canonical_distribution: DistributionFactory,
+        kind: str,
+        renamed: str,
     ) -> None:
         distribution = tmp_path / "dist"
-        wheel, sdist = _canonical_distribution(distribution)
+        wheel, sdist = canonical_distribution(distribution)
         (wheel if kind == "wheel" else sdist).rename(distribution / renamed)
         problems = checks.check_built_distributions(
             REPO_ROOT, distribution_dir=distribution
         )
         assert any("archive filename identity differs" in problem for problem in problems)
 
-    def test_distribution_directory_symlink_is_rejected(self, tmp_path: Path) -> None:
+    def test_distribution_directory_symlink_is_rejected(
+        self, tmp_path: Path, canonical_distribution: DistributionFactory
+    ) -> None:
         target = tmp_path / "real-dist"
-        _canonical_distribution(target)
+        canonical_distribution(target)
         linked = tmp_path / "linked-dist"
         linked.symlink_to(target, target_is_directory=True)
         problems = checks.check_built_distributions(REPO_ROOT, distribution_dir=linked)
         assert any("symlink" in problem for problem in problems)
 
     @pytest.mark.parametrize("suffix", [".whl", ".tar.gz"])
-    def test_archive_symlink_is_rejected(self, tmp_path: Path, suffix: str) -> None:
+    def test_archive_symlink_is_rejected(
+        self, tmp_path: Path, canonical_distribution: DistributionFactory, suffix: str
+    ) -> None:
         real = tmp_path / "real"
-        wheel, sdist = _canonical_distribution(real)
+        wheel, sdist = canonical_distribution(real)
         attacked = tmp_path / "dist"
         attacked.mkdir()
         for archive in (wheel, sdist):
@@ -1051,10 +1064,14 @@ class TestBuiltDistributions:
 
     @pytest.mark.parametrize("suffix", [".whl", ".tar.gz"])
     def test_oversized_archive_is_rejected_before_parser_construction(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, suffix: str
+        self,
+        tmp_path: Path,
+        canonical_distribution: DistributionFactory,
+        monkeypatch: pytest.MonkeyPatch,
+        suffix: str,
     ) -> None:
         distribution = tmp_path / "dist"
-        wheel, sdist = _canonical_distribution(distribution)
+        wheel, sdist = canonical_distribution(distribution)
         oversized = wheel if suffix == ".whl" else sdist
         with oversized.open("r+b") as handle:
             handle.truncate(64 * 1024 * 1024 + 1)
@@ -1236,10 +1253,10 @@ class TestBuiltDistributions:
             assert marker.read_bytes() == b""
 
     def test_a_canonical_distribution_matches_the_reviewed_source(
-        self, tmp_path: Path
+        self, tmp_path: Path, canonical_distribution: DistributionFactory
     ) -> None:
         distribution = tmp_path / "dist"
-        _canonical_distribution(distribution)
+        canonical_distribution(distribution)
         assert (
             checks.check_built_distributions(REPO_ROOT, distribution_dir=distribution)
             == []
@@ -1257,10 +1274,10 @@ class TestBuiltDistributions:
         ],
     )
     def test_wheel_rejects_every_member_outside_the_reviewed_universe(
-        self, tmp_path: Path, member: str
+        self, tmp_path: Path, canonical_distribution: DistributionFactory, member: str
     ) -> None:
         distribution = tmp_path / "dist"
-        wheel, _ = _canonical_distribution(distribution)
+        wheel, _ = canonical_distribution(distribution)
         _rewrite_wheel(wheel, append=(member, b"import pathlib\n"))
         _regenerate_record(wheel)
         problems = checks.check_built_distributions(
@@ -1269,10 +1286,10 @@ class TestBuiltDistributions:
         assert any("wheel member universe differs" in problem for problem in problems)
 
     def test_wheel_rejects_directory_entries_even_when_their_files_are_reviewed(
-        self, tmp_path: Path
+        self, tmp_path: Path, canonical_distribution: DistributionFactory
     ) -> None:
         distribution = tmp_path / "dist"
-        wheel, _ = _canonical_distribution(distribution)
+        wheel, _ = canonical_distribution(distribution)
         _rewrite_wheel(wheel, append=("operatebench/", b""))
         problems = checks.check_built_distributions(
             REPO_ROOT, distribution_dir=distribution
@@ -1311,10 +1328,10 @@ class TestBuiltDistributions:
         ],
     )
     def test_wheel_metadata_is_exact_and_bound_to_the_reviewed_filename(
-        self, tmp_path: Path, payload: bytes
+        self, tmp_path: Path, canonical_distribution: DistributionFactory, payload: bytes
     ) -> None:
         distribution = tmp_path / "dist"
-        wheel, _ = _canonical_distribution(distribution)
+        wheel, _ = canonical_distribution(distribution)
         name = "operatebench-0.1.0.dist-info/WHEEL"
         _rewrite_wheel(wheel, replace={name: payload})
         _regenerate_record(wheel)
@@ -1353,10 +1370,14 @@ class TestBuiltDistributions:
         ],
     )
     def test_wheel_metadata_requires_the_complete_reviewed_header_projection(
-        self, tmp_path: Path, needle: bytes, replacement: bytes
+        self,
+        tmp_path: Path,
+        canonical_distribution: DistributionFactory,
+        needle: bytes,
+        replacement: bytes,
     ) -> None:
         distribution = tmp_path / "dist"
-        wheel, _ = _canonical_distribution(distribution)
+        wheel, _ = canonical_distribution(distribution)
         name = "operatebench-0.1.0.dist-info/METADATA"
         with zipfile.ZipFile(wheel) as archive:
             metadata = archive.read(name)
@@ -1370,10 +1391,10 @@ class TestBuiltDistributions:
 
     @pytest.mark.parametrize("mutation", ["missing", "changed"])
     def test_wheel_licenses_are_exact_reviewed_members(
-        self, tmp_path: Path, mutation: str
+        self, tmp_path: Path, canonical_distribution: DistributionFactory, mutation: str
     ) -> None:
         distribution = tmp_path / "dist"
-        wheel, _ = _canonical_distribution(distribution)
+        wheel, _ = canonical_distribution(distribution)
         name = "operatebench-0.1.0.dist-info/licenses/LICENSE"
         if mutation == "missing":
             _rewrite_wheel(wheel, remove={name})
@@ -1390,10 +1411,10 @@ class TestBuiltDistributions:
 
     @pytest.mark.parametrize("body", [b"", b"reviewed body replaced\n"])
     def test_wheel_metadata_body_is_the_reviewed_readme(
-        self, tmp_path: Path, body: bytes
+        self, tmp_path: Path, canonical_distribution: DistributionFactory, body: bytes
     ) -> None:
         distribution = tmp_path / "dist"
-        wheel, _ = _canonical_distribution(distribution)
+        wheel, _ = canonical_distribution(distribution)
         name = "operatebench-0.1.0.dist-info/METADATA"
         with zipfile.ZipFile(wheel) as archive:
             headers = archive.read(name).split(b"\n\n", 1)[0]
@@ -1404,9 +1425,11 @@ class TestBuiltDistributions:
         )
         assert any("invalid METADATA" in problem for problem in problems)
 
-    def test_sdist_rejects_changed_production_source_bytes(self, tmp_path: Path) -> None:
+    def test_sdist_rejects_changed_production_source_bytes(
+        self, tmp_path: Path, canonical_distribution: DistributionFactory
+    ) -> None:
         distribution = tmp_path / "dist"
-        _, sdist = _canonical_distribution(distribution)
+        _, sdist = canonical_distribution(distribution)
         name = "operatebench-0.1.0/src/operatebench/version.py"
         _rewrite_sdist_member(sdist, name, b'__version__ = "999.0"\n')
         problems = checks.check_built_distributions(
@@ -1419,10 +1442,10 @@ class TestBuiltDistributions:
 
     @pytest.mark.parametrize("mutation", ["missing", "altered", "duplicate"])
     def test_wheel_rejects_noncanonical_console_entry_points(
-        self, tmp_path: Path, mutation: str
+        self, tmp_path: Path, canonical_distribution: DistributionFactory, mutation: str
     ) -> None:
         distribution = tmp_path / "dist"
-        wheel, _ = _canonical_distribution(distribution)
+        wheel, _ = canonical_distribution(distribution)
         name = "operatebench-0.1.0.dist-info/entry_points.txt"
         if mutation == "missing":
             _rewrite_wheel(wheel, remove={name})
@@ -1442,9 +1465,11 @@ class TestBuiltDistributions:
         )
         assert any("entry_points.txt" in problem for problem in problems)
 
-    def test_wheel_console_script_names_are_case_sensitive(self, tmp_path: Path) -> None:
+    def test_wheel_console_script_names_are_case_sensitive(
+        self, tmp_path: Path, canonical_distribution: DistributionFactory
+    ) -> None:
         distribution = tmp_path / "dist"
-        wheel, _ = _canonical_distribution(distribution)
+        wheel, _ = canonical_distribution(distribution)
         name = "operatebench-0.1.0.dist-info/entry_points.txt"
         _rewrite_wheel(
             wheel,
@@ -1474,10 +1499,10 @@ class TestBuiltDistributions:
         ],
     )
     def test_wheel_rejects_duplicate_console_script_declarations(
-        self, tmp_path: Path, payload: bytes
+        self, tmp_path: Path, canonical_distribution: DistributionFactory, payload: bytes
     ) -> None:
         distribution = tmp_path / "dist"
-        wheel, _ = _canonical_distribution(distribution)
+        wheel, _ = canonical_distribution(distribution)
         name = "operatebench-0.1.0.dist-info/entry_points.txt"
         _rewrite_wheel(wheel, replace={name: payload})
         _regenerate_record(wheel)
@@ -1488,10 +1513,10 @@ class TestBuiltDistributions:
 
     @pytest.mark.parametrize("field", ["Name", "Requires-Dist"])
     def test_wheel_metadata_is_bound_to_reviewed_project(
-        self, tmp_path: Path, field: str
+        self, tmp_path: Path, canonical_distribution: DistributionFactory, field: str
     ) -> None:
         distribution = tmp_path / "dist"
-        wheel, _ = _canonical_distribution(distribution)
+        wheel, _ = canonical_distribution(distribution)
         name = "operatebench-0.1.0.dist-info/METADATA"
         with zipfile.ZipFile(wheel) as archive:
             metadata = archive.read(name)
@@ -1516,10 +1541,14 @@ class TestBuiltDistributions:
         ],
     )
     def test_wheel_rejects_headers_outside_the_reviewed_metadata_universe(
-        self, tmp_path: Path, field: str, value: str
+        self,
+        tmp_path: Path,
+        canonical_distribution: DistributionFactory,
+        field: str,
+        value: str,
     ) -> None:
         distribution = tmp_path / "dist"
-        wheel, _ = _canonical_distribution(distribution)
+        wheel, _ = canonical_distribution(distribution)
         name = "operatebench-0.1.0.dist-info/METADATA"
         with zipfile.ZipFile(wheel) as archive:
             headers, body = archive.read(name).split(b"\n\n", 1)
@@ -1536,10 +1565,10 @@ class TestBuiltDistributions:
         [b"Name: operatebench\n", b"Version: 0.1.0\n", b" malformed continuation\n"],
     )
     def test_wheel_rejects_malformed_or_duplicate_metadata_identity(
-        self, tmp_path: Path, extra: bytes
+        self, tmp_path: Path, canonical_distribution: DistributionFactory, extra: bytes
     ) -> None:
         distribution = tmp_path / "dist"
-        wheel, _ = _canonical_distribution(distribution)
+        wheel, _ = canonical_distribution(distribution)
         name = "operatebench-0.1.0.dist-info/METADATA"
         with zipfile.ZipFile(wheel) as archive:
             metadata = archive.read(name) + extra
@@ -1567,10 +1596,10 @@ class TestBuiltDistributions:
         ],
     )
     def test_wheel_record_exactly_authenticates_every_member(
-        self, tmp_path: Path, mutation: str
+        self, tmp_path: Path, canonical_distribution: DistributionFactory, mutation: str
     ) -> None:
         distribution = tmp_path / "dist"
-        wheel, _ = _canonical_distribution(distribution)
+        wheel, _ = canonical_distribution(distribution)
         record_name = "operatebench-0.1.0.dist-info/RECORD"
         with zipfile.ZipFile(wheel) as archive:
             rows = list(csv.reader(io.StringIO(archive.read(record_name).decode())))
@@ -1604,9 +1633,11 @@ class TestBuiltDistributions:
         )
         assert any("RECORD" in problem for problem in problems)
 
-    def test_wheel_rejects_nonregular_dist_info_member(self, tmp_path: Path) -> None:
+    def test_wheel_rejects_nonregular_dist_info_member(
+        self, tmp_path: Path, canonical_distribution: DistributionFactory
+    ) -> None:
         distribution = tmp_path / "dist"
-        wheel, _ = _canonical_distribution(distribution)
+        wheel, _ = canonical_distribution(distribution)
         name = "operatebench-0.1.0.dist-info/METADATA"
         replacement = wheel.with_name("symlink.whl")
         with (
@@ -1626,9 +1657,11 @@ class TestBuiltDistributions:
         )
         assert any(name in problem and "not regular" in problem for problem in problems)
 
-    def test_wheel_rejects_a_backslash_package_alias(self, tmp_path: Path) -> None:
+    def test_wheel_rejects_a_backslash_package_alias(
+        self, tmp_path: Path, canonical_distribution: DistributionFactory
+    ) -> None:
         distribution = tmp_path / "dist"
-        wheel, _ = _canonical_distribution(distribution)
+        wheel, _ = canonical_distribution(distribution)
         _rewrite_wheel(wheel, append=(r"operatebench\version.py", b"conflict\n"))
         problems = checks.check_built_distributions(
             REPO_ROOT, distribution_dir=distribution
@@ -1649,10 +1682,10 @@ class TestBuiltDistributions:
 
     @pytest.mark.parametrize("mutation", ["omitted", "duplicate", "symlink"])
     def test_wheel_rejects_prior_package_integrity_mutants(
-        self, tmp_path: Path, mutation: str
+        self, tmp_path: Path, canonical_distribution: DistributionFactory, mutation: str
     ) -> None:
         distribution = tmp_path / "dist"
-        wheel, _ = _canonical_distribution(distribution)
+        wheel, _ = canonical_distribution(distribution)
         name = "boundarybench/__init__.py"
         if mutation == "omitted":
             _rewrite_wheel(wheel, remove={name})
@@ -1680,10 +1713,13 @@ class TestBuiltDistributions:
 
     @pytest.mark.parametrize("link_type", [tarfile.SYMTYPE, tarfile.LNKTYPE])
     def test_sdist_rejects_duplicate_production_source_links(
-        self, tmp_path: Path, link_type: bytes
+        self,
+        tmp_path: Path,
+        canonical_distribution: DistributionFactory,
+        link_type: bytes,
     ) -> None:
         distribution = tmp_path / "dist"
-        _, sdist = _canonical_distribution(distribution)
+        _, sdist = canonical_distribution(distribution)
         replacement = sdist.with_name("linked.tar.gz")
         duplicate_name = "operatebench-0.1.0/src/operatebench/version.py"
         with (
@@ -2108,16 +2144,25 @@ class TestScannerScope:
 
 
 class TestTheGateItself:
-    def test_every_check_passes_on_the_candidate_tree(self) -> None:
-        results = checks.run_all(REPO_ROOT)
-        failed = {name: problems for name, problems in results.items() if problems}
-        assert failed == {}
-
     def test_the_command_reports_success(
-        self, capsys: pytest.CaptureFixture[str]
+        self, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
     ) -> None:
+        original = checks.run_all
+        observed = []
+
+        def observe(*args, **kwargs):
+            results = original(*args, **kwargs)
+            observed.append(results)
+            return results
+
+        monkeypatch.setattr(checks, "run_all", observe)
         assert checks.main([str(REPO_ROOT)]) == 0
         assert f"all {len(checks.ALL_CHECKS)} passed" in capsys.readouterr().out
+        assert len(observed) == 1
+        results = observed[0]
+        assert {name: problems for name, problems in results.items() if problems} == {}
+        assert "internal stage labels and shipped topology" in results
+        assert results["internal stage labels and shipped topology"] == []
 
     def test_the_command_reports_failure_when_a_check_fails(
         self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
@@ -2129,3 +2174,233 @@ class TestTheGateItself:
         (tmp_path / ".gitignore").write_text("", encoding="utf-8")
         assert checks.main([str(tmp_path)]) == 1
         assert "FAILED" in capsys.readouterr().out
+
+
+class TestHuggingFacePublicationPins:
+    path = "tools/three_flow_river_assets.json"
+
+    def scan(self, text: str, path: str | None = None) -> list[str]:
+        return checks.scan_bare_commit_identifiers(
+            text, where=self.path, workflow_path=self.path if path is None else path
+        )
+
+    def test_canonical_manifest(self) -> None:
+        text = (REPO_ROOT / self.path).read_text()
+        assert len(list(checks.BARE_COMMIT_IDENTIFIER.finditer(text))) == 64
+        assert self.scan(text) == []
+
+    def test_consistent_new_pins_and_json_whitespace(self) -> None:
+        import json
+
+        data = json.loads((REPO_ROOT / self.path).read_text())
+        for row in data["models"]:
+            old = row["revision"]
+            row["revision"] = "ab" * 20
+            for asset in row["assets"].values():
+                asset["url"] = asset["url"].replace(old, row["revision"])
+        assert self.scan(json.dumps(data, separators=(",", ":"))) == []
+        assert self.scan(json.dumps(data, indent=4, sort_keys=True)) == []
+
+    def test_only_provenance_value_spans(self) -> None:
+        import json
+
+        text = (REPO_ROOT / self.path).read_text()
+        spans = checks._hf_provenance_spans(text, self.path)
+        data = json.loads(text)
+        expected = []
+        for row in data["models"]:
+            expected.append(row["revision"])
+            expected.extend(asset["url"] for asset in row["assets"].values())
+        assert [text[start:end] for start, end in spans] == expected
+        assert len(spans) == 64
+        assert checks._hf_provenance_spans(text, None) == []
+        # Reusing an accepted pin in a separate location never gains relief.
+        token = data["models"][0]["revision"]
+        assert self.scan(text + "\n# " + token)
+        data["models"][0]["note"] = token
+        assert self.scan(json.dumps(data))
+
+    def test_worktree_path_scope(self, tmp_path: Path) -> None:
+        text = (REPO_ROOT / self.path).read_text()
+        manifest = tmp_path / self.path
+        manifest.parent.mkdir()
+        manifest.write_text(text)
+        assert checks.check_no_bare_commit_identifiers(tmp_path) == []
+        (tmp_path / "copy.json").write_text(text)
+        problems = checks.check_no_bare_commit_identifiers(tmp_path)
+        assert len(problems) == 64
+        assert all(problem.startswith("copy.json:") for problem in problems)
+
+    @pytest.mark.parametrize("field", ["tokenizer_model", "url"])
+    def test_distinct_tokenizer_repository_binding(self, field: str) -> None:
+        import json
+
+        data = json.loads((REPO_ROOT / self.path).read_text())
+        row = next(row for row in data["models"] if "tokenizer_model" in row)
+        if field == "tokenizer_model":
+            row[field] = row["model"]
+        else:
+            asset = row["assets"]["config.json"]
+            asset[field] = asset[field].replace(row["tokenizer_model"], row["model"])
+        assert self.scan(json.dumps(data))
+
+    @pytest.mark.parametrize(
+        "mutation",
+        [
+            "extra-root",
+            "extra-row",
+            "extra-asset",
+            "duplicate-root",
+            "duplicate-row",
+            "duplicate-asset",
+            "comment",
+            "trailing",
+            "model",
+            "key",
+            "tokenizer",
+            "filename",
+            "revision",
+            "uppercase",
+            "domain",
+            "http",
+            "repository",
+            "query",
+            "fragment",
+            "traversal",
+            "sha256",
+            "length",
+            "bool-length",
+            "float-length",
+            "status",
+            "exit",
+            "missing-row",
+            "duplicate-model",
+            "missing-asset",
+            "extra-asset-name",
+            "nonfinite",
+            "rogue-repo-token",
+        ],
+    )
+    def test_malformed_manifest_is_not_exempt(self, mutation: str) -> None:
+        import json
+
+        text = (REPO_ROOT / self.path).read_text()
+        data = json.loads(text)
+        row = data["models"][0]
+        asset = row["assets"]["config.json"]
+        token = "ab" * 20
+        if mutation.startswith("extra-") and mutation != "extra-asset-name":
+            {"extra-root": data, "extra-row": row, "extra-asset": asset}[mutation][
+                "note"
+            ] = token
+        elif mutation.startswith("duplicate-") and mutation != "duplicate-model":
+            key = {
+                "duplicate-root": "models",
+                "duplicate-row": "revision",
+                "duplicate-asset": "url",
+            }[mutation]
+            text = text.replace(f'"{key}":', f'"{key}": "{token}", "{key}":', 1)
+        elif mutation == "comment":
+            text += "\n// " + token
+        elif mutation == "trailing":
+            text += json.dumps(token)
+        elif mutation in {"model", "key", "tokenizer"}:
+            row[{"tokenizer": "tokenizer_model"}.get(mutation, mutation)] = (
+                "rogue/identity"
+            )
+        elif mutation == "filename":
+            row["assets"][token] = row["assets"].pop("config.json")
+        elif mutation == "revision":
+            row["revision"] = token
+        elif mutation == "uppercase":
+            row["revision"] = row["revision"].upper()
+        elif mutation == "domain":
+            asset["url"] = asset["url"].replace("huggingface.co", "example.com")
+        elif mutation == "http":
+            asset["url"] = asset["url"].replace("https:", "http:")
+        elif mutation == "repository":
+            asset["url"] = asset["url"].replace(row["model"], "other/repo")
+        elif mutation in {"query", "fragment", "traversal"}:
+            asset["url"] += {"query": "?ref=", "fragment": "#", "traversal": "/../"}[
+                mutation
+            ] + token
+        elif mutation == "sha256":
+            asset["sha256"] = token
+        elif mutation in {"length", "bool-length", "float-length"}:
+            asset["bytes"] = {"length": -1, "bool-length": True, "float-length": 1.5}[
+                mutation
+            ]
+        elif mutation == "status":
+            asset["http_status"] = 200
+        elif mutation == "exit":
+            asset["exit"] = False
+        elif mutation == "missing-row":
+            data["models"].pop()
+        elif mutation == "duplicate-model":
+            data["models"][-1] = row
+        elif mutation == "missing-asset":
+            row["assets"].pop("config.json")
+        elif mutation == "extra-asset-name":
+            row["assets"]["other.json"] = asset
+        elif mutation == "nonfinite":
+            asset["bytes"] = float("nan")
+        elif mutation == "rogue-repo-token":
+            row["model"] += "/" + token
+        if not (
+            mutation.startswith("duplicate-") and mutation != "duplicate-model"
+        ) and mutation not in {"comment", "trailing"}:
+            text = json.dumps(data)
+        assert self.scan(text)
+
+    @pytest.mark.parametrize(
+        "path",
+        [
+            "copy.json",
+            "nested/tools/three_flow_river_assets.json",
+            "./tools/three_flow_river_assets.json",
+            "tools//three_flow_river_assets.json",
+            "/tools/three_flow_river_assets.json",
+            "tools/../tools/three_flow_river_assets.json",
+            "tools\\three_flow_river_assets.json",
+        ],
+    )
+    def test_noncanonical_path(self, path: str) -> None:
+        assert len(self.scan((REPO_ROOT / self.path).read_text(), path)) == 64
+
+    @pytest.mark.parametrize("kind", ["wheel", "sdist"])
+    @pytest.mark.parametrize(
+        "variant", ["canonical", "nested", "dot", "duplicate", "extra", "two-roots"]
+    )
+    def test_archive_parity(self, tmp_path: Path, kind: str, variant: str) -> None:
+        import io
+        import tarfile
+        import zipfile
+
+        distribution = tmp_path / "dist"
+        _empty_distribution(distribution)
+        text = (REPO_ROOT / self.path).read_text()
+        if variant == "duplicate":
+            text = text.replace('"models":', '"models": [], "models":', 1)
+        if variant == "extra":
+            text = text.replace('"models":', '"extra": "' + "ab" * 20 + '", "models":', 1)
+        member = {"nested": "nested/", "dot": "./"}.get(variant, "") + self.path
+        members = {member: text.encode()}
+        if kind == "sdist":
+            members = {"pkg-0.1.0/" + name: raw for name, raw in members.items()}
+        if variant == "two-roots":
+            members["other/readme.txt"] = b"benign"
+        if kind == "wheel":
+            with zipfile.ZipFile(
+                distribution / "pkg-0.1.0-py3-none-any.whl", "w"
+            ) as archive:
+                for name, raw in members.items():
+                    archive.writestr(name, raw)
+        else:
+            with tarfile.open(distribution / "pkg-0.1.0.tar.gz", "w:gz") as archive:
+                for name, raw in members.items():
+                    info = tarfile.TarInfo(name)
+                    info.size = len(raw)
+                    archive.addfile(info, io.BytesIO(raw))
+        problems = checks.check_built_distributions(tmp_path)
+        allowed = variant == "canonical" or (kind == "wheel" and variant == "two-roots")
+        assert (problems == []) is allowed

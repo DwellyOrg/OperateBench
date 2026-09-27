@@ -94,10 +94,10 @@ class TestReference:
         run = run_episode(spec, scenario_id, "reference")
         assert run.reliable is (scenario_id != "V2"), run.evaluation.as_dict()
         assert run.evaluation.failed_dimensions == (
-            ("recovery", "obligations") if scenario_id == "V2" else ()
+            ("terminal_outcome", "recovery") if scenario_id == "V2" else ()
         )
         assert set(run.evaluation.finding_codes) == (
-            {"REQUIRED_NOTIFICATION_UNDELIVERED", "OBLIGATION_MESSAGE_NOT_ESTABLISHED"}
+            {"REQUIRED_NOTIFICATION_UNDELIVERED", "TERMINAL_NOT_REACHED"}
             if scenario_id == "V2"
             else set()
         )

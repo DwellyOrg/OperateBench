@@ -264,7 +264,8 @@ def test_actual_model_request_boundary_has_nested_obligations_and_wire_refs() ->
     ]
     actionable = next(schema for schema in visible if "evidence_refs" in schema)
     assert actionable == {
-        name: request_schema[name] for name in ("required", "evidence_refs")
+        name: request_schema[name]
+        for name in ("required", "evidence_refs", "field_guidance")
     }
     selector = actionable["evidence_refs"]["required"]["quote_record_key"]["select"]
     assert selector == (

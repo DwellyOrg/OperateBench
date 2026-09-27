@@ -2747,6 +2747,83 @@ def _human(trajectory: Sequence[Mapping[str, Any]], scenario: ScenarioSpec) -> D
     )
 
 
+def _recovery_receipt_bound(
+    trajectory: Sequence[Mapping[str, Any]],
+    final_state: Mapping[str, Any],
+    start: int,
+    payload: Mapping[str, Any],
+    receipt: Mapping[str, Any],
+) -> bool:
+    """Independent reconstruction of the original committed, failed intent.
+
+    Public communication positions count accepted sends, not proposals. Neither
+    a sent flag nor a purported recovery receipt can invent the original failure.
+    """
+    index = payload.get("recovery_of")
+    communications = final_state["communications"]
+    if (
+        type(index) is not int
+        or not 0 <= index < len(communications)
+        or receipt.get("recovery_of") != index
+        or receipt.get("dispatch_channel") != "secondary"
+    ):
+        return False
+    original = communications[index]
+    keys = ("recipient_actor_id", "message_fixture_id", "correlation_id")
+    if (
+        original.get("dispatch_status") != "FAILED"
+        or "recovery_of" in original
+        or payload.get("message_fixture_id") != "msg_transfer_notice"
+        or any(original.get(k) != payload.get(k) for k in keys)
+        or sum(row.get("recovery_of") == index for row in communications) != 1
+    ):
+        return False
+    committed = []
+    for position, proposal in enumerate(trajectory[:start]):
+        if (
+            proposal.get("record_type") != "action_proposed"
+            or proposal.get("action_type") != "send_message"
+        ):
+            continue
+        ends = [
+            end
+            for end in range(position + 1, start)
+            if trajectory[end].get("record_type") == "effect_accepted"
+            and trajectory[end].get("proposal_id") == proposal.get("proposal_id")
+            and trajectory[end].get("action_type") == "send_message"
+            and trajectory[end].get("code") == "ACCEPTED"
+        ]
+        if len(ends) == 1:
+            committed.append((position, ends[0], proposal))
+    if index >= len(committed):
+        return False
+    position, end, proposal = committed[index]
+    original_payload = proposal.get("payload", {})
+    if (
+        "recovery_of" in original_payload
+        or any(original_payload.get(k) != payload.get(k) for k in keys)
+        or original.get("at") != proposal.get("at")
+        or trajectory[end].get("at") != proposal.get("at")
+        or trajectory[end].get("cycle_id") != original_payload.get("correlation_id")
+    ):
+        return False
+    interval = trajectory[position + 1 : end]
+    failures = [r for r in interval if r.get("record_type") == "side_effect_failed"]
+    return (
+        len(failures) == 1
+        and failures[0].get("channel") == "message_dispatch"
+        and "dispatch_channel" not in failures[0]
+        and "recovery_of" not in failures[0]
+        and failures[0].get("message_fixture_id") == payload.get("message_fixture_id")
+        and failures[0].get("recipient_actor_id") == payload.get("recipient_actor_id")
+        and failures[0].get("committed_decision_preserved") is True
+        and not any(
+            r.get("record_type") in {"side_effect", "action_rejected", "action_proposed"}
+            for r in interval
+        )
+    )
+
+
 def _message_delivered(
     trajectory: Sequence[Mapping[str, Any]],
     final_state: Mapping[str, Any],
@@ -2790,21 +2867,31 @@ def _message_delivered(
             for row in interval
         ):
             continue
-        if not any(
-            row.get("record_type") == "side_effect"
-            and row.get("channel") == "message_dispatch"
+        receipts = [row for row in interval if row.get("record_type") == "side_effect"]
+        if len(receipts) != 1:
+            continue
+        row = receipts[0]
+        if not (
+            row.get("channel") == "message_dispatch"
             and row.get("status") == "DELIVERED"
             and row.get("message_fixture_id") == fixture
             and row.get("recipient_actor_id") == recipient
             and row.get("at") == proposal.get("at")
-            for row in interval
         ):
+            continue
+        if "recovery_of" in payload:
+            if not _recovery_receipt_bound(trajectory, final_state, start, payload, row):
+                continue
+        elif "recovery_of" in row or "dispatch_channel" in row:
             continue
         if any(
             message.get("message_fixture_id") == fixture
             and message.get("recipient_actor_id") == recipient
             and message.get("correlation_id") == cycle
             and message.get("at") == proposal.get("at")
+            and message.get("dispatch_status", "DELIVERED") == "DELIVERED"
+            and message.get("recovery_of") == payload.get("recovery_of")
+            and message.get("dispatch_channel") == row.get("dispatch_channel")
             for message in final_state["communications"]
         ):
             return True

@@ -33,8 +33,6 @@ labels it forbids would fail the gate it is testing.
 from __future__ import annotations
 
 import io
-import subprocess
-import sys
 import tarfile
 import zipfile
 from pathlib import Path
@@ -77,30 +75,6 @@ def _plant(tmp_path: Path, text: str) -> Path:
     return tree
 
 
-def _wheel_bytes(tmp_path: Path) -> Path:
-    dist = tmp_path / "dist"
-    subprocess.run(
-        ["uv", "build", "--wheel", "--out-dir", str(dist)],
-        cwd=ROOT,
-        check=True,
-        capture_output=True,
-        text=True,
-    )
-    return next(dist.glob("*.whl"))
-
-
-def _sdist_bytes(tmp_path: Path) -> Path:
-    dist = tmp_path / "dist"
-    subprocess.run(
-        ["uv", "build", "--sdist", "--out-dir", str(dist)],
-        cwd=ROOT,
-        check=True,
-        capture_output=True,
-        text=True,
-    )
-    return next(dist.glob("*.tar.gz"))
-
-
 # --------------------------------------------------------------- the source
 
 
@@ -132,11 +106,6 @@ class TestTheShippedDescription:
 
     def test_the_whole_candidate_tree_is_clean(self) -> None:
         assert checks.check_public_scope_prose(ROOT) == []
-
-    def test_the_check_is_part_of_the_gate(self) -> None:
-        results = checks.run_all(ROOT)
-        assert "internal stage labels and shipped topology" in results
-        assert results["internal stage labels and shipped topology"] == []
 
 
 # ------------------------------------------------------------- the gate fails
@@ -196,8 +165,10 @@ class TestTheGateFailsClosed:
 
 
 class TestTheBuiltDistributionsCarryTheSameProse:
-    def test_the_wheel_ships_the_truthful_description(self, tmp_path: Path) -> None:
-        with zipfile.ZipFile(_wheel_bytes(tmp_path)) as wheel:
+    def test_the_wheel_ships_the_truthful_description(
+        self, built_distribution: tuple[Path, Path]
+    ) -> None:
+        with zipfile.ZipFile(built_distribution[0]) as wheel:
             member = next(
                 name for name in wheel.namelist() if name == "operatebench/__init__.py"
             )
@@ -209,10 +180,10 @@ class TestTheBuiltDistributionsCarryTheSameProse:
         assert checks.scan_public_scope(text, where="wheel") == []
 
     def test_no_wheel_member_carries_a_label_or_topology_claim(
-        self, tmp_path: Path
+        self, built_distribution: tuple[Path, Path]
     ) -> None:
         problems: list[str] = []
-        with zipfile.ZipFile(_wheel_bytes(tmp_path)) as wheel:
+        with zipfile.ZipFile(built_distribution[0]) as wheel:
             for info in wheel.infolist():
                 if info.is_dir():
                     continue
@@ -223,10 +194,10 @@ class TestTheBuiltDistributionsCarryTheSameProse:
         assert problems == []
 
     def test_no_sdist_member_carries_a_label_or_topology_claim(
-        self, tmp_path: Path
+        self, built_distribution: tuple[Path, Path]
     ) -> None:
         problems: list[str] = []
-        with tarfile.open(_sdist_bytes(tmp_path)) as sdist:
+        with tarfile.open(built_distribution[1]) as sdist:
             for entry in sdist.getmembers():
                 if not entry.isfile():
                     continue
@@ -275,19 +246,8 @@ class TestTheBuiltDistributionsCarryTheSameProse:
         assert any("false distribution topology" in problem for problem in problems)
 
     def test_the_extracted_sdist_scanner_still_passes_on_this_candidate(
-        self, tmp_path: Path
+        self, extracted_sdist_scan: tuple[int, str, str]
     ) -> None:
-        extracted = tmp_path / "extracted"
-        extracted.mkdir()
-        with tarfile.open(_sdist_bytes(tmp_path)) as sdist:
-            sdist.extractall(extracted, filter="data")
-        root = next(extracted.iterdir())
-        result = subprocess.run(
-            [sys.executable, "-m", "tools.check_public_release", "--surface", "sdist"],
-            cwd=root,
-            check=False,
-            capture_output=True,
-            text=True,
-        )
-        assert result.returncode == 0, result.stdout + result.stderr
-        assert "internal stage labels and shipped topology" in result.stdout
+        returncode, stdout, stderr = extracted_sdist_scan
+        assert returncode == 0, stdout + stderr
+        assert "internal stage labels and shipped topology" in stdout

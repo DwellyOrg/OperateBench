@@ -289,7 +289,7 @@ def test_metadata_for_owner_rejects_hostile_str_subclasses() -> None:
 def test_all_builtins_report_the_same_prospire_maintainer_identity() -> None:
     from operatebench.sdk.builtins import BUILTIN_PACKS
 
-    assert len(BUILTIN_PACKS.metadata()) == 3
+    assert len(BUILTIN_PACKS.metadata()) == 5
     assert {
         (item.owner_id, item.owner_display_name, item.contribution_kind)
         for item in BUILTIN_PACKS.metadata()

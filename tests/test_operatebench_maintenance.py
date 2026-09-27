@@ -258,9 +258,9 @@ class TestV2Rejection:
     def test_rejection_transfers_to_a_human_without_touching_payment(
         self, v2: EpisodeRun
     ) -> None:
-        assert v2.outcome.status == "transferred_to_human_ownership"
+        assert v2.outcome.status == "operational_horizon_exhausted"
         assert v2.evaluation.reliable is False
-        assert set(v2.evaluation.failed_dimensions) == {"recovery", "obligations"}
+        assert set(v2.evaluation.failed_dimensions) == {"terminal_outcome", "recovery"}
         assert v2.outcome.final_state["payment"]["status"] == "NOT_REQUESTED"
 
     def test_no_work_was_authorised_after_the_rejection(self, v2: EpisodeRun) -> None:
@@ -287,8 +287,12 @@ class TestV2Rejection:
                 and row.get("checkpoint_type") == "maintenance_exception_resolution"
             ),
         )
-        terminal = index_of(v2, lambda row: row["record_type"] == "terminal_accepted")
-        assert exception_opened < resolved < terminal
+        failed_notice = index_of(
+            v2, lambda row: row["record_type"] == "side_effect_failed"
+        )
+        assert exception_opened < resolved < failed_notice
+        assert v2.outcome.final_state["ownership_transferred_to"] == "operator_1"
+        assert not rows(v2, "terminal_accepted")
 
     def test_the_exception_checkpoint_carried_its_context(self, v2: EpisodeRun) -> None:
         opened = [
@@ -304,8 +308,10 @@ class TestV2Rejection:
     ) -> None:
         failures = rows(v2, "side_effect_failed")
         assert [row["message_fixture_id"] for row in failures] == ["msg_transfer_notice"]
-        assert v2.outcome.final_state["transfer_notice_sent"] is True
-        assert v2.outcome.status == "transferred_to_human_ownership"
+        assert v2.outcome.final_state["transfer_notice_sent"] is False
+        assert v2.outcome.final_state["ownership_transferred_to"] == "operator_1"
+        assert failures[0]["committed_decision_preserved"] is True
+        assert v2.outcome.status == "operational_horizon_exhausted"
 
 
 class TestV3ExpiryAndReminder:

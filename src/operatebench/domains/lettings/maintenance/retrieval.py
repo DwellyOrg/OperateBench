@@ -88,7 +88,11 @@ class RetrievalToolSpec:
 
     @property
     def schema_id(self) -> str:
-        revision = "v2" if self.tool == "get_case_record" else SCHEMA_REVISION
+        revision = (
+            "v2"
+            if self.tool in {"get_case_record", "list_communications"}
+            else SCHEMA_REVISION
+        )
         return f"{SCHEMA_NAMESPACE}.{self.tool}.{revision}"
 
     @property

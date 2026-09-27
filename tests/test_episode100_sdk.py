@@ -50,7 +50,7 @@ def test_retrieve_loops_episode_boundary(cell, prefix, decisions, tmp_path):
             assert result["invocations"] == 1
         assert len(seen) == 100
         assert result["termination_cause"] == (
-            "episode_decision_limit" if decisions >= 100 else "provider_transport"
+            "episode_decision_limit" if decisions >= 100 else "provider_server_error"
         )
         rows = [
             json.loads(line)

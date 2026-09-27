@@ -17,6 +17,8 @@ import pytest
 
 from operatebench import _write_once
 
+pytest_plugins = ["tests.distribution_fixtures"]
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 EXAMPLES = REPO_ROOT / "examples"
 EXAMPLE_CARD = EXAMPLES / "maintenance_authority.yaml"

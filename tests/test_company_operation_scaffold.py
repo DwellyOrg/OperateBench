@@ -541,6 +541,7 @@ def test_real_source_layout_cli_tolerates_shared_caches_across_operations(
         "northstar:northstar_account_recovery_synthetic_v1",
         "northstar:northstar_invoice_review_synthetic_v1",
         "prospire:lettings_property_compliance_synthetic_v1",
+        "prospire:lettings_property_compliance_profiles_v1",
     )
 
 

@@ -150,6 +150,7 @@ from operatebench.providers.openai_responses import (
     OPENAI_API,
     OPENAI_BASE_URL,
     OPENAI_PROVIDER,
+    OPENAI_REASONING_ITEMS_CONTRACT,
     OPENAI_RESPONSE_CAPTURE,
     OPENAI_RESPONSE_SERVER_EXTENSIONS,
     OUTPUT_LIMIT_REASON,
@@ -349,6 +350,7 @@ def lifecycle_openai_settings(
         "request_mapping": LIFECYCLE_OPENAI_REQUEST_MAPPING_VERSION,
         **shape.as_settings(),
         "response_capture": OPENAI_RESPONSE_CAPTURE,
+        "reasoning_items_contract": OPENAI_REASONING_ITEMS_CONTRACT,
         "response_contract": "exactly_one_tool_call",
         "response_server_extensions": OPENAI_RESPONSE_SERVER_EXTENSIONS,
         "response_server_extensions_digest": SERVER_EXTENSION_DIGEST,
@@ -467,6 +469,11 @@ def model_response_from(response: WireResponse[Response]) -> ModelResponse:
     * **The count.** ``output_tokens`` from the usage block the exchange
       validated on the wire, so the ceiling check the agent applies is against a
       number the provider actually stated.
+
+    Reasoning items are validated non-actions and never become prose or tools.
+    Requests are fresh observation snapshots, not Responses conversations: neither
+    prior output items, function-call outputs nor previous_response_id are reused.
+    Opaque reasoning continuity is therefore not part of this mapping.
     """
     parsed = response.parsed
     # ``response_usage`` refuses the whole body rather than returning a count it
@@ -502,8 +509,9 @@ def model_response_from(response: WireResponse[Response]) -> ModelResponse:
         declared = getattr(item, "type", None)
         if declared not in ACCEPTED_ITEM_TYPES:
             raise _response_invalid(
-                "the answer carries an output item that is neither an assistant "
-                "message nor a function call; this boundary accepts one structured "
+                "the answer carries an output item outside the validated reasoning, "
+                "assistant message or function call contract; this boundary accepts "
+                "one structured "
                 "outcome beside optional prose, and cannot tell which part of an "
                 "answer containing anything else is the decision. The type the item "
                 "declared is not recorded here: it is provider-controlled text, and "

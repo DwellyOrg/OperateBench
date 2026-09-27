@@ -16,7 +16,9 @@ are byte-for-byte what the pre-extraction implementation recorded. The two
 digests below lock that recording. If either one moves, the extraction has
 changed what a run *is* — every stored ledger row is hashed against it and a
 resume across it is refused by design — so they are stated as literals and a
-failure here is a stop, not a number to update.
+failure here is a stop, not a number to update. Later deliberate response
+contract revisions are pinned separately below and reversed field-by-field to
+verify this original settings golden still protects all unrelated settings.
 
 **There is one send path, not two.** A duplicated executor would pass every
 golden test above while quietly drifting on the next change, so the adapter is
@@ -191,15 +193,37 @@ def test_the_projection_builds_exactly_the_body_the_adapter_sends() -> None:
     assert json.loads(json.dumps(payload)) == transport.bodies[0]
 
 
+# Explicit contract changes after the composition extraction: null-only root
+# metadata (8ef9cce) and validated non-action reasoning items (4d86101).
+CURRENT_SETTINGS_DIGEST = (
+    "85683d612da766b497a7f3fd351ae16e0e8409ef69775b5634edb218c9bfef6e"
+)
+
+
 def test_the_settings_hashed_into_run_identity_are_unchanged() -> None:
-    assert _digest(openai_settings(model=MODEL)) == BASELINE_SETTINGS_DIGEST
+    current = dict(openai_settings(model=MODEL))
+    assert _digest(current) == CURRENT_SETTINGS_DIGEST
+    assert current.pop("reasoning_items_contract") == (
+        "openai_reasoning_items_strict_non_action_v1"
+    )
+    assert current["response_server_extensions"] == "openai_response_server_extensions_v3"
+    assert current["response_server_extensions_digest"] == (
+        "71b4891dd1010171eba5c779e1bec8f51a86c4d85f2fbfdf245f3f79d4e43d44"
+    )
+    # Restore only those reviewed fields and prove every other setting still
+    # matches the original pre-extraction golden, rather than repinning blindly.
+    current["response_server_extensions"] = "openai_response_server_extensions_v2"
+    current["response_server_extensions_digest"] = (
+        "f17e798a28a88e2e0c2db787286c7a7cf823a46f092fa00205aaf5e931ae6527"
+    )
+    assert _digest(current) == BASELINE_SETTINGS_DIGEST
 
 
 def test_the_adapter_settings_are_the_settings_function_settings() -> None:
     _transport, client = scripted_client(_body())
     adapter = OpenAIResponsesAdapter(model=MODEL, client=client)
 
-    assert _digest(dict(adapter.settings)) == BASELINE_SETTINGS_DIGEST
+    assert _digest(dict(adapter.settings)) == CURRENT_SETTINGS_DIGEST
 
 
 def test_the_adapter_identity_and_version_are_unchanged() -> None:

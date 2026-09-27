@@ -161,6 +161,54 @@ def _message(recipient: str, fixture_id: str, correlation_id: str | None) -> Act
 # --------------------------------------------------------------------- reference
 
 
+def _notice_or_wait(
+    state: Mapping[str, Any],
+    recipient: str,
+    fixture: str,
+    cycle_id: Any,
+    *,
+    recovery_enabled: bool = False,
+) -> AgentOutcome:
+    if recovery_enabled:
+        for index, row in enumerate(state["communications"]):
+            if (
+                row.get("dispatch_status") == "FAILED"
+                and row.get("recipient_actor_id") == recipient
+                and row.get("message_fixture_id") == fixture
+                and row.get("correlation_id") == cycle_id
+                and "recovery_of" not in row
+                and not any(
+                    r.get("recovery_of") == index for r in state["communications"]
+                )
+            ):
+                return Act(
+                    action_type="send_message",
+                    payload={
+                        "recipient_actor_id": recipient,
+                        "message_fixture_id": fixture,
+                        "correlation_id": cycle_id,
+                        "recovery_of": index,
+                    },
+                    rationale="request the publicly supported secondary dispatch",
+                )
+    if any(
+        row.get("dispatch_status") == "FAILED"
+        and row.get("recipient_actor_id") == recipient
+        and row.get("message_fixture_id") == fixture
+        and row.get("correlation_id") == cycle_id
+        for row in state["communications"]
+    ):
+        # Only public observed failure, never the scenario's future fault set.
+        # There is no dispatch-recovery action in this contract. Do not loop or
+        # falsely complete: yield for new information/the operational horizon.
+        return Wait(
+            reason="notification delivery failed; no supported recovery channel",
+            wake_on=WAKE_CUSTOMER,
+            fallback_after_minutes=2880,
+        )
+    return _message(recipient, fixture, cycle_id)
+
+
 class ReferenceAgent:
     """Runs the operation the way the authored oracle says it should be run.
 
@@ -189,7 +237,16 @@ class ReferenceAgent:
         # 1. A human has taken the operation over: tell the customer, then close.
         if state["ownership_transferred_to"] is not None:
             if not state["transfer_notice_sent"]:
-                return _message(CUSTOMER, MSG_TRANSFER_NOTICE, cycle_id)
+                return _notice_or_wait(
+                    state,
+                    str(state["issue_reporting_actor_id"]),
+                    MSG_TRANSFER_NOTICE,
+                    cycle_id,
+                    recovery_enabled=(
+                        policy.get("maintenance_contract_version")
+                        == "delivery-recovery.v3"
+                    ),
+                )
             return Complete(reason="an authorised operator has accepted ownership")
 
         # 2. An exception checkpoint is with a human. Wait for them.
@@ -229,7 +286,9 @@ class ReferenceAgent:
             if approval["reminder_fired"] and _obligation_open(
                 state, f"approval_reminder:{checkpoint_id}"
             ):
-                return _message(APPROVER, MSG_APPROVAL_REMINDER, approval["cycle_id"])
+                return _notice_or_wait(
+                    state, APPROVER, MSG_APPROVAL_REMINDER, approval["cycle_id"]
+                )
             return Wait(
                 reason="the approver holds an open quote decision",
                 wake_on=WAKE_APPROVAL,
@@ -367,7 +426,7 @@ class ReferenceAgent:
         self, state: Mapping[str, Any], cycle: Mapping[str, Any], cycle_id: str
     ) -> AgentOutcome:
         if not cycle["completion_notice_sent"]:
-            return _message(CUSTOMER, MSG_COMPLETION_NOTICE, cycle_id)
+            return _notice_or_wait(state, CUSTOMER, MSG_COMPLETION_NOTICE, cycle_id)
         return Complete(
             reason=f"cycle {cycle_id} is verified, settled where payable, and notified",
             evidence_refs=(str(cycle["work_evidence_id"]),),

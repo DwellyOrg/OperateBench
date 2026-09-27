@@ -76,7 +76,7 @@ class CostReservationBreachedError(AdapterError):
         *,
         measured_usd: Decimal | None,
         reservation_usd: Decimal,
-        cap_usd: Decimal,
+        cap_usd: Decimal | None,
     ) -> None:
         super().__init__(message)
         self.measured_usd = measured_usd

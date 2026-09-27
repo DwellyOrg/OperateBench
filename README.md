@@ -1,5 +1,9 @@
 # OperateBench
 
+Domain authors: [Domain public contract v2](docs/DOMAIN_PUBLIC_CONTRACT_V2.md).
+Three-flow operators: [Correction binding](docs/THREE_FLOW_CORRECTION_BINDING.md)
+and [Error semantics](docs/THREE_FLOW_ERROR_SEMANTICS.md).
+
 **Can AI run the operation?**
 
 OperateBench evaluates whether an agent can keep a persistent business operation
@@ -98,6 +102,14 @@ Concessions of prior art, per-benchmark differences and sources:
   but is not Artifact 8, release-admitted or evidence-eligible.
 - **Property Compliance SDK architecture check** — a synthetic Property Safety
   Certificate renewal incubator, also statically registered and not evidence-eligible.
+- **International profile development packs** — research-grounded synthetic
+  return/refund and property-compliance processes, each with four bounded
+  jurisdiction profiles. They use real Core execution and a separate development
+  decision-tape record, not Artifact 8. Their offline reference-driven mock tests
+  prove interface execution, not real-model capability, legal correctness or new
+  ratings. See [profile CLI and scope](docs/profile-pack-cli.md),
+  [Commerce profile details](docs/commerce-return-refund-profiles.md) and
+  [Compliance profile details](docs/contributions/prospire/property_compliance_profiles.md).
 - **Boundary Track** — the inherited BoundaryBench methodology for consequential
   operational boundaries.
 - **Maintenance reference and 8 targeted negative agents** — `reference`,
@@ -210,6 +222,10 @@ uv run operatebench check --pack maintenance \
 ```
 
 `run-maintenance` and `check-maintenance` remain compatibility aliases.
+The original Commerce and Property Compliance pack IDs and aliases remain
+available alongside the additive `.profiles` successors. For successor
+validate/run/replay/check examples and country limitations, see
+[profile-pack CLI](docs/profile-pack-cli.md).
 
 The Boundary Track keeps its own command, `boundarybench`, for the same reason
 it keeps its own package: a Boundary run and a Lifecycle run are different
@@ -467,6 +483,12 @@ alone is not proof of benchmark validity.
   diagnostic, including its trusted offline transport boundary and explicit
   non-claims.
 
+- [Three-flow campaign](docs/THREE_FLOW_CAMPAIGN.md) — reference-driven offline
+  SDK mock execution, shared accounting and replay; not paid-launch approval or
+  model-performance evidence.
+- [Three-flow River](docs/THREE_FLOW_RIVER.md) — optional SDK, pinned tokenizer
+  assets and native protobuf mock transport; full-matrix qualification remains
+  pending.
 - [Aggregate budget](docs/AGGREGATE_BUDGET.md) — optional offline accounting
   controller and its settlement and activation boundaries.
 - [Scorecard tracking](docs/SCORECARD_TRACKING.md) — retained-evidence readers,
