@@ -41,11 +41,13 @@ from tools.three_flow_profiles import (
     ENDPOINTS as ENDPOINTS,
 )
 from tools.three_flow_profiles import (
-    HTTP_APIS,
-    http_mode_fields,
+    LATEST_HTTP_MODELS as LATEST_HTTP_MODELS,
 )
 from tools.three_flow_profiles import (
-    LATEST_HTTP_MODELS as LATEST_HTTP_MODELS,
+    MODE_PROFILES,
+    http_mode_fields,
+    http_reasoning_mode,
+    selection_for,
 )
 from tools.three_flow_profiles import (
     MODELS as MODELS,
@@ -204,12 +206,17 @@ class HTTPCampaignTransport:
             raise ValueError("unknown transport policy")
         if transport_policy != "legacy-v1" and provider != "mistral":
             raise ValueError("pacing policy is Mistral-only")
-        if mode_profile not in ("legacy-v1", "off-or-minimum-v1"):
+        if mode_profile not in MODE_PROFILES:
             raise ValueError("unknown reasoning mode profile")
         model = MODELS.get(provider) if model is None else model
-        if not isinstance(model, str) or (provider, model) not in LATEST_HTTP_MODELS:
+        if (
+            not isinstance(model, str)
+            or provider not in MODELS
+            or selection_for(provider, model, "off-or-minimum-v1") is None
+        ):
             raise ValueError("unsupported HTTP provider/model pair")
-        if model not in MODELS.values() and mode_profile != "off-or-minimum-v1":
+        selection = selection_for(provider, model, mode_profile)
+        if selection is None:
             raise ValueError("new models require explicit off-or-minimum profile")
         self.mode_profile = mode_profile
         self.mode_fields = http_mode_fields(provider, model, mode_profile)
@@ -225,7 +232,9 @@ class HTTPCampaignTransport:
         self.network_timeout = network_timeout
         self.context_tokens = context_tokens
         self.provider, self.model = provider, model
-        self.api = HTTP_APIS[provider]
+        self.selection = selection
+        self.api = selection.api
+        self.settings_source = selection.settings_source
         self.request_mapping = "three-flow-" + provider + "-v1"
         if mode_profile != "legacy-v1":
             self.request_mapping += "-" + mode_profile
@@ -312,7 +321,7 @@ class HTTPCampaignTransport:
             self.settings.update(self.mode_fields)
             self.settings.update(
                 mode_profile=mode_profile,
-                reasoning_mode="OFF" if minimum_effort(model) == "none" else "MINIMUM",
+                reasoning_mode=http_reasoning_mode(model),
             )
             if provider == "openai":
                 self.settings["omitted"] = ["temperature", "top_p", "seed"]

@@ -27,11 +27,13 @@ and the existing Mistral exchange/capture boundaries are deliberate exceptions,
 not targets for automatic migration.
 
 `tools.three_flow_profiles` owns finite campaign rosters, candidate reasoning
-controls, native mode metadata and declaration provenance. Capability references
-reuse provider `RequestProfile` objects; selection does not establish API
-capability or admission. HTTP/River transports still own clients, serialization
-and dispatch; admission, pricing, authorization and budget custody remain outside
-the profile owner. Historical `settings_source` literals are preserved.
+controls, native mode metadata and declaration provenance. API capabilities remain
+with provider `RequestProfile` objects, not a copied selection capability catalog;
+native family validation remains in `three_flow_river_native`, with Kimi separate.
+Selection does not establish API capability or admission. HTTP/River transports
+still own clients, serialization and dispatch; admission, pricing, authorization
+and budget custody remain outside the profile owner. Historical `settings_source`
+literals are preserved.
 Source/runtime identities change when these modules change: existing source-bound
 authorizations must not be reused even when settings and mappings are unchanged.
 

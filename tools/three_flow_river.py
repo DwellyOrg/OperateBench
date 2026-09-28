@@ -28,8 +28,12 @@ from tools.aggregate_budget import SharedGuard
 from tools.three_flow_budget import CampaignBudget
 from tools.three_flow_errors import grpc_error, river_failed
 from tools.three_flow_profiles import (
+    MODE_PROFILES,
+    RIVER_API,
+    river_legacy_fields,
     river_mode_fields,
     river_reasoning_prefilled,
+    selection_for,
 )
 from tools.three_flow_river_assets import catalog, family_render, family_tokenizer
 from tools.three_flow_river_kimi import parse_kimi
@@ -236,7 +240,7 @@ class RiverCampaignTransport:
         )
 
     provider = "river"
-    api = "grpc_inference_generate"
+    api = RIVER_API
     request_mapping = "three-flow-river-native-v1"
 
     def __init__(
@@ -251,7 +255,7 @@ class RiverCampaignTransport:
         network_timeout: float | None = 120.0,
         mode_profile: str = "legacy-v1",
     ) -> None:
-        if mode_profile not in ("legacy-v1", "off-or-minimum-v1"):
+        if mode_profile not in MODE_PROFILES:
             raise ValueError("unknown reasoning mode profile")
         self.mode_profile = mode_profile
         self.reasoning_prefilled = river_reasoning_prefilled(model, mode_profile)
@@ -268,8 +272,12 @@ class RiverCampaignTransport:
         if guard._max_output_tokens != max_output_tokens:
             raise ValueError("guard output setting differs")
         rows = [r for r in catalog()["models"] if r["model"] == model]
-        if len(rows) != 1:
+        selection = selection_for("river", model, mode_profile)
+        if len(rows) != 1 or selection is None:
             raise ValueError("exact River roster model required")
+        self.selection = selection
+        self.api = selection.api
+        self.settings_source = selection.settings_source
         self.model, self.assets, self.guard = model, assets, guard
         self.network_timeout = network_timeout
         self.max_output_tokens = max_output_tokens
@@ -279,6 +287,7 @@ class RiverCampaignTransport:
         self.stub = generated.RiverServiceStub(self.wire)
         self.flight = SingleFlight(adapter="three-flow River")
         self.last_turn: dict[str, Any] | None = None
+        legacy = river_legacy_fields(model)
         self.settings = {
             "sdk": "river-client",
             "sdk_version": SDK_VERSION,
@@ -286,12 +295,19 @@ class RiverCampaignTransport:
             "endpoint": "api.river.ai:443",
             "protocol_version": MODEL_PROTOCOL_VERSION,
             "max_output_tokens": max_output_tokens,
-            "temperature": 0,
-            "top_p": 1,
-            "top_k": -1,
-            "stop": ["<|im_end|>"] if "Kimi" in model else [],
-            "thinking": True,
-            "deepseek_reasoning_effort": 75 if "V4.1" in model else None,
+            # Preserve the transport's historical order (stop before thinking),
+            # which differs from the admission declaration's order.
+            **{
+                key: legacy[key]
+                for key in (
+                    "temperature",
+                    "top_p",
+                    "top_k",
+                    "stop",
+                    "thinking",
+                    "deepseek_reasoning_effort",
+                )
+            },
             "max_retries": 0,
             "grpc_options": list(map(list, GRPC_OPTIONS)),
             "rpc_timeout_seconds": network_timeout,

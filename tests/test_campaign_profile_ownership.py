@@ -72,6 +72,87 @@ def test_sdk_bytes_and_settings_golden(tmp_path, monkeypatch, key, expected):
         budget.close()
 
 
+def test_selection_catalog_drives_http_and_declaration(tmp_path, monkeypatch):
+    from dataclasses import replace
+
+    from tools import three_flow_profiles as profiles
+
+    original = profiles.SELECTIONS
+    monkeypatch.setattr(
+        profiles,
+        "SELECTIONS",
+        tuple(
+            replace(s, api="selected-api", settings_source="selected-source")
+            if s.provider == "openai"
+            else s
+            for s in original
+        ),
+    )
+    budget, _, transport, _ = fixture(tmp_path, "openai")
+    try:
+        assert transport.api == "selected-api"
+        assert transport.settings_source == "selected-source"
+        assert transport.selection in profiles.SELECTIONS
+        row = next(r for r in registry() if r["provider"] == "openai")
+        assert row["settings_source"] == "selected-source"
+    finally:
+        transport.close()
+        budget.close()
+
+
+def test_http_admission_controls_share_payload_owner(monkeypatch):
+    from tools import three_flow_profiles as profiles
+
+    original = profiles.http_mode_fields
+
+    def controls(provider, model, mode):
+        return {**original(provider, model, mode), "owner_probe": provider}
+
+    monkeypatch.setattr(profiles, "http_mode_fields", controls)
+    for row in registry(mode_profile="off-or-minimum-v1"):
+        if row["provider"] != "river":
+            assert row["request_settings"]["owner_probe"] == row["provider"]
+
+
+@pytest.mark.parametrize(
+    "overrides,message",
+    [
+        ({"transport_policy": "bad", "mode_profile": "bad"}, "unknown transport policy"),
+        (
+            {"transport_policy": "paced-safe-errors-v1", "mode_profile": "bad"},
+            "pacing policy is Mistral-only",
+        ),
+        ({"mode_profile": "bad", "model": "unknown"}, "unknown reasoning mode profile"),
+        ({"model": "unknown"}, "unsupported HTTP provider/model pair"),
+        (
+            {"provider": "river", "model": "Qwen/Qwen3.8-27B-FP8"},
+            "unsupported HTTP provider/model pair",
+        ),
+        (
+            {"model": "gpt-6-luna", "max_output_tokens": 0},
+            "new models require explicit off-or-minimum profile",
+        ),
+        ({"max_output_tokens": 0}, "explicit output profile required"),
+        ({"max_output_tokens": 1}, "successor flagship output profile is 128000"),
+    ],
+)
+def test_http_refusal_order_before_client_construction(overrides, message):
+    from types import SimpleNamespace
+
+    kwargs = {
+        "provider": "openai",
+        "model": "gpt-6-astra",
+        "api_key": "synthetic",
+        "inner": None,
+        "guard": SimpleNamespace(_max_output_tokens=1),
+        "max_output_tokens": 128000,
+    }
+    kwargs.update(overrides)
+    with pytest.raises(ValueError) as caught:
+        http.HTTPCampaignTransport(**kwargs)
+    assert str(caught.value) == message
+
+
 def test_unknown_legacy_defaults_and_refusals():
     assert http.minimum_effort("unrecognized") == "low"
     with pytest.raises(ValueError, match=r"^unknown roster profile$"):

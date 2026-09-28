@@ -1,7 +1,7 @@
 """Finite campaign selections, not admission or a second API capability registry.
 
 Candidate mode overrides belong here. Reviewed API capabilities remain the
-provider RequestProfile objects; a missing reference is not a new capability.
+provider RequestProfile objects, not these candidate selection records.
 Settings provenance literals remain historical recorded identities.
 No clients, credentials, pricing, budgets, or native parsers are owned here.
 """
@@ -11,8 +11,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from types import MappingProxyType
 from typing import Any
-
-from operatebench.providers import anthropic_messages, mistral_chat, openai_responses
 
 MODELS = {
     "openai": "gpt-6-astra",
@@ -82,50 +80,52 @@ class CampaignSelection:
     api: str
     mode_profile: str
     settings_source: str
-    request_profile: (
-        openai_responses.RequestProfile
-        | anthropic_messages.RequestProfile
-        | mistral_chat.RequestProfile
-        | None
-    )
-    native_family: str | None
 
 
-def native_family(model: str) -> str:
-    if "DeepSeek" in model:
-        return "deepseek"
-    if "Kimi" in model:
-        return "kimi"
-    if "GLM" in model:
-        return "glm"
-    if "Nemotron" in model:
-        return "nemotron"
-    return "qwen"
-
-
-# References, never copied capability declarations. Candidate-only models may
-# have no reviewed profile, exactly as before this selection owner existed.
-_PROFILE_OWNERS = {
-    "openai": openai_responses,
-    "anthropic": anthropic_messages,
-    "mistral": mistral_chat,
-}
+MODE_PROFILES = ("legacy-v1", "off-or-minimum-v1")
+RIVER_API = "grpc_inference_generate"
 SELECTIONS = tuple(
     CampaignSelection(
         p,
         m,
-        HTTP_APIS.get(p, "grpc_inference_generate"),
+        HTTP_APIS.get(p, RIVER_API),
         mode,
         "tools/three_flow_" + ("river" if p == "river" else "http") + ".py",
-        _PROFILE_OWNERS[p].MODEL_REQUEST_PROFILES.get(m)
-        if p in _PROFILE_OWNERS
-        else None,
-        native_family(m) if p == "river" else None,
     )
     for p, m in tuple(("river", m) for m in RIVER_MODELS) + LATEST_HTTP_MODELS
-    for mode in ("legacy-v1", "off-or-minimum-v1")
+    for mode in MODE_PROFILES
     if mode != "legacy-v1" or p == "river" or m in MODELS.values()
 )
+
+
+def selection_for(
+    provider: str, model: str, mode_profile: str
+) -> CampaignSelection | None:
+    """Resolve only existing valid cells; callers retain their validation order."""
+    return next(
+        (
+            s
+            for s in SELECTIONS
+            if (s.provider, s.model, s.mode_profile) == (provider, model, mode_profile)
+        ),
+        None,
+    )
+
+
+def declaration_selection(
+    provider: str, model: str, mode_profile: str
+) -> CampaignSelection:
+    # Legacy registry declarations include successor models even though HTTP
+    # construction refuses them in legacy mode. Keep that historical asymmetry.
+    selected = selection_for(provider, model, mode_profile) or selection_for(
+        provider, model, "off-or-minimum-v1"
+    )
+    assert selected is not None
+    return selected
+
+
+def http_reasoning_mode(model: str) -> str:
+    return "OFF" if minimum_effort(model) == "none" else "MINIMUM"
 
 
 def http_mode_fields(provider: str, model: str, mode_profile: str) -> dict[str, Any]:
@@ -155,6 +155,15 @@ def river_legacy_fields(model: str) -> dict[str, Any]:
     }
 
 
+def river_template_kwargs(model: str, mode_profile: str) -> dict[str, Any]:
+    """Native template controls only; Kimi retains its separate framing path."""
+    if mode_profile == "legacy-v1":
+        return {"enable_thinking": True}
+    if river_reasoning_prefilled(model, mode_profile):
+        return {"reasoning_effort": "low"}
+    return {"enable_thinking": False}
+
+
 def river_mode_fields(model: str, mode_profile: str) -> dict[str, Any]:
     if mode_profile == "legacy-v1":
         return {}
@@ -170,11 +179,9 @@ def river_mode_fields(model: str, mode_profile: str) -> dict[str, Any]:
         fields["encoder"] = {"thinking_mode": "chat", "reasoning_effort": None}
     else:
         fields["template_kwargs"] = (
-            {"reasoning_effort": "low"}
-            if minimum
-            else {"thinking": False}
-            if "Kimi" in model
-            else {"enable_thinking": False}
+            {"thinking": False}
+            if "Kimi" in model and not minimum
+            else river_template_kwargs(model, mode_profile)
         )
     return fields
 
@@ -187,7 +194,7 @@ def registry(
 ) -> list[dict[str, Any]]:
     if transport_policy not in ("legacy-v1", "paced-safe-errors-v1"):
         raise ValueError("unknown transport policy")
-    if mode_profile not in ("legacy-v1", "off-or-minimum-v1"):
+    if mode_profile not in MODE_PROFILES:
         raise ValueError("unknown reasoning mode profile")
     rows: list[dict[str, Any]] = [
         {
@@ -222,9 +229,7 @@ def registry(
                     ),
                 }
             ),
-            "settings_source": "tools/three_flow_"
-            + ("river" if p == "river" else "http")
-            + ".py",
+            "settings_source": declaration_selection(p, m, mode_profile).settings_source,
             "retries": 0,
             "output_limit": (
                 "externally admitted verified maximum or explicit published-context "
@@ -239,22 +244,19 @@ def registry(
             break
         p, m = row["provider"], row["model"]
         settings = row["request_settings"]
-        minimum = (p != "river" or "GLM-5.3" in m) and minimum_effort(m) != "none"
-        row["mapping"] += "-" + mode_profile
-        settings.update(
-            mode_profile=mode_profile, reasoning_mode="MINIMUM" if minimum else "OFF"
+        reasoning_mode = (
+            ("MINIMUM" if river_reasoning_prefilled(m, mode_profile) else "OFF")
+            if p == "river"
+            else http_reasoning_mode(m)
         )
-        if p == "openai":
-            settings.update(
-                reasoning={"effort": minimum_effort(m)},
-                omitted=["temperature", "top_p", "seed"],
-            )
-        elif p == "anthropic":
-            settings["output_config"] = {"effort": "low"}
-        elif p == "mistral":
-            settings["reasoning_effort"] = "none"
-        else:
+        row["mapping"] += "-" + mode_profile
+        settings.update(mode_profile=mode_profile, reasoning_mode=reasoning_mode)
+        if p == "river":
             settings.update(river_mode_fields(m, mode_profile))
+        else:
+            settings.update(http_mode_fields(p, m, mode_profile))
+            if p == "openai":
+                settings["omitted"] = ["temperature", "top_p", "seed"]
     if transport_policy != "legacy-v1":
         for row in rows:
             if row["provider"] == "mistral":

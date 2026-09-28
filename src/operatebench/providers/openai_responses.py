@@ -1083,9 +1083,6 @@ def response_usage(response: WireResponse[Response]) -> TokenUsage:
     return wire_token_usage(usage, fields=USAGE_FIELDS)
 
 
-
-
-
 # -- the exchange -------------------------------------------------------------
 
 

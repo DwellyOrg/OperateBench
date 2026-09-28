@@ -18,6 +18,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from tools.three_flow_profiles import river_template_kwargs
+
 
 class NativeAssetError(RuntimeError):
     """Trusted local pinned asset unavailable or corrupt; never a provider fault."""
@@ -690,11 +692,5 @@ def render_messages(
         bos_token=config.get("bos_token", ""),
         eos_token=config.get("eos_token", ""),
         add_generation_prompt=add_generation_prompt,
-        **(
-            {"enable_thinking": True}
-            if mode_profile == "legacy-v1"
-            else {"reasoning_effort": "low"}
-            if "GLM-5.3" in model
-            else {"enable_thinking": False}
-        ),
+        **river_template_kwargs(model, mode_profile),
     )
