@@ -37,35 +37,26 @@ from operatebench.providers.faults import AdapterProviderError, SingleFlight
 from operatebench.providers.wire import WireResponse, wire_invalid
 from tools.aggregate_budget import SharedGuard
 from tools.three_flow_errors import ProviderPacer, http_error
-
-MISTRAL_PACER = ProviderPacer()
-
-MODELS = {
-    "openai": "gpt-6-astra",
-    "anthropic": "claude-fable-5-1",
-    "mistral": "mistral-medium-3-5",
-}
-# Explicit successor candidates; legacy MODELS remains frozen for old readers.
-# This explicit roster does not select Terra; model identities are not substituted.
-LATEST_HTTP_MODELS = (
-    ("openai", "gpt-6-luna"),
-    ("openai", "gpt-6-sol"),
-    ("openai", "gpt-6-astra"),
-    ("anthropic", "claude-fable-5-1"),
-    ("anthropic", "claude-opus-5-5"),
-    ("mistral", "mistral-medium-3-5"),
+from tools.three_flow_profiles import (
+    ENDPOINTS as ENDPOINTS,
+)
+from tools.three_flow_profiles import (
+    LATEST_HTTP_MODELS as LATEST_HTTP_MODELS,
+)
+from tools.three_flow_profiles import (
+    MODE_PROFILES,
+    http_mode_fields,
+    http_reasoning_mode,
+    selection_for,
+)
+from tools.three_flow_profiles import (
+    MODELS as MODELS,
+)
+from tools.three_flow_profiles import (
+    minimum_effort as minimum_effort,
 )
 
-
-def minimum_effort(model: str) -> str:
-    return "none" if model in ("gpt-6-luna", "gpt-6-sol") else "low"
-
-
-ENDPOINTS = {
-    "openai": "https://api.openai.com/v1/responses",
-    "anthropic": "https://api.anthropic.com/v1/messages",
-    "mistral": "https://api.mistral.ai/v1/chat/completions",
-}
+MISTRAL_PACER = ProviderPacer()
 
 
 def explicit_sdk_client(cls: Any, **kwargs: Any) -> Any:
@@ -215,25 +206,20 @@ class HTTPCampaignTransport:
             raise ValueError("unknown transport policy")
         if transport_policy != "legacy-v1" and provider != "mistral":
             raise ValueError("pacing policy is Mistral-only")
-        if mode_profile not in ("legacy-v1", "off-or-minimum-v1"):
+        if mode_profile not in MODE_PROFILES:
             raise ValueError("unknown reasoning mode profile")
         model = MODELS.get(provider) if model is None else model
-        if not isinstance(model, str) or (provider, model) not in LATEST_HTTP_MODELS:
+        if (
+            not isinstance(model, str)
+            or provider not in MODELS
+            or selection_for(provider, model, "off-or-minimum-v1") is None
+        ):
             raise ValueError("unsupported HTTP provider/model pair")
-        if model not in MODELS.values() and mode_profile != "off-or-minimum-v1":
+        selection = selection_for(provider, model, mode_profile)
+        if selection is None:
             raise ValueError("new models require explicit off-or-minimum profile")
         self.mode_profile = mode_profile
-        controls: dict[str, dict[str, Any]] = {
-            "openai": {"reasoning": {"effort": minimum_effort(model)}},
-            "anthropic": {
-                "thinking": {"type": "adaptive"},
-                "output_config": {"effort": "low"},
-            },
-            "mistral": {"reasoning_effort": "none"},
-        }
-        self.mode_fields = (
-            controls.get(provider, {}) if mode_profile == "off-or-minimum-v1" else {}
-        )
+        self.mode_fields = http_mode_fields(provider, model, mode_profile)
         if provider not in MODELS:
             raise ValueError("unsupported HTTP provider")
         if type(max_output_tokens) is not int or max_output_tokens <= 0:
@@ -246,13 +232,9 @@ class HTTPCampaignTransport:
         self.network_timeout = network_timeout
         self.context_tokens = context_tokens
         self.provider, self.model = provider, model
-        self.api = (
-            "responses"
-            if provider == "openai"
-            else "messages"
-            if provider == "anthropic"
-            else "chat_completions"
-        )
+        self.selection = selection
+        self.api = selection.api
+        self.settings_source = selection.settings_source
         self.request_mapping = "three-flow-" + provider + "-v1"
         if mode_profile != "legacy-v1":
             self.request_mapping += "-" + mode_profile
@@ -339,7 +321,7 @@ class HTTPCampaignTransport:
             self.settings.update(self.mode_fields)
             self.settings.update(
                 mode_profile=mode_profile,
-                reasoning_mode="OFF" if minimum_effort(model) == "none" else "MINIMUM",
+                reasoning_mode=http_reasoning_mode(model),
             )
             if provider == "openai":
                 self.settings["omitted"] = ["temperature", "top_p", "seed"]

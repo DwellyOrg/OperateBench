@@ -108,8 +108,8 @@ build-backend = "hatchling.build"
 path = "src/operatebench/version.py"
 
 [tool.hatch.build.targets.wheel]
-# `tools/` is repository machinery — the release checker and its allowlists —
-# and is deliberately not among them.
+# `tools/` contains repository/sdist tooling, including release checks and
+# operator entrypoints. It is deliberately excluded from the wheel.
 packages = ["src/operatebench", "src/boundarybench"]
 
 [tool.hatch.build.targets.sdist]

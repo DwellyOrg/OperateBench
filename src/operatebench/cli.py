@@ -16,12 +16,12 @@ from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import Never
 
-from boundarybench.jsonsafe import JsonSafetyError
 from operatebench.core.errors import OperateBenchError
 from operatebench.domains.lettings.maintenance.pack import (
     MAINTENANCE_PACK_ID,
     SCOPE_NOTE,
 )
+from operatebench.jsonsafe import JsonSafetyError
 from operatebench.sdk.api import (
     CheckRequest,
     CommandResult,

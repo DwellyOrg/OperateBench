@@ -79,14 +79,15 @@ from operatebench.providers.executor import (
     TurnExecutor,
     check_retry_policy,
 )
+from operatebench.providers.extensions import frozen_contract as _frozen
+from operatebench.providers.extensions import plain_contract as _plain
 from operatebench.providers.faults import (
-    PROVIDER_FAULT_NETWORK_ERROR,
     PROVIDER_FAULT_RESPONSE_INVALID,
-    PROVIDER_FAULT_TIMEOUT,
     AdapterProviderError,
-    Fault,
     SingleFlight,
-    classify_http_status,
+)
+from operatebench.providers.openai_sdk import (
+    classify_openai_sdk_exception as classify_exception,
 )
 from operatebench.providers.response import (
     check_response_collection,
@@ -528,20 +529,6 @@ PENALTY_MAXIMUM = 2.0
 #: build holds a response body in memory for the length of a turn; non-empty
 #: because a stated value of nothing states nothing.
 MAX_EXTENSION_TEXT_CHARACTERS = 128
-
-
-def _frozen(node: Any) -> Any:
-    """One schema node, deeply immutable. A shared mutable contract is not one."""
-    if isinstance(node, Mapping):
-        return MappingProxyType({key: _frozen(value) for key, value in node.items()})
-    return node
-
-
-def _plain(node: Any) -> Any:
-    """The same node as plain JSON-encodable data, for the digest below."""
-    if isinstance(node, Mapping):
-        return {key: _plain(value) for key, value in node.items()}
-    return node
 
 
 #: The contract itself: every name it accepts, at every level, and the exact
@@ -1094,30 +1081,6 @@ def response_usage(response: WireResponse[Response]) -> TokenUsage:
     """
     usage = checked_wire_object(response.wire.get("usage"), USAGE_WIRE_SHAPE)
     return wire_token_usage(usage, fields=USAGE_FIELDS)
-
-
-def classify_exception(exception: Exception) -> Fault | None:
-    """Map one SDK error onto the contract's fault set, or decline.
-
-    ``None`` means "not a provider fault": something inside this integration
-    broke, and the runner should record it as the adapter failure it is rather
-    than have it dressed up as an outage.
-    """
-    # Checked before its base class: an SDK timeout *is* an
-    # ``APIConnectionError``, and the two are worth telling apart.
-    if isinstance(exception, openai.APITimeoutError):
-        return Fault(PROVIDER_FAULT_TIMEOUT, True, None)
-    if isinstance(exception, openai.APIConnectionError):
-        return Fault(PROVIDER_FAULT_NETWORK_ERROR, True, None)
-    if isinstance(exception, openai.APIResponseValidationError):
-        # A whole body arrived and the SDK refused to read it. Recorded as an
-        # attempt that *received a response*, because it did: saying otherwise
-        # would report a transport failure that did not happen and would hide
-        # the one case where the provider answered with something unreadable.
-        return Fault(PROVIDER_FAULT_RESPONSE_INVALID, False, None, response_received=True)
-    if isinstance(exception, openai.APIStatusError):
-        return classify_http_status(exception.status_code)
-    return None
 
 
 # -- the exchange -------------------------------------------------------------

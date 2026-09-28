@@ -18,7 +18,7 @@ from operatebench.core.errors import SpecSchemaError
 
 PACK_ID = "commerce.return_refund.profiles.v1"
 OPERATION_TYPE = "commerce.return_refund.profiles"
-VERSION = "0.1.0"
+VERSION = "0.2.0"
 
 
 def thaw(value: Any) -> Any:

@@ -20,7 +20,9 @@ from tools.three_flow_campaign import (
     assignments,
     selected_roster,
 )
-from tools.three_flow_http import ENDPOINTS, minimum_effort
+from tools.three_flow_profiles import ENDPOINTS
+from tools.three_flow_profiles import minimum_effort as minimum_effort
+from tools.three_flow_profiles import registry as registry
 from tools.three_flow_runtime import ROOT, source_binding
 
 VARIABLES = {
@@ -64,118 +66,6 @@ def runtime_identity() -> dict[str, Any]:
         "lock_sha256": hashlib.sha256((ROOT / "uv.lock").read_bytes()).hexdigest(),
         "runtime_digest": source_binding(),
     }
-
-
-def registry(
-    *,
-    mode_profile: str = "legacy-v1",
-    transport_policy: str = "legacy-v1",
-    roster_profile: str = "legacy-v1",
-) -> list[dict[str, Any]]:
-    if transport_policy not in ("legacy-v1", "paced-safe-errors-v1"):
-        raise ValueError("unknown transport policy")
-    if mode_profile not in ("legacy-v1", "off-or-minimum-v1"):
-        raise ValueError("unknown reasoning mode profile")
-    rows: list[dict[str, Any]] = [
-        {
-            "provider": p,
-            "model": m,
-            "endpoint": ENDPOINTS.get(p, "api.river.ai:443"),
-            "mapping": "three-flow-river-native-v1"
-            if p == "river"
-            else "three-flow-" + p + "-v1",
-            "request_settings": (
-                {
-                    "temperature": 0,
-                    "top_p": 1,
-                    "top_k": -1,
-                    "thinking": True,
-                    "stop": ["<|im_end|>"] if "Kimi" in m else [],
-                    "deepseek_reasoning_effort": 75 if "V4.1" in m else None,
-                }
-                if p == "river"
-                else {
-                    "tool_choice": {"type": "auto"},
-                    "thinking": {"type": "adaptive"},
-                    "output_config": {"effort": "high"},
-                }
-                if p == "anthropic"
-                else {
-                    "tool_choice": "required",
-                    "parallel_tool_calls": False,
-                    "store": False,
-                    "omitted": ["temperature", "reasoning", "top_p", "seed"],
-                }
-                if p == "openai"
-                else {
-                    "tool_choice": "required",
-                    "temperature": 0.0,
-                    "parallel_tool_calls": False,
-                    "output_policy": (
-                        "min(explicit maximum, context minus conservative input bound)"
-                    ),
-                }
-            ),
-            "settings_source": "tools/three_flow_"
-            + ("river" if p == "river" else "http")
-            + ".py",
-            "retries": 0,
-            "output_limit": (
-                "externally admitted verified maximum or explicit published-context "
-                "diagnostic bound; no automatic smaller-output resubmission"
-            ),
-            "admitted": False,
-        }
-        for p, m in selected_roster(roster_profile)
-    ]
-    for row in rows:
-        if mode_profile == "legacy-v1":
-            break
-        p, m = row["provider"], row["model"]
-        settings = row["request_settings"]
-        minimum = (p != "river" or "GLM-5.3" in m) and minimum_effort(m) != "none"
-        row["mapping"] += "-" + mode_profile
-        settings.update(
-            mode_profile=mode_profile, reasoning_mode="MINIMUM" if minimum else "OFF"
-        )
-        if p == "openai":
-            settings.update(
-                reasoning={"effort": minimum_effort(m)},
-                omitted=["temperature", "top_p", "seed"],
-            )
-        elif p == "anthropic":
-            settings["output_config"] = {"effort": "low"}
-        elif p == "mistral":
-            settings["reasoning_effort"] = "none"
-        else:
-            settings.update(
-                thinking=minimum,
-                reasoning_prefilled=minimum,
-                deepseek_reasoning_effort=None,
-            )
-            if "DeepSeek" in m:
-                settings["encoder"] = {"thinking_mode": "chat", "reasoning_effort": None}
-            else:
-                settings["template_kwargs"] = (
-                    {"reasoning_effort": "low"}
-                    if minimum
-                    else {"thinking": False}
-                    if "Kimi" in m
-                    else {"enable_thinking": False}
-                )
-    if transport_policy != "legacy-v1":
-        for row in rows:
-            if row["provider"] == "mistral":
-                row["mapping"] += "-" + transport_policy
-                row["request_settings"].update(
-                    transport_policy=transport_policy,
-                    pacing_scope="process-wide-mistral",
-                    minimum_spacing_seconds=1,
-                    retry_after_max_seconds=86400,
-                    retry_eligibility="none-proven",
-                    automatic_resubmission=False,
-                )
-    return rows
 
 
 def proposal(sha: str, roster_profile: str = "legacy-v1") -> dict[str, Any]:

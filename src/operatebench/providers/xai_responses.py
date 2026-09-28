@@ -73,14 +73,14 @@ from operatebench.providers.executor import (
     TurnExecutor,
     check_retry_policy,
 )
+from operatebench.providers.extensions import typed_extras as _typed_extras
 from operatebench.providers.faults import (
-    PROVIDER_FAULT_NETWORK_ERROR,
     PROVIDER_FAULT_RESPONSE_INVALID,
-    PROVIDER_FAULT_TIMEOUT,
     AdapterProviderError,
-    Fault,
     SingleFlight,
-    classify_http_status,
+)
+from operatebench.providers.openai_sdk import (
+    classify_openai_sdk_exception as classify_exception,
 )
 from operatebench.providers.response import (
     check_response_collection,
@@ -577,11 +577,6 @@ def check_response_extensions(node: Mapping[str, Any], *, site: str) -> None:
     )
 
 
-def _typed_extras(value: Any) -> Mapping[str, Any]:
-    extra = getattr(value, "model_extra", None)
-    return extra if isinstance(extra, Mapping) else {}
-
-
 def _exact_json_equal(left: Any, right: Any) -> bool:
     if type(left) is not type(right):
         return False
@@ -1068,30 +1063,6 @@ def response_usage(response: WireResponse[Response]) -> TokenUsage:
     """
     usage = checked_wire_object(response.wire.get("usage"), USAGE_WIRE_SHAPE)
     return wire_token_usage(usage, fields=USAGE_FIELDS)
-
-
-def classify_exception(exception: Exception) -> Fault | None:
-    """Map one SDK error onto the contract's fault set, or decline.
-
-    ``None`` means "not a provider fault": something inside this integration
-    broke, and the runner should record it as the adapter failure it is rather
-    than have it dressed up as an outage.
-    """
-    # Checked before its base class: an SDK timeout *is* an
-    # ``APIConnectionError``, and the two are worth telling apart.
-    if isinstance(exception, openai.APITimeoutError):
-        return Fault(PROVIDER_FAULT_TIMEOUT, True, None)
-    if isinstance(exception, openai.APIConnectionError):
-        return Fault(PROVIDER_FAULT_NETWORK_ERROR, True, None)
-    if isinstance(exception, openai.APIResponseValidationError):
-        # A whole body arrived and the SDK refused to read it. Recorded as an
-        # attempt that *received a response*, because it did: saying otherwise
-        # would report a transport failure that did not happen and would hide
-        # the one case where the provider answered with something unreadable.
-        return Fault(PROVIDER_FAULT_RESPONSE_INVALID, False, None, response_received=True)
-    if isinstance(exception, openai.APIStatusError):
-        return classify_http_status(exception.status_code)
-    return None
 
 
 # -- the exchange -------------------------------------------------------------

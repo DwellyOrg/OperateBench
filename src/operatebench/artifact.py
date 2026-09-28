@@ -89,13 +89,6 @@ from itertools import pairwise
 from pathlib import Path
 from typing import Any
 
-from boundarybench.jsonsafe import (
-    JsonSafetyError,
-    NestingDepthError,
-    canonical_json_text,
-    ensure_json_safe,
-    ensure_raw_json_depth,
-)
 from operatebench._write_once import (
     _write_once_bytes,
     _write_once_bytes_at,
@@ -158,6 +151,13 @@ from operatebench.domains.lettings.maintenance.state import validate_canonical_s
 from operatebench.execution_ledger import (
     SUPPORTED_EXECUTION_LEDGER_VERSIONS,
     execution_run_id_problem,
+)
+from operatebench.jsonsafe import (
+    JsonSafetyError,
+    NestingDepthError,
+    canonical_json_text,
+    ensure_json_safe,
+    ensure_raw_json_depth,
 )
 from operatebench.providers.cost import usd_text
 

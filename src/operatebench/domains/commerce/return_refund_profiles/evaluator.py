@@ -301,6 +301,8 @@ def evaluate_episode(episode: Any, spec: Spec, scenario_id: str) -> dict[str, An
         acts("submit_refund")
     ):
         fail("deduplication", "MULTIPLE_ECONOMIC_REFUNDS")
+    history_valid = False
+    folded_settled_at = None
     if branch == "refund":
         proof = events.get("proof_1")
         approval = events.get("approval_1")
@@ -386,19 +388,87 @@ def evaluate_episode(episode: Any, spec: Spec, scenario_id: str) -> dict[str, An
         ]
         if payment and payment["payload"].get("status") != expected_status:
             fail("settlement", "WRONG_AUTHORED_PROCESSOR_RESULT")
+        # Fold Core-accepted deliveries in order, independently of reducer state
+        # and its duplicate marker. A conflicting retry cannot repair history.
+        webhook_payloads: dict[str, Any] = {}
+        result_ids = set()
+        folded_status = None
+        folded_settled_at = None
+        folded_amount = 0
+        genuine_duplicate = False
+        history_valid = True
+        for result in episode.events:
+            if (
+                result["disposition"] != "accepted"
+                or result["event_type"] != "payment_update"
+            ):
+                continue
+            payload = result["payload"]
+            key = payload.get("webhook_id")
+            event_id = result["event_id"]
+            authored_status = expected_status if event_id == "processor_1" else "settled"
+            if (
+                event_id not in {"processor_1", "query_result_1", "duplicate_result_1"}
+                or event_id in result_ids
+                or result["actor_id"] != "processor"
+                or payload.get("status") != authored_status
+                or key != ("webhook_1" if event_id == "processor_1" else "webhook_2")
+            ):
+                fail("settlement", "WRONG_AUTHORED_PROCESSOR_RESULT")
+                history_valid = False
+            result_ids.add(event_id)
+            if not isinstance(key, str):
+                fail("deduplication", "CONFLICTING_WEBHOOK_RESULT")
+                history_valid = False
+                continue
+            if key in webhook_payloads:
+                if payload != webhook_payloads[key]:
+                    fail("deduplication", "CONFLICTING_WEBHOOK_RESULT")
+                    history_valid = False
+                else:
+                    genuine_duplicate = True
+                continue
+            webhook_payloads[key] = payload
+            status = payload.get("status")
+            if (folded_status is None and event_id != "processor_1") or (
+                folded_status is not None
+                and not (
+                    folded_status == "unknown"
+                    and event_id == "query_result_1"
+                    and status in ("settled", "failed")
+                )
+            ):
+                fail("settlement", "INVALID_PROCESSOR_STATUS_HISTORY")
+                history_valid = False
+                continue
+            folded_status = status
+            if status == "settled":
+                folded_amount = payload.get("amount_minor")
+                folded_settled_at = result["at"]
+        if (
+            state["payment"]["status"] != folded_status
+            or state["payment"]["settled_minor"] != folded_amount
+            or state["payment"].get("settled_at") != folded_settled_at
+        ):
+            fail("settlement", "PROCESSOR_HISTORY_STATE_MISMATCH")
         if s["payment_mode"] == "unknown":
             query = acts("query_payment")
             query_result = events.get("query_result_1")
             if (
                 len(query) != 1
                 or query[0]["payload"].get("intent_id") != "refund_1"
+                or not payment
+                or query[0]["at"] < payment["at"]
                 or not query_result
                 or query_result["at"] != shift_minutes(query[0]["at"], 10)
             ):
                 fail("deduplication", "UNKNOWN_NOT_RECONCILED_BY_ORIGINAL_KEY")
-            if not any(
-                r["record_type"] == "commerce_duplicate_ignored"
-                for r in episode.trajectory
+            duplicate = events.get("duplicate_result_1")
+            if (
+                not genuine_duplicate
+                or not duplicate
+                or len(query) != 1
+                or duplicate["at"] != shift_minutes(query[0]["at"], 12)
             ):
                 fail("deduplication", "DUPLICATE_WEBHOOK_NOT_EXERCISED")
         if s["payment_mode"] == "failed":
@@ -483,6 +553,11 @@ def evaluate_episode(episode: Any, spec: Spec, scenario_id: str) -> dict[str, An
             not finality
             or not state["payment"].get("settled_at")
             or finality[0]["at"] != shift_minutes(state["payment"]["settled_at"], 5)
+            or (
+                history_valid
+                and folded_settled_at is not None
+                and finality[0]["at"] != shift_minutes(folded_settled_at, 5)
+            )
         ):
             fail("completion", "FINALITY_NOT_OBSERVED")
     notices = acts("notify_customer")

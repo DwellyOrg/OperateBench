@@ -30,8 +30,24 @@ from operatebench.agents.transport import ProviderFailure, content_digest
 from operatebench.sdk.profile_packs.pack import COMMERCE_COMMANDS, COMPLIANCE_COMMANDS
 from tools.aggregate_budget import SharedGuard, canonical, decimal
 from tools.three_flow_budget import CampaignBudget
-from tools.three_flow_http import LATEST_HTTP_MODELS, MODELS, HTTPCampaignTransport
+from tools.three_flow_http import LATEST_HTTP_MODELS, HTTPCampaignTransport
 from tools.three_flow_mock import SDKMockTransport
+from tools.three_flow_profiles import (
+    EXCLUDED_FUTURE_MODEL as EXCLUDED_FUTURE_MODEL,
+)
+from tools.three_flow_profiles import (
+    LATEST_ROSTER_PROFILE as LATEST_ROSTER_PROFILE,
+)
+from tools.three_flow_profiles import MODELS as MODELS
+from tools.three_flow_profiles import (
+    RIVER_MODELS as RIVER_MODELS,
+)
+from tools.three_flow_profiles import (
+    ROSTER as ROSTER,
+)
+from tools.three_flow_profiles import (
+    selected_roster as selected_roster,
+)
 from tools.three_flow_runtime import (
     ROOT,
     Trial,
@@ -40,35 +56,6 @@ from tools.three_flow_runtime import (
     run_trial,
     source_binding,
 )
-
-RIVER_MODELS = (
-    "Qwen/Qwen3.8-27B-FP8",
-    "Qwen/Qwen3.6-35B-A3B-FP8",
-    "Qwen/Qwen3.5-397B-A17B-FP8",
-    "Qwen/Qwen3.5-122B-A10B-FP8",
-    "Qwen/Qwen3.5-9B",
-    "nvidia/Kimi-K2.6-NVFP4",
-    "nvidia/GLM-5.2-NVFP4-262K",
-    "zai-org/GLM-5.3-Flash",
-    "deepseek-ai/DeepSeek-V4-Flash-0731",
-    "deepseek-ai/DeepSeek-V4.1-Flash",
-    "nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4",
-)
-ROSTER = tuple(("river", m) for m in RIVER_MODELS) + tuple(MODELS.items())
-LATEST_ROSTER_PROFILE = "latest-http-v1"
-EXCLUDED_FUTURE_MODEL = "Qwen/Qwen3.5-122B-A10B-FP8"
-
-
-def selected_roster(roster_profile: str = "legacy-v1") -> tuple[tuple[str, str], ...]:
-    if roster_profile == "legacy-v1":
-        return ROSTER
-    if roster_profile == LATEST_ROSTER_PROFILE:
-        return (
-            tuple(("river", m) for m in RIVER_MODELS if m != EXCLUDED_FUTURE_MODEL)
-            + LATEST_HTTP_MODELS
-        )
-    raise ValueError("unknown roster profile")
-
 
 CONFIGURATIONS = (
     tuple(("maintenance", s) for s in ("V1", "V2", "V3"))

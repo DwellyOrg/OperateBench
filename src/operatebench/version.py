@@ -17,8 +17,8 @@ no new wheel required. They are separate identities in
 ``docs/VERSIONING.md``, so they are separate literals here, and the release
 scanner pins both by value rather than to each other.
 
-A leaf module so any recorder can import it without pulling the package graph
-in.
+This module has no runtime dependencies. Importing it through the package may
+still initialize the package import graph.
 """
 
 from __future__ import annotations

@@ -93,7 +93,6 @@ def test_codeowners_covers_current_and_future_sensitive_paths() -> None:
     }
     sensitive = current_source_and_tools | current_github_files | MANDATORY_OWNED_FILES
 
-    assert sensitive >= MANDATORY_OWNED_FILES
     assert current_source_and_tools
     assert current_github_files
     assert all(OWNER in _owners_for(path) for path in sensitive)
@@ -173,7 +172,14 @@ def test_governance_names_stable_aggregate_checks_without_claiming_ruleset_state
 ):
     governance = _flowed("docs/REPOSITORY_GOVERNANCE.md")
     governance_lower = governance.lower()
-    required = {"test (py3.11)", "test (py3.14)", "build distribution", "dco"}
+    required = {
+        "test (py3.11)",
+        "test (py3.14)",
+        "build distribution",
+        "dco",
+        "independent secret scan",
+        "dependency-review",
+    }
     assert all(f"`{context}`" in governance for context in required)
     assert "Ruff" in governance
     assert "mypy" in governance
@@ -212,6 +218,6 @@ def test_ruleset_activation_is_blocked_until_both_distinct_roles_are_verified() 
         in governance
     )
     assert (
-        "Until both prerequisites exist, forge enforcement is blocked and the "
-        "repository remains unprotected; partial activation is not safe." in governance
+        "Until both prerequisites exist, the independent-approval rule is deferred; "
+        "existing branch protections and required checks remain in force." in governance
     )
