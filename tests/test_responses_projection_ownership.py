@@ -14,7 +14,7 @@ import pytest
 from boundarybench.providers import xai_openai_compat as boundary
 from operatebench.agents import openai_responses, xai_responses
 from operatebench.providers import xai_openai_compat as kernel
-from tests.test_i7_xai_differential_corpus import body, corpus, exercise
+from tests.test_xai_extension_differential_corpus import body, corpus, exercise
 
 
 def digest(value):
