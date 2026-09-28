@@ -15,6 +15,26 @@ is what executes; the differences are named below and in
 
 ## 1. Decision
 
+### Current provider ownership (implementation note)
+
+`operatebench.providers` owns track-neutral wire contracts, fault taxonomy,
+API-specific request profiles and exchange mechanics. `providers.openai_sdk`
+owns the shared OpenAI-SDK exception classifier; existing integration names are
+compatibility aliases. The kernel may import neither track code nor `tools`.
+Lifecycle agents and Boundary adapters retain their own request/response
+projections and settlement semantics. Boundary Anthropic's frozen predecessor
+and the existing Mistral exchange/capture boundaries are deliberate exceptions,
+not targets for automatic migration.
+
+`tools.three_flow_profiles` owns finite campaign rosters, candidate reasoning
+controls, native mode metadata and declaration provenance. Capability references
+reuse provider `RequestProfile` objects; selection does not establish API
+capability or admission. HTTP/River transports still own clients, serialization
+and dispatch; admission, pricing, authorization and budget custody remain outside
+the profile owner. Historical `settings_source` literals are preserved.
+Source/runtime identities change when these modules change: existing source-bound
+authorizations must not be reused even when settings and mappings are unchanged.
+
 OperateBench is a benchmark for AI agents that own longitudinal, event-driven
 business operations.
 

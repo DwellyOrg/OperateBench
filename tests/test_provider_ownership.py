@@ -27,9 +27,11 @@ def test_sdk_classifier_preserves_response_received(module):
     assert classifier(ValueError("internal bug")) is None
     timeout = classifier(openai.APITimeoutError(request=request))
     network = classifier(openai.APIConnectionError(request=request))
-    invalid = classifier(openai.APIResponseValidationError(
-        response=httpx.Response(200, request=request), body={}
-    ))
+    invalid = classifier(
+        openai.APIResponseValidationError(
+            response=httpx.Response(200, request=request), body={}
+        )
+    )
     assert timeout.fault == "provider_timeout"
     assert network.fault == "provider_network_error"
     assert timeout.retryable and network.retryable
