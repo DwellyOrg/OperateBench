@@ -81,6 +81,12 @@ jobs:
       - name: Sync the locked environment
         run: uv sync --frozen --all-groups --python ${{ matrix.python-version }}
 
+      - name: Check dependency graph export
+        shell: bash
+        run: |
+          uv export --frozen --all-groups --no-emit-project --offline > "$RUNNER_TEMP/requirements.txt"
+          diff -u requirements.txt "$RUNNER_TEMP/requirements.txt"
+
       - name: Ruff — lint
         run: uv run --python ${{ matrix.python-version }} ruff check .
 
