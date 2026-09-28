@@ -73,6 +73,7 @@ from operatebench.providers.executor import (
     TurnExecutor,
     check_retry_policy,
 )
+from operatebench.providers.extensions import typed_extras as _typed_extras
 from operatebench.providers.faults import (
     PROVIDER_FAULT_RESPONSE_INVALID,
     AdapterProviderError,
@@ -574,11 +575,6 @@ def check_response_extensions(node: Mapping[str, Any], *, site: str) -> None:
     _check_response_extensions_against(
         node, site=site, schema_by_site=RESPONSE_EXTENSION_SCHEMA
     )
-
-
-def _typed_extras(value: Any) -> Mapping[str, Any]:
-    extra = getattr(value, "model_extra", None)
-    return extra if isinstance(extra, Mapping) else {}
 
 
 def _exact_json_equal(left: Any, right: Any) -> bool:

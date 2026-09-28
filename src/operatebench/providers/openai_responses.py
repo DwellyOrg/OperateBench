@@ -79,6 +79,8 @@ from operatebench.providers.executor import (
     TurnExecutor,
     check_retry_policy,
 )
+from operatebench.providers.extensions import frozen_contract as _frozen
+from operatebench.providers.extensions import plain_contract as _plain
 from operatebench.providers.faults import (
     PROVIDER_FAULT_RESPONSE_INVALID,
     AdapterProviderError,
@@ -527,20 +529,6 @@ PENALTY_MAXIMUM = 2.0
 #: build holds a response body in memory for the length of a turn; non-empty
 #: because a stated value of nothing states nothing.
 MAX_EXTENSION_TEXT_CHARACTERS = 128
-
-
-def _frozen(node: Any) -> Any:
-    """One schema node, deeply immutable. A shared mutable contract is not one."""
-    if isinstance(node, Mapping):
-        return MappingProxyType({key: _frozen(value) for key, value in node.items()})
-    return node
-
-
-def _plain(node: Any) -> Any:
-    """The same node as plain JSON-encodable data, for the digest below."""
-    if isinstance(node, Mapping):
-        return {key: _plain(value) for key, value in node.items()}
-    return node
 
 
 #: The contract itself: every name it accepts, at every level, and the exact

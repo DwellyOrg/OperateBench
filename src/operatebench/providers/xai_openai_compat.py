@@ -42,6 +42,9 @@ from operatebench.providers.executor import (
     TurnExecutor,
     check_retry_policy,
 )
+from operatebench.providers.extensions import frozen_contract as _frozen
+from operatebench.providers.extensions import plain_contract as _plain
+from operatebench.providers.extensions import typed_extras as _typed_extras
 from operatebench.providers.faults import (
     PROVIDER_FAULT_RESPONSE_INVALID,
     AdapterProviderError,
@@ -262,20 +265,6 @@ MAX_EXTENSION_COUNT = MAX_EXACT_TOKEN_COUNT
 MAX_REASONING_CONTENT_CHARACTERS = 4096 * 16
 
 
-def _frozen(node: Any) -> Any:
-    """One schema node, deeply immutable. A shared mutable contract is not one."""
-    if isinstance(node, Mapping):
-        return MappingProxyType({key: _frozen(value) for key, value in node.items()})
-    return node
-
-
-def _plain(node: Any) -> Any:
-    """The same node as plain JSON-encodable data, for the digest below."""
-    if isinstance(node, Mapping):
-        return {key: _plain(value) for key, value in node.items()}
-    return node
-
-
 #: Where the assistant message's extension is fixed.
 MESSAGE_EXTENSION_SITE = "completion_message"
 
@@ -478,12 +467,6 @@ def _stated_extensions(
     if not isinstance(node, Mapping):
         return {}
     return {name: node[name] for name in contract["members"][site] if name in node}
-
-
-def _typed_extras(value: Any) -> Mapping[str, Any]:
-    """One parsed object's undeclared fields, as this SDK parked them."""
-    extra = getattr(value, "model_extra", None)
-    return extra if isinstance(extra, Mapping) else {}
 
 
 def _object_stated_by_both(raw: Any, typed: Any) -> bool:

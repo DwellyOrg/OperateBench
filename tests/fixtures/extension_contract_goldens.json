@@ -1,0 +1,205 @@
+{
+  "boundarybench.providers.mistral_chat": {
+    "RESPONSE_EXTENSION_CONTRACT": {
+      "contract": "mistral_response_extensions_v1",
+      "extension_values_read": false,
+      "max_count": 9007199254740991,
+      "members": {
+        "prompt_tokens_details": {
+          "cached_tokens": "non_negative_bounded_integer"
+        }
+      },
+      "object_members_required": true,
+      "top_level_members_required": false
+    },
+    "RESPONSE_EXTENSION_DIGEST": "d16b8582b25861b986ce8bcababe2d61bbe31d5f0a88bcc05bf0ea13009d70ee"
+  },
+  "boundarybench.providers.xai_openai_compat": {
+    "RESPONSE_EXTENSION_CONTRACT": {
+      "contract": "xai_compat_response_extensions_v1",
+      "extension_values_read": false,
+      "max_count": 9007199254740991,
+      "max_reasoning_characters": 16384,
+      "members": {
+        "completion_message": {
+          "reasoning_content": "bounded_reasoning_text"
+        },
+        "prompt_token_details": {
+          "image_tokens": "non_negative_bounded_integer",
+          "text_tokens": "non_negative_bounded_integer"
+        },
+        "usage_block": {
+          "cost_in_usd_ticks": "non_negative_bounded_integer",
+          "num_sources_used": "non_negative_bounded_integer"
+        }
+      },
+      "members_required_together": {
+        "completion_message": false,
+        "prompt_token_details": true,
+        "usage_block": false
+      }
+    },
+    "RESPONSE_EXTENSION_DIGEST": "9249fb6a8362e7b7ae9ea85e7fd3262a83b64bf55011e3b8eb48fc9e6dd2b152"
+  },
+  "operatebench.providers.mistral_chat": {
+    "RESPONSE_EXTENSION_CONTRACT": {
+      "contract": "mistral_response_extensions_v1",
+      "extension_values_read": false,
+      "max_count": 9007199254740991,
+      "members": {
+        "prompt_tokens_details": {
+          "cached_tokens": "non_negative_bounded_integer"
+        }
+      },
+      "object_members_required": true,
+      "top_level_members_required": false
+    },
+    "RESPONSE_EXTENSION_DIGEST": "d16b8582b25861b986ce8bcababe2d61bbe31d5f0a88bcc05bf0ea13009d70ee"
+  },
+  "operatebench.providers.openai_responses": {
+    "SERVER_EXTENSION_CONTRACT": {
+      "contract": "openai_response_server_extensions_v3",
+      "members": {
+        "access_programs": "null",
+        "billing": {
+          "payer": "bounded_text"
+        },
+        "frequency_penalty": "penalty_number",
+        "presence_penalty": "penalty_number",
+        "store": "boolean",
+        "tool_usage": {
+          "image_gen": {
+            "input_tokens": "non_negative_integer",
+            "input_tokens_details": {
+              "image_tokens": "non_negative_integer",
+              "text_tokens": "non_negative_integer"
+            },
+            "output_tokens": "non_negative_integer",
+            "output_tokens_details": {
+              "image_tokens": "non_negative_integer",
+              "text_tokens": "non_negative_integer"
+            },
+            "total_tokens": "non_negative_integer"
+          },
+          "web_search": {
+            "num_requests": "non_negative_integer"
+          }
+        }
+      },
+      "object_members_required": true,
+      "top_level_members_required": false
+    },
+    "SERVER_EXTENSION_DIGEST": "71b4891dd1010171eba5c779e1bec8f51a86c4d85f2fbfdf245f3f79d4e43d44"
+  },
+  "operatebench.providers.xai_openai_compat": {
+    "RESPONSE_EXTENSION_CONTRACT": {
+      "contract": "xai_compat_response_extensions_v1",
+      "extension_values_read": false,
+      "max_count": 9007199254740991,
+      "max_reasoning_characters": 65536,
+      "members": {
+        "completion_message": {
+          "reasoning_content": "bounded_reasoning_text"
+        },
+        "prompt_token_details": {
+          "image_tokens": "non_negative_bounded_integer",
+          "text_tokens": "non_negative_bounded_integer"
+        },
+        "usage_block": {
+          "cost_in_usd_ticks": "non_negative_bounded_integer",
+          "num_sources_used": "non_negative_bounded_integer"
+        }
+      },
+      "members_required_together": {
+        "completion_message": false,
+        "prompt_token_details": true,
+        "usage_block": false
+      }
+    },
+    "RESPONSE_EXTENSION_DIGEST": "58027d0272a1017dd5a0c456ebd864dec1a5f732a450a0cf86e428535c10dffb"
+  },
+  "operatebench.providers.xai_responses": {
+    "RESPONSE_EXTENSION_CONTRACT": {
+      "contract": "xai_responses_server_extensions_v2",
+      "members": {
+        "response_root": {
+          "frequency_penalty": "finite_penalty_number",
+          "presence_penalty": "finite_penalty_number",
+          "store": "boolean"
+        },
+        "usage_block": {
+          "context_details": {
+            "one_of": [
+              {
+                "image_tokens": "exact_count",
+                "text_tokens": "exact_count"
+              },
+              {
+                "input_tokens": "exact_count",
+                "output_tokens": "exact_count"
+              }
+            ]
+          },
+          "cost_in_usd_ticks": "exact_count",
+          "num_server_side_tools_used": "exact_zero",
+          "num_sources_used": "exact_zero"
+        }
+      },
+      "sites_optional": true,
+      "structured_members_required": true
+    },
+    "RESPONSE_EXTENSION_CONTRACT_V1": {
+      "contract": "xai_responses_server_extensions_v1",
+      "members": {
+        "response_root": {
+          "frequency_penalty": "finite_penalty_number",
+          "presence_penalty": "finite_penalty_number",
+          "store": "boolean"
+        },
+        "usage_block": {
+          "context_details": {
+            "image_tokens": "exact_count",
+            "text_tokens": "exact_count"
+          },
+          "cost_in_usd_ticks": "exact_count",
+          "num_server_side_tools_used": "exact_zero",
+          "num_sources_used": "exact_zero"
+        }
+      },
+      "sites_optional": true,
+      "structured_members_required": true
+    },
+    "RESPONSE_EXTENSION_DIGEST": "9b5c06b433ddeb9015ed3bb7b215100aecc196bdbbcfff71e99e642c094a85f4",
+    "RESPONSE_EXTENSION_DIGEST_V1": "ca5fabda902d3d3ccb985ebc04389d3e2c895d54d90c7b810ba8ec85d1fe8f05",
+    "SERVER_EXTENSION_CONTRACT": {
+      "contract": "xai_responses_server_extensions_v2",
+      "members": {
+        "response_root": {
+          "frequency_penalty": "finite_penalty_number",
+          "presence_penalty": "finite_penalty_number",
+          "store": "boolean"
+        },
+        "usage_block": {
+          "context_details": {
+            "one_of": [
+              {
+                "image_tokens": "exact_count",
+                "text_tokens": "exact_count"
+              },
+              {
+                "input_tokens": "exact_count",
+                "output_tokens": "exact_count"
+              }
+            ]
+          },
+          "cost_in_usd_ticks": "exact_count",
+          "num_server_side_tools_used": "exact_zero",
+          "num_sources_used": "exact_zero"
+        }
+      },
+      "sites_optional": true,
+      "structured_members_required": true
+    },
+    "SERVER_EXTENSION_DIGEST": "9b5c06b433ddeb9015ed3bb7b215100aecc196bdbbcfff71e99e642c094a85f4"
+  }
+}

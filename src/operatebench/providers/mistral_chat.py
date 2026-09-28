@@ -55,6 +55,7 @@ from operatebench.providers.executor import (
     TurnExecutor,
     check_retry_policy,
 )
+from operatebench.providers.extensions import typed_extras as _typed_extras
 from operatebench.providers.faults import (
     PROVIDER_FAULT_NETWORK_ERROR,
     PROVIDER_FAULT_RESPONSE_INVALID,
@@ -214,11 +215,6 @@ def check_response_extensions(node: Mapping[str, Any]) -> None:
         raise wire_invalid(
             "the Mistral response extension count is not an exact bounded integer"
         )
-
-
-def _typed_extras(value: Any) -> Mapping[str, Any]:
-    extra = getattr(value, "model_extra", None)
-    return extra if isinstance(extra, Mapping) else {}
 
 
 def check_response_extensions_agree(

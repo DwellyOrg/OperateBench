@@ -125,6 +125,8 @@ from boundarybench.providers.wire import (
 )
 from boundarybench.queries import QUERY_RESOLUTION_CONTRACT
 from boundarybench.scaffold import ACTION_SURFACE_CONTRACT, FACT_AFFORDANCE_CONTRACT
+from operatebench.providers.extensions import frozen_contract as _frozen
+from operatebench.providers.extensions import plain_contract as _plain
 from operatebench.providers.openai_compat_client import (
     check_xai_openai_compat_client_state,
 )
@@ -397,20 +399,6 @@ MAX_EXTENSION_COUNT = MAX_EXACT_TOKEN_COUNT
 #: This is not a provider-native maximum and is not dynamically coupled to
 #: the current output budget or runtime settings.
 MAX_REASONING_CONTENT_CHARACTERS = MAX_OUTPUT_TOKENS * 16
-
-
-def _frozen(node: Any) -> Any:
-    """One schema node, deeply immutable. A shared mutable contract is not one."""
-    if isinstance(node, Mapping):
-        return MappingProxyType({key: _frozen(value) for key, value in node.items()})
-    return node
-
-
-def _plain(node: Any) -> Any:
-    """The same node as plain JSON-encodable data, for the digest below."""
-    if isinstance(node, Mapping):
-        return {key: _plain(value) for key, value in node.items()}
-    return node
 
 
 #: Where the assistant message's extension is fixed.
