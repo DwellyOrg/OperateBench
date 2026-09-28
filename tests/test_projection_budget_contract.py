@@ -32,6 +32,42 @@ def assert_projection_budget(projections, *, engine_version, scenario_id):
         # No incremental allowance for V2/V3; retain the legacy ceiling.
         assert full < HISTORICAL_CAP_V1, "legacy projection budget"
         return
+    # Maintenance delivery-observability.v2 / delivery-recovery.v3 introduce
+    # two separately identified disclosures. Compare the old projection after
+    # removing ONLY those exact new leaves, not by increasing its old ceiling.
+    # Their own serialized bounds are independently pinned below. Old guidance
+    # and all non-guidance fields still spend the historical allowances.
+    delivery_bytes = 0
+    appearances = 0
+    for projection in projections:
+        schemas = projection.get("action_schemas", {})
+        if not isinstance(schemas, dict):
+            continue
+        send = schemas.get("send_message", {})
+        exceptions = schemas.get("request_exception_resolution", {})
+        if "dispatch_status" not in send.get("field_guidance", {}):
+            continue
+        appearances += 1
+        contract = projection["policy"]["maintenance_contract_version"]
+        assert contract in {"delivery-observability.v2", "delivery-recovery.v3"}
+        extra = {"dispatch_status": send["field_guidance"]["dispatch_status"]}
+        exception_guidance = exceptions["field_guidance"]
+        assert len(json.dumps(extra, sort_keys=True)) <= 350, (
+            "delivery dispatch disclosure budget"
+        )
+        assert len(json.dumps(exception_guidance, sort_keys=True)) <= 273, (
+            "exception disclosure budget"
+        )
+        reduced = copy.deepcopy(schemas)
+        del reduced["send_message"]["field_guidance"]["dispatch_status"]
+        del reduced["request_exception_resolution"]["field_guidance"]
+        if contract == "delivery-recovery.v3":
+            assert reduced["send_message"]["optional"].pop("recovery_of") == "integer"
+        delivery_bytes += len(json.dumps(schemas, sort_keys=True)) - len(
+            json.dumps(reduced, sort_keys=True)
+        )
+    assert appearances <= 23, "delivery disclosure repetition budget"
+    fields["action_schemas"] = fields.get("action_schemas", 0) - delivery_bytes
     increments = {
         name: max(0, fields.get(name, 0) - initial)
         for name, initial in INITIAL_GUIDANCE_FIELDS_V1.items()
@@ -40,7 +76,9 @@ def assert_projection_budget(projections, *, engine_version, scenario_id):
         assert increment <= GUIDANCE_ALLOWANCES_0_13[name], f"{name} guidance budget"
     incremental = sum(increments.values())
     # Guidance savings cannot pay for growth in the initial projection.
-    assert full - incremental < HISTORICAL_CAP_V1, "initial full projection budget"
+    assert full - delivery_bytes - incremental < HISTORICAL_CAP_V1, (
+        "initial full projection budget"
+    )
     assert sum(fields.values()) - incremental < (
         HISTORICAL_CAP_V1 - INITIAL_ENVELOPE_BYTES_V1
     ), "initial field projection budget"
@@ -51,6 +89,30 @@ def v1_projections():
     from tests.test_operatebench_retrieval_reference import SPEC, census_run, load_spec
 
     return census_run(load_spec(SPEC), "V1")[1].projections
+
+
+@pytest.mark.parametrize("leaf", ["dispatch", "exception", "unknown_contract", "repeat"])
+def test_versioned_disclosures_cannot_hide_growth(v1_projections, leaf):
+    projections = copy.deepcopy(v1_projections)
+    ready = next(
+        p for p in projections if "required" in p["action_schemas"]["send_message"]
+    )
+    if leaf == "dispatch":
+        ready["action_schemas"]["send_message"]["field_guidance"]["dispatch_status"] += (
+            "x"
+        )
+    elif leaf == "exception":
+        ready["action_schemas"]["request_exception_resolution"]["field_guidance"][
+            "exception_type"
+        ] += "x"
+    elif leaf == "unknown_contract":
+        ready["policy"]["maintenance_contract_version"] = "unreviewed.v4"
+    else:
+        projections.append(copy.deepcopy(ready))
+    with pytest.raises(AssertionError):
+        assert_projection_budget(
+            projections, engine_version=OPERATEBENCH_VERSION, scenario_id="V1"
+        )
 
 
 def test_historical_contract_is_unchanged():

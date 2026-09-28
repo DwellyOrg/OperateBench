@@ -97,6 +97,14 @@ EXCEPTION_TYPES: tuple[str, ...] = (
     "REPEATED_VISIT_FAILURE",
 )
 
+# The finite eligibility relation used by both public guidance and the guard.
+# Other declared types are reserved, not secretly eligible on a future fixture.
+EXCEPTION_APPROVAL_STATUSES: Mapping[str, str] = {
+    "APPROVAL_REJECTED": APPROVAL_REJECTED,
+    "APPROVAL_EXPIRED": APPROVAL_EXPIRED,
+}
+
+
 #: The business terminals this state machine can actually enter, and therefore
 #: the only ones a scenario may declare as its expectation. The list is derived
 #: from the two transitions that write :attr:`MaintenanceState.terminal` —
@@ -897,7 +905,11 @@ def _validate_authoritative(body: Any, where: str) -> None:
 
 
 def validate_canonical_state(
-    payload: Any, where: str, *, reporting_actor: bool = True
+    payload: Any,
+    where: str,
+    *,
+    reporting_actor: bool = True,
+    recovery_enabled: bool = False,
 ) -> None:
     """Hold an untrusted ``final_state`` to the exact shape this operation writes.
 
@@ -957,12 +969,49 @@ def validate_canonical_state(
     for key, item in records.items():
         _validate_authoritative(item, f"{where}.authoritative_records[{key!r}]")
 
-    for position, item in enumerate(
-        _seq(body["communications"], f"{where}.communications")
-    ):
+    communications = _seq(body["communications"], f"{where}.communications")
+    delivery_shape = recovery_enabled or any(
+        isinstance(item, Mapping) and "dispatch_status" in item for item in communications
+    )
+    recovered: set[int] = set()
+    for position, item in enumerate(communications):
         place = f"{where}.communications[{position}]"
         entry = _obj(item, place)
-        _exact(entry, _COMMUNICATION_FIELDS, place)
+        # Historical communication records predate explicit dispatch status.
+        # Accept that exact shape for reading only; never infer delivery from it.
+        fields = _COMMUNICATION_FIELDS
+        if delivery_shape:
+            fields = (*fields, "dispatch_status")
+            _one_of(
+                entry.get("dispatch_status"),
+                ("DELIVERED", "FAILED"),
+                f"{place}.dispatch_status",
+            )
+        if recovery_enabled and ("recovery_of" in entry or "dispatch_channel" in entry):
+            fields = (*fields, "recovery_of", "dispatch_channel")
+            index = _num(entry.get("recovery_of"), f"{place}.recovery_of", minimum=0)
+            _one_of(
+                entry.get("dispatch_channel"), ("secondary",), f"{place}.dispatch_channel"
+            )
+            if index >= position or index in recovered:
+                _fail(place, "recovery requires one prior failed intent, exactly once")
+            original = communications[index]
+            if (
+                original.get("dispatch_status") != "FAILED"
+                or "recovery_of" in original
+                or entry.get("message_fixture_id") != "msg_transfer_notice"
+                or any(
+                    original.get(key) != entry.get(key)
+                    for key in (
+                        "recipient_actor_id",
+                        "message_fixture_id",
+                        "correlation_id",
+                    )
+                )
+            ):
+                _fail(place, "recovery is not bound to the original failed intent")
+            recovered.add(index)
+        _exact(entry, fields, place)
         _txt(entry["recipient_actor_id"], f"{place}.recipient_actor_id")
         _txt(entry["message_fixture_id"], f"{place}.message_fixture_id")
         _opt_txt(entry["correlation_id"], f"{place}.correlation_id")

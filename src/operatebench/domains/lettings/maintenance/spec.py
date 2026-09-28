@@ -56,7 +56,11 @@ from operatebench.domains.lettings.maintenance.retrieval import (
     MAINTENANCE_RETRIEVAL_TOOLS,
     maintenance_retrieval_catalogue,
 )
-from operatebench.domains.lettings.maintenance.state import PRODUCIBLE_TERMINALS
+from operatebench.domains.lettings.maintenance.state import (
+    EXCEPTION_APPROVAL_STATUSES,
+    EXCEPTION_TYPES,
+    PRODUCIBLE_TERMINALS,
+)
 
 #: Every event type the Maintenance vertical knows, mapped to the authority an
 #: actor must hold to emit it. This mapping *is* the provenance contract.
@@ -566,7 +570,18 @@ MAINTENANCE_ROLE_AUTHORITY: Mapping[str, str] = {
 MAINTENANCE_WAKE_EVENT_TYPES: tuple[str, ...] = tuple(sorted(MAINTENANCE_EVENT_TYPES))
 
 
-def action_schema_view() -> dict[str, dict[str, Any]]:
+def action_payload_schemas(
+    *, recovery_enabled: bool = False
+) -> dict[str, tuple[Mapping[str, str], Mapping[str, str]]]:
+    """One version-selected table for publication and payload validation."""
+    schemas = dict(MAINTENANCE_ACTION_PAYLOAD_SCHEMAS)
+    if recovery_enabled:
+        required, optional = schemas["send_message"]
+        schemas["send_message"] = (required, {**optional, "recovery_of": "integer"})
+    return schemas
+
+
+def action_schema_view(*, recovery_enabled: bool = False) -> dict[str, dict[str, Any]]:
     """The action contracts as detached plain builtins, safe to hand an agent.
 
     ``reads`` is a schema *part*, a tool-name-to-requirement mapping beside
@@ -588,18 +603,32 @@ def action_schema_view() -> dict[str, dict[str, Any]]:
         for action_type, (
             required,
             optional,
-        ) in MAINTENANCE_ACTION_PAYLOAD_SCHEMAS.items()
+        ) in action_payload_schemas(recovery_enabled=recovery_enabled).items()
     }
-    published["send_message"]["field_guidance"] = {
+    published["request_exception_resolution"]["field_guidance"] = {
+        "exception_type": "Only these names; one open exception.",
+        **{
+            name: (
+                "approval_checkpoint_id status: " + EXCEPTION_APPROVAL_STATUSES[name]
+                if name in EXCEPTION_APPROVAL_STATUSES
+                else "not eligible"
+            )
+            for name in EXCEPTION_TYPES
+        },
+    }
+    message_guidance = {
+        "dispatch_status": (
+            "list_communications: DELIVERED or FAILED, not acceptance. Failed "
+            "attempts remain committed but discharge nothing. Retries are allowed, "
+            "not guaranteed to recover. No notification-failure exception or "
+            "alternate channel exists; if blocked, WAIT rather than COMPLETE."
+        ),
         "correlation_id": (
-            "cycle_id (get_case_record/list_obligations): completion: "
-            "match-only discharge; mismatch accepted; approval reminder: "
-            "open/due approval; transfer: current/transferred; else optional. "
-            "Recheck open obligations after each wake: a new completion duty "
-            "requires a newly delivered, correctly correlated notice even if an "
-            "identical notice was accepted earlier. Early notices are permitted; "
-            "they do not discharge duties created later. Repeats without a new "
-            "duty remain redundant."
+            "cycle_id: completion match-only discharge, mismatch accepted; "
+            "reminder open/due; transfer current/transferred; else optional. "
+            "Recheck on wake: a new completion duty needs a new correlated delivery. "
+            "Early notices allowed; they do not discharge duties created later. "
+            "No new duty: redundant."
         ),
         "recipient_actor_id": (
             "completion/transfer notices: "
@@ -607,6 +636,15 @@ def action_schema_view() -> dict[str, dict[str, Any]]:
             "approval reminder: approver_1; else any"
         ),
     }
+    if recovery_enabled:
+        message_guidance["dispatch_status"] = (
+            "FAILED commits, not delivers. Transfer recovery_of: zero-based "
+            "FAILED primary index in list_communications.communications. Match "
+            "recipient_actor_id/message_fixture_id/correlation_id. One secondary "
+            "attempt; only environment DELIVERED receipt discharges. Primary "
+            "fault persists. Secondary FAILED: WAIT; no notification exception."
+        )
+    published["send_message"]["field_guidance"] = message_guidance
     # The terminal is published beside the actions. It carries no payload — that
     # is why it is absent from the payload table — but its correctness depends on
     # the record exactly as an action's does, so its read requirement is
@@ -614,10 +652,8 @@ def action_schema_view() -> dict[str, dict[str, Any]]:
     published[COMPLETE_OUTCOME_KEY] = {
         "field_guidance": {
             "operation": (
-                "A valid declared wait may be interrupted by unsolicited runtime "
-                "events outside wake_on; this is informational, not a WAIT failure. "
-                "Recheck current records and obligations on every wake. "
-                "Open obligations must still be discharged before completion."
+                "Events outside wake_on may interrupt WAIT, not fail it. Recheck "
+                "records/duties every wake; discharge open duties before COMPLETE."
             ),
         },
         "required": {},
@@ -696,7 +732,11 @@ def validate_event_payload(
 
 
 def validate_action_payload(
-    action_type: str, payload: Mapping[str, Any], where: str
+    action_type: str,
+    payload: Mapping[str, Any],
+    where: str,
+    *,
+    recovery_enabled: bool = False,
 ) -> None:
     """Hold one proposed action payload to the exact contract its type declares.
 
@@ -705,7 +745,7 @@ def validate_action_payload(
     primitive type, and the place to say so is once, in a table, rather than in
     whichever ``int()`` call the handler happens to reach first.
     """
-    schema = MAINTENANCE_ACTION_PAYLOAD_SCHEMAS.get(action_type)
+    schema = action_payload_schemas(recovery_enabled=recovery_enabled).get(action_type)
     if schema is None:
         raise UnknownTypeError(
             f"{where}: {action_type!r} has no payload schema in this build; an action "
@@ -1131,7 +1171,12 @@ class OperationSpec:
         hidden = _freeze(_require_mapping(raw["hidden_state"], f"{source}: hidden_state"))
         semantic_scenario_id = _require_text(raw, "semantic_scenario_id", source)
         scenarios = _parse_scenarios(
-            raw["scenarios"], actors, fixtures, semantic_scenario_id, source
+            raw["scenarios"],
+            actors,
+            fixtures,
+            semantic_scenario_id,
+            source,
+            recovery_enabled=raw["operation_version"] == "0.7.0",
         )
 
         # Built once with a placeholder identity, then given the identity it
@@ -1246,6 +1291,8 @@ def _parse_scenarios(
     fixtures: Mapping[str, str],
     semantic_scenario_id: str,
     source: str,
+    *,
+    recovery_enabled: bool = False,
 ) -> dict[str, ScenarioSpec]:
     mapping = _require_mapping(raw, f"{source}: scenarios")
     if not mapping:
@@ -1289,7 +1336,9 @@ def _parse_scenarios(
                 f"{where}: dispatch_failures must be a list of message fixture ids"
             )
         for fixture_id in failures:
-            if fixture_id not in fixtures:
+            if fixture_id not in fixtures and not (
+                recovery_enabled and fixture_id == "secondary:msg_transfer_notice"
+            ):
                 raise UnknownTypeError(
                     f"{where}: dispatch_failures names {fixture_id!r}, which is not a "
                     f"declared message fixture ({sorted(fixtures)})"

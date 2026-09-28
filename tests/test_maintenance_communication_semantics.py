@@ -115,7 +115,7 @@ def test_independent_message_causality(message, mutation):
 
 def test_failed_transfer_delivery_preserves_ownership_but_fails_reliability():
     run = run_episode(load_spec(FIXTURE), "V2", "reference")
-    assert run.outcome.status == "transferred_to_human_ownership"
+    assert run.outcome.status == "operational_horizon_exhausted"
     assert run.outcome.final_state["ownership_transferred_to"] == "operator_1"
     assert not run.reliable
     assert not _recovery(run.outcome.trajectory, run.outcome.final_state).ok
@@ -241,9 +241,9 @@ def test_reference_fault_control_is_not_reliable_reference():
     refs = {c.scenario_id: c for c in report.checks if c.kind == "reference"}
     assert refs["V1"].reliable and refs["V3"].reliable
     assert not refs["V2"].reliable
-    assert refs["V2"].expected_targets == ("recovery", "obligations")
+    assert refs["V2"].expected_targets == ("terminal_outcome", "recovery")
     assert (
         refs["V2"].reference_expectation_id
-        == "maintenance.reference.V2.permanent-notification-fault.v1"
+        == "maintenance.reference.V2.permanent-notification-fault.v2"
     )
     assert refs["V1"].reference_expectation_id is None

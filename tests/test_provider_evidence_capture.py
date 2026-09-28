@@ -536,11 +536,10 @@ def test_a_faulted_run_records_the_true_kernel_fault_and_status(
     assert last.attempts[-1].response_received is True
     assert last.attempts[-1].usage_reported is False
     assert audit.totals.fault_counts == {kernel_fault: 1}
-    # The Lifecycle exclusion code is its own vocabulary and does not overwrite
-    # what the kernel measured.
+    # Canonical adapter faults survive both the model and durable boundaries.
     assert audit.terminal is not None
-    assert audit.terminal.exclusion_code == failure.fault == "provider_transport"
-    assert audit.terminal.exclusion_code not in audit.totals.fault_counts
+    assert audit.terminal.exclusion_code == failure.fault == kernel_fault
+    assert audit.terminal.exclusion_code in audit.totals.fault_counts
 
 
 def test_an_invalid_response_body_is_recorded_as_a_response_that_arrived(
@@ -754,8 +753,9 @@ def test_the_cost_guard_refuses_before_a_request_is_dispatched(
 def test_the_ledger_can_express_every_fault_the_model_boundary_raises() -> None:
     from operatebench.agents.transport import FAULTS
     from operatebench.execution_ledger import ABORTED_CODE, EXCLUSION_CODES
+    from operatebench.providers.faults import PROVIDER_FAULTS
 
-    assert set(EXCLUSION_CODES) == {*FAULTS, ABORTED_CODE}
+    assert set(EXCLUSION_CODES) == {*FAULTS, *PROVIDER_FAULTS, ABORTED_CODE}
 
 
 def test_a_terminal_code_outside_that_vocabulary_is_refused() -> None:

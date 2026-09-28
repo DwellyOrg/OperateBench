@@ -166,9 +166,15 @@ def test_duplicate_json_keys_are_rejected_inside_a_variant(tmp_path):
 @pytest.mark.parametrize("constant", ["NaN", "Infinity", "-Infinity"])
 def test_non_finite_json_constants_are_rejected(tmp_path, constant):
     payload = valid_manifest()
-    text = json.dumps(payload).replace('"manifest_version": 1', f'"x": {constant}', 1)
-    with pytest.raises(ManifestFormatError):
+    payload["note"] = constant
+    assert load_manifest(written(tmp_path, payload)).note == constant
+    text = json.dumps(payload).replace(f'"note": "{constant}"', f'"note": {constant}', 1)
+    with pytest.raises(ManifestFormatError) as caught:
         load_manifest(written(tmp_path, text))
+    assert str(caught.value) == (
+        f"{constant} is not a finite JSON value; a semantic manifest carries only "
+        "strings, integers and lists"
+    )
 
 
 @pytest.mark.parametrize(

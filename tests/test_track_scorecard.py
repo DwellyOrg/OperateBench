@@ -5,6 +5,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[1]
 TOOL = ROOT / "tools/track_scorecard.py"
 
@@ -299,7 +301,10 @@ def test_refusals_no_outputs(tmp_path):
         write_outputs({}, tmp_path)
 
 
-def test_v2_completed_transfer_is_not_reliable(tmp_path):
+@pytest.mark.parametrize("recoverable", [False, True])
+def test_v2_scorecard_distinguishes_legacy_failure_and_recovered_transfer(
+    tmp_path, recoverable
+):
     from operatebench.artifact import write_artifact
     from operatebench.domains.lettings.maintenance.spec import load_spec
     from operatebench.runner import run_episode
@@ -307,13 +312,20 @@ def test_v2_completed_transfer_is_not_reliable(tmp_path):
 
     manifest, row, _ = excluded_manifest(tmp_path)
     artifact = tmp_path / "v2.json"
+    fixture = (
+        "maintenance_delivery_recovery_v0_7.yaml"
+        if recoverable
+        else "maintenance_v0_1.yaml"
+    )
     run = run_episode(
-        load_spec(ROOT / "examples/operatebench/maintenance_v0_1.yaml"),
+        load_spec(ROOT / "examples/operatebench" / fixture),
         "V2",
         "reference",
     )
-    assert run.reliable is False
-    assert run.evaluation.failed_dimensions == ("recovery", "obligations")
+    assert run.reliable is recoverable
+    assert run.evaluation.failed_dimensions == (
+        () if recoverable else ("terminal_outcome", "recovery")
+    )
     write_artifact(run, artifact)
     evaluation = json.loads(artifact.read_text())["evaluation"]
     metrics = tmp_path / "metrics.json"
@@ -332,15 +344,15 @@ def test_v2_completed_transfer_is_not_reliable(tmp_path):
     scorecard = build(manifest)
     assert scorecard["summary"] == {
         "assigned": 1,
-        "verified_completed": 1,
+        "verified_completed": int(recoverable),
         "completion_unknown": 0,
         "quality_evaluable": 1,
-        "quality_passed": 0,
+        "quality_passed": int(recoverable),
     }
     result = scorecard["runs"][0]
-    assert result["completion_observed"] is True
-    assert result["completion_verified"] is True
-    assert result["reliable"] is False
+    assert result["completion_observed"] is recoverable
+    assert result["completion_verified"] is recoverable
+    assert result["reliable"] is recoverable
     assert result["dimensions"] == evaluation["dimensions"]
     assert result["provenance"]["checks"]["original_metrics_equal"] is True
 

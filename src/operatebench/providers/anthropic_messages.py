@@ -173,9 +173,13 @@ def check_client_endpoint(client: anthropic.Anthropic) -> None:
     )
 
 
+# Observed root metadata, not declared by anthropic 0.121.0 Message.
+# Only absence/null is established; a non-null payload has no accepted contract.
+NULL_ROOT_METADATA = frozenset({"diagnostics"})
+
 MESSAGE_SHAPE = WireShape(
     "Anthropic message",
-    declared_wire_fields(Message),
+    declared_wire_fields(Message) | NULL_ROOT_METADATA,
     ("content", "model", "stop_reason", "usage"),
 )
 TOOL_USE_SHAPE = WireShape(
@@ -193,6 +197,11 @@ USAGE_SHAPE = WireShape("Anthropic usage", declared_wire_fields(Usage), USAGE_FI
 
 def check_response_admissible(response: WireResponse[Message], *, model: str) -> None:
     wire = checked_wire_object(response.wire, MESSAGE_SHAPE)
+    if any(wire.get(name) is not None for name in NULL_ROOT_METADATA):
+        raise AdapterProviderError(
+            PROVIDER_FAULT_RESPONSE_INVALID,
+            "the optional root metadata must be absent or null",
+        )
     checked_wire_string(wire["model"], kind="response model")
     if wire["model"] != model:
         raise AdapterProviderError(
@@ -235,7 +244,15 @@ def check_response_admissible(response: WireResponse[Message], *, model: str) ->
                 "has no versioned cache-pricing and accounting policy",
             )
     parsed = response.parsed
-    check_response_contract(parsed)
+    check_response_contract(parsed, allowed_root_extras=NULL_ROOT_METADATA)
+    extra = parsed.model_extra or {}
+    if any(extra.get(name) is not None for name in NULL_ROOT_METADATA) or {
+        name for name in NULL_ROOT_METADATA if name in wire
+    } != {name for name in NULL_ROOT_METADATA if name in extra}:
+        raise AdapterProviderError(
+            PROVIDER_FAULT_RESPONSE_INVALID,
+            "the wire and SDK optional root metadata disagree",
+        )
     check_response_collection(parsed.content, kind="content blocks")
     check_response_object(parsed.usage, fields=USAGE_FIELDS, kind="usage block")
     if parsed.model != model:

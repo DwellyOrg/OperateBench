@@ -306,6 +306,7 @@ def test_the_recorded_luna_settings_are_exactly_this_build_s() -> None:
         "request_mapping": REQUEST_MAPPING_VERSION,
         "request_profile": LUNA_PROFILE_ID,
         "response_capture": OPENAI_RESPONSE_CAPTURE,
+        "reasoning_items_contract": "openai_reasoning_items_strict_non_action_v1",
         "response_contract": "exactly_one_tool_call",
         # The named response-extension contract this lane accepts, and its
         # digest. Neither is a request setting — what this build *sends* is

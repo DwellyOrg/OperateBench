@@ -74,6 +74,7 @@ from operatebench.domains.lettings.maintenance.state import (
     CYCLE_APPROVED_WORK,
     CYCLE_DIAGNOSTIC,
     CYCLE_WARRANTY_REVISIT,
+    EXCEPTION_APPROVAL_STATUSES,
     EXCEPTION_TYPES,
     INVOICE_REJECTED,
     INVOICE_UNVALIDATED,
@@ -246,13 +247,16 @@ class MaintenanceOperation:
 
     def policy_view(self) -> Mapping[str, Any]:
         return {
+            "maintenance_contract_version": (
+                "delivery-recovery.v3"
+                if self.spec.operation_version == "0.7.0"
+                else "delivery-observability.v2"
+            ),
             "human_checkpoint_budget": self.scenario.human_checkpoint_budget,
             "human_checkpoint_guidance": (
-                "human_checkpoint_budget is the maximum total number of human "
-                "checkpoints opened during this episode, including approval and "
-                "exception checkpoints. Exceeding it fails the human-checkpoint "
-                "evaluation. Read current checkpoints before requesting human "
-                "intervention to avoid redundant requests."
+                "maximum total number of human checkpoints per episode, including "
+                "approvals and exceptions. Exceeding it fails evaluation. Read "
+                "current checkpoints before requesting another."
             ),
             "currency": self.policy.currency,
             "issue_classification": self.policy.issue_classification,
@@ -288,7 +292,9 @@ class MaintenanceOperation:
         guessing rather than operating.
         """
         agent = self.spec.actors["agent"]
-        published = action_schema_view()
+        published = action_schema_view(
+            recovery_enabled=self.spec.operation_version == "0.7.0"
+        )
         offered = {
             action_type: schema
             for action_type, schema in published.items()
@@ -962,7 +968,12 @@ class MaintenanceOperation:
                 f"{action_type!r} is not an action of this operation",
             )
         try:
-            validate_action_payload(action_type, payload, f"action {action_type}")
+            validate_action_payload(
+                action_type,
+                payload,
+                f"action {action_type}",
+                recovery_enabled=self.spec.operation_version == "0.7.0",
+            )
         except SpecSchemaError as exc:
             # Checked before the handler indexes anything, exactly as an event
             # payload is checked before its reducer does. Nothing has been
@@ -1358,8 +1369,52 @@ class MaintenanceOperation:
                 "a transfer notice cannot be sent before an operator has accepted "
                 "ownership",
             )
+        # Acceptance commits an attempt, not delivery. Dispatch is synchronous
+        # here, but its result is a separate durable, publicly retrievable fact.
+        recovery_fields: dict[str, Any] = {}
+        dispatch_key = fixture_id
+        if "recovery_of" in payload:
+            index = payload["recovery_of"]
+            if (
+                self.spec.operation_version != "0.7.0"
+                or fixture_id != MSG_TRANSFER_NOTICE
+            ):
+                return Verdict.refused("RECOVERY_NOT_SUPPORTED", "no secondary channel")
+            if type(index) is not int or not 0 <= index < len(state.communications):
+                return Verdict.refused(
+                    "RECOVERY_BINDING_MISMATCH", "unknown failed intent"
+                )
+            original = state.communications[index]
+            if (
+                original.get("dispatch_status") != "FAILED"
+                or "recovery_of" in original
+                or any(
+                    original.get(key) != payload.get(key)
+                    for key in (
+                        "recipient_actor_id",
+                        "message_fixture_id",
+                        "correlation_id",
+                    )
+                )
+            ):
+                return Verdict.refused(
+                    "RECOVERY_BINDING_MISMATCH", "not this failed intent"
+                )
+            if any(
+                row.get("recovery_of") == index for row in state.communications
+            ) or _delivered_notice(state, fixture_id, str(correlation_id)):
+                return Verdict.refused(
+                    "RECOVERY_ALREADY_ATTEMPTED", "no duplicate recovery"
+                )
+            recovery_fields = {"recovery_of": index, "dispatch_channel": "secondary"}
+            # Channel-qualified fault key, NOT a renamed message fixture.
+            # v0.7 declares this independent channel, also fault-injectable.
+            dispatch_key = f"secondary:{fixture_id}"
+        delivered = not context.dispatch_fails(dispatch_key)
         state.communications.append(
             {
+                **recovery_fields,
+                "dispatch_status": "DELIVERED" if delivered else "FAILED",
                 "recipient_actor_id": recipient,
                 "message_fixture_id": fixture_id,
                 "correlation_id": correlation_id,
@@ -1367,14 +1422,14 @@ class MaintenanceOperation:
             }
         )
         cycle_id = str(correlation_id) if isinstance(correlation_id, str) else None
-        if fixture_id == MSG_COMPLETION_NOTICE and cycle_id in state.cycles:
+        if delivered and fixture_id == MSG_COMPLETION_NOTICE and cycle_id in state.cycles:
             state.cycles[cycle_id].completion_notice_sent = True
             _close_obligation(
                 state, context, _notice_obligation_id(cycle_id), OBLIGATION_DISCHARGED
             )
-        if fixture_id == MSG_TRANSFER_NOTICE:
+        if delivered and fixture_id == MSG_TRANSFER_NOTICE:
             state.transfer_notice_sent = True
-        if fixture_id == MSG_APPROVAL_REMINDER and not context.dispatch_fails(fixture_id):
+        if delivered and fixture_id == MSG_APPROVAL_REMINDER:
             for approval in state.open_approvals():
                 if approval.reminder_fired and approval.cycle_id == cycle_id:
                     _close_obligation(
@@ -1385,7 +1440,7 @@ class MaintenanceOperation:
                     )
         # The commit is done. Dispatch is a separate, later fact: if it fails the
         # decision stands and the failure is recorded as recovery evidence.
-        if context.dispatch_fails(fixture_id):
+        if not delivered:
             context.record(
                 "side_effect_failed",
                 {
@@ -1393,6 +1448,7 @@ class MaintenanceOperation:
                     "message_fixture_id": fixture_id,
                     "recipient_actor_id": recipient,
                     "committed_decision_preserved": True,
+                    **recovery_fields,
                 },
             )
         else:
@@ -1403,6 +1459,7 @@ class MaintenanceOperation:
                     "message_fixture_id": fixture_id,
                     "recipient_actor_id": recipient,
                     "status": "DELIVERED",
+                    **recovery_fields,
                 },
             )
         return Verdict.ok(cycle_id=cycle_id or state.current_cycle_id)
@@ -1423,7 +1480,9 @@ class MaintenanceOperation:
         if exception_type not in EXCEPTION_TYPES:
             return Verdict.refused(
                 "UNKNOWN_EXCEPTION_TYPE",
-                f"{exception_type!r} is not a typed exception of this operation",
+                "supported exception types: "
+                + ", ".join(EXCEPTION_TYPES)
+                + "; see request_exception_resolution field_guidance for eligibility",
             )
         selected_id = str(payload["approval_checkpoint_id"])
         eligible = _eligible_exception_approval(state, exception_type, selected_id)
@@ -1532,7 +1591,7 @@ class MaintenanceOperation:
     def _terminal_transfer(
         self, state: MaintenanceState, context: EnvironmentContext
     ) -> Verdict:
-        if not state.transfer_notice_sent:
+        if not _delivered_notice(state, MSG_TRANSFER_NOTICE, state.current_cycle_id):
             return Verdict.refused(
                 "TRANSFER_NOTICE_NOT_SENT",
                 "the customer must be told the operation moved to a human",
@@ -1605,7 +1664,7 @@ class MaintenanceOperation:
                 "the customer says the issue persists; the operation cannot close "
                 "until that is resolved",
             )
-        if not cycle.completion_notice_sent:
+        if not _delivered_notice(state, MSG_COMPLETION_NOTICE, cycle.cycle_id):
             return Verdict.refused(
                 "COMPLETION_NOTICE_NOT_SENT",
                 f"the customer has not been told cycle {cycle.cycle_id!r} is done",
@@ -1783,6 +1842,19 @@ def _settlement_mismatch(
     return None
 
 
+def _delivered_notice(
+    state: MaintenanceState, fixture_id: str, cycle_id: str | None
+) -> bool:
+    """A sent flag is not a receipt, and a role is not the intended actor."""
+    return state.issue_reporting_actor_id is not None and any(
+        row.get("dispatch_status") == "DELIVERED"
+        and row.get("message_fixture_id") == fixture_id
+        and row.get("recipient_actor_id") == state.issue_reporting_actor_id
+        and row.get("correlation_id") == cycle_id
+        for row in state.communications
+    )
+
+
 def _blocking_checkpoints(state: MaintenanceState) -> list[str]:
     return sorted(
         [approval.checkpoint_id for approval in state.open_approvals()]
@@ -1794,10 +1866,7 @@ def _eligible_exception_approval(
     state: MaintenanceState, exception_type: str, checkpoint_id: str
 ) -> Approval | None:
     """Which approval, if any, justifies the exception the agent is claiming."""
-    wanted = {
-        "APPROVAL_REJECTED": APPROVAL_REJECTED,
-        "APPROVAL_EXPIRED": APPROVAL_EXPIRED,
-    }.get(exception_type)
+    wanted = EXCEPTION_APPROVAL_STATUSES.get(exception_type)
     if wanted is None:
         return None
     approval = state.approvals.get(checkpoint_id)

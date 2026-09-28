@@ -467,6 +467,40 @@ def test_pack_metadata_is_fail_closed() -> None:
     assert metadata["privacy_status"] == "SYNTHETIC_ONLY"
 
 
+def _references_legacy_namespace(source: str) -> bool:
+    # Match the namespace component, not a similarly named sibling package.
+    import re
+
+    return (
+        re.search(
+            r"\boperatebench\.contributions\.prospire\.property_compliance\b|\bimport\s+property_compliance\b",
+            source,
+        )
+        is not None
+    )
+
+
+@pytest.mark.parametrize(
+    "source,expected",
+    [
+        (
+            "from operatebench.contributions.prospire.property_compliance_profiles "
+            "import build_domain",
+            False,
+        ),
+        ("lettings.property_compliance.profiles", False),
+        (
+            "from operatebench.contributions.prospire.property_compliance.pack "
+            "import PACK",
+            True,
+        ),
+        ("from operatebench.contributions.prospire import property_compliance", True),
+    ],
+)
+def test_legacy_namespace_scan_controls(source, expected):
+    assert _references_legacy_namespace(source) is expected
+
+
 def test_package_is_isolated_and_registry_is_only_dispatch_integration() -> None:
     package = Path("src/operatebench/contributions/prospire/property_compliance")
     source = "\n".join(path.read_text(encoding="utf-8") for path in package.rglob("*.py"))
@@ -474,8 +508,8 @@ def test_package_is_isolated_and_registry_is_only_dispatch_integration() -> None
     assert "operatebench.domains.lettings.maintenance" not in source
     integrations = []
     for path in Path("src/operatebench").rglob("*.py"):
-        if package not in path.parents and "property_compliance" in path.read_text(
-            encoding="utf-8"
+        if package not in path.parents and _references_legacy_namespace(
+            path.read_text(encoding="utf-8")
         ):
             integrations.append(path.as_posix())
     assert integrations == ["src/operatebench/sdk/builtins.py"]

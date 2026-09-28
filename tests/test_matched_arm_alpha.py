@@ -625,33 +625,9 @@ class UnreadCredentialEnvironment(MutableMapping[str, str]):
         return len(self.data)
 
 
-@pytest.mark.parametrize(
-    ("name", "value"),
-    [
-        ("MODEL", "moved"),
-        ("PROFILE_ID", "moved"),
-        ("POLICY_ID", "moved"),
-        ("RATE_SOURCE", "moved"),
-        ("INPUT_USD_PER_MTOK", Decimal("0.21")),
-        ("OUTPUT_USD_PER_MTOK", Decimal("1.21")),
-        ("CELL_CAP_USD", Decimal("5.01")),
-        ("HARD_CALL_CAP", 511),
-        ("EXPECTED_CALLS", 229),
-        ("MAX_POINT_CALLS", 9),
-        ("MAX_ATTEMPTS_PER_CALL", 2),
-        ("SDK_MAX_RETRIES", 1),
-        ("OPENAI_SDK_VERSION", "2.54.0"),
-        ("TURN_DEADLINE_SECONDS", 31.0),
-        ("WALL_CLOCK_DEADLINE_SECONDS", 18001.0),
-        ("SPEC_DIGEST_SHA256", "0" * 64),
-        ("COMPILER_ID", "moved"),
-        ("SCAFFOLD_ID", "moved"),
-    ],
-)
-def test_each_mutated_build_control_refuses_before_credential_or_construction(
-    output_dir: Path, monkeypatch: pytest.MonkeyPatch, name: str, value: Any
+def test_unconditional_live_quarantine_refuses_before_credential_or_construction(
+    output_dir: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setattr(alpha, name, value)
     monkeypatch.setattr(
         alpha, "open_live_transport", lambda: pytest.fail("transport built")
     )
@@ -664,22 +640,13 @@ def test_each_mutated_build_control_refuses_before_credential_or_construction(
             alpha.CREDENTIAL_VARIABLE: "sk-nev...0000",
         }
     )
-    with pytest.raises(alpha.AlphaRefusal):
+    with pytest.raises(alpha.AlphaRefusal, match=r"^alpha_operator_quarantined$"):
         alpha._run_live(directory=output_dir, environ=env)
     assert not any(output_dir.iterdir())
 
 
-class CloseCountingClient:
-    def __init__(self) -> None:
-        self.close_calls = 0
-
-    def close(self) -> None:
-        self.close_calls += 1
-
-
-@pytest.mark.parametrize("failure_stage", [None, "execution", "validation"])
-def test_offline_client_closes_exactly_once(
-    output_dir: Path, monkeypatch: pytest.MonkeyPatch, failure_stage: str | None
+def test_offline_quarantine_refuses_before_client_construction(
+    output_dir: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """The quarantined boundary constructs no client, irrespective of old stages."""
     monkeypatch.setattr(
@@ -692,9 +659,8 @@ def test_offline_client_closes_exactly_once(
     assert not any(output_dir.iterdir())
 
 
-@pytest.mark.parametrize("failure_stage", [None, "execution", "validation"])
-def test_live_client_closes_exactly_once(
-    output_dir: Path, monkeypatch: pytest.MonkeyPatch, failure_stage: str | None
+def test_live_quarantine_refuses_before_client_construction(
+    output_dir: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """The quarantined live boundary constructs no client to require closing."""
     monkeypatch.setattr(

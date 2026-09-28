@@ -50,6 +50,13 @@ from openai.types.responses import (
     Response,
     ResponseFunctionToolCall,
     ResponseOutputMessage,
+    ResponseReasoningItem,
+)
+from openai.types.responses.response_reasoning_item import (
+    Content as ReasoningContent,
+)
+from openai.types.responses.response_reasoning_item import (
+    Summary as ReasoningSummary,
 )
 from openai.types.responses.response_usage import (
     InputTokensDetails,
@@ -365,12 +372,97 @@ OUTPUT_LIMIT_REASON = "max_output_tokens"
 #: other would prove nothing.
 USAGE_FIELDS: tuple[str, ...] = ("input_tokens", "output_tokens")
 
-#: The only two output item types this scaffold reads. Checked by declared value
+#: The action, prose and inert reasoning item types. Checked by declared value
 #: rather than by Python class: an SDK resolves a union leniently, so an
 #: ``isinstance`` answers "the SDK fell back", not "the provider sent this".
 FUNCTION_CALL_ITEM = "function_call"
 MESSAGE_ITEM = "message"
-ACCEPTED_ITEM_TYPES: frozenset[str] = frozenset({FUNCTION_CALL_ITEM, MESSAGE_ITEM})
+REASONING_ITEM = "reasoning"
+ACCEPTED_ITEM_TYPES: frozenset[str] = frozenset(
+    {FUNCTION_CALL_ITEM, MESSAGE_ITEM, REASONING_ITEM}
+)
+
+# Official Responses schema as shipped in openai 2.53.0, response_reasoning_item.py.
+# This interpretation changes response acceptance, not request bytes or Core.
+OPENAI_REASONING_ITEMS_CONTRACT = "openai_reasoning_items_strict_non_action_v1"
+REASONING_ITEM_WIRE_SHAPE = WireShape(
+    kind="reasoning output item",
+    allowed=frozenset(
+        {"type", "id", "summary", "content", "encrypted_content", "status"}
+    ),
+    required=("type", "id", "summary"),
+)
+REASONING_TEXT_WIRE_SHAPE = WireShape(
+    kind="reasoning text part",
+    allowed=frozenset({"type", "text"}),
+    required=("type", "text"),
+)
+
+
+def check_reasoning_item(value: Any) -> None:
+    """Closed recursive wire contract; no coercion and no content interpretation."""
+    item = checked_wire_object(value, REASONING_ITEM_WIRE_SHAPE)
+    if item["type"] != REASONING_ITEM or type(item["id"]) is not str:
+        raise wire_invalid("invalid reasoning item discriminator or identifier")
+    for name, tag in (("summary", "summary_text"), ("content", "reasoning_text")):
+        if name == "content" and item.get(name) is None:
+            continue
+        parts = item[name]
+        if type(parts) is not list:
+            raise wire_invalid("invalid reasoning parts collection")
+        for value in parts:
+            part = checked_wire_object(value, REASONING_TEXT_WIRE_SHAPE)
+            if part["type"] != tag or type(part["text"]) is not str:
+                raise wire_invalid("invalid reasoning text part")
+    if (
+        item.get("encrypted_content") is not None
+        and type(item["encrypted_content"]) is not str
+    ):
+        raise wire_invalid("invalid opaque reasoning content")
+    if item.get("status") is not None and item["status"] not in (
+        "in_progress",
+        "completed",
+        "incomplete",
+    ):
+        raise wire_invalid("invalid reasoning item status")
+
+
+def check_reasoning_items_agree(raw: Mapping[str, Any], parsed: Response) -> None:
+    """Validate both readings including optional-field presence and nested extras."""
+    items = checked_wire_list(raw["output"], kind="output items")
+    typed = checked_wire_list(parsed.output, kind="typed output items")
+    if len(items) != len(typed):
+        raise wire_invalid("wire and typed output lengths disagree")
+    for entry, item in zip(items, typed, strict=True):
+        if (
+            entry.get("type") == REASONING_ITEM
+            or getattr(item, "type", None) == REASONING_ITEM
+        ):
+            if not isinstance(item, ResponseReasoningItem):
+                raise wire_invalid("invalid typed reasoning item")
+            # Read exact typed values without SDK serialization/coercion. Retain
+            # absent versus present-null, and reject malformed union fallbacks.
+            projected = {key: getattr(item, key, None) for key in item.model_fields_set}
+            for key in REASONING_ITEM_WIRE_SHAPE.allowed - item.model_fields_set:
+                if getattr(item, key, None) is not None:
+                    raise wire_invalid("unstated typed reasoning value")
+            for key, cls in (
+                ("summary", ReasoningSummary),
+                ("content", ReasoningContent),
+            ):
+                parts = projected.get(key)
+                if key == "content" and parts is None:
+                    continue
+                if type(parts) is not list or any(not isinstance(p, cls) for p in parts):
+                    raise wire_invalid("invalid typed reasoning parts")
+                projected[key] = [
+                    {name: getattr(p, name, None) for name in p.model_fields_set}
+                    for p in parts
+                ]
+            check_reasoning_item(projected)
+            if projected != entry:
+                raise wire_invalid("wire and typed reasoning items disagree")
+
 
 # -- the response server-extension contract -----------------------------------
 #
@@ -409,19 +501,19 @@ ACCEPTED_ITEM_TYPES: frozenset[str] = frozenset({FUNCTION_CALL_ITEM, MESSAGE_ITE
 
 #: The name of that contract, as adapter settings record it.
 #:
-#: ``_v2``. The ``_v1`` reading transcribed these same names and types and then
-#: accepted a present object that stated any subset of them, including none; this
-#: one requires a present object to be whole. Two readings of one body are two
-#: contracts, so the name moves with the reading rather than only with the shape.
-OPENAI_RESPONSE_SERVER_EXTENSIONS = "openai_response_server_extensions_v2"
+#: ``_v3`` adds only optional null ``access_programs`` metadata to ``_v2``.
+#: The ``_v2`` rule requiring every present object to be whole is unchanged.
+#: This is observed compatibility, not a vendor-declared non-null contract.
+OPENAI_RESPONSE_SERVER_EXTENSIONS = "openai_response_server_extensions_v3"
 
-#: The scalar vocabulary the contract fixes. Four kinds, and each one is a
+#: The scalar vocabulary the contract fixes. Five kinds, and each one is a
 #: closed-set label this build chose, so it may appear in a durable failure
 #: detail where a field name or a value may not.
 EXTENSION_COUNT = "non_negative_integer"
 EXTENSION_PENALTY = "penalty_number"
 EXTENSION_FLAG = "boolean"
 EXTENSION_TEXT = "bounded_text"
+EXTENSION_NULL = "null"
 
 #: The inclusive range the vendor publishes for these two parameters on its
 #: request surface, and the range this contract holds their echoes to. A number
@@ -456,10 +548,10 @@ def _plain(node: Any) -> Any:
 #: shape each one must have when it is present.
 #:
 #: A mapping value is an object whose keys are closed to exactly these children.
-#: A string value is one of the four scalar kinds above.
+#: A string value is one of the five scalar kinds above.
 #:
 #: Optionality is decided by *level*, and the two levels are not the same
-#: question. Each of the five top-level names may be absent, independently of the
+#: question. Each of the six top-level names may be absent, independently of the
 #: others: this build reads none of them, so a service that stops sending a whole
 #: block has not broken anything a run depends on, and demanding it would refuse
 #: a body this build can read perfectly well. Inside a block that *is* present,
@@ -468,6 +560,9 @@ def _plain(node: Any) -> Any:
 #: read under and is hashed together with it.
 SERVER_EXTENSION_SCHEMA: Mapping[str, Any] = _frozen(
     {
+        # Observed optional metadata, absent from openai 2.53.0 Response.
+        # No non-null contract is established; do not infer one.
+        "access_programs": EXTENSION_NULL,
         "billing": {"payer": EXTENSION_TEXT},
         "frequency_penalty": EXTENSION_PENALTY,
         "presence_penalty": EXTENSION_PENALTY,
@@ -512,7 +607,7 @@ SERVER_EXTENSION_CONTRACT: Mapping[str, Any] = _frozen(
         "members": SERVER_EXTENSION_SCHEMA,
         # Present object, whole object.
         "object_members_required": True,
-        # ...and each of the five top-level names may be absent on its own.
+        # ...and each of the six top-level names may be absent on its own.
         "top_level_members_required": False,
     }
 )
@@ -545,6 +640,8 @@ def _extension_scalar_valid(value: Any, kind: str) -> bool:
     as a penalty of one — and a lenient reader downstream would render either as
     a measurement nobody took.
     """
+    if kind == EXTENSION_NULL:
+        return value is None
     if kind == EXTENSION_COUNT:
         # The same rule the token counts are read under, and deliberately the
         # same function: two independently written definitions of "an exact
@@ -560,8 +657,8 @@ def _extension_scalar_valid(value: Any, kind: str) -> bool:
         )
     if kind == EXTENSION_FLAG:
         return type(value) is bool
-    # :data:`EXTENSION_TEXT`, the last of the four. The vocabulary is closed and
-    # is this module's own, so there is no fifth kind to fall through to.
+    # :data:`EXTENSION_TEXT`, the last of the five. The vocabulary is closed and
+    # is this module's own, so there is no sixth kind to fall through to.
     return (
         type(value) is str
         and bool(value.strip())
@@ -618,7 +715,7 @@ def check_server_extensions(fields: Mapping[str, Any]) -> None:
     """Prove every named extension this mapping states is the exact fixed shape.
 
     A name that is absent is not checked, and that is this level's rule rather
-    than the contract's rule everywhere: the five top-level names are
+    than the contract's rule everywhere: the six top-level names are
     independently optional, and everything below one of them is required once
     its parent is here.
 
@@ -716,7 +813,7 @@ OUTPUT_TOKENS_DETAILS_WIRE_SHAPE = WireShape(
     allowed=declared_wire_fields(OutputTokensDetails),
     required=(),
 )
-#: The two output item types this scaffold reads. An item of any other declared
+#: Action and prose shapes (reasoning has its own recursive shape above). Any other
 #: type is left to the track's own parser, which refuses it as the protocol
 #: failure it is: an item this scaffold did not ask for says something about the
 #: answer, not about the transport.
@@ -915,6 +1012,8 @@ def check_wire_response(raw: Mapping[str, Any]) -> None:
             checked_wire_string(call["arguments"], kind="tool call arguments")
         elif declared == MESSAGE_ITEM:
             checked_wire_object(entry, MESSAGE_ITEM_WIRE_SHAPE)
+        elif declared == REASONING_ITEM:
+            check_reasoning_item(entry)
     usage = checked_wire_object(body["usage"], USAGE_WIRE_SHAPE)
     for field, shape in (
         ("input_tokens_details", INPUT_TOKENS_DETAILS_WIRE_SHAPE),
@@ -966,6 +1065,7 @@ def check_response_admissible(response: WireResponse[Response], *, model: str) -
     check_response_model(parsed, model=model)
     check_response_contract(parsed, allowed_root_extras=SERVER_EXTENSION_NAMES)
     check_server_extensions_agree(response.wire, parsed)
+    check_reasoning_items_agree(response.wire, parsed)
     check_response_collection(parsed.output, kind="output items")
     usage = parsed.usage
     if usage is not None:

@@ -214,7 +214,7 @@ class LifecycleCostGuard:
         self,
         *,
         policy: LifecyclePricingPolicy,
-        cap_usd: Decimal,
+        cap_usd: Decimal | None,
         max_output_tokens: int,
         token_hard_cap: int | None = None,
     ) -> None:
@@ -223,8 +223,12 @@ class LifecycleCostGuard:
                 "a Lifecycle cost guard enforces a stated pricing policy, not "
                 f"{type(policy).__name__}"
             )
-        cap = _rate(cap_usd, "cap_usd")
-        if cap <= 0:
+        cap = (
+            None
+            if cap_usd is None and self._allows_no_money_cap
+            else _rate(cap_usd, "cap_usd")
+        )
+        if cap is not None and cap <= 0:
             raise PricingPolicyError(
                 "a cost cap is a positive amount; a zero cap authorises nothing and "
                 "is refused rather than read as 'no limit'"
@@ -260,7 +264,12 @@ class LifecycleCostGuard:
         return self._policy
 
     @property
-    def cap_usd(self) -> Decimal:
+    def _allows_no_money_cap(self) -> bool:
+        # Historical guards remain strictly capped; only explicit successors opt in.
+        return False
+
+    @property
+    def cap_usd(self) -> Decimal | None:
         return self._cap
 
     @property
@@ -336,7 +345,7 @@ class LifecycleCostGuard:
         with localcontext() as context:
             context.prec = PRICING_PRECISION
             projected = self._measured + self._forfeited + self._outstanding + reservation
-        if projected > self._cap:
+        if self._cap is not None and projected > self._cap:
             raise CostCapExceededError(
                 "this run's remaining authorised budget cannot cover the request. "
                 f"The cap is {usd_text(self._cap)} USD and authorising this request "
@@ -439,7 +448,7 @@ class LifecycleCostGuard:
     def as_dict(self) -> Mapping[str, Any]:
         """The three totals, apart, as exact decimal strings."""
         return {
-            "cap_usd": usd_text(self._cap),
+            "cap_usd": None if self._cap is None else usd_text(self._cap),
             "measured_cost_usd": usd_text(self._measured),
             "forfeited_reservation_usd": usd_text(self._forfeited),
             "reserved_usd": usd_text(self._reserved),

@@ -2,10 +2,6 @@
 
 from __future__ import annotations
 
-import os
-import subprocess
-import sys
-import tarfile
 import tomllib
 from pathlib import Path
 
@@ -36,36 +32,7 @@ def test_sdist_declares_technical_sources_and_excludes_release_controls() -> Non
 
 
 def test_extracted_sdist_passes_its_bundled_release_scanner_offline(
-    tmp_path: Path,
+    extracted_sdist_scan: tuple[int, str, str],
 ) -> None:
-    dist = tmp_path / "dist"
-    subprocess.run(
-        ["uv", "build", "--sdist", "--offline", "--out-dir", str(dist)],
-        cwd=REPO_ROOT,
-        check=True,
-        capture_output=True,
-        text=True,
-    )
-    archive = next(dist.glob("*.tar.gz"))
-    extracted = tmp_path / "extracted"
-    extracted.mkdir()
-    with tarfile.open(archive, "r:gz") as sdist:
-        sdist.extractall(extracted, filter="data")
-    root = next(extracted.iterdir())
-    environment = os.environ.copy()
-    environment.update(
-        {
-            "HTTP_PROXY": "http://" + "127.0.0.1:9",
-            "HTTPS_PROXY": "http://" + "127.0.0.1:9",
-            "NO_PROXY": "",
-        }
-    )
-    result = subprocess.run(
-        [sys.executable, "-m", "tools.check_public_release", "--surface", "sdist"],
-        cwd=root,
-        env=environment,
-        check=False,
-        capture_output=True,
-        text=True,
-    )
-    assert result.returncode == 0, result.stdout + result.stderr
+    returncode, stdout, stderr = extracted_sdist_scan
+    assert returncode == 0, stdout + stderr

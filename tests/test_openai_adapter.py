@@ -244,7 +244,11 @@ def test_an_unknown_output_item_type_is_refused_rather_than_read_as_commentary()
     _transport, client = scripted_client(
         responses_body(
             [
-                {"type": "reasoning", "id": "rs_1", "summary": []},
+                {
+                    "type": "compaction",
+                    "id": "synthetic",
+                    "encrypted_content": "synthetic",
+                },
                 function_call_item("read_records", "{}"),
             ],
             model=PINNED_MODEL,

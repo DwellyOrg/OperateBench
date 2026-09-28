@@ -73,7 +73,8 @@ from operatebench.core.outcomes import (
 from operatebench.core.protocol import AgentObservation, model_projection
 from operatebench.core.retrieval import RetrievalRequest, RetrieveBatch
 from operatebench.providers.config import ProviderConfigurationError
-from operatebench.providers.cost import CostReservationBreachedError
+from operatebench.providers.cost import CostCapExceededError, CostReservationBreachedError
+from operatebench.providers.faults import AdapterProviderError
 
 #: The model protocol this build speaks. Part of request identity: a response
 #: parsed under one protocol version is not evidence about another.
@@ -382,6 +383,11 @@ class ModelAgent:
             # attempt and must retain its local configuration taxonomy.
             self._calls -= 1
             raise
+        except CostCapExceededError:
+            self._calls -= 1
+            raise ProviderFailure(
+                self._excluded(FAULT_BUDGET), "local cost admission refused; run excluded"
+            ) from None
         except CostReservationBreachedError as exc:
             # Dispatch answered, but settlement violated our admitted cost bound.
             # The executor already recorded that attempt and its settlement: do
@@ -391,7 +397,22 @@ class ModelAgent:
                 "provider usage breached the admitted cost reservation; "
                 "this run is excluded, not scored",
             ) from exc
+        except AdapterProviderError as exc:
+            self._attempts.append(
+                ProviderAttempt(
+                    invocation_index=request.invocation_index,
+                    turn_index=request.turn_index,
+                    request_digest_sha256=request.request_digest_sha256,
+                    outcome="failed",
+                    fault=exc.fault,
+                )
+            )
+            raise ProviderFailure(
+                self._excluded(exc.fault), "provider operation failed; run excluded"
+            ) from None
         except Exception as exc:
+            if getattr(self._transport, "preserve_internal_errors", False):
+                raise
             self._attempts.append(
                 ProviderAttempt(
                     invocation_index=request.invocation_index,

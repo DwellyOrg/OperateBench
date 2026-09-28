@@ -601,10 +601,9 @@ def _execute(
     it, so an episode that runs under one must be running the operation that
     digest describes.
 
-    The agent is wrapped in a :class:`~operatebench.agents.playback.RecordingAgent`
-    unconditionally. The wrapper forwards observation and outcome unchanged, so
-    a recorded episode is byte-for-byte the episode that would have run without
-    it, and every run — deterministic or not — comes out with a tape.
+    The agent has exactly one recording owner. A caller-supplied RecordingAgent
+    already owns its tape and observer; reuse it rather than duplicating partial
+    decision emission. Otherwise this boundary creates the canonical recorder.
 
     ``operation_instance_id`` is converted here, before anything is built and
     long before ``begin_episode``, and this is the engine boundary rather than a
@@ -619,9 +618,16 @@ def _execute(
     scenario = spec.scenario(scenario_id)
     domain = MaintenanceOperation(spec, scenario_id)
     agent = build_agent(agent_id) if agent_factory is None else agent_factory()
-    recorder = RecordingAgent(
-        agent, observer=None if partial_evidence is None else partial_evidence.decision
-    )
+    if isinstance(agent, RecordingAgent):
+        if partial_evidence is not None and agent._observer != partial_evidence.decision:
+            raise ValueError("supplied recorder must own the partial decision observer")
+        recorder = agent
+        agent = recorder.inner
+    else:
+        recorder = RecordingAgent(
+            agent,
+            observer=None if partial_evidence is None else partial_evidence.decision,
+        )
     engine = Engine(
         domain,
         recorder,
@@ -1143,7 +1149,7 @@ def check_agent(
             required_passing = expectation.passing_dimensions
             if (
                 evaluation.reliable
-                or not evaluation.legitimate_completion
+                or evaluation.legitimate_completion
                 or run.outcome.status != expectation.terminal
                 or set(failed) != set(expected_targets)
                 or set(codes) != set(expected_findings)

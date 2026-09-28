@@ -117,8 +117,19 @@ def test_engine_malformed_feedback_is_safe_complete_and_repairable(call, classif
 def test_reference_visible_wire_solves(scenario, monkeypatch):
     run = _reference_run(scenario, monkeypatch)
     assert run.reliable is (scenario != "V2")
+    if scenario == "V2":
+        # Legacy primary failure has no alternate channel. The reference waits,
+        # so the transfer terminal is never claimed (nor its delivery forged).
+        assert run.outcome.status == "operational_horizon_exhausted"
+        transfers = [
+            row
+            for row in run.outcome.final_state["communications"]
+            if row["message_fixture_id"] == "msg_transfer_notice"
+        ]
+        assert transfers and all(row["dispatch_status"] == "FAILED" for row in transfers)
+        assert all("recovery_of" not in row for row in transfers)
     assert set(run.evaluation.failed_dimensions) == (
-        {"recovery", "obligations"} if scenario == "V2" else set()
+        {"terminal_outcome", "recovery"} if scenario == "V2" else set()
     )
 
 
@@ -310,13 +321,13 @@ def test_completion_correlation_is_conditionally_disclosed_on_model_wire():
             ]
             assert "correlation_id" not in schema["required"]
             guidance = schema["field_guidance"]["correlation_id"]
-            assert "completion: match-only discharge" in guidance
+            assert "completion match-only discharge" in guidance
             assert "cycle_id" in guidance
             assert "discharge" in guidance
             assert "else optional" in guidance
-            assert "match-only discharge; mismatch accepted" in guidance
-            assert "approval reminder: open/due approval" in guidance
-            assert "transfer: current/transferred" in guidance
+            assert "match-only discharge, mismatch accepted" in guidance
+            assert "reminder open/due" in guidance
+            assert "transfer current/transferred" in guidance
             recipients = schema["field_guidance"]["recipient_actor_id"]
             assert "get_case_record.issue_reporting_actor_id" in recipients
             assert "completion/transfer notices:" in recipients

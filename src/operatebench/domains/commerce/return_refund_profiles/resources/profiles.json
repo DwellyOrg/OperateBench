@@ -1,0 +1,504 @@
+{
+  "UK": {
+    "profile_id": "UK",
+    "profile_version": "2026-09-26.v1",
+    "jurisdiction": "United Kingdom",
+    "timezone": "Europe/London",
+    "currency": "GBP",
+    "as_of": "2026-09-26",
+    "classification": "SYNTHETIC_POLICY; research-grounded, not legal advice or admitted evidence",
+    "scope": "Stipulated domestic B2C ordinary single fully-paid movable good; no special categories, historic or cross-border determination.",
+    "legal_rules": [
+      {
+        "claim_id": "UK-02",
+        "jurisdiction": "United Kingdom; cited ordinary-goods provisions",
+        "claim": "ordinary distance-sale cancellation notice",
+        "exact_quotes": [
+          "the cancellation period ends at the end of 14 days after the day on which the goods come into the physical possession of—"
+        ],
+        "conditions_exceptions_uncertainty": "Ordinary single delivery; consumer or nominated non-carrier recipient. Last good/lot for split order; first delivery for regular deliveries. Do not start at order placement or warehouse shipment.[25]",
+        "effective_date_status": "See the embedded sources for source-level effective_date_status and temporal limitations. These snapshots do not independently establish historical commencement or validate applicability to historical cases.",
+        "sources": [
+          {
+            "source_id": 25,
+            "url": "https://www.legislation.gov.uk/uksi/2013/3134/regulation/30",
+            "accessed_at": "2026-09-26T20:07:46.879650+00:00",
+            "effective_date_status": "CCR commencement 2014-06-13; contracts from that date; source 18. Revised snapshot, not historical consolidation."
+          }
+        ]
+      },
+      {
+        "claim_id": "UK-03",
+        "jurisdiction": "United Kingdom; cited ordinary-goods provisions",
+        "claim": "missing cancellation information changes clock",
+        "exact_quotes": [
+          "the cancellation period ends at the end of 14 days after the consumer receives the information",
+          "the end of 12 months after the day on which it would have ended under regulation 30."
+        ],
+        "conditions_exceptions_uncertainty": "First clause applies to qualifying information supplied within the specified 12-month period; not an automatic 14-day denial when disclosure evidence is missing.[26]",
+        "effective_date_status": "See the embedded sources for source-level effective_date_status and temporal limitations. These snapshots do not independently establish historical commencement or validate applicability to historical cases.",
+        "sources": [
+          {
+            "source_id": 26,
+            "url": "https://www.legislation.gov.uk/uksi/2013/3134/regulation/31",
+            "accessed_at": "2026-09-26T20:07:46.879282+00:00",
+            "effective_date_status": "CCR commencement 2014-06-13; contracts from that date; source 18. Revised snapshot, not historical consolidation."
+          }
+        ]
+      },
+      {
+        "claim_id": "UK-04",
+        "jurisdiction": "United Kingdom; cited ordinary-goods provisions",
+        "claim": "return dispatch deadline",
+        "exact_quotes": [
+          "not later than 14 days after the day on which the consumer informs the trader"
+        ],
+        "conditions_exceptions_uncertainty": "Dispatch/handover, not warehouse arrival. Collection obligation is a separate branch. Direct return cost consumer only if disclosed, unless trader agreed to bear it; qualifying non-postable off-premises goods require collection.[16]",
+        "effective_date_status": "See the embedded sources for source-level effective_date_status and temporal limitations. These snapshots do not independently establish historical commencement or validate applicability to historical cases.",
+        "sources": [
+          {
+            "source_id": 16,
+            "url": "https://www.legislation.gov.uk/uksi/2013/3134/regulation/35",
+            "accessed_at": "2026-09-26T20:06:02.590084+00:00",
+            "effective_date_status": "CCR commencement 2014-06-13; contracts from that date; source 18. Revised snapshot, not historical consolidation."
+          }
+        ]
+      },
+      {
+        "claim_id": "UK-05",
+        "jurisdiction": "United Kingdom; cited ordinary-goods provisions",
+        "claim": "reimbursement timing",
+        "exact_quotes": [
+          "if earlier, the day on which the consumer supplies evidence of having sent the goods back."
+        ],
+        "conditions_exceptions_uncertainty": "No collection offer: 14 days after earlier receipt/evidence; otherwise 14 days after cancellation notification. “without undue delay” also applies. Inspection queue does not create another 14-day allowance.[2]",
+        "effective_date_status": "See the embedded sources for source-level effective_date_status and temporal limitations. These snapshots do not independently establish historical commencement or validate applicability to historical cases.",
+        "sources": [
+          {
+            "source_id": 2,
+            "url": "https://www.legislation.gov.uk/uksi/2013/3134/regulation/34",
+            "accessed_at": "2026-09-26T20:05:34.008092+00:00",
+            "effective_date_status": "CCR commencement 2014-06-13; contracts from that date; source 18. Revised snapshot, not historical consolidation."
+          }
+        ]
+      },
+      {
+        "claim_id": "UK-06",
+        "jurisdiction": "United Kingdom; cited ordinary-goods provisions",
+        "claim": "money, shipping, tender, deductions",
+        "exact_quotes": [
+          "using the same means of payment",
+          "must not impose any fee",
+          "beyond what is necessary to establish the nature, characteristics and functioning of the goods"
+        ],
+        "conditions_exceptions_uncertainty": "Standard outbound delivery refunded, not optional premium excess; alternate tender needs express agreement. Diminished-value recovery concerns excess handling and is unavailable if required cancellation information was not given. Not a blanket restocking fee.[2]",
+        "effective_date_status": "See the embedded sources for source-level effective_date_status and temporal limitations. These snapshots do not independently establish historical commencement or validate applicability to historical cases.",
+        "sources": [
+          {
+            "source_id": 2,
+            "url": "https://www.legislation.gov.uk/uksi/2013/3134/regulation/34",
+            "accessed_at": "2026-09-26T20:05:34.008092+00:00",
+            "effective_date_status": "CCR commencement 2014-06-13; contracts from that date; source 18. Revised snapshot, not historical consolidation."
+          }
+        ]
+      }
+    ],
+    "rules": {
+      "notice_days": 14,
+      "refund_clock": "earlier_return_or_dispatch_evidence_plus_14_days",
+      "include_standard_delivery": true,
+      "fault_branch": "review",
+      "merchant_policy": "M30 only when purchase-time display proven; M0 denies voluntary branch, not statutory rights",
+      "missing_disclosure": "review_not_late_denial"
+    },
+    "synthetic_controls": {
+      "approval": "Authenticated supervisor approval required for every refund; proof first; exact quote/order/tender/profile binding",
+      "payment": "One immutable original-tender intent; unknown must be queried by original key; failed tender goes to acknowledged review, never falsely settled",
+      "service_target_minutes": 2880,
+      "finality_minutes": 5,
+      "review": "An acknowledged unresolved handoff is a legitimate reviewed terminal, not a legal decision",
+      "calendar": "Pinned local civil dates; synthetic UTC simulator; no holiday, historical or cross-border law adjudication",
+      "M30": "30 calendar days from purchase, unused goods, proven disclosure, gross item only, original tender; verified return required",
+      "supported_outcomes": [
+        "ACT",
+        "WAIT",
+        "COMPLETE"
+      ],
+      "unsupported_outcomes": [
+        "ASK",
+        "ESCALATE"
+      ]
+    }
+  },
+  "DE": {
+    "profile_id": "DE",
+    "profile_version": "2026-09-26.v1",
+    "jurisdiction": "Germany",
+    "timezone": "Europe/Berlin",
+    "currency": "EUR",
+    "as_of": "2026-09-26",
+    "classification": "SYNTHETIC_POLICY; research-grounded, not legal advice or admitted evidence",
+    "scope": "Stipulated domestic B2C ordinary single fully-paid movable good; no special categories, historic or cross-border determination.",
+    "legal_rules": [
+      {
+        "claim_id": "DE-01",
+        "jurisdiction": "Germany",
+        "claim": "statutory distance/off-premises withdrawal",
+        "exact_quotes": [
+          "bei außerhalb von Geschäftsräumen geschlossenen Verträgen und bei Fernabsatzverträgen ein Widerrufsrecht",
+          "Die Widerrufsfrist beträgt 14 Tage."
+        ],
+        "conditions_exceptions_uncertainty": "BGB §312g and §355; not every in-store purchase. §355's default contract-conclusion start is overridden for consumer goods by §356.[14]",
+        "effective_date_status": "See the embedded sources for source-level effective_date_status and temporal limitations. These snapshots do not independently establish historical commencement or validate applicability to historical cases.",
+        "sources": [
+          {
+            "source_id": 6,
+            "url": "https://www.gesetze-im-internet.de/bgb/__355.html",
+            "accessed_at": "2026-09-26T20:05:34.056494+00:00",
+            "effective_date_status": "Current German BGB individual-section text; amending-act commencement and transition not established; historic cases review-only."
+          },
+          {
+            "source_id": 14,
+            "url": "https://www.gesetze-im-internet.de/bgb/__356.html",
+            "accessed_at": "2026-09-26T20:06:02.333826+00:00",
+            "effective_date_status": "Current German BGB individual-section text; amending-act commencement and transition not established; historic cases review-only."
+          },
+          {
+            "source_id": 27,
+            "url": "https://www.gesetze-im-internet.de/bgb/__312g.html",
+            "accessed_at": "2026-09-26T20:07:46.783103+00:00",
+            "effective_date_status": "Current German BGB individual-section text; amending-act commencement and transition not established; historic cases review-only."
+          }
+        ]
+      },
+      {
+        "claim_id": "DE-02",
+        "jurisdiction": "Germany",
+        "claim": "receipt/disclosure starts and split delivery",
+        "exact_quotes": [
+          "sobald der Verbraucher oder ein von ihm benannter Dritter, der nicht Frachtführer ist, die Waren erhalten hat",
+          "Die Widerrufsfrist beginnt nicht, bevor der Unternehmer den Verbraucher"
+        ],
+        "conditions_exceptions_uncertainty": "Last item for split order, first regular delivery. Current fetched §356(4) states expiry at latest twelve months and 14 days, subject to financial-services caveat. Missing disclosure → specialized review, never simple 14-day denial.[14]",
+        "effective_date_status": "See the embedded sources for source-level effective_date_status and temporal limitations. These snapshots do not independently establish historical commencement or validate applicability to historical cases.",
+        "sources": [
+          {
+            "source_id": 14,
+            "url": "https://www.gesetze-im-internet.de/bgb/__356.html",
+            "accessed_at": "2026-09-26T20:06:02.333826+00:00",
+            "effective_date_status": "Current German BGB individual-section text; amending-act commencement and transition not established; historic cases review-only."
+          }
+        ]
+      },
+      {
+        "claim_id": "DE-03",
+        "jurisdiction": "Germany",
+        "claim": "notice and restitution clocks",
+        "exact_quotes": [
+          "Zur Fristwahrung genügt die rechtzeitige Absendung des Widerrufs.",
+          "für den Unternehmer mit dem Zugang und für den Verbraucher mit der Abgabe der Widerrufserklärung."
+        ],
+        "conditions_exceptions_uncertainty": "Timely dispatch preserves withdrawal notice; restitution maximum starts at receipt for trader and declaration for consumer. Timely dispatch preserves goods-return period. Return risk assigned to trader on withdrawal.[6]",
+        "effective_date_status": "See the embedded sources for source-level effective_date_status and temporal limitations. These snapshots do not independently establish historical commencement or validate applicability to historical cases.",
+        "sources": [
+          {
+            "source_id": 6,
+            "url": "https://www.gesetze-im-internet.de/bgb/__355.html",
+            "accessed_at": "2026-09-26T20:05:34.056494+00:00",
+            "effective_date_status": "Current German BGB individual-section text; amending-act commencement and transition not established; historic cases review-only."
+          }
+        ]
+      },
+      {
+        "claim_id": "DE-04",
+        "jurisdiction": "Germany",
+        "claim": "reimbursement / withholding / shipping / tender",
+        "exact_quotes": [
+          "Die empfangenen Leistungen sind spätestens nach 14 Tagen zurückzugewähren.",
+          "bis er die Waren zurückerhalten hat oder der Verbraucher den Nachweis erbracht hat, dass er die Waren abgesandt hat."
+        ],
+        "conditions_exceptions_uncertainty": "Collection offer defeats withholding. Do not restart a fresh 14 days after receipt as UK-style logic. Standard outbound delivery included; same payment means unless expressly agreed free of cost; disclosed direct return cost consumer unless trader assumes it.[5]",
+        "effective_date_status": "See the embedded sources for source-level effective_date_status and temporal limitations. These snapshots do not independently establish historical commencement or validate applicability to historical cases.",
+        "sources": [
+          {
+            "source_id": 5,
+            "url": "https://www.gesetze-im-internet.de/bgb/__357.html",
+            "accessed_at": "2026-09-26T20:05:34.072479+00:00",
+            "effective_date_status": "Current German BGB individual-section text; amending-act commencement and transition not established; historic cases review-only."
+          }
+        ]
+      },
+      {
+        "claim_id": "DE-06",
+        "jurisdiction": "Germany",
+        "claim": "defects are separate from withdrawal",
+        "exact_quotes": [
+          "nach § 439 Nacherfüllung verlangen",
+          "die Beseitigung des Mangels oder die Lieferung einer mangelfreien Sache"
+        ],
+        "conditions_exceptions_uncertainty": "Buyer can choose cure form; disproportionality exception. Seller bears necessary transport/labour/material costs; item must be made available. Rescission/price reduction have additional cross-referenced prerequisites not fully researched → review, not automatic full refund.[7][8]",
+        "effective_date_status": "See the embedded sources for source-level effective_date_status and temporal limitations. These snapshots do not independently establish historical commencement or validate applicability to historical cases.",
+        "sources": [
+          {
+            "source_id": 7,
+            "url": "https://www.gesetze-im-internet.de/bgb/__437.html",
+            "accessed_at": "2026-09-26T20:05:34.026997+00:00",
+            "effective_date_status": "Current German BGB individual-section text; amending-act commencement and transition not established; historic cases review-only."
+          },
+          {
+            "source_id": 8,
+            "url": "https://www.gesetze-im-internet.de/bgb/__439.html",
+            "accessed_at": "2026-09-26T20:05:34.146253+00:00",
+            "effective_date_status": "Current German BGB individual-section text; amending-act commencement and transition not established; historic cases review-only."
+          }
+        ]
+      }
+    ],
+    "rules": {
+      "notice_days": 14,
+      "refund_clock": "notice_received_plus_14_days_with_withholding_no_restart",
+      "include_standard_delivery": true,
+      "fault_branch": "review",
+      "merchant_policy": "M30 only when purchase-time display proven; M0 denies voluntary branch, not statutory rights",
+      "missing_disclosure": "review_not_late_denial"
+    },
+    "synthetic_controls": {
+      "approval": "Authenticated supervisor approval required for every refund; proof first; exact quote/order/tender/profile binding",
+      "payment": "One immutable original-tender intent; unknown must be queried by original key; failed tender goes to acknowledged review, never falsely settled",
+      "service_target_minutes": 2880,
+      "finality_minutes": 5,
+      "review": "An acknowledged unresolved handoff is a legitimate reviewed terminal, not a legal decision",
+      "calendar": "Pinned local civil dates; synthetic UTC simulator; no holiday, historical or cross-border law adjudication",
+      "M30": "30 calendar days from purchase, unused goods, proven disclosure, gross item only, original tender; verified return required",
+      "supported_outcomes": [
+        "ACT",
+        "WAIT",
+        "COMPLETE"
+      ],
+      "unsupported_outcomes": [
+        "ASK",
+        "ESCALATE"
+      ]
+    }
+  },
+  "US_CA": {
+    "profile_id": "US_CA",
+    "profile_version": "2026-09-26.v1",
+    "jurisdiction": "California, United States",
+    "timezone": "America/Los_Angeles",
+    "currency": "USD",
+    "as_of": "2026-09-26",
+    "classification": "SYNTHETIC_POLICY; research-grounded, not legal advice or admitted evidence",
+    "scope": "Stipulated domestic B2C ordinary single fully-paid movable good; no special categories, historic or cross-border determination.",
+    "legal_rules": [
+      {
+        "claim_id": "US-01",
+        "jurisdiction": "United States federal; rule-specific scope",
+        "claim": "no generic federal three-day online return",
+        "exact_quotes": [
+          "made entirely online, by mail, or telephone"
+        ],
+        "conditions_exceptions_uncertainty": "FTC Cooling-Off Rule covers certain home/work/dorm/temporary-location sales; excludes home sales under $25, temporary-location under $130 and listed categories. Do not export this to ordinary e-commerce.[9]",
+        "effective_date_status": "See the embedded sources for source-level effective_date_status and temporal limitations. These snapshots do not independently establish historical commencement or validate applicability to historical cases.",
+        "sources": [
+          {
+            "source_id": 9,
+            "url": "https://consumer.ftc.gov/articles/buyers-remorse-ftcs-cooling-rule-may-help",
+            "accessed_at": "2026-09-26T20:05:34.275094+00:00",
+            "effective_date_status": "Guidance displays September 2025; rule commencement not independently established."
+          }
+        ]
+      },
+      {
+        "claim_id": "CA-01",
+        "jurisdiction": "California, United States",
+        "claim": "limited return policy disclosure",
+        "exact_quotes": [
+          "shall conspicuously display that policy",
+          "for at least seven days following purchase"
+        ],
+        "conditions_exceptions_uncertainty": "§1723 conditional disclosure rule, NOT a mandatory universal seven-day cash-refund law. Policy can specify cash/credit/exchange and conditions. Fault rights separately considered.[11][12]",
+        "effective_date_status": "See the embedded sources for source-level effective_date_status and temporal limitations. These snapshots do not independently establish historical commencement or validate applicability to historical cases.",
+        "sources": [
+          {
+            "source_id": 11,
+            "url": "https://oag.ca.gov/consumers/general/refunds",
+            "accessed_at": "2026-09-26T20:05:35.024166+00:00",
+            "effective_date_status": "Fetched official guidance; statutory commencement not independently established."
+          },
+          {
+            "source_id": 12,
+            "url": "https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?sectionNum=1723.&lawCode=CIV",
+            "accessed_at": "2026-09-26T20:05:35.114887+00:00",
+            "effective_date_status": "Added by Stats. 1990, Ch. 422, Sec. 2.; commencement date not independently established."
+          }
+        ]
+      },
+      {
+        "claim_id": "CA-03",
+        "jurisdiction": "California, United States",
+        "claim": "exclusions and defective goods",
+        "exact_quotes": [
+          "goods not returned with their original package",
+          "Often, an implied warranty exists by law even if the seller does not make any specific guarantees."
+        ],
+        "conditions_exceptions_uncertainty": "§1723 also excludes listed perishables, marked final-sale/as-is, used/damaged, customized and health goods. This does NOT prove no other warranty remedy. Original-package exclusion here must not contaminate AU fault handling.[12][11]",
+        "effective_date_status": "See the embedded sources for source-level effective_date_status and temporal limitations. These snapshots do not independently establish historical commencement or validate applicability to historical cases.",
+        "sources": [
+          {
+            "source_id": 11,
+            "url": "https://oag.ca.gov/consumers/general/refunds",
+            "accessed_at": "2026-09-26T20:05:35.024166+00:00",
+            "effective_date_status": "Fetched official guidance; statutory commencement not independently established."
+          },
+          {
+            "source_id": 12,
+            "url": "https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?sectionNum=1723.&lawCode=CIV",
+            "accessed_at": "2026-09-26T20:05:35.114887+00:00",
+            "effective_date_status": "Added by Stats. 1990, Ch. 422, Sec. 2.; commencement date not independently established."
+          }
+        ]
+      }
+    ],
+    "rules": {
+      "notice_days": null,
+      "refund_clock": "synthetic_service_target_only",
+      "include_standard_delivery": false,
+      "fault_branch": "review",
+      "merchant_policy": "M30 only when purchase-time display proven; M0 denies voluntary branch, not statutory rights",
+      "missing_disclosure": "review_not_late_denial"
+    },
+    "synthetic_controls": {
+      "approval": "Authenticated supervisor approval required for every refund; proof first; exact quote/order/tender/profile binding",
+      "payment": "One immutable original-tender intent; unknown must be queried by original key; failed tender goes to acknowledged review, never falsely settled",
+      "service_target_minutes": 2880,
+      "finality_minutes": 5,
+      "review": "An acknowledged unresolved handoff is a legitimate reviewed terminal, not a legal decision",
+      "calendar": "Pinned local civil dates; synthetic UTC simulator; no holiday, historical or cross-border law adjudication",
+      "M30": "30 calendar days from purchase, unused goods, proven disclosure, gross item only, original tender; verified return required",
+      "supported_outcomes": [
+        "ACT",
+        "WAIT",
+        "COMPLETE"
+      ],
+      "unsupported_outcomes": [
+        "ASK",
+        "ESCALATE"
+      ]
+    }
+  },
+  "AU_VIC": {
+    "profile_id": "AU_VIC",
+    "profile_version": "2026-09-26.v1",
+    "jurisdiction": "Victoria, Australia",
+    "timezone": "Australia/Melbourne",
+    "currency": "AUD",
+    "as_of": "2026-09-26",
+    "classification": "SYNTHETIC_POLICY; research-grounded, not legal advice or admitted evidence",
+    "scope": "Stipulated domestic B2C ordinary single fully-paid movable good; no special categories, historic or cross-border determination.",
+    "legal_rules": [
+      {
+        "claim_id": "AU-01",
+        "jurisdiction": "Australia ACL guidance from Consumer Affairs Victoria; executable profile restricted to Victoria",
+        "claim": "change-of-mind versus guarantee",
+        "exact_quotes": [
+          "Generally, a store does not have to give a refund or replacement if a customer simply changes their mind",
+          "Stores that have such policies must abide by them."
+        ],
+        "conditions_exceptions_uncertainty": "Policy cannot take away ACL rights. Online wrong-size example is merchant-policy exchange, not imported EU cooling-off. Online/in-store channel does not itself activate the UK profile.[24]",
+        "effective_date_status": "See the embedded sources for source-level effective_date_status and temporal limitations. These snapshots do not independently establish historical commencement or validate applicability to historical cases.",
+        "sources": [
+          {
+            "source_id": 24,
+            "url": "https://www.consumer.vic.gov.au/consumers-and-businesses/products-and-services/business-practices/store-policies/change-of-mind",
+            "accessed_at": "2026-09-26T20:07:28.381150+00:00",
+            "effective_date_status": "Guidance updated 2023-10-13; ACL commencement not independently established."
+          }
+        ]
+      },
+      {
+        "claim_id": "AU-02",
+        "jurisdiction": "Australia ACL guidance from Consumer Affairs Victoria; executable profile restricted to Victoria",
+        "claim": "major/minor failure",
+        "exact_quotes": [
+          "reject the product and choose a refund or replacement",
+          "repair the product within a reasonable time"
+        ],
+        "conditions_exceptions_uncertainty": "First major failure option; consumer may instead retain and seek lost value. Minor remedy initially store's choice; failure/refusal to remedy opens further options. Abnormal use, disclosed defects, wear alone and specified auction context are excluded/qualified.[23]",
+        "effective_date_status": "See the embedded sources for source-level effective_date_status and temporal limitations. These snapshots do not independently establish historical commencement or validate applicability to historical cases.",
+        "sources": [
+          {
+            "source_id": 23,
+            "url": "https://www.consumer.vic.gov.au/consumers-and-businesses/products-and-services/problems-with-a-product/faulty-product",
+            "accessed_at": "2026-09-26T20:07:28.378047+00:00",
+            "effective_date_status": "Guidance updated 2025-07-15; ACL commencement not independently established."
+          }
+        ]
+      },
+      {
+        "claim_id": "AU-03",
+        "jurisdiction": "Australia ACL guidance from Consumer Affairs Victoria; executable profile restricted to Victoria",
+        "claim": "evidence and gifts",
+        "exact_quotes": [
+          "Electronic copies and digital photographs are valid proof of transaction",
+          "Someone who receives a product as a gift has the same rights to a refund or return"
+        ],
+        "conditions_exceptions_uncertainty": "Proof of source still needed. Receipt, order reference, linked serial, statement, photograph; ambiguous statement may require corroboration. Do not demand a real card statement/PII in benchmark: synthetic references only.[20]",
+        "effective_date_status": "See the embedded sources for source-level effective_date_status and temporal limitations. These snapshots do not independently establish historical commencement or validate applicability to historical cases.",
+        "sources": [
+          {
+            "source_id": 20,
+            "url": "https://www.consumer.vic.gov.au/consumers-and-businesses/products-and-services/refunds-repairs-and-returns/receipts-and-other-proof-of-transaction",
+            "accessed_at": "2026-09-26T20:07:00.418281+00:00",
+            "effective_date_status": "Guidance updated 2023-10-13; ACL commencement not independently established."
+          }
+        ]
+      },
+      {
+        "claim_id": "AU-04",
+        "jurisdiction": "Australia ACL guidance from Consumer Affairs Victoria; executable profile restricted to Victoria",
+        "claim": "rejection duration and packaging",
+        "exact_quotes": [
+          "whether or not the goods are returned in the original packaging or wrapping",
+          "until the fault or problem would reasonably be expected to appear."
+        ],
+        "conditions_exceptions_uncertainty": "Reasonable rejection period depends on product/use/durability, not a universal 30-day clock. Lost/destroyed or inseparably attached goods have limits. Agreed repairs to major failure do not automatically waive rejection.[19]",
+        "effective_date_status": "See the embedded sources for source-level effective_date_status and temporal limitations. These snapshots do not independently establish historical commencement or validate applicability to historical cases.",
+        "sources": [
+          {
+            "source_id": 19,
+            "url": "https://www.consumer.vic.gov.au/consumers-and-businesses/products-and-services/refunds-repairs-and-returns/rejecting-and-returning-products",
+            "accessed_at": "2026-09-26T20:07:00.143441+00:00",
+            "effective_date_status": "Guidance updated 2023-10-13; ACL commencement not independently established."
+          }
+        ]
+      }
+    ],
+    "rules": {
+      "notice_days": null,
+      "refund_clock": "synthetic_service_target_only",
+      "include_standard_delivery": false,
+      "fault_branch": "stipulated_major_refund_minor_repair",
+      "merchant_policy": "M30 only when purchase-time display proven; M0 denies voluntary branch, not statutory rights",
+      "missing_disclosure": "review_not_late_denial"
+    },
+    "synthetic_controls": {
+      "approval": "Authenticated supervisor approval required for every refund; proof first; exact quote/order/tender/profile binding",
+      "payment": "One immutable original-tender intent; unknown must be queried by original key; failed tender goes to acknowledged review, never falsely settled",
+      "service_target_minutes": 2880,
+      "finality_minutes": 5,
+      "review": "An acknowledged unresolved handoff is a legitimate reviewed terminal, not a legal decision",
+      "calendar": "Pinned local civil dates; synthetic UTC simulator; no holiday, historical or cross-border law adjudication",
+      "M30": "30 calendar days from purchase, unused goods, proven disclosure, gross item only, original tender; verified return required",
+      "supported_outcomes": [
+        "ACT",
+        "WAIT",
+        "COMPLETE"
+      ],
+      "unsupported_outcomes": [
+        "ASK",
+        "ESCALATE"
+      ]
+    }
+  }
+}

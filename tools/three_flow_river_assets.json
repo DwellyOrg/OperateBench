@@ -1,0 +1,453 @@
+{
+  "models": [
+    {
+      "model": "Qwen/Qwen3.8-27B-FP8",
+      "model_slug": "river-qwen3.8-27b-fp8",
+      "revision": "017b9c7af6b5689d5dd426a76e0bc077eb5ca20a",
+      "assets": {
+        "config.json": {
+          "url": "https://huggingface.co/Qwen/Qwen3.8-27B-FP8/resolve/017b9c7af6b5689d5dd426a76e0bc077eb5ca20a/config.json",
+          "http_status": "200",
+          "exit": 0,
+          "sha256": "74227dd615bf1ea975aa676bdf355a0379858c12f394b5365cd9dfa5fc2c70bc",
+          "bytes": 51350
+        },
+        "tokenizer_config.json": {
+          "url": "https://huggingface.co/Qwen/Qwen3.8-27B-FP8/resolve/017b9c7af6b5689d5dd426a76e0bc077eb5ca20a/tokenizer_config.json",
+          "http_status": "200",
+          "exit": 0,
+          "sha256": "b11349aafa7cdc6a320767cf7ceb29ed82f7eda5d65e8e0819e76f0ce947bf27",
+          "bytes": 17928
+        },
+        "generation_config.json": {
+          "url": "https://huggingface.co/Qwen/Qwen3.8-27B-FP8/resolve/017b9c7af6b5689d5dd426a76e0bc077eb5ca20a/generation_config.json",
+          "http_status": "200",
+          "exit": 0,
+          "sha256": "e70c136c1b78ddc1fb0905bac8e733a4dc448d4f852a5dd75143fffc70be550e",
+          "bytes": 202
+        },
+        "chat_template.jinja": {
+          "url": "https://huggingface.co/Qwen/Qwen3.8-27B-FP8/resolve/017b9c7af6b5689d5dd426a76e0bc077eb5ca20a/chat_template.jinja",
+          "http_status": "200",
+          "exit": 0,
+          "sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+          "bytes": 8952
+        },
+        "tokenizer.json": {
+          "url": "https://huggingface.co/Qwen/Qwen3.8-27B-FP8/resolve/017b9c7af6b5689d5dd426a76e0bc077eb5ca20a/tokenizer.json",
+          "http_status": "200",
+          "exit": 0,
+          "sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+          "bytes": 12809320
+        }
+      }
+    },
+    {
+      "model": "Qwen/Qwen3.6-35B-A3B-FP8",
+      "model_slug": "river-qwen3.6-35b-a3b-fp8",
+      "revision": "95a723d08a9490559dae23d0cff1d9466213d989",
+      "assets": {
+        "config.json": {
+          "url": "https://huggingface.co/Qwen/Qwen3.6-35B-A3B-FP8/resolve/95a723d08a9490559dae23d0cff1d9466213d989/config.json",
+          "http_status": "200",
+          "exit": 0,
+          "sha256": "570ef7ea45a7e1d3de2b1d3c70c4ac3562d0e768acdc195778cb4f4d95025845",
+          "bytes": 37000
+        },
+        "tokenizer_config.json": {
+          "url": "https://huggingface.co/Qwen/Qwen3.6-35B-A3B-FP8/resolve/95a723d08a9490559dae23d0cff1d9466213d989/tokenizer_config.json",
+          "http_status": "200",
+          "exit": 0,
+          "sha256": "5186f0defcd7f232382c7f0aebcd2252d073bb921ab240e407b7ae8745d2b29b",
+          "bytes": 16718
+        },
+        "generation_config.json": {
+          "url": "https://huggingface.co/Qwen/Qwen3.6-35B-A3B-FP8/resolve/95a723d08a9490559dae23d0cff1d9466213d989/generation_config.json",
+          "http_status": "200",
+          "exit": 0,
+          "sha256": "e70c136c1b78ddc1fb0905bac8e733a4dc448d4f852a5dd75143fffc70be550e",
+          "bytes": 202
+        },
+        "chat_template.jinja": {
+          "url": "https://huggingface.co/Qwen/Qwen3.6-35B-A3B-FP8/resolve/95a723d08a9490559dae23d0cff1d9466213d989/chat_template.jinja",
+          "http_status": "200",
+          "exit": 0,
+          "sha256": "e84f32a23fdda27689f868aa4a1a5621f41133e51a48d7f3efcbea2839574259",
+          "bytes": 7764
+        },
+        "tokenizer.json": {
+          "url": "https://huggingface.co/Qwen/Qwen3.6-35B-A3B-FP8/resolve/95a723d08a9490559dae23d0cff1d9466213d989/tokenizer.json",
+          "http_status": "200",
+          "exit": 0,
+          "sha256": "5f9e4d4901a92b997e463c1f46055088b6cca5ca61a6522d1b9f64c4bb81cb42",
+          "bytes": 12807982
+        }
+      }
+    },
+    {
+      "model": "Qwen/Qwen3.5-397B-A17B-FP8",
+      "model_slug": "river-qwen3.5-397b-a17b-fp8",
+      "revision": "ea5b4f81096f3901c91dea97f81324302495781d",
+      "assets": {
+        "config.json": {
+          "url": "https://huggingface.co/Qwen/Qwen3.5-397B-A17B-FP8/resolve/ea5b4f81096f3901c91dea97f81324302495781d/config.json",
+          "http_status": "200",
+          "exit": 0,
+          "sha256": "9a142fc6c2d67703255ce6120ee04c4c720ec58dba6ae44bebb29c4a2d6e5db8",
+          "bytes": 26658
+        },
+        "tokenizer_config.json": {
+          "url": "https://huggingface.co/Qwen/Qwen3.5-397B-A17B-FP8/resolve/ea5b4f81096f3901c91dea97f81324302495781d/tokenizer_config.json",
+          "http_status": "200",
+          "exit": 0,
+          "sha256": "316230d6a809701f4db5ea8f8fc862bc3a6f3229c937c174e674ff3ca0a64ac8",
+          "bytes": 16710
+        },
+        "generation_config.json": {
+          "url": "https://huggingface.co/Qwen/Qwen3.5-397B-A17B-FP8/resolve/ea5b4f81096f3901c91dea97f81324302495781d/generation_config.json",
+          "http_status": "200",
+          "exit": 0,
+          "sha256": "303aba891d66ab63908a7b3cc9163bcb835fdf8b9f6301c73216f3f1eb3992dd",
+          "bytes": 244
+        },
+        "chat_template.jinja": {
+          "url": "https://huggingface.co/Qwen/Qwen3.5-397B-A17B-FP8/resolve/ea5b4f81096f3901c91dea97f81324302495781d/chat_template.jinja",
+          "http_status": "200",
+          "exit": 0,
+          "sha256": "a4aee8afcf2e0711942cf848899be66016f8d14a889ff9ede07bca099c28f715",
+          "bytes": 7756
+        },
+        "tokenizer.json": {
+          "url": "https://huggingface.co/Qwen/Qwen3.5-397B-A17B-FP8/resolve/ea5b4f81096f3901c91dea97f81324302495781d/tokenizer.json",
+          "http_status": "200",
+          "exit": 0,
+          "sha256": "5f9e4d4901a92b997e463c1f46055088b6cca5ca61a6522d1b9f64c4bb81cb42",
+          "bytes": 12807982
+        }
+      }
+    },
+    {
+      "model": "Qwen/Qwen3.5-122B-A10B-FP8",
+      "model_slug": "river-qwen3.5-122b-a10b-fp8",
+      "revision": "a099dee70ccfcd8d5dda56aaa0b60cb8ecadabc9",
+      "assets": {
+        "config.json": {
+          "url": "https://huggingface.co/Qwen/Qwen3.5-122B-A10B-FP8/resolve/a099dee70ccfcd8d5dda56aaa0b60cb8ecadabc9/config.json",
+          "http_status": "200",
+          "exit": 0,
+          "sha256": "008eaf274520a2bacb88cecce50988685f4887643c8bc760514dac2c54f4cca9",
+          "bytes": 22982
+        },
+        "tokenizer_config.json": {
+          "url": "https://huggingface.co/Qwen/Qwen3.5-122B-A10B-FP8/resolve/a099dee70ccfcd8d5dda56aaa0b60cb8ecadabc9/tokenizer_config.json",
+          "http_status": "200",
+          "exit": 0,
+          "sha256": "316230d6a809701f4db5ea8f8fc862bc3a6f3229c937c174e674ff3ca0a64ac8",
+          "bytes": 16710
+        },
+        "generation_config.json": {
+          "url": "https://huggingface.co/Qwen/Qwen3.5-122B-A10B-FP8/resolve/a099dee70ccfcd8d5dda56aaa0b60cb8ecadabc9/generation_config.json",
+          "http_status": "200",
+          "exit": 0,
+          "sha256": "303aba891d66ab63908a7b3cc9163bcb835fdf8b9f6301c73216f3f1eb3992dd",
+          "bytes": 244
+        },
+        "chat_template.jinja": {
+          "url": "https://huggingface.co/Qwen/Qwen3.5-122B-A10B-FP8/resolve/a099dee70ccfcd8d5dda56aaa0b60cb8ecadabc9/chat_template.jinja",
+          "http_status": "200",
+          "exit": 0,
+          "sha256": "a4aee8afcf2e0711942cf848899be66016f8d14a889ff9ede07bca099c28f715",
+          "bytes": 7756
+        },
+        "tokenizer.json": {
+          "url": "https://huggingface.co/Qwen/Qwen3.5-122B-A10B-FP8/resolve/a099dee70ccfcd8d5dda56aaa0b60cb8ecadabc9/tokenizer.json",
+          "http_status": "200",
+          "exit": 0,
+          "sha256": "5f9e4d4901a92b997e463c1f46055088b6cca5ca61a6522d1b9f64c4bb81cb42",
+          "bytes": 12807982
+        }
+      }
+    },
+    {
+      "model": "Qwen/Qwen3.5-9B",
+      "model_slug": "river-qwen3.5-9b",
+      "revision": "c202236235762e1c871ad0ccb60c8ee5ba337b9a",
+      "assets": {
+        "config.json": {
+          "url": "https://huggingface.co/Qwen/Qwen3.5-9B/resolve/c202236235762e1c871ad0ccb60c8ee5ba337b9a/config.json",
+          "http_status": "200",
+          "exit": 0,
+          "sha256": "d0883072e01861ed0b2d47be3c16c36a8e81c224c7ffaa310c6558fb3f932b05",
+          "bytes": 3126
+        },
+        "tokenizer_config.json": {
+          "url": "https://huggingface.co/Qwen/Qwen3.5-9B/resolve/c202236235762e1c871ad0ccb60c8ee5ba337b9a/tokenizer_config.json",
+          "http_status": "200",
+          "exit": 0,
+          "sha256": "316230d6a809701f4db5ea8f8fc862bc3a6f3229c937c174e674ff3ca0a64ac8",
+          "bytes": 16710
+        },
+        "chat_template.jinja": {
+          "url": "https://huggingface.co/Qwen/Qwen3.5-9B/resolve/c202236235762e1c871ad0ccb60c8ee5ba337b9a/chat_template.jinja",
+          "http_status": "200",
+          "exit": 0,
+          "sha256": "a4aee8afcf2e0711942cf848899be66016f8d14a889ff9ede07bca099c28f715",
+          "bytes": 7756
+        },
+        "tokenizer.json": {
+          "url": "https://huggingface.co/Qwen/Qwen3.5-9B/resolve/c202236235762e1c871ad0ccb60c8ee5ba337b9a/tokenizer.json",
+          "http_status": "200",
+          "exit": 0,
+          "sha256": "5f9e4d4901a92b997e463c1f46055088b6cca5ca61a6522d1b9f64c4bb81cb42",
+          "bytes": 12807982
+        }
+      }
+    },
+    {
+      "model": "nvidia/Kimi-K2.6-NVFP4",
+      "model_slug": "river-kimi-k2.6-nvfp4",
+      "revision": "2fd3a800dedd098b8327eb49e93ebc75f85da19f",
+      "assets": {
+        "config.json": {
+          "url": "https://huggingface.co/nvidia/Kimi-K2.6-NVFP4/resolve/2fd3a800dedd098b8327eb49e93ebc75f85da19f/config.json",
+          "http_status": "200",
+          "exit": 0,
+          "sha256": "af4c0fea7ec43d5438532eeef8daa9fcabbdf97ddedc9da2319aa675f68f51ff",
+          "bytes": 13498
+        },
+        "tokenizer_config.json": {
+          "url": "https://huggingface.co/nvidia/Kimi-K2.6-NVFP4/resolve/2fd3a800dedd098b8327eb49e93ebc75f85da19f/tokenizer_config.json",
+          "http_status": "200",
+          "exit": 0,
+          "sha256": "12fcab43d2b6068f46769f5ff373960bf7c17a94d7abbc50e2491306b2f6cf58",
+          "bytes": 4862
+        },
+        "generation_config.json": {
+          "url": "https://huggingface.co/nvidia/Kimi-K2.6-NVFP4/resolve/2fd3a800dedd098b8327eb49e93ebc75f85da19f/generation_config.json",
+          "http_status": "200",
+          "exit": 0,
+          "sha256": "5431db52f431099f309ece737670e977de148f8cfd5340e920ff1f44d7cff596",
+          "bytes": 52
+        },
+        "special_tokens_map.json": {
+          "url": "https://huggingface.co/nvidia/Kimi-K2.6-NVFP4/resolve/2fd3a800dedd098b8327eb49e93ebc75f85da19f/special_tokens_map.json",
+          "http_status": "200",
+          "exit": 0,
+          "sha256": "166020916c8df927b0e2c0b04c405e4cead4328fcfab33fa5c67e0fa9747b764",
+          "bytes": 736
+        },
+        "chat_template.jinja": {
+          "url": "https://huggingface.co/nvidia/Kimi-K2.6-NVFP4/resolve/2fd3a800dedd098b8327eb49e93ebc75f85da19f/chat_template.jinja",
+          "http_status": "200",
+          "exit": 0,
+          "sha256": "8bf859698fd4781c0e1e1c63ce74422aab27e53ccc5f47116317c64cda06132f",
+          "bytes": 4022
+        },
+        "tiktoken.model": {
+          "url": "https://huggingface.co/nvidia/Kimi-K2.6-NVFP4/resolve/2fd3a800dedd098b8327eb49e93ebc75f85da19f/tiktoken.model",
+          "http_status": "200",
+          "exit": 0,
+          "sha256": "b6c497a7469b33ced9c38afb1ad6e47f03f5e5dc05f15930799210ec050c5103",
+          "bytes": 2795286
+        }
+      }
+    },
+    {
+      "model": "nvidia/GLM-5.2-NVFP4-262K",
+      "model_slug": "river-glm-5.2-nvfp4-262k",
+      "revision": "53e0691e21895a3863a606dfd12910c69eba94ab",
+      "tokenizer_model": "nvidia/GLM-5.2-NVFP4",
+      "assets": {
+        "config.json": {
+          "url": "https://huggingface.co/nvidia/GLM-5.2-NVFP4/resolve/53e0691e21895a3863a606dfd12910c69eba94ab/config.json",
+          "http_status": "200",
+          "exit": 0,
+          "sha256": "d3783a603e5aa9cb58eff7a5d8ac9c42d83156b229efe185c72e9e2dc8444923",
+          "bytes": 15517
+        },
+        "tokenizer_config.json": {
+          "url": "https://huggingface.co/nvidia/GLM-5.2-NVFP4/resolve/53e0691e21895a3863a606dfd12910c69eba94ab/tokenizer_config.json",
+          "http_status": "200",
+          "exit": 0,
+          "sha256": "77af7d4769cd62c107b90495cac9b0ba81573c86486821bfba2980c04285ec7a",
+          "bytes": 790
+        },
+        "generation_config.json": {
+          "url": "https://huggingface.co/nvidia/GLM-5.2-NVFP4/resolve/53e0691e21895a3863a606dfd12910c69eba94ab/generation_config.json",
+          "http_status": "200",
+          "exit": 0,
+          "sha256": "f2dcde1c92cfbfc84c718a716cc59326986930236a69f161e43ce85407d3ccfa",
+          "bytes": 215
+        },
+        "chat_template.jinja": {
+          "url": "https://huggingface.co/nvidia/GLM-5.2-NVFP4/resolve/53e0691e21895a3863a606dfd12910c69eba94ab/chat_template.jinja",
+          "http_status": "200",
+          "exit": 0,
+          "sha256": "172dc74a35e1752df75ecfb2b2cf9326d2852bb1379868ebeec9571654489679",
+          "bytes": 5076
+        },
+        "tokenizer.json": {
+          "url": "https://huggingface.co/nvidia/GLM-5.2-NVFP4/resolve/53e0691e21895a3863a606dfd12910c69eba94ab/tokenizer.json",
+          "http_status": "200",
+          "exit": 0,
+          "sha256": "19e773648cb4e65de8660ea6365e10acca112d42a854923df93db4a6f333a82d",
+          "bytes": 20217442
+        }
+      }
+    },
+    {
+      "model": "zai-org/GLM-5.3-Flash",
+      "model_slug": "river-glm-5.3-flash",
+      "revision": "eb9eb208eb0d988989d07a6a12d0fdeb5f52574a",
+      "assets": {
+        "config.json": {
+          "url": "https://huggingface.co/zai-org/GLM-5.3-Flash/resolve/eb9eb208eb0d988989d07a6a12d0fdeb5f52574a/config.json",
+          "http_status": "200",
+          "exit": 0,
+          "sha256": "bb8f01c42cb92a52ca72e65afb4d5bd8d11aef083cd210e8de25dfb904f23e9f",
+          "bytes": 69416
+        },
+        "tokenizer_config.json": {
+          "url": "https://huggingface.co/zai-org/GLM-5.3-Flash/resolve/eb9eb208eb0d988989d07a6a12d0fdeb5f52574a/tokenizer_config.json",
+          "http_status": "200",
+          "exit": 0,
+          "sha256": "98b1271574f41abf89427ae2dda030d94dc9478f0edc5a8bd240db213c6fd5fc",
+          "bytes": 761
+        },
+        "generation_config.json": {
+          "url": "https://huggingface.co/zai-org/GLM-5.3-Flash/resolve/eb9eb208eb0d988989d07a6a12d0fdeb5f52574a/generation_config.json",
+          "http_status": "200",
+          "exit": 0,
+          "sha256": "230c30609ecbbb9e6583bedde8e7bdda0c6eb8fe5fad0eaeb3d1b293d751cb4f",
+          "bytes": 194
+        },
+        "chat_template.jinja": {
+          "url": "https://huggingface.co/zai-org/GLM-5.3-Flash/resolve/eb9eb208eb0d988989d07a6a12d0fdeb5f52574a/chat_template.jinja",
+          "http_status": "200",
+          "exit": 0,
+          "sha256": "0c4099f3382d6c92700dfb99725025360966fd73032f0ecf32377c0d9e6309c5",
+          "bytes": 10950
+        },
+        "tokenizer.json": {
+          "url": "https://huggingface.co/zai-org/GLM-5.3-Flash/resolve/eb9eb208eb0d988989d07a6a12d0fdeb5f52574a/tokenizer.json",
+          "http_status": "200",
+          "exit": 0,
+          "sha256": "19e773648cb4e65de8660ea6365e10acca112d42a854923df93db4a6f333a82d",
+          "bytes": 20217442
+        }
+      }
+    },
+    {
+      "model": "deepseek-ai/DeepSeek-V4-Flash-0731",
+      "model_slug": "river-deepseek-v4-flash-0731",
+      "revision": "7872f01b1d1fe23eabc4c98b48bffcef5a386062",
+      "assets": {
+        "config.json": {
+          "url": "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash-0731/resolve/7872f01b1d1fe23eabc4c98b48bffcef5a386062/config.json",
+          "http_status": "200",
+          "exit": 0,
+          "sha256": "6c8f3d2d3b48707541b88f32f22ef3f0f8a6b57d8523281e2b8d3cdb0ae9a023",
+          "bytes": 1888
+        },
+        "tokenizer_config.json": {
+          "url": "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash-0731/resolve/7872f01b1d1fe23eabc4c98b48bffcef5a386062/tokenizer_config.json",
+          "http_status": "200",
+          "exit": 0,
+          "sha256": "6ac8c8dc065ed118161d02dd532749ae3f52c243deac27872134fae2f50d8547",
+          "bytes": 801
+        },
+        "generation_config.json": {
+          "url": "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash-0731/resolve/7872f01b1d1fe23eabc4c98b48bffcef5a386062/generation_config.json",
+          "http_status": "200",
+          "exit": 0,
+          "sha256": "5fccff80f55a4d455bbe516bdd552edf3e9623df95e99fbf2a3c3389fdf91af0",
+          "bytes": 170
+        },
+        "tokenizer.json": {
+          "url": "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash-0731/resolve/7872f01b1d1fe23eabc4c98b48bffcef5a386062/tokenizer.json",
+          "http_status": "200",
+          "exit": 0,
+          "sha256": "8f9f37ca37fdc4f5fd36d5cf4d3b0e8392edb4e894fd10cc0d70b4957c8633cf",
+          "bytes": 6367146
+        }
+      }
+    },
+    {
+      "model": "deepseek-ai/DeepSeek-V4.1-Flash",
+      "model_slug": "river-deepseek-v4.1-flash",
+      "revision": "dba1be0a40aa45a94ad051997016db3960a90277",
+      "assets": {
+        "config.json": {
+          "url": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/resolve/dba1be0a40aa45a94ad051997016db3960a90277/config.json",
+          "http_status": "200",
+          "exit": 0,
+          "sha256": "8be45ce0476004a3f529fd896115a4a2e800a129ad2d3ec05b16050f52e21879",
+          "bytes": 3311
+        },
+        "tokenizer_config.json": {
+          "url": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/resolve/dba1be0a40aa45a94ad051997016db3960a90277/tokenizer_config.json",
+          "http_status": "200",
+          "exit": 0,
+          "sha256": "6ac8c8dc065ed118161d02dd532749ae3f52c243deac27872134fae2f50d8547",
+          "bytes": 801
+        },
+        "tokenizer.json": {
+          "url": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/resolve/dba1be0a40aa45a94ad051997016db3960a90277/tokenizer.json",
+          "http_status": "200",
+          "exit": 0,
+          "sha256": "c90dfa01249db1be4245780a052ede752e1361c612ac6d08e2bdada7d599476b",
+          "bytes": 6367257
+        }
+      }
+    },
+    {
+      "model": "nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4",
+      "model_slug": "river-nvidia-nemotron-3.5-lightning-30b-a3b-nvfp4",
+      "revision": "bee7596271d1495f6992ae224aefde4410e816b8",
+      "assets": {
+        "config.json": {
+          "url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4/resolve/bee7596271d1495f6992ae224aefde4410e816b8/config.json",
+          "http_status": "200",
+          "exit": 0,
+          "sha256": "f1d98b530846087dc08b574a219713a94f945bf6583dc7230a19ebf1e8c50933",
+          "bytes": 1337760
+        },
+        "tokenizer_config.json": {
+          "url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4/resolve/bee7596271d1495f6992ae224aefde4410e816b8/tokenizer_config.json",
+          "http_status": "200",
+          "exit": 0,
+          "sha256": "10f93eabcb9b1602fbb991d6308e787ce1df28ee9cd7a1c6d1e8c3f338b957bc",
+          "bytes": 177209
+        },
+        "generation_config.json": {
+          "url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4/resolve/bee7596271d1495f6992ae224aefde4410e816b8/generation_config.json",
+          "http_status": "200",
+          "exit": 0,
+          "sha256": "c67c90fcadf0e7ef78b663eb159664b36a35ffb9dd2523096e226e5c3d1b0e5f",
+          "bytes": 209
+        },
+        "special_tokens_map.json": {
+          "url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4/resolve/bee7596271d1495f6992ae224aefde4410e816b8/special_tokens_map.json",
+          "http_status": "200",
+          "exit": 0,
+          "sha256": "e9435fefd6d838fd9fcbbc44b97a8e3ff322be7f6dfb7e4fd2468586574bb52b",
+          "bytes": 563
+        },
+        "chat_template.jinja": {
+          "url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4/resolve/bee7596271d1495f6992ae224aefde4410e816b8/chat_template.jinja",
+          "http_status": "200",
+          "exit": 0,
+          "sha256": "58933db77d3099b4f78c55a38347a72e1ea05b97d6bd8f38775303dc0194e0a9",
+          "bytes": 9867
+        },
+        "tokenizer.json": {
+          "url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4/resolve/bee7596271d1495f6992ae224aefde4410e816b8/tokenizer.json",
+          "http_status": "200",
+          "exit": 0,
+          "sha256": "623c34567aebb18582765289fbe23d901c62704d6518d71866e0e58db892b5b7",
+          "bytes": 17077484
+        }
+      }
+    }
+  ]
+}

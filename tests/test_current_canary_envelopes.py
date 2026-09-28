@@ -498,8 +498,8 @@ def test_guidance_growth_cannot_admit_an_understated_wire_budget(
 
     original = operation.action_schema_view
 
-    def oversized_guidance():
-        schema = original()
+    def oversized_guidance(*, recovery_enabled=False):
+        schema = original(recovery_enabled=recovery_enabled)
         # Real observation -> canonical request -> actual SDK -> MockTransport.
         # The corrected guidance has 30 bytes of per-business-request headroom.
         # Reintroduce one byte beyond that ceiling without touching any budget.

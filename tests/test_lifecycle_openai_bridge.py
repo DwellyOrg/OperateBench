@@ -1523,8 +1523,8 @@ class TestTheActPayloadThisMappingCanState:
         The reference agent's own ``ACT`` decisions carry payloads. Sent through
         a surface that can state one, they arrive as the proposals the reference
         agent made — so the domain validator accepts them, the episode reaches a
-        terminal, and only V2 has the authored notification failures in recovery
-        and obligations. Every decision still crossed a
+        terminal except legacy V2, whose permanent notification failure prevents
+        transfer and fails terminal_outcome and recovery. Every decision still crossed a
         real SDK client on an ``httpx.MockTransport``, and the tape still
         replays without a provider.
         """
@@ -1532,7 +1532,7 @@ class TestTheActPayloadThisMappingCanState:
 
         assert run.reliable is (scenario_id != "V2")
         assert run.evaluation.failed_dimensions == (
-            ("recovery", "obligations") if scenario_id == "V2" else ()
+            ("terminal_outcome", "recovery") if scenario_id == "V2" else ()
         )
         assert run.evaluation.dimension("action_validity").findings == ()
         assert run.evaluation.dimension("deterministic_replay").ok is True
@@ -1637,7 +1637,14 @@ class TestTheResponsesThisBoundaryWillNotRead:
     def test_an_answer_carrying_an_output_item_this_boundary_cannot_read(self) -> None:
         self._refused(
             responses_body(
-                [{"type": "reasoning", "id": "rs_test", "summary": []}], model=MODEL
+                [
+                    {
+                        "type": "compaction",
+                        "id": "synthetic",
+                        "encrypted_content": "synthetic",
+                    }
+                ],
+                model=MODEL,
             )
         )
 

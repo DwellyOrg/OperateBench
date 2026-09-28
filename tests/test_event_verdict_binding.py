@@ -111,7 +111,7 @@ class TestTheGenuineRecordBinds:
         outcome = _episode(spec, scenario_id)
         evaluation = _regrade(outcome, spec, scenario_id)
         assert evaluation.failed_dimensions == (
-            ("recovery", "obligations") if scenario_id == "V2" else ()
+            ("terminal_outcome", "recovery") if scenario_id == "V2" else ()
         )
         assert evaluation.reliable is (scenario_id != "V2")
 
