@@ -728,6 +728,13 @@ def check_response_model(response: ChatCompletion, *, model: str) -> None:
 
 
 def check_wire_completion(raw: Mapping[str, Any]) -> None:
+    """Validate wire structure under this track's own extension contract."""
+    check_wire_completion_under_contract(raw, contract=RESPONSE_EXTENSION_CONTRACT)
+
+
+def check_wire_completion_under_contract(
+    raw: Mapping[str, Any], *, contract: Mapping[str, Any]
+) -> None:
     """Prove the exact JSON the provider sent is the contract this build asked for.
 
     Walked to the depth the action is carried at, because that is where this
@@ -754,7 +761,9 @@ def check_wire_completion(raw: Mapping[str, Any]) -> None:
             # an absence.
             continue
         parsed_message = checked_wire_object(message, MESSAGE_WIRE_SHAPE)
-        check_response_extensions(parsed_message, site=MESSAGE_EXTENSION_SITE)
+        check_extensions_under_contract(
+            parsed_message, site=MESSAGE_EXTENSION_SITE, contract=contract
+        )
         calls = parsed_message.get("tool_calls")
         if calls is None:
             continue
@@ -767,7 +776,7 @@ def check_wire_completion(raw: Mapping[str, Any]) -> None:
             checked_wire_string(named["name"], kind="tool call name")
             checked_wire_string(named["arguments"], kind="tool call arguments")
     usage = checked_wire_object(body["usage"], USAGE_WIRE_SHAPE)
-    check_response_extensions(usage, site=USAGE_EXTENSION_SITE)
+    check_extensions_under_contract(usage, site=USAGE_EXTENSION_SITE, contract=contract)
     for field, shape, site in (
         (
             "prompt_tokens_details",
@@ -779,7 +788,7 @@ def check_wire_completion(raw: Mapping[str, Any]) -> None:
         if usage.get(field) is not None:
             details = checked_wire_object(usage[field], shape)
             if site is not None:
-                check_response_extensions(details, site=site)
+                check_extensions_under_contract(details, site=site, contract=contract)
     wire_token_usage(usage, fields=USAGE_FIELDS)
 
 
@@ -859,9 +868,6 @@ def response_usage(response: WireResponse[ChatCompletion]) -> TokenUsage:
     """
     usage = checked_wire_object(response.wire.get("usage"), USAGE_WIRE_SHAPE)
     return wire_token_usage(usage, fields=USAGE_FIELDS)
-
-
-
 
 
 class XAIOpenAICompatExchange:

@@ -59,30 +59,38 @@ from typing import Any, cast
 
 import openai
 from openai.types.chat import ChatCompletion
-from openai.types.chat.chat_completion import Choice
+from openai.types.chat.chat_completion import Choice as Choice
 from openai.types.chat.chat_completion_message import ChatCompletionMessage
 from openai.types.chat.chat_completion_message_function_tool_call import (
-    ChatCompletionMessageFunctionToolCall,
-    Function,
+    ChatCompletionMessageFunctionToolCall as ChatCompletionMessageFunctionToolCall,
+)
+from openai.types.chat.chat_completion_message_function_tool_call import (
+    Function as Function,
 )
 from openai.types.completion_usage import (
-    CompletionTokensDetails,
+    CompletionTokensDetails as CompletionTokensDetails,
+)
+from openai.types.completion_usage import (
     CompletionUsage,
     PromptTokensDetails,
 )
 
 from boundarybench.adapter import (
-    PROVIDER_FAULT_RESPONSE_INVALID,
+    PROVIDER_FAULT_RESPONSE_INVALID as PROVIDER_FAULT_RESPONSE_INVALID,
+)
+from boundarybench.adapter import (
     AdapterCall,
     AdapterIdentity,
     AdapterOutputLimitError,
     AdapterProtocolError,
-    AdapterProviderError,
     AdapterUsage,
     ProviderTelemetry,
     SingleFlight,
     TurnDeadline,
     TurnRequest,
+)
+from boundarybench.adapter import (
+    AdapterProviderError as AdapterProviderError,
 )
 from boundarybench.budget import RunCostGuard
 from boundarybench.jsonsafe import (
@@ -96,7 +104,6 @@ from boundarybench.providers.common import (
     ProviderConfigurationError,
     ProviderRetryPolicy,
     Sleep,
-    TokenUsage,
     TurnExecutor,
     check_configuration_audited,
     check_environment,
@@ -113,15 +120,32 @@ from boundarybench.providers.common import (
     resolve_api_key,
     resolve_single_tool_call,
 )
+from boundarybench.providers.common import (
+    TokenUsage as TokenUsage,
+)
 from boundarybench.providers.wire import (
     WireResponse,
-    WireShape,
-    checked_wire_list,
-    checked_wire_mapping,
-    checked_wire_object,
-    checked_wire_string,
-    declared_wire_fields,
-    wire_token_usage,
+)
+from boundarybench.providers.wire import (
+    WireShape as WireShape,
+)
+from boundarybench.providers.wire import (
+    checked_wire_list as checked_wire_list,
+)
+from boundarybench.providers.wire import (
+    checked_wire_mapping as checked_wire_mapping,
+)
+from boundarybench.providers.wire import (
+    checked_wire_object as checked_wire_object,
+)
+from boundarybench.providers.wire import (
+    checked_wire_string as checked_wire_string,
+)
+from boundarybench.providers.wire import (
+    declared_wire_fields as declared_wire_fields,
+)
+from boundarybench.providers.wire import (
+    wire_token_usage as wire_token_usage,
 )
 from boundarybench.queries import QUERY_RESOLUTION_CONTRACT
 from boundarybench.scaffold import ACTION_SURFACE_CONTRACT, FACT_AFFORDANCE_CONTRACT
@@ -134,8 +158,39 @@ from operatebench.providers.openai_sdk import (
     classify_openai_sdk_exception as classify_exception,
 )
 from operatebench.providers.xai_openai_compat import (
+    CHOICE_WIRE_SHAPE as CHOICE_WIRE_SHAPE,
+)
+from operatebench.providers.xai_openai_compat import (
+    COMPLETION_TOKENS_DETAILS_WIRE_SHAPE as COMPLETION_TOKENS_DETAILS_WIRE_SHAPE,
+)
+from operatebench.providers.xai_openai_compat import (
+    FUNCTION_WIRE_SHAPE as FUNCTION_WIRE_SHAPE,
+)
+from operatebench.providers.xai_openai_compat import (
+    MESSAGE_WIRE_SHAPE as MESSAGE_WIRE_SHAPE,
+)
+from operatebench.providers.xai_openai_compat import (
+    PROMPT_TOKENS_DETAILS_WIRE_SHAPE as PROMPT_TOKENS_DETAILS_WIRE_SHAPE,
+)
+from operatebench.providers.xai_openai_compat import (
+    RESPONSE_WIRE_SHAPE as RESPONSE_WIRE_SHAPE,
+)
+from operatebench.providers.xai_openai_compat import (
+    TOOL_CALL_WIRE_SHAPE as TOOL_CALL_WIRE_SHAPE,
+)
+from operatebench.providers.xai_openai_compat import (
+    USAGE_WIRE_SHAPE as USAGE_WIRE_SHAPE,
+)
+from operatebench.providers.xai_openai_compat import (
     check_extensions_agree_under_contract,
     check_extensions_under_contract,
+    check_wire_completion_under_contract,
+)
+from operatebench.providers.xai_openai_compat import (
+    check_response_model as check_response_model,
+)
+from operatebench.providers.xai_openai_compat import (
+    response_usage as response_usage,
 )
 
 #: The service under test, as recorded in run identity.
@@ -560,73 +615,10 @@ def check_response_extensions_agree(
     )
 
 
-# -- the wire contract --------------------------------------------------------
-#
-# One shape per documented object this build reads, with its allowed field set
-# taken from the pinned SDK's own model for that object rather than hand-listed.
-# The nesting is what matters here: this surface carries the action four levels
-# down — response, choice, message, tool call, function — and a check that
-# looked only at the top level would pass a body whose action was carried by a
-# tool call nobody can describe.
-
-RESPONSE_WIRE_SHAPE = WireShape(
-    kind="completion",
-    allowed=declared_wire_fields(ChatCompletion),
-    required=("model", "choices", "usage"),
-)
-CHOICE_WIRE_SHAPE = WireShape(
-    kind="completion choice",
-    allowed=declared_wire_fields(Choice),
-    required=CHOICE_FIELDS,
-)
-#: The assistant message. Its allowed set is the SDK's declared fields *plus* the
-#: one name this lane's extension contract fixes for a message, and the two
-#: halves are kept visibly separate because they are two different kinds of
-#: claim: the first is the vendor's own schema as the pinned SDK models it, and
-#: the second is what this repository observed the compatibility layer return and
-#: then fixed a shape for. Membership here only buys a name the right to appear
-#: on this object; the shape of whatever it carries is proven by
-#: :func:`check_response_extensions`.
-MESSAGE_WIRE_SHAPE = WireShape(
-    kind="completion message",
-    allowed=declared_wire_fields(ChatCompletionMessage) | MESSAGE_EXTENSION_NAMES,
-    required=(),
-)
-#: One tool call. ``function`` is required because this build reads it, and
-#: requiring it is what turns "``function`` is a list" from an ``AttributeError``
-#: several frames down into a named refusal before anything is read.
-TOOL_CALL_WIRE_SHAPE = WireShape(
-    kind="tool call",
-    allowed=declared_wire_fields(ChatCompletionMessageFunctionToolCall),
-    required=("type", "function"),
-)
-FUNCTION_WIRE_SHAPE = WireShape(
-    kind="tool call function object",
-    allowed=declared_wire_fields(Function),
-    required=("name", "arguments"),
-)
-#: The usage block, and the detail object inside it this lane's extension
-#: contract also names. The same two-halves rule as the message above: the
-#: declared fields are the vendor's schema, and the extension names are this
-#: repository's own observation. ``prompt_tokens_details`` is an object the SDK
-#: *does* declare — what it does not declare is the pair inside it.
-USAGE_WIRE_SHAPE = WireShape(
-    kind="usage block",
-    allowed=declared_wire_fields(CompletionUsage) | USAGE_EXTENSION_NAMES,
-    required=USAGE_FIELDS,
-)
-PROMPT_TOKENS_DETAILS_WIRE_SHAPE = WireShape(
-    kind="prompt token details",
-    allowed=(
-        declared_wire_fields(PromptTokensDetails) | PROMPT_TOKENS_DETAILS_EXTENSION_NAMES
-    ),
-    required=(),
-)
-COMPLETION_TOKENS_DETAILS_WIRE_SHAPE = WireShape(
-    kind="completion token details",
-    allowed=declared_wire_fields(CompletionTokensDetails),
-    required=(),
-)
+# Wire shapes are compatibility aliases of the structurally identical provider
+# kernel definitions. Extension bounds remain this track's own contract, passed
+# explicitly by check_wire_completion; typed admissibility and settlement stay
+# local to Boundary.
 
 
 class XAIConfigurationError(ProviderConfigurationError):
@@ -849,78 +841,9 @@ def build_chat_request(
 # -- the response ------------------------------------------------------------
 
 
-def check_response_model(response: ChatCompletion, *, model: str) -> None:
-    """Prove the answer came from the model the run pinned and asked for.
-
-    Neither model string is quoted: the response's is provider-controlled text,
-    and the run's is already on every row.
-    """
-    if response.model != model:
-        raise AdapterProviderError(
-            PROVIDER_FAULT_RESPONSE_INVALID,
-            "the response states that a model other than the one this run pinned "
-            "and requested produced it, so it is not evidence about the model "
-            "under test and neither its action nor its token counts are accepted. "
-            "Neither model identifier is recorded here: the response's is "
-            "provider-controlled text, and the run's is already named by the "
-            "adapter identity on every row",
-        )
-
-
 def check_wire_completion(raw: Mapping[str, Any]) -> None:
-    """Prove the exact JSON the provider sent is the contract this build asked for.
-
-    Walked to the depth the action is carried at, because that is where this
-    surface's failures live. The blocker this closes is one of them: a
-    ``function`` that arrives as a list, a string, a number or a boolean
-    survives the SDK's union resolution, passes every check on the parsed
-    object, and reaches ``.name`` several frames later as an ``AttributeError``
-    — after the attempt has been published as a successful response with usage.
-
-    A tool call whose declared type is not ``function`` is deliberately not
-    checked against the function shape. That is a statement about the answer
-    rather than the transport, and :func:`parse_completion` reports it as the
-    protocol failure it is.
-
-    Nothing that arrived is quoted; see :mod:`boundarybench.providers.wire`.
-    """
-    body = checked_wire_object(raw, RESPONSE_WIRE_SHAPE)
-    for entry in checked_wire_list(body["choices"], kind="completion choices"):
-        choice = checked_wire_object(entry, CHOICE_WIRE_SHAPE)
-        message = choice["message"]
-        if message is None:
-            # This API's own "no message", reported by :func:`parse_completion`
-            # as the answer that states no action. Anything else in that field
-            # is a container rather than an absence.
-            continue
-        parsed_message = checked_wire_object(message, MESSAGE_WIRE_SHAPE)
-        check_response_extensions(parsed_message, site=MESSAGE_EXTENSION_SITE)
-        calls = parsed_message.get("tool_calls")
-        if calls is None:
-            continue
-        for raw_call in checked_wire_list(calls, kind="tool calls"):
-            call = checked_wire_mapping(raw_call, kind="tool call")
-            if call.get("type") != "function":
-                continue
-            function = checked_wire_object(call, TOOL_CALL_WIRE_SHAPE)["function"]
-            named = checked_wire_object(function, FUNCTION_WIRE_SHAPE)
-            checked_wire_string(named["name"], kind="tool call name")
-            checked_wire_string(named["arguments"], kind="tool call arguments")
-    usage = checked_wire_object(body["usage"], USAGE_WIRE_SHAPE)
-    check_response_extensions(usage, site=USAGE_EXTENSION_SITE)
-    for field, shape, site in (
-        (
-            "prompt_tokens_details",
-            PROMPT_TOKENS_DETAILS_WIRE_SHAPE,
-            PROMPT_TOKENS_DETAILS_EXTENSION_SITE,
-        ),
-        ("completion_tokens_details", COMPLETION_TOKENS_DETAILS_WIRE_SHAPE, None),
-    ):
-        if usage.get(field) is not None:
-            details = checked_wire_object(usage[field], shape)
-            if site is not None:
-                check_response_extensions(details, site=site)
-    wire_token_usage(usage, fields=USAGE_FIELDS)
+    """Validate wire structure under this track's own extension contract."""
+    check_wire_completion_under_contract(raw, contract=RESPONSE_EXTENSION_CONTRACT)
 
 
 def check_response_admissible(
@@ -1065,28 +988,6 @@ def parse_completion(response: ChatCompletion, request: TurnRequest) -> AdapterC
             "records only this build's own fixed detail and closed-set values"
         )
     return resolved
-
-
-def response_usage(response: WireResponse[ChatCompletion]) -> TokenUsage:
-    """The two counts this build prices a turn on, taken from the wire.
-
-    This surface names them ``prompt_tokens`` and ``completion_tokens`` — not
-    the Responses API's ``input_tokens``/``output_tokens``. Reading the wrong
-    pair would price every turn at null and silently forfeit every reservation,
-    which is a failure that looks like a quiet run rather than like a bug.
-
-    Read off the exact JSON rather than off the parsed model, because this SDK
-    coerces: ``true`` becomes one token and ``"12"`` becomes twelve, and both
-    then look exactly like a measurement. Validated again here rather than
-    trusted from :func:`check_response_admissible`, because this is the function
-    whose return value becomes an
-    :class:`~boundarybench.adapter.AdapterUsage` and a settled cost.
-    """
-    usage = checked_wire_object(response.wire.get("usage"), USAGE_WIRE_SHAPE)
-    return wire_token_usage(usage, fields=USAGE_FIELDS)
-
-
-
 
 
 # -- the adapter -------------------------------------------------------------

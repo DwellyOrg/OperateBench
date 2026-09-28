@@ -703,3 +703,16 @@ __all__ = [
     "outcome_tools",
     "wait_liveness_branches",
 ]
+
+
+def outcome_function_definitions() -> list[dict[str, Any]]:
+    """Fresh ordered Chat Completions definitions from the Lifecycle authority."""
+    return [
+        {
+            "name": tool["name"],
+            "description": tool["description"],
+            "parameters": tool["parameters"],
+            "strict": tool["strict"],
+        }
+        for tool in outcome_tools()
+    ]
