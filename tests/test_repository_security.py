@@ -3,12 +3,21 @@
 import re
 from pathlib import Path
 
+import pytest
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def _require_repository_checkout() -> None:
+    # Hatch adds PKG-INFO to sdists; absence of a control file alone must never
+    # exempt a checkout (including linked worktrees, whose .git is a file).
+    if (ROOT / "PKG-INFO").is_file() and not (ROOT / ".git").exists():
+        pytest.skip("repository-only control is not shipped in the source distribution")
+
+
 def test_dependency_review_is_pinned_read_only_and_pr_only() -> None:
+    _require_repository_checkout()
     path = ROOT / ".github/workflows/dependency-review.yml"
     assert path.is_file(), "Pull requests need dependency review"
     text = path.read_text()
@@ -49,6 +58,7 @@ def test_private_reporting_route_retains_email_fallback() -> None:
 
 
 def test_dependabot_uses_weekly_bounded_version_updates() -> None:
+    _require_repository_checkout()
     path = ROOT / ".github/dependabot.yml"
     assert path.is_file(), "Dependabot version updates must be configured"
     config = yaml.safe_load(path.read_text())
