@@ -256,14 +256,10 @@ MAX_EXTENSION_COUNT = MAX_EXACT_TOKEN_COUNT
 
 #: The longest reasoning string this contract accepts.
 #:
-#: Tied to this run's own pinned output ceiling rather than guessed at, because
-#: the ceiling is the one thing about the length of a generated answer this build
-#: controls: sixteen characters per token is far above what any tokenizer this
-#: surface could be using emits, so :data:`MAX_OUTPUT_TOKENS` times sixteen
-#: bounds any reasoning text a turn under this ceiling could return. It is also
-#: two orders of magnitude above the longest string the diagnostics observed,
-#: which is what makes it conservative in both directions: nothing real is
-#: refused, and a body held in memory for the length of a turn stays bounded.
+#: Historical configured parser policy: sixteen characters times the track
+#: output ceiling when this contract was fixed (Lifecycle 4096, retained as a literal).
+#: This is not a provider-native maximum and is not dynamically coupled to
+#: the current output budget or runtime settings.
 MAX_REASONING_CONTENT_CHARACTERS = 4096 * 16
 
 
@@ -386,7 +382,9 @@ TYPED_EXTENSION_EXTRAS: Mapping[type, frozenset[str]] = MappingProxyType(
 _EXTENSION_KIND = "named response extension"
 
 
-def _extension_scalar_valid(value: Any, kind: str) -> bool:
+def _extension_scalar_valid(
+    value: Any, kind: str, *, contract: Mapping[str, Any]
+) -> bool:
     """Whether one value is the exact wire scalar the contract fixes for it.
 
     Exact, and by ``type`` rather than by ``isinstance``, everywhere it matters.
@@ -398,7 +396,7 @@ def _extension_scalar_valid(value: Any, kind: str) -> bool:
         # The same rule the token counts are read under, and deliberately the
         # same function: two independently written definitions of "an exact
         # non-negative integer on the wire" would drift.
-        return is_wire_token_count(value) and value <= MAX_EXTENSION_COUNT
+        return is_wire_token_count(value) and value <= contract["max_count"]
     # :data:`EXTENSION_REASONING_TEXT`, the other of the two. The vocabulary is
     # closed and is this module's own, so there is no third kind to fall through
     # to.
@@ -412,7 +410,7 @@ def _extension_scalar_valid(value: Any, kind: str) -> bool:
     # never will be.
     return (
         type(value) is str
-        and len(value) <= MAX_REASONING_CONTENT_CHARACTERS
+        and len(value) <= contract["max_reasoning_characters"]
         and surrogate_index(value) is None
     )
 
@@ -434,16 +432,23 @@ def check_response_extensions(node: Mapping[str, Any], *, site: str) -> None:
     also requires its siblings, because a partly stated group was never observed
     and this contract describes one shape rather than every subset of one.
     """
-    schema = RESPONSE_EXTENSION_SCHEMA[site]
+    check_extensions_under_contract(node, site=site, contract=RESPONSE_EXTENSION_CONTRACT)
+
+
+def check_extensions_under_contract(
+    node: Mapping[str, Any], *, site: str, contract: Mapping[str, Any]
+) -> None:
+    """Apply the extension mechanics under the explicitly supplied track contract."""
+    schema = contract["members"][site]
     present = [name for name in schema if name in node]
     if (
-        site in RESPONSE_EXTENSION_SITES_REQUIRED_WHOLE
+        contract["members_required_together"][site]
         and present
         and len(present) != len(schema)
     ):
         raise wire_invalid(
             f"the response states part of one group of {_EXTENSION_KIND}s that "
-            f"{XAI_COMPAT_RESPONSE_EXTENSIONS} fixes as a whole. A group this "
+            f"{contract['contract']} fixes as a whole. A group this "
             "build reads nothing out of may be absent entirely, but a group that "
             "is present is a statement, and this contract describes one shape for "
             "it rather than every subset of one: a partly stated group was never "
@@ -453,11 +458,11 @@ def check_response_extensions(node: Mapping[str, Any], *, site: str) -> None:
             "only this build's own fixed detail and closed-set values"
         )
     for name in present:
-        if not _extension_scalar_valid(node[name], schema[name]):
+        if not _extension_scalar_valid(node[name], schema[name], contract=contract):
             raise wire_invalid(
                 f"the response states a {_EXTENSION_KIND} whose value is not the "
                 f"exact one of kind {schema[name]!r} that "
-                f"{XAI_COMPAT_RESPONSE_EXTENSIONS} fixes for it, so what arrived "
+                f"{contract['contract']} fixes for it, so what arrived "
                 "is not the contract this build accepts and the body is refused "
                 "rather than read past. Nothing about the value is recorded here — "
                 "neither which field carried it nor what it was: the field set is "
@@ -467,11 +472,13 @@ def check_response_extensions(node: Mapping[str, Any], *, site: str) -> None:
             )
 
 
-def _stated_extensions(node: Any, *, site: str) -> dict[str, Any]:
+def _stated_extensions(
+    node: Any, *, site: str, contract: Mapping[str, Any]
+) -> dict[str, Any]:
     """Exactly the extension members one object states, for the comparison below."""
     if not isinstance(node, Mapping):
         return {}
-    return {name: node[name] for name in RESPONSE_EXTENSION_SCHEMA[site] if name in node}
+    return {name: node[name] for name in contract["members"][site] if name in node}
 
 
 def _typed_extras(value: Any) -> Mapping[str, Any]:
@@ -571,12 +578,21 @@ def check_response_extensions_agree(
     the provider never sent. The typed parse stays exactly as the SDK produced
     it.
     """
+    check_extensions_agree_under_contract(
+        wire, parsed, contract=RESPONSE_EXTENSION_CONTRACT
+    )
+
+
+def check_extensions_agree_under_contract(
+    wire: Mapping[str, Any], parsed: ChatCompletion, *, contract: Mapping[str, Any]
+) -> None:
+    """Apply the extension mechanics under the explicitly supplied track contract."""
     readings = _extension_readings(wire, parsed)
     if not all(_object_stated_by_both(raw, typed) for _, raw, typed in readings):
         raise wire_invalid(
             "the exact JSON the provider sent and this pinned SDK's typed reading "
             "of the same bytes do not state the same objects at the sites "
-            f"{XAI_COMPAT_RESPONSE_EXTENSIONS} fixes names on, so there is no "
+            f"{contract['contract']} fixes names on, so there is no "
             "single body here for this build to check that contract against. An "
             "object only one reading states is a disagreement before any value "
             "is: the reading that has it could have stated extensions under it "
@@ -590,19 +606,19 @@ def check_response_extensions_agree(
     stated = [
         (
             site,
-            _stated_extensions(raw, site=site),
-            _stated_extensions(_typed_extras(typed), site=site),
+            _stated_extensions(raw, site=site, contract=contract),
+            _stated_extensions(_typed_extras(typed), site=site, contract=contract),
         )
         for site, raw, typed in readings
     ]
     for site, _, typed in stated:
-        check_response_extensions(typed, site=site)
+        check_extensions_under_contract(typed, site=site, contract=contract)
     if any(raw != typed for _, raw, typed in stated):
         raise wire_invalid(
             "the exact JSON the provider sent and this pinned SDK's typed reading "
             "of the same bytes do not state the same response extensions, so there "
             "is no single body here for this build to check against "
-            f"{XAI_COMPAT_RESPONSE_EXTENSIONS}. Neither reading is preferred over "
+            f"{contract['contract']}. Neither reading is preferred over "
             "the other and neither is edited to agree with the other: the response "
             "is refused whole. What each reading stated is not recorded here: it is "
             "provider-controlled, and a durable failure row records only this "
