@@ -2,19 +2,49 @@
 
 import hashlib
 import json
-from pathlib import Path
 
 import pytest
 
 from operatebench.agents.transport import ModelRequest, content_digest
+from tests.campaign_profile_goldens import load_campaign_profile_goldens
 from tests.test_three_flow_providers import fixture
 from tools import three_flow_campaign as campaign
 from tools import three_flow_http as http
 from tools.three_flow_admission import registry
 
-GOLDEN = json.loads(
-    (Path(__file__).parent / "fixtures/campaign_profile_goldens.json").read_text()
-)
+GOLDEN = load_campaign_profile_goldens()
+
+
+def test_profile_fixture_lossless_serialization():
+    # SHA256 of the original checked-in, expanded capture, not new SUT output.
+    # Its UTF-8 JSON recipe preserves recursive key order (no sort_keys).
+    # This proves lossless transformation, not historical executable provenance.
+    encoded = (json.dumps(GOLDEN, indent=2, ensure_ascii=True) + "\n").encode()
+    assert hashlib.sha256(encoded).hexdigest() == (
+        "f2eae8ae8f02150440851487d42eeabb1f8767796d62b62955c98daaa6fa62a3"
+    )
+
+
+def test_profile_fixture_rejects_unknown_schema(monkeypatch):
+    monkeypatch.setattr(
+        json,
+        "loads",
+        lambda _: {"schema_version": 2, "http": {}, "registry": {}},
+    )
+    with pytest.raises(ValueError, match="unsupported campaign golden schema"):
+        load_campaign_profile_goldens()
+
+
+def test_profile_fixture_copies_are_independent():
+    loaded = load_campaign_profile_goldens()
+    cells = list(loaded["http"].values())
+    cells[0]["prompt"]["observation"]["operation_instance_id"] = "changed"
+    cells[0]["settings"].clear()
+    matrices = list(loaded["registry"].values())
+    matrices[0][0]["request_settings"]["stop"].append("changed")
+    assert cells[1] == list(GOLDEN["http"].values())[1]
+    assert matrices[1] == list(GOLDEN["registry"].values())[1]
+    assert load_campaign_profile_goldens() == GOLDEN
 
 
 def test_campaign_selection_has_one_owner():

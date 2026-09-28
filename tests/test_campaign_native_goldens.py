@@ -15,11 +15,12 @@ from pathlib import Path
 
 import pytest
 
+from tests.campaign_profile_goldens import load_campaign_profile_goldens
 from tools import three_flow_profiles as profiles
 
 FIXTURES = Path(__file__).parent / "fixtures"
 NATIVE = json.loads((FIXTURES / "campaign_native_goldens.json").read_text())
-HTTP = json.loads((FIXTURES / "campaign_profile_goldens.json").read_text())
+HTTP = load_campaign_profile_goldens()
 
 
 def test_selections_equal_supported_golden_matrix():
