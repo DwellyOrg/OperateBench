@@ -8,7 +8,9 @@ and no paid disclosure programme.
 
 Report privately to **dmitry@dwelly.group**, with `OperateBench security` in the
 subject line. If the repository has GitHub private vulnerability reporting
-enabled, that channel is equally acceptable and preferred for code defects.
+enabled, [submit a private vulnerability report](https://github.com/DwellyOrg/OperateBench/security/advisories/new).
+That channel is equally acceptable and preferred for code defects. If it is
+unavailable, use the email address above.
 
 **Do not open a public issue** for a security or privacy report.
 
@@ -92,6 +94,27 @@ If non-synthetic data is ever found in this repository, the response is to
 remove it, publish a correction note under
 [docs/VERSIONING.md](docs/VERSIONING.md) describing what was affected, and
 review how it got past intake — in that order.
+
+## Repository dependency controls
+
+Dependabot checks the `uv` lockfile and GitHub Actions weekly. Minor and patch
+version updates are grouped within each ecosystem, with at most three open
+version-update pull requests per ecosystem; major upgrades remain separate.
+Updates require review and are not automatically merged. Action updates must
+retain full commit pins and pass the publication checks.
+
+The `dependency-review` pull-request check rejects newly introduced dependencies
+with known high or critical vulnerabilities, including development dependencies.
+It uses GitHub's dependency graph, not a complete audit of existing dependencies
+or application reachability. Coverage depends on GitHub's supported manifests
+and available dependency data; a green check is not proof of no vulnerabilities.
+The workflow has read-only permissions, does not execute pull-request code, and
+does not post comments or change licensing policy.
+
+Dependency review is available for public repositories without a paid security
+plan. Dependency graph availability and private vulnerability reporting are
+repository settings, not enabled or proven by these files. Maintainers should
+verify a successful `dependency-review` run before making that check required.
 
 ## Supported versions
 
