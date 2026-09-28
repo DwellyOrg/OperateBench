@@ -27,6 +27,10 @@ from operatebench.providers.faults import AdapterProviderError, SingleFlight
 from tools.aggregate_budget import SharedGuard
 from tools.three_flow_budget import CampaignBudget
 from tools.three_flow_errors import grpc_error, river_failed
+from tools.three_flow_profiles import (
+    river_mode_fields,
+    river_reasoning_prefilled,
+)
 from tools.three_flow_river_assets import catalog, family_render, family_tokenizer
 from tools.three_flow_river_kimi import parse_kimi
 from tools.three_flow_river_native import (
@@ -250,7 +254,7 @@ class RiverCampaignTransport:
         if mode_profile not in ("legacy-v1", "off-or-minimum-v1"):
             raise ValueError("unknown reasoning mode profile")
         self.mode_profile = mode_profile
-        self.reasoning_prefilled = mode_profile == "legacy-v1" or "GLM-5.3" in model
+        self.reasoning_prefilled = river_reasoning_prefilled(model, mode_profile)
         if mode_profile != "legacy-v1":
             self.request_mapping += "-" + mode_profile
         if not isinstance(channel, ExplicitRiverChannel) and not getattr(
@@ -314,27 +318,7 @@ class RiverCampaignTransport:
             if getattr(channel, "offline_mock", False)
             else "PROVIDER_CANDIDATE",
         }
-        if mode_profile != "legacy-v1":
-            self.settings.update(
-                mode_profile=mode_profile,
-                reasoning_mode="MINIMUM" if self.reasoning_prefilled else "OFF",
-                reasoning_prefilled=self.reasoning_prefilled,
-                thinking=self.reasoning_prefilled,
-                deepseek_reasoning_effort=None,
-            )
-            if "DeepSeek" in model:
-                self.settings["encoder"] = {
-                    "thinking_mode": "chat",
-                    "reasoning_effort": None,
-                }
-            else:
-                self.settings["template_kwargs"] = (
-                    {"reasoning_effort": "low"}
-                    if self.reasoning_prefilled
-                    else {"thinking": False}
-                    if "Kimi" in model
-                    else {"enable_thinking": False}
-                )
+        self.settings.update(river_mode_fields(model, mode_profile))
 
     def response(
         self, response: Any, ids: list[int], *, max_output_tokens: int | None = None
