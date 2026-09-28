@@ -43,16 +43,15 @@ from operatebench.providers.executor import (
     check_retry_policy,
 )
 from operatebench.providers.faults import (
-    PROVIDER_FAULT_NETWORK_ERROR,
     PROVIDER_FAULT_RESPONSE_INVALID,
-    PROVIDER_FAULT_TIMEOUT,
     AdapterProviderError,
-    Fault,
     SingleFlight,
-    classify_http_status,
 )
 from operatebench.providers.openai_compat_client import (
     check_xai_openai_compat_client_state,
+)
+from operatebench.providers.openai_sdk import (
+    classify_openai_sdk_exception as classify_exception,
 )
 from operatebench.providers.response import (
     check_response_collection,
@@ -879,19 +878,7 @@ def response_usage(response: WireResponse[ChatCompletion]) -> TokenUsage:
     return wire_token_usage(usage, fields=USAGE_FIELDS)
 
 
-def classify_exception(exception: Exception) -> Fault | None:
-    """Map one SDK error onto the contract's fault set, or decline."""
-    if isinstance(exception, openai.APITimeoutError):
-        return Fault(PROVIDER_FAULT_TIMEOUT, True, None)
-    if isinstance(exception, openai.APIConnectionError):
-        return Fault(PROVIDER_FAULT_NETWORK_ERROR, True, None)
-    if isinstance(exception, openai.APIResponseValidationError):
-        # A whole body arrived and the SDK refused to read it, so the attempt
-        # records that a response was received. See the OpenAI integration.
-        return Fault(PROVIDER_FAULT_RESPONSE_INVALID, False, None, response_received=True)
-    if isinstance(exception, openai.APIStatusError):
-        return classify_http_status(exception.status_code)
-    return None
+
 
 
 class XAIOpenAICompatExchange:

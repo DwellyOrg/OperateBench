@@ -72,9 +72,7 @@ from openai.types.completion_usage import (
 )
 
 from boundarybench.adapter import (
-    PROVIDER_FAULT_NETWORK_ERROR,
     PROVIDER_FAULT_RESPONSE_INVALID,
-    PROVIDER_FAULT_TIMEOUT,
     AdapterCall,
     AdapterIdentity,
     AdapterOutputLimitError,
@@ -95,7 +93,6 @@ from boundarybench.pricing import MAX_EXACT_TOKEN_COUNT
 from boundarybench.providers.common import (
     SDK_MAX_RETRIES,
     Clock,
-    Fault,
     ProviderConfigurationError,
     ProviderRetryPolicy,
     Sleep,
@@ -110,7 +107,6 @@ from boundarybench.providers.common import (
     check_response_object,
     check_retry_policy,
     checked_token_usage,
-    classify_http_status,
     nested_tool_schema,
     observed_case,
     request_input_token_bound,
@@ -131,6 +127,9 @@ from boundarybench.queries import QUERY_RESOLUTION_CONTRACT
 from boundarybench.scaffold import ACTION_SURFACE_CONTRACT, FACT_AFFORDANCE_CONTRACT
 from operatebench.providers.openai_compat_client import (
     check_xai_openai_compat_client_state,
+)
+from operatebench.providers.openai_sdk import (
+    classify_openai_sdk_exception as classify_exception,
 )
 from operatebench.providers.xai_openai_compat import (
     check_extensions_agree_under_contract,
@@ -1099,19 +1098,7 @@ def response_usage(response: WireResponse[ChatCompletion]) -> TokenUsage:
     return wire_token_usage(usage, fields=USAGE_FIELDS)
 
 
-def classify_exception(exception: Exception) -> Fault | None:
-    """Map one SDK error onto the contract's fault set, or decline."""
-    if isinstance(exception, openai.APITimeoutError):
-        return Fault(PROVIDER_FAULT_TIMEOUT, True, None)
-    if isinstance(exception, openai.APIConnectionError):
-        return Fault(PROVIDER_FAULT_NETWORK_ERROR, True, None)
-    if isinstance(exception, openai.APIResponseValidationError):
-        # A whole body arrived and the SDK refused to read it, so the attempt
-        # records that a response was received. See the OpenAI integration.
-        return Fault(PROVIDER_FAULT_RESPONSE_INVALID, False, None, response_received=True)
-    if isinstance(exception, openai.APIStatusError):
-        return classify_http_status(exception.status_code)
-    return None
+
 
 
 # -- the adapter -------------------------------------------------------------
