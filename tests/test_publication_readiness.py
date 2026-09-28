@@ -145,6 +145,19 @@ def test_manifest_records_scoped_base_acceptance_not_blanket_staleness() -> None
     )
 
 
+def test_ci_extends_only_the_python311_coverage_timeout() -> None:
+    import yaml
+
+    root = Path(__file__).resolve().parents[1]
+    workflow = (root / ".github/workflows/ci.yml").read_text()
+    document = yaml.load(workflow, Loader=yaml.BaseLoader)
+    job = document["jobs"]["test"]
+    assert job["strategy"]["matrix"] == {"python-version": ["3.11", "3.14"]}
+    assert job["timeout-minutes"] == (
+        "${{ matrix.python-version == '3.11' && 180 || 90 }}"
+    )
+
+
 def test_ci_keeps_full_matrix_and_independent_secret_scan() -> None:
     root = Path(__file__).resolve().parents[1]
     workflow = (root / ".github/workflows/ci.yml").read_text()

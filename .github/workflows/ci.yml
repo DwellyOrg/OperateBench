@@ -55,7 +55,8 @@ jobs:
   test:
     name: test (py${{ matrix.python-version }})
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    # Allow extra time for the Python 3.11 coverage lane only.
+    timeout-minutes: ${{ matrix.python-version == '3.11' && 180 || 90 }}
     strategy:
       fail-fast: false
       matrix:
