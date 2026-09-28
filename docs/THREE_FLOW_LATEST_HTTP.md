@@ -5,7 +5,8 @@ legacy-v1 (14 models / 616 initial slots). Nothing migrates existing series,
 financial authority, trial identities or evidence.
 
 New external admissions may explicitly select `roster_profile: latest-http-v1`
-with `mode_profile: off-or-minimum-v1`. Use `registry(roster_profile=...,
+with `mode_profile: off-or-minimum-v1` (16 models × 44 configurations = 704
+initial slots). Use `registry(roster_profile=...,
 mode_profile=...)`, `assignments(id, roster_profile)`, or the non-consuming
 `proposal(source_sha, roster_profile)` to describe that source-bound selection.
 Existing admission, source, budget, custody and approval checks still apply.

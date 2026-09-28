@@ -50,11 +50,11 @@ grade = api.evaluate_episode(episode, spec, "EN_normal")
 assert grade["reliable"]
 ```
 
-This slice provides the domain interface, not a registered SDK pack, generic CLI,
-provider integration or competing run-record codec. Shared registration and
-precise contribution-import admission belong to integration. No paid provider
-is needed. The dedicated tests persist ordinary Core playback decision tapes
-as JSON and replay them through a fresh domain; this is not official evidence.
+Registered as `lettings.property_compliance.profiles.v1` with status `incubator`
+and `evidence_eligible=False`; see the shared [profile CLI](../../profile-pack-cli.md).
+Contribution-import admission remains integration-owned. No paid provider is
+needed; tests replay persisted Core JSON decision tapes through a fresh domain,
+not as official evidence.
 
 ## Implemented profiles and public source map
 

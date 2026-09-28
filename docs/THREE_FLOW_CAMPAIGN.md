@@ -1,27 +1,45 @@
 # Three-flow evaluation controller
 
 The repository tooling runs the three Maintenance scenarios, sixteen Commerce
-profiles and twenty-five Compliance profiles through their real Engine domains
+scenarios and twenty-five Compliance scenarios through their real Engine domains
 and original evaluators. This is a separate, nonofficial evidence contract. It
 does not change Artifact 8, development records, the public pack CLI or business
 grading. The selected Maintenance fixture models verified notification recovery;
-its reference agent reaches reliable closure for V1, V2 and V3. The historical
-permanent-fault fixture retains its separate operation identity and grading.
+its reference agent reaches reliable closure for V1, V2 and V3. Execution and
+replay share `tools.three_flow_runtime.SPECS`, selecting
+`maintenance_delivery_recovery_v0_7.yaml` with operation identity
+`lettings_maintenance_delivery_recovery_v2`. The historical permanent-fault YAML,
+artifacts, operation identity and grading remain unchanged, as do Commerce and
+Compliance spec selections, business guards and scoring.
 
-`python -m tools.three_flow_campaign` prints a non-authorizing preflight. Every
-model remains unapproved. It cannot create owner authority or dispatch a paid
-campaign. Fresh approval must independently bind source, account, settings,
-endpoint limits and all applicable prices. DeepSeek V4.1 remains unpriced.
+## Authority boundary
+
+Preflight is not approval: every model remains unapproved. The repository supplies
+no approval writer, recovery command, owner/account evidence or executable admission.
+Fresh approval must independently bind reviewed source/runtime, account access,
+settings, endpoint bounds, all applicable prices and execution policy. DeepSeek
+V4.1 remains unpriced. Hashes are integrity bindings, not signatures, provider
+authorship or proof of evidence accuracy; external owner custody and approval are
+required. Replacing evidence and every trusted anchor is outside this contract.
+Offline controls prove mechanics, not LLM performance, production resource bounds,
+real historical recovery, invoice reconciliation or authority for provider access,
+paid launches/corrections or re-opening a real journal. No real-provider results
+are claimed.
+
+## Offline execution
+
+`python -m tools.three_flow_campaign` prints a non-authorizing preflight.
 
 `python -m tools.three_flow_campaign offline --output /absolute/fresh/directory`
 executes all 44 configurations through the actual OpenAI SDK and an in-process
 reference-driven HTTP mock. `--providers openai anthropic mistral river` assigns
-all 616 roster cells: HTTP providers exercise their SDKs; River uses its actual
+all 616 default `legacy-v1` cells (14 models × 44 configurations). The separately
+selectable [`latest-http-v1` roster](THREE_FLOW_LATEST_HTTP.md) has 16 models and
+704 cells. HTTP providers exercise their SDKs; River uses its actual
 optional SDK, pinned tokenizer assets, native renderer/parser and protobuf mock
 transport in a qualified Python environment with explicit `--river-assets`.
-Missing River dependencies or assets fail closed. Neither mode reports mock
-decisions as LLM performance. The command forbids network connections and uses literal mock
-credentials. It never loads account credentials or creates approval documents.
+Missing River dependencies or assets fail closed. The command forbids network
+connections, uses literal mock credentials and never loads account credentials.
 
 The controller assigns unique trial slots and uses bounded independent HTTP and
 River worker lanes (see the consuming-entrypoint resource policy below).
@@ -41,12 +59,29 @@ The JSON/CSV/Markdown reports retain causal accepted event receipts, dimensions,
 completion, usage, latency and separate estimated/unknown costs. Missing outcomes
 remain null; there is no weighted ability score.
 
+## Replay and error evidence
+
 Replay needs the independently retained Trial binding and closure digest. It
 reexecutes the original domain and evaluator, consumes the entire decision tape
-and compares full state/events/evaluation with zero provider calls. Digests are
-integrity checks against separately retained anchors, not signatures or proof of
-provider authorship. An owner who replaces both evidence and every trusted anchor
-is outside this trusted-controller contract.
+and compares full state/events/evaluation with zero provider calls.
+
+The record container remains `operatebench.three-flow-candidate.v1`: this is not a
+claim that every source revision has the same evaluator or fault semantics.
+Admission pins the runtime source digest and interpreter/dependency identity;
+records pin the source digest, fixture bytes, semantic spec digest, operation ID
+and provider settings. Replay checks these bindings before executing decisions.
+Old records remain readable as recorded. Exact historical replay requires the
+original pinned source/runtime/spec, not this successor's evaluator. Do not rewrite
+an old refusal's label, replay it as a successful successor, or count it as new
+safe-reason evidence. No new registry mode is needed to select the successor:
+the source-bound spec selection is authoritative; reasoning modes are orthogonal.
+
+New error projections are independently named: `sanitized_http_error_v2`,
+`sanitized_grpc_error_v2`, and `sanitized_river_failure_v1`. Partial evidence retains
+its NON-SCORED v1 container and source bindings; projections and exclusion codes
+are observations from that source, never instructions to reclassify old records.
+
+## HTTP transport and pacing
 
 HTTP transports use explicit injected wire capabilities, one SDK attempt per
 turn, no artificial episode wall deadline or call cap, and candidate endpoint
@@ -55,17 +90,40 @@ thinking remains in captures and output usage. Mistral subtracts a conservative
 input bound from its candidate context allowance. These candidate settings and
 limits still require independent admission. River offline integration uses the
 optional SDK and explicit pinned assets.
-Synthetic tests verify transport mechanics, not provider capability or a
-production memory envelope. No real-provider results are claimed.
+
+The Mistral-only `paced-safe-errors-v1` transport policy serializes calls across
+lanes in one process, spaces them, and honors validated bounded delta-seconds
+Retry-After cooldown for subsequent work. It never resubmits a failed query,
+releases uncertain liability, or proves a pre-generation rejection. Manual
+technical correction remains explicit and separately authorized by campaign
+controls. Generic unknown causes remain unknown.
+
+Trusted Python injection examples (neither supplies credentials nor admission):
+
+```python
+# Existing callers retain the legacy transport and reasoning defaults.
+HTTPCampaignTransport(..., provider="mistral", transport_policy="legacy-v1")
+# Separate explicit opt-ins; neither enables automatic retries.
+HTTPCampaignTransport(
+    ...,
+    provider="mistral",
+    mode_profile="off-or-minimum-v1",
+    transport_policy="paced-safe-errors-v1",
+)
+```
+
+The reasoning-mode registry and provider settings still distinguish legacy from
+`off-or-minimum-v1`. Transport settings and request mapping additionally record
+pacing opt-in. These Python examples are not new live-CLI admission fields.
 
 ## Consuming entrypoint
 
 `python tools/three_flow_live.py preflight` is the separate, inert live-path
 preflight. It checks clean source before importing repository runtime modules,
-then prints the exact roster, ordered 616 slots, settings registry, interpreter,
+then prints the default `legacy-v1` roster, ordered 616 slots, settings registry, interpreter,
 dependency versions, lock digest and runtime digest. It never inspects a
 credential path, consumes authority, creates output, or reserves money. `--help`
-needs no SDK imports. Preflight is not approval and cannot produce approval.
+needs no SDK imports.
 
 The external owner may later invoke:
 
@@ -119,8 +177,7 @@ The record binds `source_sha`, the exact model's `registry_entry_sha256`,
 is the canonical admission digest of the profile excluding `owner_pricing` and
 `rate_evidence_sha256`; the profile's `rate_evidence_sha256` in turn binds the
 entire owner record. Digests use `three_flow_admission.digest`. Evidence review
-must establish that the inventory preserves all applicable known rates; hashes
-provide integrity, not signatures or proof that the supplied material is accurate.
+must establish that the inventory preserves all applicable known rates.
 
 Only the two tariff-coverage guarantees may be conditional. A coverage guarantee
 must stay **false** when its envelope uses unknown-category assumptions; the
@@ -136,8 +193,7 @@ owner assumptions, **not a guaranteed actual invoice**. The existing journal's
 pricing-policy digest binds the whole admitted profile and its envelope rates.
 Neither this policy nor a new rate record resets the campaign, journal, cap,
 retry or correction scope. Historical and default verified-only policies are
-unchanged. No owner record, account evidence or executable admission is supplied
-by this repository.
+unchanged.
 
 ### Optional reported-usage diagnostic accounting
 
@@ -159,12 +215,10 @@ may fail safely as an excluded provider request, not proof of access. Price
 coverage and published-context policy remain separate. Without this accounting
 policy the previous strict requirements are unchanged.
 
-Rebind `owner_pricing.profile_sha256` over the complete profile except
-`owner_pricing` and `rate_evidence_sha256`, then `rate_evidence_sha256` over the
-owner record. The existing owner source/registry bindings must match the final
-source SHA and registry; runtime and complete admission digests must also be
-regenerated. Any changed consent, guarantee, timeout or bound invalidates the
-old binding. This repository supplies no owner consent or consuming authority.
+Rebind profile/rate evidence as in [owner pricing](#explicit-conditional-pricing-alternative).
+Owner source/registry bindings must match the final source and registry; regenerate
+runtime and complete admission digests too. Any changed consent, guarantee,
+timeout or bound invalidates the old binding.
 
 Reported usage settlement, unknown-reservation retention on missing/malformed
 usage, one shared journal, no automatic resubmission and no reset are unchanged.
@@ -173,19 +227,16 @@ label for scored and excluded requests; `model_contract_verified` stays false.
 Genuine provider model results remain live-eligible by origin, while injected
 SDK mocks remain mock-only; unverified billing guarantees do not decide origin.
 
-The existing documented native per-RPC operational timeout is 120 seconds
-(`THREE_FLOW_RIVER.md`); an operator can explicitly select 120 seconds for the
-external profiles and rebind them. This is not an episode/call/output cap or a
-new hardcoded policy default. Historical profiles still require a positive reviewed timeout.
-The explicit successor below instead requires null.
-
 ### Explicit optional limits for a new series
 
 `three-flow-optional-limits-v1` is a reusable opt-in configuration of the same
 consuming entrypoint, not a new launcher, default, approval or authorization to
 repeat indefinitely. Historical admission records without this policy still
 require exactly `cap_usd="1000"` and a positive timeout. Their journal genesis,
-reducer, settlement and replay interpretation are unchanged.
+reducer, settlement and replay interpretation are unchanged. The documented
+[native per-RPC timeout](THREE_FLOW_RIVER.md) is 120 seconds; external profiles may
+explicitly select it and rebind, not as a new hardcoded default or episode/call/
+output cap. The optional policy below instead requires null.
 
 For an explicitly authorized **new** series, set top-level `cap_usd=null` and add
 a closed `limit_policy` object with these exact fields:
@@ -242,10 +293,7 @@ The operator must retain and review the referenced historical manifest (includin
 all known/pending/unknown liabilities), retire any conflicting outstanding launch
 authorities, and keep old evidence immutable. The hash binds that external review;
 it is not proof of financial completeness or fleet-wide exclusion. A capped
-journal cannot reopen under the optional profile. No real historical recovery,
-credential access, provider dispatch or invoice reconciliation is implied by
-these offline tests. Any live execution requires independent source, account,
-pricing and execution-policy admission.
+journal cannot reopen under the optional profile.
 
 The owner-only external admission directory has a single permanent
 `SERIES-CONSUMED` claim. The credential file must be canonical, private, single
@@ -280,6 +328,64 @@ technical-fix evidence; scored model behavior is not automatically retried.
 Each continuation permanently consumes its own attempt claim and preserves prior
 claims, trial IDs, closures, unknown liabilities and financial history.
 
+### Source-changing corrections
+
+The optional `correction_binding` admission extension uses schema
+`three-flow-correction-binding-v1`. It authorizes execution under the current
+reviewed source/runtime/registry, **not a replacement financial policy**.
+Absent this extension, existing admission/receipt/genesis serialization is unchanged.
+Model-mode selection remains independent and retains its existing default.
+The optional `mode_profile: off-or-minimum-v1` and
+`transport_policy: paced-safe-errors-v1` fields bind the current execution
+registry exactly. The latter selects process-wide Mistral pacing only; other
+providers retain their existing transport policy. Both settings are forwarded
+to the real SDK transport factory. Omitting either retains its legacy default,
+not permission to drop a setting from an already-bound registry.
+
+The embedded original admission retains its original mode and transport fields
+and structurally validated historical registry; it is not compared with today's
+settings. Its consumed closed receipt authenticates the complete original
+admission. New-series pricing binds the new series source and selected registry;
+correction pricing instead remains identical to the original admission, even
+when the current execution mode or pacing changes.
+
+The closed binding contains explicit `owner_accepted`, `owner_evidence_sha256`,
+`original_source_sha`, `execution_source_sha`, `original_admission`,
+`financial_policy_sha256`, `genesis_sha256`, `manifest_sha256`, and
+`original_trial_artifacts_sha256`. The latter maps the exact selected original
+trial IDs to `assigned`, `binding`, and `closure` file-byte SHA256 values; these
+must exist unchanged before recovery or credential access.
+The financial digest uses admission `digest` on exactly `cap_usd` and
+`limit_policy` (null for the historical capped controller). Genesis hashes the
+complete first canonical journal line, including newline; manifest hashes the
+unchanged `assignment.json` bytes. The original admission must hash to the
+original consumed receipt's `admission_sha256`. Retain that external document;
+never reconstruct it by inventing financial consent.
+
+Existing admission fields additionally bind campaign/custody roots, namespace,
+original consumed claim, current journal digest, current runtime/registry,
+distinct attempt, ordered subset, and confirmed technical-fix evidence. The
+consuming path verifies the original receipt before opening the existing budget;
+the journal and genesis hashes are checked under its exclusive lock before
+recovery. Every prior settled/unknown reservation survives; unresolved exposure
+is conservatively converted to unknown by existing recovery, never refunded.
+
+Selected profiles must remain exactly equal to the original admitted profiles.
+Owner pricing stays verified against its **original** source and registry entry;
+the outer admission checks the **new** execution source/runtime/registry.
+This extension does not authorize price upgrades or changed financial assumptions.
+Such changes require separately designed explicit consent, not editing this
+binding or the immutable genesis. Historical liability references stay unchanged.
+
+Only correction operations can carry the extension. A changed-source correction
+without it refuses, including the capped legacy controller. Existing same-source
+operations keep their existing behavior. Technical eligibility, subset scope,
+new correction IDs, cap exhaustion, and one-shot durable claims still apply.
+Consumption precedes credential reads; rejection never creates a fresh wallet.
+Tests use disposable private synthetic custody and actual SDK mock transports.
+
+### Worker resources and reports
+
 River has at most two active trials and serialized native tokenizer construction.
 Each trial owns its tokenizer; there is no shared mutable tokenizer or full-roster
 cache. A separate HTTP lane has at most four workers, so a blocked River request
@@ -294,5 +400,4 @@ Terminal reports bind the journal sequence, tip and complete journal digest.
 Original historical launchers and outstanding historical authorities are unchanged
 and are outside this series. The operator's no-intervening-spend obligation is
 an operational prerequisite, not mechanically enforced fleet-wide exclusion.
-Source review, offline qualification and real account, pricing and limit
-admission must precede any paid launch.
+Offline qualification and the authority boundary above apply before any paid launch.

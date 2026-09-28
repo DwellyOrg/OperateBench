@@ -28,6 +28,33 @@ these fixtures. See the detailed scope, research sources and unimplemented
 branches in [Commerce profiles](commerce-return-refund-profiles.md) and
 [Compliance profiles](contributions/prospire/property_compliance_profiles.md).
 
+## Public contract v2
+
+The two profile domains expose `public_contract_version=2` in model-visible
+policy, a domain-local marker, not an engine, package, provider mapping, fixture
+or evaluator version. Producing source commit and implementation bindings remain required.
+Compliance publishes canonical exact required payload fields, including empty
+`{}`, no additional fields, non-empty string values and separate `evidence_refs`;
+the same guidance accompanies PAYLOAD refusals. Commerce clarifies review ordering,
+pending versus unknown payment, settlement versus finality, citations and one-time
+notices. Refusal codes distinguish duplicate entitlement, notice/finality readiness,
+already-notified status and review ordering/repetition from substantive mismatch.
+These observation/diagnostic changes leave accepted business effects, action guards
+and evaluator safety unchanged: a rejected proposal is not an applied harmful
+effect but still makes the episode unsafe; successful recovery does not erase it.
+
+Historical tapes, observations, findings and source bindings stay unchanged:
+no relabelling as v2, rewriting, rescoring or in-place repair. Shared engine or
+fixture versions do not imply identical domain implementation. Exact historical
+replay needs the producing source and original public contract; current development
+replay checks implementation binding and full episode agreement. New-build tests
+prove only new-build consistency, not old-record replay compatibility. The marker
+neither migrates artifacts nor adds a historical-runtime loader. Changed prompts
+may change decisions without changing accepted business semantics: cross-version
+results are not interchangeable or pooled. Model benefit requires separately
+authorized fresh runs; offline payload-shape probes show boundary behavior, not
+model improvement, and authorize neither provider execution nor evidence rewriting.
+
 ## Offline source-checkout commands
 
 Run from the repository root after installing the project dependencies. The
@@ -73,7 +100,8 @@ and grade. Replay reconstructs execution from recorded decisions, without the
 original solver or provider, and checks the reconstructed result. Wrong pack,
 changed profile/spec, altered observations or inconsistent tape are refused.
 These integrity checks are not cryptographic third-party attestation or official
-evidence admission. Records should be regenerated after runtime/domain changes.
+evidence admission. New runs after runtime/domain changes need new records;
+historical records stay immutable.
 Core `Escalate` lowering is not supported in this development lane: profiles use
 explicit domain review actions and `Wait`, not a hidden Maintenance fallback.
 

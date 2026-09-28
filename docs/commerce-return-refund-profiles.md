@@ -2,8 +2,9 @@
 
 **Research-grounded SYNTHETIC_POLICY, not legal advice, legal certification,
 production payment automation, or officially admitted benchmark evidence.**
-This additive namespace does not change the legacy Commerce pack, Maintenance,
-Artifact 8, or SDK/CLI registration. All people, goods, orders, authorities,
+Registered as `commerce.return_refund.profiles.v1` with status `development`; see
+[profile CLI](profile-pack-cli.md). Legacy Commerce, Maintenance and Artifact 8
+are unchanged. All people, goods, orders, authorities,
 carrier events and payments are synthetic. No provider or payment API is used.
 
 ## Identity and reproducibility
@@ -226,12 +227,10 @@ print(evaluate_episode(episode, spec, scenario))
 print(episode.final_state["payment"])
 ```
 
-The dedicated tests also execute all cases through the actual generic ModelAgent
-parser with a reference-driven **mock** transport, record decisions, and replay
-fresh domains with RecordedModelAgent: full episodes and grades match and replay
-provider calls are zero. This proves parser/projection/tape compatibility, not
-real-model capability. Shared persisted run codecs/registration remain the
-integration owner's responsibility; this namespace defines no competing format.
+Dedicated tests exercise every case through the generic ModelAgent parser with
+reference-driven mocks and RecordedModelAgent replay: full episodes and grades
+match with zero replay provider calls. This is interface compatibility, not model
+capability; the shared [development record](profile-pack-cli.md) remains integration-owned.
 
 ## Not implemented
 

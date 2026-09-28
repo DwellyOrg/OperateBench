@@ -67,13 +67,36 @@ closure digest, making zero RPCs.
 
 All real admission flags remain false. The CLI's output setting 32768 and
 synthetic rates are offline fixture settings, **not verified endpoint bounds
-or current prices** (including for the unsuffixed Kimi model). DeepSeek V4.1's
-missing current price blocks real admission, not offline qualification. Exact
-account availability, context/output limits, cache/reasoning/tier billing,
-price admission and explicit source authorization remain required before any
-live execution. The separate consuming entrypoint is documented in
-[Three-flow evaluation controller](THREE_FLOW_CAMPAIGN.md); neither the offline
-command nor this repository supplies an authorization writer.
+or current prices** (including unsuffixed Kimi). DeepSeek V4.1's missing price
+blocks real admission, not offline qualification. The campaign's
+[authority boundary](THREE_FLOW_CAMPAIGN.md#authority-boundary) and
+[consuming entrypoint](THREE_FLOW_CAMPAIGN.md#consuming-entrypoint) govern live use,
+including account access, context/output limits and cache/reasoning/tier billing.
+
+## Failure evidence
+
+The reviewed `river-client==0.12.0` generated `RequestFailedResponse` has string
+`error_category`, string `message`, and `google.protobuf.Struct details`. It has
+**no typed failure-reason enum or numeric reason field**. A `details.code` or
+`details.reason` entry is not a documented enum merely because it is a number or
+string. These arbitrary values are not retained or interpreted. Presence of the
+Struct is retained; finer cause remains `unknown`.
+
+Actual installed gRPC `StatusCode` members are closed structured codes. Their name
+and numeric value are retained (for example INVALID_ARGUMENT = 3,
+RESOURCE_EXHAUSTED = 8), and classifications distinguish request rejection, rate
+limiting, authentication, timeout, network and generic server failures. Unknown
+status objects yield UNKNOWN with no numeric code. INVALID_ARGUMENT alone does
+not identify which argument failed, establish context overflow, prove that no
+generation occurred, or authorize a retry. No raw error body, text, headers,
+trailers, reasoning, credentials or hashes of those values are diagnostic evidence.
+
+Diagnostics expose these safe status names/numbers and the presence of
+failed-response structured details. They cannot establish a finer numeric
+River reason through this SDK contract. Supporting one requires a
+provider-documented field/enum contract and a reviewed closed projection first.
+Error projections are `sanitized_grpc_error_v2` and `sanitized_river_failure_v1`;
+[replay and historical evidence boundaries](THREE_FLOW_CAMPAIGN.md#replay-and-error-evidence) apply.
 
 Run the separate River matrix with the optional SDK environment and explicit
 `THREE_FLOW_RIVER_ASSETS=<asset-cache>`:
