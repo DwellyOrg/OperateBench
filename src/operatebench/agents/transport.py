@@ -30,9 +30,9 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any, NoReturn, Protocol
 
-from boundarybench.jsonsafe import canonical_json_text
 from operatebench.core.errors import OperateBenchError
 from operatebench.core.protocol import AgentObservation, model_projection
+from operatebench.jsonsafe import canonical_json_text
 from operatebench.partial_evidence import PartialExecutionEvidence
 
 #: How many times a failed provider call is retried. Zero, and pinned: a retry

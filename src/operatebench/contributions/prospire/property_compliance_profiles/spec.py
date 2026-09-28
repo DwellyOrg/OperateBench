@@ -12,8 +12,8 @@ from typing import Any
 
 PACK_ID = "lettings.property_compliance.profiles.v1"
 OPERATION_TYPE = "lettings.property_compliance.profiles"
-VERSION = "0.1.0"
-FIXTURE_DIGEST = "0cb47835c4e95fb8d2c53ea24e86ea44a63e0f831feebdb2f0ac5b85ee06c309"
+VERSION = "0.2.0"
+FIXTURE_DIGEST = "5f4796f32869e5e46d531d797fc2c18acfa177356e470e006032e96db34c6b80"
 REFERENCE_SCENARIOS = (
     "EN_normal",
     "EN_remediation",
@@ -95,7 +95,7 @@ def load_spec(path: str | Path) -> Spec:
     )
     if digest(body) != FIXTURE_DIGEST:
         raise ValueError(
-            "not the reviewed finite 0.1.0 fixture; unknown fields, "
+            "not the reviewed finite 0.2.0 fixture; unknown fields, "
             "rules, dates and cases are refused"
         )
     return Spec(

@@ -11,7 +11,7 @@ carrier events and payments are synthetic. No provider or payment API is used.
 
 - Module: `operatebench.domains.commerce.return_refund_profiles`
 - Pack: `commerce.return_refund.profiles.v1`
-- Operation type: `commerce.return_refund.profiles`; version: `0.1.0`
+- Operation type: `commerce.return_refund.profiles`; version: `0.2.0`
 - Operation ID: `commerce_return_refund_profiles`
 - Fixture: `examples/operatebench/commerce_return_refund_profiles/operation.yaml`
   (JSON syntax, a strict YAML subset).

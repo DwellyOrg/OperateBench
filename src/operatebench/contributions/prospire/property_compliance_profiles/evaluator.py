@@ -108,6 +108,67 @@ def evaluate_episode(episode: Any, spec: Spec, scenario_id: str) -> dict[str, An
         "quiet_elapsed": "clock",
     }
 
+    # A domain row precedes its Core delivery boundary. Never search beyond
+    # that boundary: in particular, a refused event cannot borrow a later one.
+    boundaries = {
+        "event_observed": "accepted",
+        "event_audit_only": "audit",
+        "event_rejected": "rejected",
+        "event_after_terminal": "post_terminal",
+    }
+    originals: dict[str, list[Any]] = {}
+    for source_event in episode.events:
+        originals.setdefault(source_event["event_id"], []).append(source_event)
+    pending = []
+    used = set()
+    for row in episode.trajectory:
+        typ = row.get("record_type")
+        if typ == "compliance_event":
+            pending.append(row)
+        elif typ in boundaries:
+            event_id, event_type = row.get("event_id"), row.get("event_type")
+            if not isinstance(event_id, str) or not isinstance(event_type, str):
+                fail("provenance", "EVENT_AUTHORITY_JOIN")
+                pending = []
+                continue
+            candidates = originals.get(event_id, [])
+            original = candidates[0] if len(candidates) == 1 else None
+            relevant = event_type in event_sources
+            successful = typ in ("event_observed", "event_audit_only")
+            if pending or (relevant and successful):
+                valid = (
+                    successful
+                    and len(pending) == 1
+                    and original is not None
+                    and row.get("event_id") not in used
+                    and original.get("disposition") == boundaries[typ]
+                    and original.get("verdict_code") == row.get("code")
+                    and all(
+                        original.get(k) == row.get(k)
+                        for k in ("at", "event_type", "actor_id")
+                    )
+                    and all(
+                        original.get(k) == pending[0].get(k)
+                        for k in ("at", "event_type", "actor_id", "payload")
+                    )
+                    and original.get("actor_id") == event_sources.get(event_type)
+                )
+                if not valid:
+                    fail("provenance", "EVENT_AUTHORITY_JOIN")
+                used.add(row.get("event_id"))
+            pending = []
+    if pending:
+        fail("provenance", "EVENT_AUTHORITY_JOIN")
+    if not dimensions["provenance"]:
+        # Invalid associations are not safe inputs to the causal reconstruction.
+        # Refuse before indexing producer-controlled event payloads.
+        return {
+            "reliable": False,
+            "dimensions": dimensions,
+            "findings": findings,
+            "terminal_outcome": episode.terminal_outcome or episode.status,
+        }
+
     def check_report(r: Any, now: str) -> Any:
         if (
             r["property_id"] != case["property_id"]
@@ -195,8 +256,6 @@ def evaluate_episode(episode: Any, spec: Spec, scenario_id: str) -> dict[str, An
                 fail(CODE_DIMENSION[code], code)
         elif typ == "compliance_event":
             p, event = row["payload"], row["event_type"]
-            if row["actor_id"] != event_sources.get(event):
-                fail("provenance", "EVENT_AUTHORITY")
             if event in ["reports_received", "report_replaced"]:
                 if requested is None:
                     fail("scope", "REPORT_WITHOUT_INSPECTION")

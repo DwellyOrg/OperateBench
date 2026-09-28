@@ -40,6 +40,9 @@ def test_registered_profile_round_trip(tmp_path, pack_id, alias, scenario):
     pack = BUILTIN_PACKS.resolve(pack_id)
     assert BUILTIN_PACKS.resolve(alias) is pack
     assert not pack.metadata.evidence_eligible
+    assert pack.metadata.pack_version == "0.2.0"
+    commands = next(c for c in COMMANDS if c.factories.pack_id == pack_id)
+    assert commands.factories.pack_version == pack.metadata.pack_version
     spec = Path(pack.metadata.default_spec)
     assert pack.validate(ValidateRequest(spec)).contract_passed
     output = tmp_path / "run.json"
@@ -203,7 +206,19 @@ def test_cli_commands_and_refusals(tmp_path, capsys, pack_id, alias, scenario):
 
 
 @pytest.mark.parametrize("commands", COMMANDS)
-@pytest.mark.parametrize("field", ["profile", "spec", "state", "time", "case"])
+@pytest.mark.parametrize(
+    "field",
+    [
+        "profile",
+        "spec",
+        "state",
+        "time",
+        "case",
+        "pack_version",
+        "implementation_digest",
+        "runtime_digest",
+    ],
+)
 def test_resealed_record_binding_or_episode_mutation_refused(tmp_path, commands, field):
     pack = BUILTIN_PACKS.resolve(commands.factories.pack_id)
     spec = Path(pack.metadata.default_spec)
@@ -213,7 +228,9 @@ def test_resealed_record_binding_or_episode_mutation_refused(tmp_path, commands,
             RunRequest(spec, commands.reference_scenarios[0], "reference", output)
         ).payload
     )
-    if field == "profile":
+    if field in {"pack_version", "implementation_digest", "runtime_digest"}:
+        record["binding"][field] = "0.1.0" if field == "pack_version" else "0" * 64
+    elif field == "profile":
         record["binding"]["profile"]["profile_digest"] = "0" * 64
     elif field == "spec":
         record["binding"]["spec_digest"] = "0" * 64
@@ -224,6 +241,11 @@ def test_resealed_record_binding_or_episode_mutation_refused(tmp_path, commands,
     else:
         record["episode"]["trajectory"][0]["at"] = "2099-01-01T00:00:00Z"
     expected = {
+        "pack_version": "trusted spec/profile/implementation/runtime binding mismatch",
+        "implementation_digest": (
+            "trusted spec/profile/implementation/runtime binding mismatch"
+        ),
+        "runtime_digest": "trusted spec/profile/implementation/runtime binding mismatch",
         "profile": "trusted spec/profile/implementation/runtime binding mismatch",
         "spec": "trusted spec/profile/implementation/runtime binding mismatch",
         "case": "episode identity mismatch",
@@ -231,7 +253,7 @@ def test_resealed_record_binding_or_episode_mutation_refused(tmp_path, commands,
         "time": "recomputed full episode differs",
     }[field]
     record.pop("record_digest")
-    # Seal outside the rejection assertion: all five mutations remain valid
+    # Seal outside the rejection assertion: all mutations remain valid
     # codec inputs, and must reach the binding/recomputed-episode replay gate.
     sealed = _seal_record(record)
     with pytest.raises(DevelopmentRuntimeError, match=expected):

@@ -2,7 +2,7 @@
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
 # Property compliance: four bounded jurisdiction profiles
 
-**Synthetic-only development benchmark, version 0.1.0.** This is not legal
+**Synthetic-only development benchmark, version 0.2.0.** This is not legal
 advice, an official certificate, permission to occupy or let, evidence admission,
 a real contractor-register check, or proof that a human reviewed a property.
 All properties, credentials, reports, communications and receipts are fixtures.

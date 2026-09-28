@@ -43,7 +43,6 @@ from dataclasses import dataclass, fields
 from dataclasses import field as dataclass_field
 from typing import Any
 
-from boundarybench.jsonsafe import canonical_json_bytes
 from operatebench.core.engine import Engine
 from operatebench.core.errors import OperateBenchError
 from operatebench.core.outcomes import (
@@ -77,6 +76,7 @@ from operatebench.domains.lettings.maintenance.state import (
     Obligation,
     Quote,
 )
+from operatebench.jsonsafe import canonical_json_bytes
 
 #: The one quantity a matched decision-point control and its Lifecycle arm share.
 #: Named here so a report can state it rather than leave a reader to infer that

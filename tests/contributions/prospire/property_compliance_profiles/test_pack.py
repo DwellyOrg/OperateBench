@@ -170,7 +170,7 @@ def test_strict_spec_refuses_unreviewed_rules(tmp_path, mutation):
         body["scenarios"]["EN_normal"]["profile_id"] = "global"
     raw = json.dumps(body)
     if mutation == "duplicate":
-        raw = raw.replace('"version": "0.1.0"', '"version": "0.1.0", "version": "0.1.0"')
+        raw = raw.replace('"version": "0.2.0"', '"version": "0.2.0", "version": "0.2.0"')
     path = tmp_path / "bad.json"
     path.write_text(raw)
     with pytest.raises(ValueError):

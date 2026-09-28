@@ -1,7 +1,7 @@
 {
   "pack_id": "commerce.return_refund.profiles.v1",
   "operation_type": "commerce.return_refund.profiles",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "operation_id": "commerce_return_refund_profiles",
   "profiles": {
     "UK": "abc74281a82b25901ba743e63675b2c1b99695785a6230d993fec2c6a520a300",

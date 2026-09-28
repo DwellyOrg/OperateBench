@@ -16,7 +16,7 @@ class ComplianceProfilesPack:
         pack_id="lettings.property_compliance.profiles.v1",
         operation_type="lettings.property_compliance.profiles",
         operation_id="lettings_property_compliance_profiles_v1",
-        pack_version="0.1.0",
+        pack_version="0.2.0",
         display_name="Property compliance jurisdiction profiles",
         owner_id="prospire",
         owner_display_name="PROSPIRE TECHNOLOGIES LTD",

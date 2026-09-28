@@ -31,7 +31,7 @@ import hashlib
 from collections.abc import Mapping, Sequence
 from typing import Any
 
-from boundarybench.jsonsafe import canonical_json_bytes, ensure_json_safe
+from operatebench.jsonsafe import canonical_json_bytes, ensure_json_safe
 
 #: Stable public name for the version mechanics implemented below. This names an
 #: encoding contract; it is not a claim that a shortened content digest provides
