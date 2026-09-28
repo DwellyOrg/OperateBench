@@ -91,7 +91,7 @@ from tests.openai_transport import (
 #: The contract's own name, written out rather than imported: it is inside
 #: ``configuration_id``, so an identifier asserted against itself would follow
 #: any rename and prove nothing about the run identity a reader compares.
-EXTENSIONS_CONTRACT = "openai_response_server_extensions_v2"
+EXTENSIONS_CONTRACT = "openai_response_server_extensions_v3"
 
 #: The name the superseded reading of the same field set carried. ``v1``
 #: transcribed these names and types and then made every one of them optional
@@ -107,6 +107,7 @@ SUPERSEDED_EXTENSIONS_CONTRACT = "openai_response_server_extensions_v1"
 #: settings is asserted against a SHA-256 over its canonical bytes, so a silent
 #: widening of the accepted contract fails here rather than in production.
 EXPECTED_SCHEMA: dict[str, Any] = {
+    "access_programs": "null",
     "billing": {"payer": "bounded_text"},
     "frequency_penalty": "penalty_number",
     "presence_penalty": "penalty_number",
@@ -778,7 +779,7 @@ def test_the_contract_is_provider_observed_and_says_so_by_not_claiming_the_sdk()
     declared = declared_wire_fields(Response)
 
     assert set(SERVER_EXTENSION_NAMES).isdisjoint(declared)
-    assert len(SERVER_EXTENSION_NAMES) == 5
+    assert len(SERVER_EXTENSION_NAMES) == 6
 
 
 # -- 7. what moved, and what did not -------------------------------------------

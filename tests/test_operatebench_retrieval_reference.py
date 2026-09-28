@@ -48,13 +48,15 @@ from operatebench.runner import check_maintenance, run_episode
 from operatebench.version import OPERATEBENCH_VERSION
 from tests.test_projection_budget_contract import assert_projection_budget
 
-SPEC = "examples/operatebench/maintenance_v0_1.yaml"
+SPEC = "examples/operatebench/maintenance_delivery_recovery_v0_7.yaml"
 
 #: Probe 1, the shipped reference at V1 on the pre-retrieval observation.
 BASELINE_CALLS_V1 = 46
 
 #: Probe 4, variant A (agent re-request), the variant the owner adjudicated.
-TARGET_CALLS = {"V1": 46, "V2": 24, "V3": 28}
+# Historical baseline remains 24 for V2. The versioned successor adds exactly
+# one explicit recovery action and its fresh read batch; not a legacy parity claim.
+TARGET_CALLS = {"V1": 46, "V2": 24 + 2, "V3": 28}
 
 
 @pytest.fixture(scope="module")
@@ -505,13 +507,11 @@ class TestTheReferenceRunsThroughReads:
     def test_the_authored_terminal_is_reached_reliably(self, spec, scenario_id) -> None:
         run = run_episode(spec, scenario_id, "reference")
         assert run.outcome.status == spec.scenario(scenario_id).expected_terminal
-        assert run.reliable is (scenario_id != "V2")
-        assert run.evaluation.failed_dimensions == (
-            ("recovery", "obligations") if scenario_id == "V2" else ()
-        )
+        assert run.reliable is True
+        assert run.evaluation.failed_dimensions == ()
 
     @pytest.mark.parametrize("scenario_id", ["V1", "V2", "V3"])
-    def test_it_costs_no_more_calls_than_the_shipped_baseline(
+    def test_calls_fit_the_explicit_successor_recovery_delta(
         self, spec, scenario_id
     ) -> None:
         _outcome, agent = census_run(spec, scenario_id)
@@ -632,6 +632,11 @@ class TestTheReferenceRunsThroughReads:
 
 
 class TestTheNegativesKeepTheirOracleClosures:
+    @pytest.fixture
+    def spec(self):
+        # Historical negative-control manifests retain their original spec.
+        return load_spec("examples/operatebench/maintenance_v0_1.yaml")
+
     def test_the_registry_holds_exactly_nine_agents(self) -> None:
         assert sorted(AGENTS) == [
             "always_act",

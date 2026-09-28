@@ -35,7 +35,7 @@ from operatebench.runner import run_episode
 from operatebench.version import OPERATEBENCH_VERSION
 from tests.test_projection_budget_contract import assert_projection_budget
 
-SPEC = "examples/operatebench/maintenance_v0_1.yaml"
+SPEC = "examples/operatebench/maintenance_delivery_recovery_v0_7.yaml"
 
 #: The identity a provider-backed run carries. Not a registered agent: a model
 #: run has no registry entry, and its kind comes from its execution source.
@@ -46,7 +46,9 @@ BASELINE_CALLS_V1 = 46
 
 #: Probe 4 variant A, the variant the owner adjudicated. One agent batch per
 #: business decision: 23 -> 46 at V1, honestly 2x the legacy 23-call episode.
-TARGET_CALLS = {"V1": 46, "V2": 24, "V3": 28}
+# Historical baseline remains 24 for V2. The versioned successor adds exactly
+# one explicit recovery action and its fresh read batch; not a legacy parity claim.
+TARGET_CALLS = {"V1": 46, "V2": 24 + 2, "V3": 28}
 
 #: Collection names that only a normalized projection of the record carries. If
 #: one of these is a key anywhere in a model request, the removal did not happen.
@@ -251,15 +253,9 @@ class TestTheAdjudicatedBudgets:
     ) -> None:
         run = run_episode(spec, scenario_id, "reference")
         assert run.outcome.status == spec.scenario(scenario_id).expected_terminal
-        assert run.reliable is (scenario_id != "V2"), run.evaluation.as_dict()
-        assert run.evaluation.failed_dimensions == (
-            ("recovery", "obligations") if scenario_id == "V2" else ()
-        )
-        assert set(run.evaluation.finding_codes) == (
-            {"REQUIRED_NOTIFICATION_UNDELIVERED", "OBLIGATION_MESSAGE_NOT_ESTABLISHED"}
-            if scenario_id == "V2"
-            else set()
-        )
+        assert run.reliable is True, run.evaluation.as_dict()
+        assert run.evaluation.failed_dimensions == ()
+        assert set(run.evaluation.finding_codes) == set()
 
     @pytest.mark.parametrize("scenario_id", ["V1", "V2", "V3"])
     def test_the_call_budget_holds(self, spec, scenario_id) -> None:

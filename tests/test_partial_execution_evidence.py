@@ -72,7 +72,7 @@ def test_provider_recorder_durably_keeps_excluded_prefix(tmp_path, server_error)
     ledger = read_execution_ledger(result.ledger_path)
     assert rows[0]["identity"]["execution_run_id"] == ledger.header.execution_run_id
     assert rows[-1]["exclusion_code"] == (
-        "provider_transport" if server_error else "provider_budget"
+        "provider_server_error" if server_error else "provider_budget"
     )
     assert any(r.get("receipt", {}).get("record_type") == "effect_accepted" for r in rows)
     assert rows[-1]["ledger_terminal"] == ledger.terminal.as_dict()

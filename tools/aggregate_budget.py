@@ -56,7 +56,9 @@ def money(x: Any) -> F:
     return F(d)
 
 
-def decimal(x: F) -> Decimal:
+def decimal(x: F | None) -> Decimal:
+    if x is None:
+        raise ValueError("absent monetary ceiling is not a numeric amount")
     # Rates are finite decimal; denominator factors only 2 and 5.
     from decimal import localcontext
 
@@ -113,8 +115,8 @@ class Budget:
         st = root.stat()
         if st.st_uid != os.getuid() or stat.S_IMODE(st.st_mode) != 0o700:
             raise ValueError("root-only directory required")
-        self.cap = money(cap)
-        if self.cap <= 0:
+        self.cap: F | None = money(cap)
+        if self.cap is not None and self.cap <= 0:
             raise ValueError("positive cap required")
         self.root = root
         self.namespace = namespace
@@ -187,13 +189,15 @@ class Budget:
 
     @property
     def exposure(self) -> F:
-        return self.totals()["exposure"]
+        value = self.totals()["exposure"]
+        assert value is not None
+        return value
 
     @property
     def total(self) -> Decimal:
         return decimal(self.exposure)
 
-    def totals(self) -> dict[str, F]:
+    def totals(self) -> dict[str, F | None]:
         with self.lock:
             known = sum(
                 (
@@ -220,7 +224,9 @@ class Budget:
                 "pending": pending,
                 "unknown": unknown,
                 "exposure": known + pending + unknown,
-                "remaining": self.cap - known - pending - unknown,
+                "remaining": None
+                if self.cap is None
+                else self.cap - known - pending - unknown,
             }
 
     def _reduce(
@@ -285,7 +291,7 @@ class Budget:
             ),
             F(0),
         )
-        if exposure > self.cap:
+        if self.cap is not None and exposure > self.cap:
             raise CostCapExceededError("aggregate exposure exhausted before wire")
         return rows
 
@@ -448,15 +454,23 @@ class SharedGuard(LifecycleCostGuard):
         max_output_tokens: int,
         token_hard_cap: int | None = None,
     ) -> None:
+        self.budget = budget
         super().__init__(
             policy=policy,
-            cap_usd=decimal(budget.cap),
+            cap_usd=None if budget.cap is None else decimal(budget.cap),
             max_output_tokens=max_output_tokens,
             token_hard_cap=token_hard_cap,
         )
         self.budget = budget
         self.cell = cell
         self.ticket: tuple[str, Decimal, int] | None = None
+
+    @property
+    def _allows_no_money_cap(self) -> bool:
+        return (
+            getattr(self.budget, "controller_profile", None)
+            == "three-flow-optional-limits-v1"
+        )
 
     def authorize(self, *, input_tokens_upper_bound: int) -> Decimal:
         if self.ticket is not None:

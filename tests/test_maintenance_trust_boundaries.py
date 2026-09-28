@@ -591,7 +591,7 @@ class TestEvaluatorTreatsTheRecordAsUntrusted:
             run = run_episode(spec, scenario_id, "reference")
             assert run.reliable is (scenario_id != "V2")
             assert run.evaluation.failed_dimensions == (
-                ("recovery", "obligations") if scenario_id == "V2" else ()
+                ("terminal_outcome", "recovery") if scenario_id == "V2" else ()
             )
 
     def test_an_ordering_forgery_is_a_critical_failure(

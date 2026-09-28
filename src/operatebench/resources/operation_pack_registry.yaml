@@ -5,6 +5,15 @@ operations:
   - owner_id: prospire
     owner_display_name: PROSPIRE TECHNOLOGIES LTD
     contribution_kind: maintainer
+    pack_id: commerce.return_refund.profiles.v1
+    operation_type: commerce.return_refund.profiles
+    operation_id: commerce_return_refund_profiles
+    aliases: [commerce.return_refund.profiles]
+    source_module: operatebench.sdk.profile_packs.pack
+    source_path: src/operatebench/sdk/profile_packs
+  - owner_id: prospire
+    owner_display_name: PROSPIRE TECHNOLOGIES LTD
+    contribution_kind: maintainer
     pack_id: commerce.return_refund.synthetic.v1
     operation_type: commerce.return_refund.synthetic.v1
     operation_id: commerce_return_refund_synthetic_v1
@@ -22,6 +31,15 @@ operations:
       - maintenance
     source_module: operatebench.domains.lettings.maintenance.pack
     source_path: src/operatebench/domains/lettings/maintenance
+  - owner_id: prospire
+    owner_display_name: PROSPIRE TECHNOLOGIES LTD
+    contribution_kind: maintainer
+    pack_id: lettings.property_compliance.profiles.v1
+    operation_type: lettings.property_compliance.profiles
+    operation_id: lettings_property_compliance_profiles_v1
+    aliases: [lettings.property_compliance.profiles]
+    source_module: operatebench.contributions.prospire.property_compliance_profiles.pack
+    source_path: src/operatebench/contributions/prospire/property_compliance_profiles
   - owner_id: prospire
     owner_display_name: PROSPIRE TECHNOLOGIES LTD
     contribution_kind: maintainer

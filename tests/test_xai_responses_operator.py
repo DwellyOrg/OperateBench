@@ -148,6 +148,7 @@ def test_raw_tool_argument_byte_bound_accepts_exact_limit_and_refuses_plus_one()
 def test_invalid_huge_arguments_are_refused_before_json_or_sdk_parsing(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    from operatebench.providers.faults import AdapterProviderError
     from operatebench.providers.wire import WireResponse
     from operatebench.providers.xai_responses import check_tool_argument_wire_bytes
 
@@ -171,8 +172,9 @@ def test_invalid_huge_arguments_are_refused_before_json_or_sdk_parsing(
             payload, max_bytes=17
         ),
     )
-    with pytest.raises(Exception, match="byte limit"):
+    with pytest.raises(AdapterProviderError, match="byte limit") as caught:
         _ = response.wire
+    assert caught.value.fault == "provider_response_invalid"
     assert parsed is False
 
 

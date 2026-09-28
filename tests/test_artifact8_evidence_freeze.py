@@ -32,6 +32,7 @@ from operatebench.execution_ledger import (
     IncompleteExecutionLedgerError,
     read_execution_ledger,
 )
+from tests.distribution_fixtures import DistributionFactory
 from tests.test_public_release import _canonical_distribution
 from tools import check_public_release as release_checks
 
@@ -567,8 +568,12 @@ def _expected_wheel_package_files(root: Path = ROOT) -> dict[str, Path]:
     return expected
 
 
-def _write_test_distribution(directory: Path) -> None:
-    _, sdist = _canonical_distribution(directory)
+def _write_test_distribution(
+    directory: Path,
+    *,
+    canonical_distribution: DistributionFactory = _canonical_distribution,
+) -> None:
+    _, sdist = canonical_distribution(directory)
     replacement = sdist.with_name("replacement.tar.gz")
     with (
         tarfile.open(sdist, "r:gz") as source,
@@ -595,10 +600,10 @@ def test_distribution_directory_unset_skips_with_build_job_guidance(
 
 
 def test_prebuilt_distribution_passes_exact_audit(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path, b3_distribution: DistributionFactory, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     out = tmp_path / "dist"
-    _write_test_distribution(out)
+    b3_distribution(out)
     monkeypatch.setenv("OPERATEBENCH_DIST_DIR", str(out))
 
     _audit_distribution_from_environment()
@@ -615,10 +620,13 @@ def test_distribution_directory_from_environment_must_exist(
 
 @pytest.mark.parametrize("duplicate_suffix", [".whl", ".tar.gz"])
 def test_distribution_directory_requires_exactly_one_archive_of_each_kind(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, duplicate_suffix: str
+    tmp_path: Path,
+    b3_distribution: DistributionFactory,
+    monkeypatch: pytest.MonkeyPatch,
+    duplicate_suffix: str,
 ) -> None:
     out = tmp_path / "dist"
-    _write_test_distribution(out)
+    b3_distribution(out)
     (out / f"duplicate{duplicate_suffix}").write_bytes(b"wrong archive")
     monkeypatch.setenv("OPERATEBENCH_DIST_DIR", str(out))
     with pytest.raises(AssertionError, match="exactly one wheel and one sdist"):
@@ -682,10 +690,10 @@ def _append_test_sdist_member(
     [(tarfile.SYMTYPE, "../../../../outside"), (tarfile.LNKTYPE, "outside")],
 )
 def test_sdist_refuses_duplicate_fixture_link_replacement(
-    tmp_path: Path, kind: bytes, linkname: str
+    tmp_path: Path, b3_distribution: DistributionFactory, kind: bytes, linkname: str
 ) -> None:
     out = tmp_path / "dist"
-    _write_test_distribution(out)
+    b3_distribution(out)
     wheel, sdist = next(out.glob("*.whl")), next(out.glob("*.tar.gz"))
     member = tarfile.TarInfo(f"operatebench-0.9.0/tests/fixtures/b3/{MODEL_NAME}")
     member.type = kind
@@ -696,9 +704,11 @@ def test_sdist_refuses_duplicate_fixture_link_replacement(
         _audit_distribution(wheel, sdist)
 
 
-def test_sdist_refuses_duplicate_regular_member(tmp_path: Path) -> None:
+def test_sdist_refuses_duplicate_regular_member(
+    tmp_path: Path, b3_distribution: DistributionFactory
+) -> None:
     out = tmp_path / "dist"
-    _write_test_distribution(out)
+    b3_distribution(out)
     wheel, sdist = next(out.glob("*.whl")), next(out.glob("*.tar.gz"))
     member = tarfile.TarInfo(f"operatebench-0.9.0/tests/fixtures/b3/{MODEL_NAME}")
     _append_test_sdist_member(sdist, member, (FIXTURES / MODEL_NAME).read_bytes())
@@ -716,9 +726,11 @@ def test_sdist_refuses_duplicate_regular_member(tmp_path: Path) -> None:
         "operatebench-0.9.0//outside",
     ],
 )
-def test_sdist_refuses_unsafe_member_name(tmp_path: Path, name: str) -> None:
+def test_sdist_refuses_unsafe_member_name(
+    tmp_path: Path, b3_distribution: DistributionFactory, name: str
+) -> None:
     out = tmp_path / "dist"
-    _write_test_distribution(out)
+    b3_distribution(out)
     wheel, sdist = next(out.glob("*.whl")), next(out.glob("*.tar.gz"))
     _append_test_sdist_member(sdist, tarfile.TarInfo(name), b"unsafe")
 
@@ -726,9 +738,11 @@ def test_sdist_refuses_unsafe_member_name(tmp_path: Path, name: str) -> None:
         _audit_distribution(wheel, sdist)
 
 
-def test_sdist_refuses_second_top_level_root(tmp_path: Path) -> None:
+def test_sdist_refuses_second_top_level_root(
+    tmp_path: Path, b3_distribution: DistributionFactory
+) -> None:
     out = tmp_path / "dist"
-    _write_test_distribution(out)
+    b3_distribution(out)
     wheel, sdist = next(out.glob("*.whl")), next(out.glob("*.tar.gz"))
     _append_test_sdist_member(sdist, tarfile.TarInfo("other-root/file"), b"unsafe")
 
@@ -736,9 +750,11 @@ def test_sdist_refuses_second_top_level_root(tmp_path: Path) -> None:
         _audit_distribution(wheel, sdist)
 
 
-def test_sdist_refuses_non_file_non_directory_member(tmp_path: Path) -> None:
+def test_sdist_refuses_non_file_non_directory_member(
+    tmp_path: Path, b3_distribution: DistributionFactory
+) -> None:
     out = tmp_path / "dist"
-    _write_test_distribution(out)
+    b3_distribution(out)
     wheel, sdist = next(out.glob("*.whl")), next(out.glob("*.tar.gz"))
     member = tarfile.TarInfo("operatebench-0.9.0/pipe")
     member.type = tarfile.FIFOTYPE
@@ -748,9 +764,11 @@ def test_sdist_refuses_non_file_non_directory_member(tmp_path: Path) -> None:
         _audit_distribution(wheel, sdist)
 
 
-def test_wheel_refuses_omission_of_boundarybench_package(tmp_path: Path) -> None:
+def test_wheel_refuses_omission_of_boundarybench_package(
+    tmp_path: Path, b3_distribution: DistributionFactory
+) -> None:
     out = tmp_path / "dist"
-    _write_test_distribution(out)
+    b3_distribution(out)
     wheel, sdist = next(out.glob("*.whl")), next(out.glob("*.tar.gz"))
     with zipfile.ZipFile(wheel) as archive:
         remove = {
@@ -771,10 +789,10 @@ def test_wheel_refuses_omission_of_boundarybench_package(tmp_path: Path) -> None
     ],
 )
 def test_wheel_refuses_omission_of_any_operatebench_source_member(
-    tmp_path: Path, name: str
+    tmp_path: Path, b3_distribution: DistributionFactory, name: str
 ) -> None:
     out = tmp_path / "dist"
-    _write_test_distribution(out)
+    b3_distribution(out)
     wheel, sdist = next(out.glob("*.whl")), next(out.glob("*.tar.gz"))
     _rewrite_test_wheel(wheel, remove={name})
 
@@ -782,9 +800,11 @@ def test_wheel_refuses_omission_of_any_operatebench_source_member(
         _audit_distribution(wheel, sdist)
 
 
-def test_wheel_refuses_changed_package_member_bytes(tmp_path: Path) -> None:
+def test_wheel_refuses_changed_package_member_bytes(
+    tmp_path: Path, b3_distribution: DistributionFactory
+) -> None:
     out = tmp_path / "dist"
-    _write_test_distribution(out)
+    b3_distribution(out)
     wheel, sdist = next(out.glob("*.whl")), next(out.glob("*.tar.gz"))
     _rewrite_test_wheel(wheel, alter="operatebench/version.py")
 
@@ -792,9 +812,11 @@ def test_wheel_refuses_changed_package_member_bytes(tmp_path: Path) -> None:
         _audit_distribution(wheel, sdist)
 
 
-def test_wheel_refuses_duplicate_member_name(tmp_path: Path) -> None:
+def test_wheel_refuses_duplicate_member_name(
+    tmp_path: Path, b3_distribution: DistributionFactory
+) -> None:
     out = tmp_path / "dist"
-    _write_test_distribution(out)
+    b3_distribution(out)
     wheel, sdist = next(out.glob("*.whl")), next(out.glob("*.tar.gz"))
     with (
         pytest.warns(UserWarning, match="Duplicate name"),
@@ -806,9 +828,11 @@ def test_wheel_refuses_duplicate_member_name(tmp_path: Path) -> None:
         _audit_distribution(wheel, sdist)
 
 
-def test_wheel_refuses_symlink_mode_package_member(tmp_path: Path) -> None:
+def test_wheel_refuses_symlink_mode_package_member(
+    tmp_path: Path, b3_distribution: DistributionFactory
+) -> None:
     out = tmp_path / "dist"
-    _write_test_distribution(out)
+    b3_distribution(out)
     wheel, sdist = next(out.glob("*.whl")), next(out.glob("*.tar.gz"))
     _rewrite_test_wheel(wheel, symlink="operatebench/__init__.py")
 

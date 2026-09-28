@@ -314,6 +314,9 @@ EXCLUSION_CODES: tuple[str, ...] = (
     ABORTED_CODE,
     EXCLUSION_BUDGET,
     EXCLUSION_DEADLINE,
+    # ModelAgent preserves canonical adapter faults rather than collapsing them
+    # into provider_transport. Keep the durable vocabulary literal and closed.
+    *PROVIDER_FAULTS_V3,
     "provider_protocol",
     "provider_transport",
 )

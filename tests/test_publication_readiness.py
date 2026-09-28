@@ -173,6 +173,40 @@ def test_ci_keeps_full_matrix_and_independent_secret_scan() -> None:
         "persist-credentials: false",
     ):
         assert required in workflow
+    import yaml
+
+    document = yaml.load(workflow, Loader=yaml.BaseLoader)
+    assert document["on"] == {
+        "push": {"branches": ["main"]},
+        "pull_request": "",
+        "workflow_dispatch": "",
+    }
+    assert document["permissions"] == {"contents": "read"}
+    assert document["jobs"]["test"]["strategy"]["matrix"] == {
+        "python-version": ["3.11", "3.14"]
+    }
+    job = document["jobs"]["secret-scan"]
+    assert job["name"] == "independent secret scan"
+    assert job["runs-on"] == "ubuntu-latest"
+    # Pin the current unconditional job/step contract, not an expression evaluator.
+    assert not ({"if", "continue-on-error", "needs", "defaults", "env"} & job.keys())
+    assert "defaults" not in document
+    steps = job["steps"]
+    assert [step["name"] for step in steps] == [
+        "Check out the repository",
+        "Install independent secret scanner",
+        "Independent source secret scan",
+    ]
+    for step in steps:
+        assert not ({"if", "continue-on-error", "working-directory", "env"} & step.keys())
+    assert steps[0]["uses"].startswith("actions/checkout@")
+    assert steps[0]["with"]["persist-credentials"] == "false"
+    assert steps[1]["shell"] == "bash"
+    assert "sha256sum --check" in steps[1]["run"]
+    assert steps[2] == {
+        "name": "Independent source secret scan",
+        "run": "gitleaks dir --redact --no-banner .",
+    }
     assert "--exit-code 0" not in workflow
     assert "--baseline-path" not in workflow
     assert "secrets." not in "\n".join(
@@ -200,33 +234,35 @@ def test_existing_credential_families_stay_detectable(
     assert checks.check_no_credential_shapes(tmp_path)
 
 
-def _assert_candidate_and_human_requirements(manifest: dict) -> None:
-    assert manifest["candidate_acceptance"]["status"] == "requires_exact_source_record"
-    assert manifest["candidate_acceptance"]["hosted_ci"] == "pending"
-    gates = {gate["id"].split("_")[0]: gate for gate in manifest["gates"]}
-    for name in ("G6", "G8", "G9", "G11", "G12"):
-        assert gates[name]["status"] == "pending"
-        assert gates[name]["blocking"] is True
-        assert gates[name]["evidence"]
-    assert (
-        "Human requirements cannot be closed by CI"
-        in manifest["candidate_acceptance"]["closure"]
-    )
-
-
-@pytest.mark.parametrize("gate_name", ["G6", "G8", "G9", "G11", "G12"])
-@pytest.mark.parametrize(
-    "field,value", [("status", "passed"), ("blocking", False), ("evidence", "")]
-)
-def test_gate_contract_rejects_unproved_closure(
-    gate_name: str, field: str, value: object
-) -> None:
+def test_real_manifest_preserves_all_candidate_and_human_requirements() -> None:
+    """Authored policy against the real manifest, not assertion-helper self-tests."""
     import json
 
     root = Path(__file__).resolve().parents[1]
     manifest = json.loads((root / "PUBLICATION_MANIFEST.json").read_text())
-    _assert_candidate_and_human_requirements(manifest)
-    gate = next(g for g in manifest["gates"] if g["id"].startswith(gate_name + "_"))
-    gate[field] = value
-    with pytest.raises(AssertionError):
-        _assert_candidate_and_human_requirements(manifest)
+    acceptance = manifest["candidate_acceptance"]
+    assert acceptance["status"] == "requires_exact_source_record"
+    assert acceptance["hosted_ci"] == "pending"
+    expected = {
+        "G1_clean_history": "passed",
+        "G2_package_build_and_install": "passed",
+        "G3_cli_offline": "passed",
+        "G4_causal_acceptance": "passed",
+        "G5_deterministic_replay": "passed",
+        "G6_offline_suite_and_quality_gates": "pending",
+        "G7_secret_and_private_reference_scan": "passed",
+        "G8_claims_scan": "pending",
+        "G9_links": "pending",
+        "G10_licensing": "passed",
+        "G11_independent_human_gate": "pending",
+        "G12_explicit_publication_approval": "pending",
+    }
+    gates = manifest["gates"]
+    assert len(gates) == len(expected)
+    assert {gate["id"] for gate in gates} == set(expected)
+    for gate in gates:
+        assert gate["status"] == expected[gate["id"]]
+        assert gate["blocking"] is True
+        assert gate["evidence"]
+        assert gate["evidence_candidate"] == "verified_base"
+    assert "Human requirements cannot be closed by CI" in acceptance["closure"]

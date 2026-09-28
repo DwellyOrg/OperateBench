@@ -74,7 +74,7 @@ def test_notice_is_apache_and_dco_is_not_a_project_content_license() -> None:
 
 
 def test_wheel_metadata_contains_canonical_apache_and_cc_license_texts(
-    tmp_path: Path,
+    built_distribution: tuple[Path, Path],
 ) -> None:
     project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))[
         "project"
@@ -82,11 +82,7 @@ def test_wheel_metadata_contains_canonical_apache_and_cc_license_texts(
     assert "LICENSES/Apache-2.0.txt" in project["license-files"]
     assert "LICENSES/CC-BY-4.0.txt" in project["license-files"]
 
-    dist = tmp_path / "dist"
-    subprocess.run(
-        ["uv", "build", "--wheel", "--out-dir", str(dist)], cwd=ROOT, check=True
-    )
-    with zipfile.ZipFile(next(dist.glob("*.whl"))) as wheel:
+    with zipfile.ZipFile(built_distribution[0]) as wheel:
         members = set(wheel.namelist())
     licenses = {
         member.split(".dist-info/licenses/", 1)[1]
@@ -296,37 +292,19 @@ def test_licensing_candidate_gate_names_owner_authorization_not_brand_legal() ->
 
 
 def test_sdist_excludes_release_control_files_but_checkout_keeps_them(
-    tmp_path: Path,
+    built_distribution: tuple[Path, Path],
 ) -> None:
     assert all((ROOT / name).is_file() for name in CONTROL_FILES)
-    dist = tmp_path / "dist"
-    subprocess.run(
-        ["uv", "build", "--sdist", "--out-dir", str(dist)], cwd=ROOT, check=True
-    )
-    with tarfile.open(next(dist.glob("*.tar.gz")), "r:gz") as archive:
+    with tarfile.open(built_distribution[1], "r:gz") as archive:
         members = {Path(name).name for name in archive.getnames()}
     assert CONTROL_FILES.isdisjoint(members)
 
 
 def test_extracted_sdist_scanner_uses_package_surface_not_missing_controls(
-    tmp_path: Path,
+    extracted_sdist_scan: tuple[int, str, str],
 ) -> None:
-    dist = tmp_path / "dist"
-    subprocess.run(
-        ["uv", "build", "--sdist", "--out-dir", str(dist)], cwd=ROOT, check=True
-    )
-    extracted = tmp_path / "src"
-    with tarfile.open(next(dist.glob("*.tar.gz")), "r:gz") as archive:
-        archive.extractall(extracted, filter="data")
-    package_root = next(extracted.iterdir())
-    result = subprocess.run(
-        [sys.executable, "-m", "tools.check_public_release", "--surface", "sdist"],
-        cwd=package_root,
-        text=True,
-        capture_output=True,
-        check=False,
-    )
-    assert result.returncode == 0, result.stdout + result.stderr
+    returncode, stdout, stderr = extracted_sdist_scan
+    assert returncode == 0, stdout + stderr
 
 
 def test_source_surface_requires_controls_even_with_forged_valid_pkg_info(

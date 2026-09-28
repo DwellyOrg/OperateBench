@@ -99,17 +99,23 @@ CONTRIBUTION_SOURCE_OPERATEBENCH_MODULES = frozenset(
         "operatebench._write_once",
         "operatebench.core.errors",
         "operatebench.core.evaluation",
+        "operatebench.core.engine",
         "operatebench.core.outcomes",
         "operatebench.core.protocol",
         "operatebench.core.read_contract",
         "operatebench.core.retrieval",
+        "operatebench.core.retrieval_evidence",
         "operatebench.sdk",
         "operatebench.sdk.errors",
     }
 )
 CONTRIBUTION_TEST_OPERATEBENCH_MODULES = frozenset(
     {
+        "operatebench.agents.playback",
         "operatebench.cli",
+        "operatebench.core.engine",
+        "operatebench.core.outcomes",
+        "operatebench.core.protocol",
         "operatebench.core.errors",
         "operatebench.sdk",
     }
@@ -118,16 +124,38 @@ CONTRIBUTION_TEST_OPERATEBENCH_MODULES = frozenset(
 # the module on the left of ``import`` is not a closed boundary.  Keep the public
 # names finite and static; never import contribution targets while checking them.
 CONTRIBUTION_OPERATEBENCH_SYMBOLS: dict[str, frozenset[str]] = {
+    "operatebench.agents.playback": frozenset(
+        {"RecordedOutcomeAgent", "RecordingAgent", "tape_from_records"}
+    ),
+    "operatebench.sdk.profile_packs.pack": frozenset({"COMPLIANCE_COMMANDS"}),
     "operatebench.cli": frozenset({"main"}),
     "operatebench.core.errors": frozenset(
         {"AgentRegistryError", "ArtifactError", "OracleManifestError", "SpecSchemaError"}
     ),
     "operatebench.core.evaluation": frozenset({"OperationEvaluation"}),
-    "operatebench.core.outcomes": frozenset({"AgentOutcome"}),
-    "operatebench.core.protocol": frozenset(
-        {"AgentObservation", "EnvironmentContext", "EpisodePlan", "Verdict"}
+    # Genuine Core contribution domains: finite public constructors/provenance.
+    # No agent/provider modules, private provenance key, registry or reflection.
+    "operatebench.core.engine": frozenset(
+        {"Engine", "EpisodeOutcome", "has_canonical_episode_outcome_provenance"}
     ),
-    "operatebench.core.read_contract": frozenset({"ReadRequirementContract"}),
+    "operatebench.core.outcomes": frozenset({"AgentOutcome", "Act", "Complete", "Wait"}),
+    "operatebench.core.protocol": frozenset(
+        {
+            "AgentObservation",
+            "EnvironmentContext",
+            "EpisodePlan",
+            "Verdict",
+            "PlannedEvent",
+            "PlannedTrigger",
+            "model_projection",
+        }
+    ),
+    "operatebench.core.read_contract": frozenset(
+        {"ReadRequirementContract", "ActionEvidenceContract"}
+    ),
+    "operatebench.core.retrieval_evidence": frozenset(
+        {"PUBLIC_RECORD_VERSION_ALGORITHM", "public_record_version"}
+    ),
     "operatebench.core.retrieval": frozenset(
         {"RetrievalRequest", "RetrieveBatch", "ToolResult"}
     ),
@@ -705,12 +733,22 @@ def _check_operatebench_module_import(
     path: Path,
     name: str,
     operation_module: str,
+    current_module: str,
     *,
     is_test: bool,
 ) -> None:
     if not (name == "operatebench" or name.startswith("operatebench.")):
         return
     if name == operation_module or name.startswith(operation_module + "."):
+        return
+    if (
+        name == "operatebench.sdk.profile_packs.pack"
+        and operation_module
+        == "operatebench.contributions.prospire.property_compliance_profiles"
+        and current_module == operation_module + ".pack"
+        and path.name == "pack.py"
+        and not is_test
+    ):
         return
     supported = (
         CONTRIBUTION_TEST_OPERATEBENCH_MODULES
@@ -867,6 +905,61 @@ def _check_resource_call(
         )
 
 
+def _check_profile_command_shim(path: Path, tree: ast.Module) -> None:
+    """Finite syntax for this rich-object exception, not a Python sandbox.
+
+    Only literal metadata may vary. No additional method code, alias, factory
+    access, reflection, defaults or decorators can accompany the delegation.
+    The ordinary metadata contract still checks the literal values separately.
+    """
+    expected = ast.parse(
+        "from operatebench.sdk import (CheckRequest, CommandResult, "
+        "OperationPackMetadata, ReplayRequest, RunRequest, ValidateRequest)\n"
+        "from operatebench.sdk.profile_packs.pack import COMPLIANCE_COMMANDS\n"
+        "class ComplianceProfilesPack:\n"
+        "    metadata = None\n"
+        + "".join(
+            f"    def {method}(self, request: {request}) -> CommandResult:\n"
+            f"        return COMPLIANCE_COMMANDS.{method}(request)\n"
+            for method, request in (
+                ("validate", "ValidateRequest"),
+                ("run", "RunRequest"),
+                ("replay", "ReplayRequest"),
+                ("check", "CheckRequest"),
+            )
+        )
+        + "PACK = ComplianceProfilesPack()\n"
+    )
+    # Reparse a private copy: never mutate the tree consumed by other checks.
+    candidate = ast.parse(ast.unparse(tree))
+    if ast.get_docstring(candidate) is not None:
+        candidate.body.pop(0)
+    for node in ast.walk(candidate):
+        if not (
+            isinstance(node, ast.Assign)
+            and len(node.targets) == 1
+            and isinstance(node.targets[0], ast.Name)
+            and node.targets[0].id == "metadata"
+            and isinstance(node.value, ast.Call)
+            and isinstance(node.value.func, ast.Name)
+            and node.value.func.id == "OperationPackMetadata"
+            and not node.value.args
+            and all(keyword.arg is not None for keyword in node.value.keywords)
+        ):
+            continue
+        try:
+            for keyword in node.value.keywords:
+                ast.literal_eval(keyword.value)
+        except (ValueError, TypeError):
+            break
+        node.value = ast.Constant(value=None)
+    if ast.dump(candidate) != ast.dump(expected):
+        raise ContributionError(
+            f"{path}: profile command shim requires exact direct delegations "
+            "and literal metadata"
+        )
+
+
 def _check_ast(
     path: Path,
     tree: ast.Module,
@@ -876,6 +969,26 @@ def _check_ast(
     *,
     is_test: bool,
 ) -> None:
+    profile_imports = [
+        node
+        for node in ast.walk(tree)
+        if isinstance(node, ast.ImportFrom)
+        and _absolute_import(node, current_module, path.name == "__init__.py")
+        == "operatebench.sdk.profile_packs.pack"
+    ]
+    if profile_imports:
+        if not (
+            owner_id == "prospire"
+            and operation_module
+            == "operatebench.contributions.prospire.property_compliance_profiles"
+            and current_module == operation_module + ".pack"
+            and path.name == "pack.py"
+            and not is_test
+        ):
+            raise ContributionError(
+                f"{path}: profile command shim has unauthorized location"
+            )
+        _check_profile_command_shim(path, tree)
     aliases: set[str] = set()
     loader_aliases: set[str] = set()
     operatebench_modules: set[str] = set()
@@ -1138,7 +1251,9 @@ def _check_ast(
                 f"{path}: object namespace mutation through .__dict__ is forbidden"
             )
     for name in sorted(operatebench_modules):
-        _check_operatebench_module_import(path, name, operation_module, is_test=is_test)
+        _check_operatebench_module_import(
+            path, name, operation_module, current_module, is_test=is_test
+        )
     for resource_call in resource_calls:
         _check_resource_call(path, tree, resource_call, parents)
 

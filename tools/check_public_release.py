@@ -28,6 +28,7 @@ import sys
 import tomllib
 from collections import Counter
 from collections.abc import Iterable, Iterator
+from itertools import pairwise
 from pathlib import Path
 from typing import Any, Literal, cast
 
@@ -161,8 +162,8 @@ PRIVATE_REFERENCE_PATTERNS: tuple[tuple[str, str], ...] = (
 )
 
 #: A bare Git commit identity is internal provenance, not a content digest. Match
-#: every hexadecimal case representation. The sole publication-safe form is a
-#: canonical lowercase supply-chain pin in a GitHub Actions workflow.
+#: every hexadecimal case representation. Exceptions are validated Action pins
+#: and strictly scoped Hugging Face asset provenance in the canonical manifest.
 BARE_COMMIT_IDENTIFIER = re.compile(r"(?<![0-9A-Za-z_-])[0-9A-Fa-f]{40}(?![0-9A-Za-z_-])")
 PINNED_ACTION_USES_LINE = re.compile(
     r"^\s*(?:-\s+)?uses:\s+"
@@ -790,13 +791,181 @@ def _is_allowed_pinned_action_uses_line(line: str) -> bool:
     )
 
 
+# Publication schema, independent of the manifest being inspected. Repository,
+# model slug and asset-name sets are closed; revisions and content metadata are data.
+HF_ASSET_MANIFEST = "tools/three_flow_river_assets.json"
+HF_STANDARD_ASSETS = frozenset(
+    {
+        "config.json",
+        "tokenizer_config.json",
+        "generation_config.json",
+        "chat_template.jinja",
+        "tokenizer.json",
+    }
+)
+HF_ASSET_ROSTER: dict[str, tuple[str, str | None, frozenset[str]]] = {
+    "Qwen/Qwen3.8-27B-FP8": ("river-qwen3.8-27b-fp8", None, HF_STANDARD_ASSETS),
+    "Qwen/Qwen3.6-35B-A3B-FP8": ("river-qwen3.6-35b-a3b-fp8", None, HF_STANDARD_ASSETS),
+    "Qwen/Qwen3.5-397B-A17B-FP8": (
+        "river-qwen3.5-397b-a17b-fp8",
+        None,
+        HF_STANDARD_ASSETS,
+    ),
+    "Qwen/Qwen3.5-122B-A10B-FP8": (
+        "river-qwen3.5-122b-a10b-fp8",
+        None,
+        HF_STANDARD_ASSETS,
+    ),
+    "Qwen/Qwen3.5-9B": (
+        "river-qwen3.5-9b",
+        None,
+        HF_STANDARD_ASSETS - {"generation_config.json"},
+    ),
+    "nvidia/Kimi-K2.6-NVFP4": (
+        "river-kimi-k2.6-nvfp4",
+        None,
+        (HF_STANDARD_ASSETS - {"tokenizer.json"})
+        | {"tiktoken.model", "special_tokens_map.json"},
+    ),
+    "nvidia/GLM-5.2-NVFP4-262K": (
+        "river-glm-5.2-nvfp4-262k",
+        "nvidia/GLM-5.2-NVFP4",
+        HF_STANDARD_ASSETS,
+    ),
+    "zai-org/GLM-5.3-Flash": ("river-glm-5.3-flash", None, HF_STANDARD_ASSETS),
+    "deepseek-ai/DeepSeek-V4-Flash-0731": (
+        "river-deepseek-v4-flash-0731",
+        None,
+        HF_STANDARD_ASSETS - {"chat_template.jinja"},
+    ),
+    "deepseek-ai/DeepSeek-V4.1-Flash": (
+        "river-deepseek-v4.1-flash",
+        None,
+        HF_STANDARD_ASSETS - {"chat_template.jinja", "generation_config.json"},
+    ),
+    "nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4": (
+        "river-nvidia-nemotron-3.5-lightning-30b-a3b-nvfp4",
+        None,
+        HF_STANDARD_ASSETS | {"special_tokens_map.json"},
+    ),
+}
+
+
+def _unique_json_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    result: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError("duplicate JSON key")
+        result[key] = value
+    return result
+
+
+def _reject_json_constant(value: str) -> Any:
+    raise ValueError("nonfinite JSON number")
+
+
+def _valid_hf_asset_manifest(data: Any) -> bool:
+    if not isinstance(data, dict) or set(data) != {"models"}:
+        return False
+    rows = data["models"]
+    if not isinstance(rows, list) or len(rows) != len(HF_ASSET_ROSTER):
+        return False
+    seen: set[str] = set()
+    for row in rows:
+        if not isinstance(row, dict):
+            return False
+        model = row.get("model")
+        if not isinstance(model, str) or model not in HF_ASSET_ROSTER or model in seen:
+            return False
+        seen.add(model)
+        model_slug, tokenizer, filenames = HF_ASSET_ROSTER[model]
+        fields = {"model", "model_slug", "revision", "assets"}
+        if tokenizer is not None:
+            fields.add("tokenizer_model")
+        if set(row) != fields or row["model_slug"] != model_slug:
+            return False
+        if tokenizer is not None and row["tokenizer_model"] != tokenizer:
+            return False
+        revision = row["revision"]
+        if (
+            not isinstance(revision, str)
+            or re.fullmatch(r"[0-9a-f]{40}", revision) is None
+        ):
+            return False
+        assets = row["assets"]
+        if not isinstance(assets, dict) or set(assets) != filenames:
+            return False
+        for filename, asset in assets.items():
+            if not isinstance(asset, dict) or set(asset) != {
+                "url",
+                "http_status",
+                "exit",
+                "sha256",
+                "bytes",
+            }:
+                return False
+            url = (
+                f"https://huggingface.co/{tokenizer or model}"
+                f"/resolve/{revision}/{filename}"
+            )
+            if asset["url"] != url or asset["http_status"] != "200":
+                return False
+            if type(asset["exit"]) is not int or asset["exit"] != 0:
+                return False
+            if type(asset["bytes"]) is not int or asset["bytes"] <= 0:
+                return False
+            digest = asset["sha256"]
+            if (
+                not isinstance(digest, str)
+                or re.fullmatch(r"[0-9a-f]{64}", digest) is None
+            ):
+                return False
+    return True
+
+
+def _hf_provenance_spans(text: str, relative: str | None) -> list[tuple[int, int]]:
+    """Return only validated revision/URL value spans, never whole-file relief."""
+    if relative != HF_ASSET_MANIFEST:
+        return []
+    try:
+        data = json.loads(
+            text,
+            object_pairs_hook=_unique_json_object,
+            parse_constant=_reject_json_constant,
+        )
+    except (ValueError, RecursionError):
+        return []
+    if not _valid_hf_asset_manifest(data):
+        return []
+    # Tokenize strings rather than searching for value text: repeated tokens in
+    # unrelated positions receive no exception. The closed schema above proves
+    # that these keys can occur only at their designated provenance locations.
+    strings = list(re.finditer(r'"(?:[^"\\]|\\.)*"', text))
+    spans = []
+    for key, value in pairwise(strings):
+        if key.group() not in {'"revision"', '"url"'}:
+            continue
+        if text[key.end() : value.start()].strip() != ":":
+            continue
+        # No escaped spellings of the exempt values: pins must be readable.
+        if "\\" not in value.group():
+            spans.append((value.start() + 1, value.end() - 1))
+    return spans
+
+
 def scan_bare_commit_identifiers(
     text: str, *, where: str, workflow_path: str | None = None
 ) -> list[str]:
-    """Reject commit tokens except canonical approved-owner SHA-pinned Actions."""
+    """Reject commit tokens except validated Action and canonical HF asset pins."""
     problems: list[str] = []
     workflow = workflow_path is not None and _is_workflow_path(workflow_path)
+    provenance_spans = _hf_provenance_spans(text, workflow_path)
     for match in BARE_COMMIT_IDENTIFIER.finditer(text):
+        if any(
+            start <= match.start() and match.end() <= end
+            for start, end in provenance_spans
+        ):
+            continue
         line_number = text.count("\n", 0, match.start()) + 1
         line_start = text.rfind("\n", 0, match.start()) + 1
         line_end = text.find("\n", match.end())
@@ -810,7 +979,7 @@ def scan_bare_commit_identifiers(
 
 
 def check_no_bare_commit_identifiers(root: Path = REPO_ROOT) -> list[str]:
-    """No internal commit identity outside a pinned GitHub Action reference."""
+    """No commit identity outside validated Action or canonical HF asset pins."""
     problems: list[str] = []
     for path in candidate_files(root):
         text = _read(path)

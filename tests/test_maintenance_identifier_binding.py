@@ -170,7 +170,9 @@ class TestAlternateIdentifiersCannotDesynchroniseTheWorld:
         alternate = _run(spec, scenario_id, AlternateIdentifierAgent())
 
         assert alternate.outcome.status == reference.outcome.status
-        expected_failures = ("recovery", "obligations") if scenario_id == "V2" else ()
+        expected_failures = (
+            ("terminal_outcome", "recovery") if scenario_id == "V2" else ()
+        )
         assert reference.evaluation.failed_dimensions == expected_failures
         assert alternate.evaluation.failed_dimensions == expected_failures
         assert alternate.evaluation.reliable is reference.evaluation.reliable

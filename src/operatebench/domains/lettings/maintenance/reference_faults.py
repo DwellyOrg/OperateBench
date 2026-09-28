@@ -3,7 +3,7 @@
 """Authored diagnostic expectations, not agent policy or reliability waivers.
 
 V2 permanently fails customer transfer-notice dispatch. Durable ownership is
-legitimate, but recovery and the notification obligation must fail. This
+legitimate, but notification remains undelivered and terminal completion must fail. This
 separate current-engine expectation leaves shipped negative manifests frozen.
 Nothing here imports an agent, evaluator, or observed run to derive an oracle.
 """
@@ -21,15 +21,15 @@ class ReferenceFaultExpectation:
 
 
 V2_PERMANENT_NOTIFICATION_FAULT = ReferenceFaultExpectation(
-    expectation_id="maintenance.reference.V2.permanent-notification-fault.v1",
-    terminal="transferred_to_human_ownership",
-    failed_dimensions=("recovery", "obligations"),
+    expectation_id="maintenance.reference.V2.permanent-notification-fault.v2",
+    terminal="operational_horizon_exhausted",
+    failed_dimensions=("terminal_outcome", "recovery"),
     finding_codes=(
-        "OBLIGATION_MESSAGE_NOT_ESTABLISHED",
+        "TERMINAL_NOT_REACHED",
         "REQUIRED_NOTIFICATION_UNDELIVERED",
     ),
     passing_dimensions=(
-        "terminal_outcome",
+        "obligations",
         "critical_invariants",
         "temporal_correctness",
         "authority_boundaries",

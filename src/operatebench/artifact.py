@@ -1876,7 +1876,9 @@ def _validate_row_body(
     )
 
 
-def _validate_trajectory(payload: Any, where: str, version: int) -> None:
+def _validate_trajectory(
+    payload: Any, where: str, version: int, *, recovery_enabled: bool = False
+) -> None:
     rows = _listing(payload, where)
     previous: int | None = None
     for position, row in enumerate(rows):
@@ -1903,7 +1905,30 @@ def _validate_trajectory(payload: Any, where: str, version: int) -> None:
             f"{at}.record_type",
             f"{record_type!r} is not a record type this build writes",
         )
-        _validate_row_body(body, str(record_type), at, version)
+        if (
+            recovery_enabled
+            and record_type in {"side_effect", "side_effect_failed"}
+            and ("recovery_of" in body or "dispatch_channel" in body)
+        ):
+            _counter(body.get("recovery_of"), f"{at}.recovery_of")
+            _require(
+                body.get("dispatch_channel") == "secondary",
+                at,
+                "unknown recovery channel",
+            )
+            _require(
+                body.get("message_fixture_id") == "msg_transfer_notice",
+                at,
+                "unsupported recovery fixture",
+            )
+            base = {
+                key: value
+                for key, value in body.items()
+                if key not in {"recovery_of", "dispatch_channel"}
+            }
+            _validate_row_body(base, str(record_type), at, version)
+        else:
+            _validate_row_body(body, str(record_type), at, version)
 
 
 def _validate_evaluation(payload: Any, where: str, version: int) -> None:
@@ -2646,7 +2671,17 @@ def validate_artifact(payload: Any, source: str = "run artefact") -> dict[str, A
     _counter(body["simulated_minutes"], f"{source}.simulated_minutes")
     _counter(body["agent_invocations"], f"{source}.agent_invocations")
     _validate_events(body["events"], f"{source}.events")
-    _validate_trajectory(body["trajectory"], f"{source}.trajectory", version)
+    recovery_enabled = (
+        version == ARTIFACT_VERSION
+        and body["operation"]["operation_type"] == "lettings.maintenance.synthetic"
+        and body["operation"]["operation_version"] == "0.7.0"
+    )
+    _validate_trajectory(
+        body["trajectory"],
+        f"{source}.trajectory",
+        version,
+        recovery_enabled=recovery_enabled,
+    )
 
     operation_type = str(body["operation"]["operation_type"])
     state_validator = _STATE_VALIDATORS.get(operation_type)
@@ -2663,6 +2698,7 @@ def validate_artifact(payload: Any, source: str = "run artefact") -> dict[str, A
             body["final_state"],
             f"{source}.final_state",
             reporting_actor=body["engine_version"] in {"0.11.0", "0.12.0", "0.13.0"},
+            recovery_enabled=recovery_enabled,
         )
     else:
         state_validator(body["final_state"], f"{source}.final_state")

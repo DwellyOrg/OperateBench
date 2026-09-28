@@ -346,6 +346,7 @@ def test_positive_controls(tmp_path: Path) -> None:
     )
     assert check_contributions(Path.cwd()) == (
         "prospire:lettings_property_compliance_synthetic_v1",
+        "prospire:lettings_property_compliance_profiles_v1",
     )
 
 
@@ -2022,7 +2023,7 @@ def test_helper_module_names_do_not_bypass_ownership_boundaries(
     [
         "operatebench.sdk.builtins",
         "operatebench.sdk.registry",
-        "operatebench.core.engine",
+        "operatebench.core.audit_budget",
         "operatebench.unknown",
     ],
 )

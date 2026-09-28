@@ -355,6 +355,7 @@ def lifecycle_anthropic_settings(
         "request_mapping": LIFECYCLE_ANTHROPIC_REQUEST_MAPPING_VERSION,
         **profile.as_settings(),
         "response_contract": "closed_exactly_one_tool_call",
+        "response_null_root_metadata": {"diagnostics": "optional_null_v1"},
         "retry": LIFECYCLE_ANTHROPIC_RETRY_POLICY.as_dict(),
         "sdk": "anthropic",
         "sdk_max_retries": 0,

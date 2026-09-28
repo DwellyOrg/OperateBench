@@ -130,6 +130,7 @@ from operatebench.providers.openai_responses import (
     OPENAI_API,
     OPENAI_BASE_URL,
     OPENAI_PROVIDER,
+    OPENAI_REASONING_ITEMS_CONTRACT,
     OPENAI_RESPONSE_CAPTURE,
     OPENAI_RESPONSE_SERVER_EXTENSIONS,
     OUTPUT_LIMIT_REASON,
@@ -307,6 +308,7 @@ def profile_settings(
         "request_mapping": REQUEST_MAPPING_VERSION,
         **profile.as_settings(),
         "response_capture": OPENAI_RESPONSE_CAPTURE,
+        "reasoning_items_contract": OPENAI_REASONING_ITEMS_CONTRACT,
         "response_contract": "exactly_one_tool_call",
         # Named *and* hashed. The name says which contract this run accepted a
         # server-extension block under; the digest is what makes that claim
@@ -398,8 +400,9 @@ def _function_calls(response: Response) -> list[Any]:
         declared = getattr(item, "type", None)
         if declared not in ACCEPTED_ITEM_TYPES:
             raise AdapterProtocolError(
-                "the answer carries an output item that is neither an assistant "
-                "message nor a function call; this scaffold accepts one function "
+                "the answer carries an output item outside the validated reasoning, "
+                "assistant message or function call contract; this scaffold accepts "
+                "one function "
                 "call beside optional text, and cannot tell which part of an "
                 "answer containing anything else is the action. The type the item "
                 "declared is not quoted here: it is provider-controlled text, and "

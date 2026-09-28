@@ -99,7 +99,11 @@ def test_real_sdk_deadline_and_evidence(tmp_path, monkeypatch, timeout120, case)
                 100 if case == "loop" else 0 if case == "prewire" else 1
             )
             assert result["termination_cause"] == (
-                "episode_decision_limit" if case == "loop" else "provider_transport"
+                "episode_decision_limit"
+                if case == "loop"
+                else "provider_server_error"
+                if case == "503"
+                else "provider_timeout"
             )
             rows = [
                 json.loads(line)

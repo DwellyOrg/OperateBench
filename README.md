@@ -98,6 +98,10 @@ Concessions of prior art, per-benchmark differences and sources:
   but is not Artifact 8, release-admitted or evidence-eligible.
 - **Property Compliance SDK architecture check** — a synthetic Property Safety
   Certificate renewal incubator, also statically registered and not evidence-eligible.
+- **International profile development packs** — two research-grounded synthetic
+  processes with four bounded profiles each, using Core and development records,
+  not Artifact 8, legal correctness or real-model capability evidence. See
+  [profile CLI, scope and public contract](docs/profile-pack-cli.md).
 - **Boundary Track** — the inherited BoundaryBench methodology for consequential
   operational boundaries.
 - **Maintenance reference and 8 targeted negative agents** — `reference`,
@@ -210,6 +214,8 @@ uv run operatebench check --pack maintenance \
 ```
 
 `run-maintenance` and `check-maintenance` remain compatibility aliases.
+For additive Commerce and Property Compliance commands and country limitations,
+see [profile-pack CLI](docs/profile-pack-cli.md); original IDs and aliases remain available.
 
 The Boundary Track keeps its own command, `boundarybench`, for the same reason
 it keeps its own package: a Boundary run and a Lifecycle run are different
@@ -467,6 +473,16 @@ alone is not proof of benchmark validity.
   diagnostic, including its trusted offline transport boundary and explicit
   non-claims.
 
+- [Commerce profile details](docs/commerce-return-refund-profiles.md) — domain scope and sources.
+- [Compliance profile details](docs/contributions/prospire/property_compliance_profiles.md) — contribution scope and sources.
+- [Three-flow campaign](docs/THREE_FLOW_CAMPAIGN.md) — reference-driven offline
+  SDK mock execution, shared accounting and replay; not paid-launch approval or
+  model-performance evidence.
+- [Three-flow latest HTTP roster](docs/THREE_FLOW_LATEST_HTTP.md) — explicit
+  roster and mode profile selection, pricing safeguards and compatibility boundaries.
+- [Three-flow River](docs/THREE_FLOW_RIVER.md) — optional SDK, pinned tokenizer
+  assets and native protobuf mock transport; full-matrix qualification remains
+  pending.
 - [Aggregate budget](docs/AGGREGATE_BUDGET.md) — optional offline accounting
   controller and its settlement and activation boundaries.
 - [Scorecard tracking](docs/SCORECARD_TRACKING.md) — retained-evidence readers,

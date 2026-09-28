@@ -2,9 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 """Mock safety-gate predicates for frozen operators, not historical execution proof.
 
-Only imported gate versions and model-visible guidance are restored for these tests.
-Core, evaluator and recorder identities remain current. No production activation
-knob, request mapping, ceiling or historical fixture is changed.
+Only imported gate versions and model-visible disclosures are restored for these tests.
+Core, evaluator, durable delivery receipts and recorder identities remain current.
+No production activation knob, request mapping, ceiling or historical fixture is changed.
 """
 
 import importlib
@@ -27,8 +27,10 @@ def historical_canary_gate_build(request, monkeypatch):
     )["action_contracts"]
     current = operation.action_schema_view
 
-    def historical_guidance():
-        schemas = current()
+    def historical_guidance(*, recovery_enabled=False):
+        # Frozen canaries exercise the legacy envelope, never the successor.
+        assert not recovery_enabled
+        schemas = current(recovery_enabled=False)
         for action, schema in schemas.items():
             schema.pop("field_guidance", None)
             if "field_guidance" in frozen[action]:
@@ -43,8 +45,21 @@ def historical_canary_gate_build(request, monkeypatch):
         # The actual scenario budget and evaluator enforcement remain unchanged.
         policy.pop("human_checkpoint_budget")
         policy.pop("human_checkpoint_guidance")
+        policy.pop("maintenance_contract_version")
         return policy
 
+    current_retrieval = operation.serve_maintenance_retrieval
+
+    def historical_retrieval(record, requests, as_of):
+        # Frozen V1 SDK envelopes predate per-message delivery disclosure.
+        # Strip only the detached read projection, never state or receipt evidence.
+        record = deepcopy(record)
+        for message in record.get("communications", []):
+            assert message.pop("dispatch_status") == "DELIVERED"
+            assert "recovery_of" not in message
+        return current_retrieval(record, requests, as_of)
+
+    monkeypatch.setattr(operation, "serve_maintenance_retrieval", historical_retrieval)
     monkeypatch.setattr(operation.MaintenanceOperation, "policy_view", historical_policy)
     monkeypatch.setattr(operation, "action_schema_view", historical_guidance)
     modules = [
