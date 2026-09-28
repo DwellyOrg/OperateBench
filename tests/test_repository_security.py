@@ -1,6 +1,10 @@
 """Offline contracts for repository-only supply-chain controls."""
 
+import os
 import re
+import shutil
+import subprocess
+import tomllib
 from pathlib import Path
 
 import pytest
@@ -47,6 +51,60 @@ def test_dependency_review_is_pinned_read_only_and_pr_only() -> None:
         "show-openssf-scorecard": "false",
     }
     assert "secrets." not in text
+
+
+@pytest.mark.parametrize("changed", [None, "requirements.txt", "uv.lock"])
+def test_dependency_graph_export_freshness_gate(
+    tmp_path: Path, changed: str | None
+) -> None:
+    _require_repository_checkout()
+    workflow = yaml.load(
+        (ROOT / ".github/workflows/ci.yml").read_text(), Loader=yaml.BaseLoader
+    )
+    steps = [
+        step
+        for step in workflow["jobs"]["test"]["steps"]
+        if step.get("name") == "Check dependency graph export"
+    ]
+    assert len(steps) == 1, "CI must check the frozen dependency graph export"
+    for name in ("pyproject.toml", "uv.lock", "requirements.txt"):
+        shutil.copyfile(ROOT / name, tmp_path / name)
+    if changed is not None:
+        path = tmp_path / changed
+        text = path.read_text()
+        lock = tomllib.loads((tmp_path / "uv.lock").read_text())
+        package = next(p for p in lock["package"] if p["name"] == "anthropic")
+        version = package["version"]
+        if changed == "requirements.txt":
+            old, new = f"anthropic=={version}", "anthropic==0.0.0"
+        else:
+            old = next(
+                block
+                for block in text.split("[[package]]")
+                if block.startswith(f'\nname = "anthropic"\nversion = "{version}"')
+            )
+            # Keep wheel filenames consistent so export succeeds; diff, not a
+            # malformed-lock parser error, must reject the changed dependency.
+            new = old.replace(version, "0.0.0")
+        assert old in text
+        path.write_text(text.replace(old, new, 1))
+    lock_bytes = (tmp_path / "uv.lock").read_bytes()
+    runner_temp = tmp_path / "runner"
+    runner_temp.mkdir()
+    result = subprocess.run(
+        ["bash", "-euo", "pipefail", "-c", steps[0]["run"]],
+        cwd=tmp_path,
+        env={**os.environ, "RUNNER_TEMP": str(runner_temp), "UV_OFFLINE": "1"},
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    assert (tmp_path / "uv.lock").read_bytes() == lock_bytes
+    if changed is None:
+        assert result.returncode == 0, result.stdout + result.stderr
+    else:
+        assert result.returncode == 1, result.stdout + result.stderr
+        assert "-anthropic==" in result.stdout and "+anthropic==" in result.stdout
 
 
 def test_private_reporting_route_retains_email_fallback() -> None:

@@ -103,6 +103,14 @@ version-update pull requests per ecosystem; major upgrades remain separate.
 Updates require review and are not automatically merged. Action updates must
 retain full commit pins and pass the publication checks.
 
+The root `requirements.txt` is a hash-preserving export of the runtime and all
+development groups from `uv.lock`, provided for GitHub's native dependency graph.
+`uv.lock` remains the sole dependency source of truth; installation and Dependabot
+updates continue to use uv, not this repository-only export. After a lockfile
+update, regenerate it with
+`uv export --frozen --all-groups --no-emit-project --offline > requirements.txt`.
+CI compares a fresh offline export byte-for-byte and rejects drift.
+
 The `dependency-review` pull-request check rejects newly introduced dependencies
 with known high or critical vulnerabilities, including development dependencies.
 It uses GitHub's dependency graph, not a complete audit of existing dependencies
