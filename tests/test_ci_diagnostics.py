@@ -1,6 +1,7 @@
 """Bounded ordinary pytest exits and the CI diagnostic artifact contract."""
 
 import os
+import re
 import subprocess
 import sys
 import xml.etree.ElementTree as ET
@@ -26,10 +27,13 @@ def test_ci_keeps_lane_semantics_and_always_uploads_only_junit():
     )
     upload = next(s for s in job["steps"] if s["name"] == "Upload pytest diagnostics")
     assert upload["if"] == "always()"
-    assert (
-        upload["uses"]
-        == "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02"
+    distribution_upload = next(
+        s
+        for s in workflow["jobs"]["build"]["steps"]
+        if s["name"] == "Upload the distribution as an artifact"
     )
+    assert upload["uses"] == distribution_upload["uses"]
+    assert re.fullmatch(r"actions/upload-artifact@[0-9a-f]{40}", upload["uses"])
     assert (
         upload["with"]["path"]
         == "${{ runner.temp }}/pytest-${{ matrix.python-version }}.xml"

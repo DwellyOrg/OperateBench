@@ -66,8 +66,34 @@ def test_next_core_boundary_owns_domain_row(mode):
     class Domain(ComplianceDomain):
         def reduce_event(self, state, event, context):
             class Proxy:
-                def __getattr__(self, name):
-                    return getattr(context, name)
+                @property
+                def now(self):
+                    return context.now
+
+                def schedule_timer(
+                    self,
+                    event_id,
+                    event_type,
+                    actor_id,
+                    delay_minutes,
+                    payload,
+                    *,
+                    triggers_agent=True,
+                ):
+                    return context.schedule_timer(
+                        event_id,
+                        event_type,
+                        actor_id,
+                        delay_minutes,
+                        payload,
+                        triggers_agent=triggers_agent,
+                    )
+
+                def cancel_timer(self, event_id):
+                    return context.cancel_timer(event_id)
+
+                def dispatch_fails(self, message_fixture_id):
+                    return context.dispatch_fails(message_fixture_id)
 
                 def record(self, kind, payload):
                     if kind == "compliance_event" and event.event_type == "case_opened":
