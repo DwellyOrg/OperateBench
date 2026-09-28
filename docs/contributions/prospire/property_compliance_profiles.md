@@ -109,7 +109,21 @@ scenario and profile, and independently walks causal evidence/actions rather
 than trusting reducer readiness or terminal labels. Rejected unsafe proposals
 remain failures after subsequent recovery. Dimensions are provenance, scope,
 qualification, verification, delivery, temporal, versioning, access, retrieval,
-decision validity and terminal correctness.
+decision validity and terminal correctness. All eleven dimensions are booleans.
+Unsafe event joins mark every non-provenance dimension false with an explicit
+`NOT_EVALUATED_EVENT_AUTHORITY_JOIN` finding; unauthenticated episodes use
+`NOT_EVALUATED_UNAUTHENTICATED_EPISODE`. These statuses mean a pass was not
+demonstrated, not that a substantive violation was proven. Binding mismatches
+alone do not stop the independent audit.
+
+Authentic rejected rows are checked against the accepted prefix without applying
+their state changes. Verification/VERIFICATION and report/VERSION rejections
+require an independently demonstrated defect; otherwise the grader records
+`UNJUSTIFIED_EVENT_REJECTION` and continues. Detailed defects and mapped refusal
+codes survive recovery. Rejected reports are checked sequentially for the first
+broken supersession, without authored-report or inspection diagnostics. Actual
+reducer mutations leaked by a rejection remain `CAUSAL_STATE_MISMATCH`; rejecting
+a replacement alone does not invalidate a sufficient accepted older report.
 
 The reference and negative agents operate on observations, not scenario IDs,
 expected outcomes or hidden event queues. Tests round-trip the model-visible

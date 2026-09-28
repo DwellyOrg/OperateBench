@@ -63,6 +63,8 @@ def evaluate_episode(episode: Any, spec: Spec, scenario_id: str) -> dict[str, An
         episode, EpisodeOutcome
     ) or not has_canonical_episode_outcome_provenance(episode):
         fail("provenance", "UNAUTHENTICATED_EPISODE")
+        for dimension in DIMENSIONS[1:]:
+            fail(dimension, "NOT_EVALUATED_UNAUTHENTICATED_EPISODE")
         return {
             "reliable": False,
             "dimensions": dimensions,
@@ -121,14 +123,17 @@ def evaluate_episode(episode: Any, spec: Spec, scenario_id: str) -> dict[str, An
         originals.setdefault(source_event["event_id"], []).append(source_event)
     pending = []
     used = set()
-    for row in episode.trajectory:
+    join_failed = False
+    joined: dict[int, tuple[str, str]] = {}
+    for index, row in enumerate(episode.trajectory):
         typ = row.get("record_type")
         if typ == "compliance_event":
-            pending.append(row)
+            pending.append((index, row))
         elif typ in boundaries:
             event_id, event_type = row.get("event_id"), row.get("event_type")
             if not isinstance(event_id, str) or not isinstance(event_type, str):
                 fail("provenance", "EVENT_AUTHORITY_JOIN")
+                join_failed = True
                 pending = []
                 continue
             candidates = originals.get(event_id, [])
@@ -137,7 +142,7 @@ def evaluate_episode(episode: Any, spec: Spec, scenario_id: str) -> dict[str, An
             successful = typ in ("event_observed", "event_audit_only")
             if pending or (relevant and successful):
                 valid = (
-                    successful
+                    typ != "event_after_terminal"
                     and len(pending) == 1
                     and original is not None
                     and row.get("event_id") not in used
@@ -148,18 +153,24 @@ def evaluate_episode(episode: Any, spec: Spec, scenario_id: str) -> dict[str, An
                         for k in ("at", "event_type", "actor_id")
                     )
                     and all(
-                        original.get(k) == pending[0].get(k)
+                        original.get(k) == pending[0][1].get(k)
                         for k in ("at", "event_type", "actor_id", "payload")
                     )
                     and original.get("actor_id") == event_sources.get(event_type)
                 )
                 if not valid:
                     fail("provenance", "EVENT_AUTHORITY_JOIN")
+                    join_failed = True
+                else:
+                    joined[pending[0][0]] = (boundaries[typ], row.get("code", ""))
                 used.add(row.get("event_id"))
             pending = []
     if pending:
         fail("provenance", "EVENT_AUTHORITY_JOIN")
-    if not dimensions["provenance"]:
+        join_failed = True
+    if join_failed:
+        for dimension in DIMENSIONS[1:]:
+            fail(dimension, "NOT_EVALUATED_EVENT_AUTHORITY_JOIN")
         # Invalid associations are not safe inputs to the causal reconstruction.
         # Refuse before indexing producer-controlled event payloads.
         return {
@@ -243,7 +254,25 @@ def evaluate_episode(episode: Any, spec: Spec, scenario_id: str) -> dict[str, An
             if not all(doc + ":" + t in delivered for t in targets):
                 fail("delivery", "MISSING_RECIPIENT_RECEIPT")
 
-    for row in episode.trajectory:
+    def check_verification(p: Any) -> bool:
+        doc = p["document_id"]
+        broken = (
+            doc not in reports
+            or doc not in works
+            or p.get("verification_id") != "confirmation-" + doc
+            or set(p.get("defects_resolved", ())) != required_defects(doc)
+            or p.get("property_id") != case["property_id"]
+            or p.get("qualified") is not True
+            or p.get("standards_met") is not True
+        )
+        reset = doc in reports and p.get("next_due_unchanged") != reports[doc]["next_due"]
+        if broken:
+            fail("verification", "BROKEN_REPAIR_CHAIN")
+        if reset:
+            fail("temporal", "REPAIR_RESET_PERIODIC_CLOCK")
+        return broken or reset
+
+    for index, row in enumerate(episode.trajectory):
         typ = row.get("record_type")
         now = row.get("at", "")
         # Core records have flattened payload fields; never trust a final-state flag.
@@ -256,13 +285,35 @@ def evaluate_episode(episode: Any, spec: Spec, scenario_id: str) -> dict[str, An
                 fail(CODE_DIMENSION[code], code)
         elif typ == "compliance_event":
             p, event = row["payload"], row["event_type"]
+            disposition, code = joined[index]
+            if disposition == "rejected":
+                defect = False
+                expected_code = None
+                if event == "verification_received":
+                    expected_code = "VERIFICATION"
+                    defect = check_verification(p)
+                elif event in ("reports_received", "report_replaced"):
+                    expected_code = "VERSION"
+                    candidate_latest = dict(latest)
+                    for report in p["reports"]:
+                        old = candidate_latest.get(report["kind"])
+                        if old is not None and report["supersedes"] != old:
+                            fail("versioning", "BROKEN_SUPERSESSION")
+                            defect = True
+                            break
+                        candidate_latest[report["kind"]] = report["document_id"]
+                if code in CODE_DIMENSION:
+                    fail(CODE_DIMENSION[code], code)
+                if not defect or code != expected_code:
+                    fail("provenance", "UNJUSTIFIED_EVENT_REJECTION")
+                continue
             if event in ["reports_received", "report_replaced"]:
                 if requested is None:
                     fail("scope", "REPORT_WITHOUT_INSPECTION")
                 authored = (
                     plain(scenario["reports"])
                     if event == "reports_received"
-                    else [plain(scenario["replacement"])]
+                    else [plain(scenario.get("replacement"))]
                 )
                 if p["reports"] != authored:
                     fail("provenance", "AUTHORED_REPORT_MISMATCH")
@@ -276,16 +327,7 @@ def evaluate_episode(episode: Any, spec: Spec, scenario_id: str) -> dict[str, An
                 quiet, provisional_at = False, None
             elif event == "verification_received":
                 doc = p["document_id"]
-                if (
-                    doc not in works
-                    or set(p["defects_resolved"]) != required_defects(doc)
-                    or p["property_id"] != case["property_id"]
-                    or not p["qualified"]
-                    or not p["standards_met"]
-                ):
-                    fail("verification", "BROKEN_REPAIR_CHAIN")
-                if p["next_due_unchanged"] != reports[doc]["next_due"]:
-                    fail("temporal", "REPAIR_RESET_PERIODIC_CLOCK")
+                check_verification(p)
                 verified[doc] = p["verification_id"]
                 verification_records[doc] = dict(p)
                 if now > case["remedy_due"]:
@@ -333,6 +375,9 @@ def evaluate_episode(episode: Any, spec: Spec, scenario_id: str) -> dict[str, An
                 or doc not in row["evidence_refs"]
             ):
                 fail("versioning", "ACCEPTED_STALE_DOCUMENT")
+                if doc not in reports:
+                    # A leaked rejected report cannot supply accepted prerequisites.
+                    continue
             if action == "request_inspection":
                 if case["access"] != "consented":
                     fail("access", "INSPECTION_WITHOUT_CONSENT")

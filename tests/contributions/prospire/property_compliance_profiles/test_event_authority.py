@@ -37,7 +37,7 @@ def test_original_event_authority_not_reducer_narrative(corrupt):
     assert episode.terminal_outcome == "VERIFIED_CURRENT"
     assert grade["reliable"] is not corrupt
     assert {key for key, ok in grade["dimensions"].items() if not ok} == (
-        {"provenance"} if corrupt else set()
+        set(grade["dimensions"]) if corrupt else set()
     )
     if corrupt:
         assert {"dimension": "provenance", "code": "EVENT_AUTHORITY_JOIN"} in grade[
@@ -131,9 +131,27 @@ def test_next_core_boundary_owns_domain_row(mode):
     assert has_canonical_episode_outcome_provenance(episode)
     assert grade["dimensions"]["provenance"] is (mode == "valid")
     assert {key for key, ok in grade["dimensions"].items() if not ok} == (
-        set() if mode == "valid" else {"provenance"}
+        set()
+        if mode == "valid"
+        else (
+            {"provenance", "terminal"} if mode == "refused" else set(grade["dimensions"])
+        )
     )
-    if mode != "valid":
+    if mode == "refused":
+        assert grade["findings"] == [
+            {"dimension": "provenance", "code": "UNJUSTIFIED_EVENT_REJECTION"},
+            {"dimension": "terminal", "code": "UNRESOLVED_WORKFLOW"},
+        ]
+        assert not episode.replay_final
+    elif mode != "valid":
         assert {"dimension": "provenance", "code": "EVENT_AUTHORITY_JOIN"} in grade[
             "findings"
         ]
+
+        assert all(
+            {"dimension": d, "code": "NOT_EVALUATED_EVENT_AUTHORITY_JOIN"}
+            in grade["findings"]
+            for d in grade["dimensions"]
+            if d != "provenance"
+        )
+        assert len(grade["findings"]) == 11
