@@ -485,6 +485,56 @@ def test_dco_real_git_range_accepts_signed_commit(tmp_path: Path) -> None:
     assert result.returncode == 0, result.stderr
 
 
+def test_dco_accepts_final_signoff_after_metadata_divider(tmp_path: Path) -> None:
+    repository, revision_range = _temporary_git_range(
+        tmp_path,
+        "Update dependency\n\nUpdate the synthetic dependency.\n"
+        "---\nupdated-dependencies:\n- dependency-name: example-package\n...\n\n"
+        "Signed-off-by: Test Contributor <contributor@example.com>",
+    )
+    result = _run_dco(repository, revision_range)
+    assert result.returncode == 0, result.stderr
+
+
+@pytest.mark.parametrize(
+    "suffix",
+    [
+        "No sign-off supplied.",
+        "Signed-off-by: <contributor@example.com>",
+        "Signed-off-by: Test Contributor <contributor>",
+        "Signed-off-by: Test Contributor <contributor @example.com>",
+        "Signed-off-by: Test Contributor contributor@example.com",
+        "Signed-off-by: Test Contributor <contributor@example.com>\n\n"
+        "This final paragraph makes the earlier sign-off body text.",
+        "Signed-off-by: Test Contributor <contributor@example.com>\n\n"
+        "---\nmetadata: final body content\n...",
+        "Inline Signed-off-by: Test Contributor <contributor@example.com>",
+        "> Signed-off-by: Test Contributor <contributor@example.com>",
+    ],
+    ids=[
+        "unsigned",
+        "missing-name",
+        "missing-email-at",
+        "email-whitespace",
+        "missing-angle-brackets",
+        "embedded-body",
+        "before-final-divider",
+        "inline",
+        "quoted",
+    ],
+)
+def test_dco_rejects_invalid_signoff_after_metadata_divider(
+    tmp_path: Path, suffix: str
+) -> None:
+    repository, revision_range = _temporary_git_range(
+        tmp_path,
+        "Update dependency\n\n---\nmetadata: synthetic\n...\n\n" + suffix,
+    )
+    result = _run_dco(repository, revision_range)
+    assert result.returncode == 1
+    assert revision_range.split("..", 1)[1] in result.stderr
+
+
 def test_dco_real_git_range_rejects_unsigned_commit(tmp_path: Path) -> None:
     repository, revision_range = _temporary_git_range(tmp_path, "Unsigned contribution")
     result = _run_dco(repository, revision_range)
