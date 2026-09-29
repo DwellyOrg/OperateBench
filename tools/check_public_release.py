@@ -59,6 +59,8 @@ SKIPPED_DIRECTORIES: frozenset[str] = frozenset(
     }
 )
 
+REVIEWED_HATCHLING_VERSION = "1.32.4"
+
 DISTRIBUTION_NAME = "operatebench"
 DISTRIBUTION_VERSION = "0.1.0"
 #: The runtime-and-evaluator identity recorded as ``engine_version`` in every
@@ -396,7 +398,7 @@ def check_distribution_metadata(root: Path = REPO_ROOT) -> list[str]:
     tool = data.get("tool", {})
 
     build_system = data.get("build-system", {})
-    expected_build_requires = ["hatchling==1.32.0"]
+    expected_build_requires = [f"hatchling=={REVIEWED_HATCHLING_VERSION}"]
     if build_system.get("requires") != expected_build_requires:
         problems.append(
             f"build-system.requires is {build_system.get('requires')!r}, expected "
@@ -1621,7 +1623,9 @@ def check_built_distributions(
                                     )
                             if str(wheel_message["Wheel-Version"]) != "1.0":
                                 raise ValueError("Wheel-Version differs")
-                            if str(wheel_message["Generator"]) != "hatchling 1.32.0":
+                            if str(wheel_message["Generator"]) != (
+                                f"hatchling {REVIEWED_HATCHLING_VERSION}"
+                            ):
                                 raise ValueError("Generator differs from pinned backend")
                             if str(wheel_message["Root-Is-Purelib"]) != "true":
                                 raise ValueError("Root-Is-Purelib differs")

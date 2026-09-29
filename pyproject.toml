@@ -69,8 +69,8 @@ dependencies = [
     # that costs.
     "openai>=2.53.0,<3",
     # The Mistral SDK. `mistralai` 2.x is a namespace distribution and the
-    # client class lives at `mistralai.client.Mistral`; the floor is the version
-    # this build serialised a request with and parsed a response through.
+    # client class lives at `mistralai.client.Mistral`; the floor retains the
+    # supported 2.9.2 contract. The lock selects the SDK tested by this build.
     "mistralai>=2.9.2,<3",
     "pyyaml>=6.0",
 ]

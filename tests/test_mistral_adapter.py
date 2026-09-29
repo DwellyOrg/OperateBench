@@ -527,3 +527,27 @@ def test_settings_state_every_result_affecting_request_setting() -> None:
     assert settings["parallel_tool_calls"] is False
     assert settings["response_contract"] == "exactly_one_tool_call"
     assert settings["retry"]["max_attempts"] == 3
+
+
+@pytest.mark.parametrize("status", [429, 503])
+def test_inert_sdk_retry_options_still_send_exactly_one_request(status: int) -> None:
+    from mistralai.client.utils import BackoffStrategy, RetryConfig
+
+    from boundarybench.providers.common import ProviderRetryPolicy
+
+    transport = RecordingTransport([(status, error_body())])
+    client = transport.client()
+    client.sdk_configuration.retry_config = RetryConfig(
+        "none",
+        BackoffStrategy(1, 1, 1, 1, jitter_ms=7),
+        False,
+        status_codes_override=["429", "5XX"],
+    )
+    adapter = MistralChatAdapter(
+        model=PINNED_MODEL,
+        client=client,
+        retry=ProviderRetryPolicy(max_attempts=1),
+    )
+    with pytest.raises(AdapterProviderError):
+        adapter.next_call(_turn_request(), _deadline())
+    assert transport.calls == 1
