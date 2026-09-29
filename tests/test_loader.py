@@ -8,8 +8,9 @@ without complaint and only one of them would be the ground truth.
 from __future__ import annotations
 
 import pytest
+from yaml.events import AliasEvent
 
-from boundarybench.loader import load_card
+from boundarybench.loader import AliasError, load_card, read_yaml_mapping
 from boundarybench.schema import SchemaError
 from tests.conftest import EXAMPLE_CARD
 
@@ -115,6 +116,33 @@ def test_a_decoding_failure_does_not_swallow_unrelated_programming_errors(
     monkeypatch.setattr("pathlib.Path.read_text", boom)
     with pytest.raises(RuntimeError, match="programming error"):
         load_card(tmp_path / "card.yaml")
+
+
+@pytest.mark.parametrize("missing_mark", [False, True], ids=["parsed-mark", "no-mark"])
+def test_alias_is_rejected_before_construction(tmp_path, monkeypatch, missing_mark):
+    path = write(tmp_path, "first: &a [value]\nsecond: *a\n")
+    if missing_mark:
+        monkeypatch.setattr(
+            "boundarybench.loader.yaml.parse",
+            lambda _text: iter([AliasEvent("a", None, None)]),
+        )
+
+    def refuse_construction(*_args, **_kwargs):
+        pytest.fail("an alias must be rejected before YAML construction")
+
+    monkeypatch.setattr("boundarybench.loader.yaml.load", refuse_construction)
+    with pytest.raises(SchemaError) as excinfo:
+        read_yaml_mapping(path, what="construct card")
+    location = "" if missing_mark else " at line 2, column 9"
+    diagnostic = (
+        f"alias *a{location}: an alias makes the document a graph while "
+        "the reviewed text still reads as a tree, and a shared subgraph "
+        "costs every later traversal one visit per path through it. "
+        "State the structure literally instead"
+    )
+    assert str(excinfo.value) == f"{path}: {diagnostic}"
+    assert isinstance(excinfo.value.__cause__, AliasError)
+    assert str(excinfo.value.__cause__) == diagnostic
 
 
 def test_loader_does_not_construct_arbitrary_python_objects(tmp_path):
