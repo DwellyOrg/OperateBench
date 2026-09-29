@@ -60,7 +60,7 @@ dependencies = [
     #
     # Public/offline Lifecycle reference and negative commands need no SDK calls.
     # Model-capable operator tooling exists and requires separate authorization.
-    "anthropic>=0.121.0,<1",
+    "anthropic>=0.121.0,<2",
     # The OpenAI SDK, on the same terms and for the same reason. It serves two
     # adapters rather than one: the OpenAI Responses adapter, and the xAI
     # adapter, which talks to xAI's documented OpenAI-compatible Chat
