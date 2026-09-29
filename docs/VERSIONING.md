@@ -308,6 +308,30 @@ fresh synthetic requests; old request pins do not authorize new wire bodies.
 No new paid or live evidence is claimed. Engine 0.11.0, Artifact 8, ledger 3,
 model protocol v4 and the output/profile policy field sets remain unchanged.
 
+### Profile pack 0.2.0: independent causal audit corrections
+
+The property-compliance and commerce-return/refund profile packs advance from
+0.1.0 to 0.2.0. Property event provenance now joins each domain row to its next
+Core delivery boundary and original event, including rejected boundaries; this
+is not an action/proposal-join closure. Commerce independently folds accepted
+processor results, binds query semantics and identical duplicate payloads, and
+checks the derived settlement and finality. These are development/incubator
+packs with `evidence_eligible=False`, not new admitted benchmark evidence.
+
+Jurisdiction rules, profile versions and profile digests are unchanged. The
+fixture envelope versions and current fixture pins advance with the packs; no
+global engine or distribution version changes. Prior records keep their original
+bindings and grades: the current implementation refuses mismatched replay, not
+silently regrades. Fresh results require reruns.
+
+The bundled seven canonical-JSON import redirects preserve object identity and
+Core semantics; the Boundary compatibility shim and historical source copies are
+unchanged. Nevertheless, Core/agent source bytes enter `runtime_digest`, so this
+change invalidates current-build replay of prior development records **across
+packs**, not only these two profile packs. Keep producing-source historical
+replay available; do not rewrite old records or pins. This narrow Core engine
+import closure is not a claim of whole-package Boundary isolation.
+
 ## Comparability statement
 
 > Results are comparable only between runs that share `operation_spec_version`,

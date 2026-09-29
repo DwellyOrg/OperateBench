@@ -10,7 +10,8 @@ or that the forge currently enforces any setting below.
 - A pull request requires one independent approval; stale approvals are
   dismissed after new changes, and all review conversations must be resolved.
 - Required check contexts use these stable aggregate job names: `test (py3.11)`,
-  `test (py3.14)`, `build distribution`, and `dco`.
+  `test (py3.14)`, `build distribution`, `independent secret scan`, `dco`,
+  and `dependency-review`.
 - Force-push and branch deletion are prohibited. Bypass is limited to a named
   emergency role, not all maintainers or repository administrators by default.
 
@@ -29,9 +30,8 @@ The approval-, CODEOWNERS-, and bypass-dependent ruleset MUST NOT be activated
 while only `@khanukov` exists and no distinct emergency role exists. Activation
 prerequisites are both: (a) at least one distinct reviewer or team with repository
 access and a verified approval path; and (b) a named, distinct emergency team or
-custom role with a verified bypass path. Until both prerequisites exist, forge
-enforcement is blocked and the repository remains unprotected; partial activation
-is not safe.
+custom role with a verified bypass path. Until both prerequisites exist, the independent-approval rule is deferred;
+existing branch protections and required checks remain in force.
 
 ## Candidate markers
 

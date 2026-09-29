@@ -38,7 +38,7 @@ def _compliance_spec(path: str | Path) -> ComplianceSpec:
 COMMERCE_COMMANDS = DevelopmentCommands(
     DevelopmentFactories(
         "commerce.return_refund.profiles.v1",
-        "0.1.0",
+        "0.2.0",
         "commerce.return_refund.profiles",
         commerce.load_spec,
         commerce.build_domain,
@@ -55,7 +55,7 @@ COMMERCE_COMMANDS = DevelopmentCommands(
 COMPLIANCE_COMMANDS = DevelopmentCommands(
     DevelopmentFactories(
         "lettings.property_compliance.profiles.v1",
-        "0.1.0",
+        "0.2.0",
         "lettings.property_compliance.profiles",
         _compliance_spec,
         compliance.build_domain,
@@ -76,7 +76,7 @@ class CommerceProfilesPack:
         pack_id="commerce.return_refund.profiles.v1",
         operation_type="commerce.return_refund.profiles",
         operation_id="commerce_return_refund_profiles",
-        pack_version="0.1.0",
+        pack_version="0.2.0",
         display_name="Commerce return and refund profiles",
         owner_id="prospire",
         owner_display_name="PROSPIRE TECHNOLOGIES LTD",

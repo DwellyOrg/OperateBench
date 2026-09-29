@@ -59,48 +59,51 @@ from typing import Any, cast
 
 import openai
 from openai.types.chat import ChatCompletion
-from openai.types.chat.chat_completion import Choice
+from openai.types.chat.chat_completion import Choice as Choice
 from openai.types.chat.chat_completion_message import ChatCompletionMessage
 from openai.types.chat.chat_completion_message_function_tool_call import (
-    ChatCompletionMessageFunctionToolCall,
-    Function,
+    ChatCompletionMessageFunctionToolCall as ChatCompletionMessageFunctionToolCall,
+)
+from openai.types.chat.chat_completion_message_function_tool_call import (
+    Function as Function,
 )
 from openai.types.completion_usage import (
-    CompletionTokensDetails,
+    CompletionTokensDetails as CompletionTokensDetails,
+)
+from openai.types.completion_usage import (
     CompletionUsage,
     PromptTokensDetails,
 )
 
 from boundarybench.adapter import (
-    PROVIDER_FAULT_NETWORK_ERROR,
-    PROVIDER_FAULT_RESPONSE_INVALID,
-    PROVIDER_FAULT_TIMEOUT,
+    PROVIDER_FAULT_RESPONSE_INVALID as PROVIDER_FAULT_RESPONSE_INVALID,
+)
+from boundarybench.adapter import (
     AdapterCall,
     AdapterIdentity,
     AdapterOutputLimitError,
     AdapterProtocolError,
-    AdapterProviderError,
     AdapterUsage,
     ProviderTelemetry,
     SingleFlight,
     TurnDeadline,
     TurnRequest,
 )
+from boundarybench.adapter import (
+    AdapterProviderError as AdapterProviderError,
+)
 from boundarybench.budget import RunCostGuard
 from boundarybench.jsonsafe import (
     canonical_json_bytes,
     canonical_json_text,
-    surrogate_index,
 )
 from boundarybench.pricing import MAX_EXACT_TOKEN_COUNT
 from boundarybench.providers.common import (
     SDK_MAX_RETRIES,
     Clock,
-    Fault,
     ProviderConfigurationError,
     ProviderRetryPolicy,
     Sleep,
-    TokenUsage,
     TurnExecutor,
     check_configuration_audited,
     check_environment,
@@ -111,29 +114,83 @@ from boundarybench.providers.common import (
     check_response_object,
     check_retry_policy,
     checked_token_usage,
-    classify_http_status,
     nested_tool_schema,
     observed_case,
     request_input_token_bound,
     resolve_api_key,
     resolve_single_tool_call,
 )
+from boundarybench.providers.common import (
+    TokenUsage as TokenUsage,
+)
 from boundarybench.providers.wire import (
     WireResponse,
-    WireShape,
-    checked_wire_list,
-    checked_wire_mapping,
-    checked_wire_object,
-    checked_wire_string,
-    declared_wire_fields,
-    is_wire_token_count,
-    wire_invalid,
-    wire_token_usage,
+)
+from boundarybench.providers.wire import (
+    WireShape as WireShape,
+)
+from boundarybench.providers.wire import (
+    checked_wire_list as checked_wire_list,
+)
+from boundarybench.providers.wire import (
+    checked_wire_mapping as checked_wire_mapping,
+)
+from boundarybench.providers.wire import (
+    checked_wire_object as checked_wire_object,
+)
+from boundarybench.providers.wire import (
+    checked_wire_string as checked_wire_string,
+)
+from boundarybench.providers.wire import (
+    declared_wire_fields as declared_wire_fields,
+)
+from boundarybench.providers.wire import (
+    wire_token_usage as wire_token_usage,
 )
 from boundarybench.queries import QUERY_RESOLUTION_CONTRACT
 from boundarybench.scaffold import ACTION_SURFACE_CONTRACT, FACT_AFFORDANCE_CONTRACT
+from operatebench.providers.extensions import frozen_contract as _frozen
+from operatebench.providers.extensions import plain_contract as _plain
 from operatebench.providers.openai_compat_client import (
     check_xai_openai_compat_client_state,
+)
+from operatebench.providers.openai_sdk import (
+    classify_openai_sdk_exception as classify_exception,
+)
+from operatebench.providers.xai_openai_compat import (
+    CHOICE_WIRE_SHAPE as CHOICE_WIRE_SHAPE,
+)
+from operatebench.providers.xai_openai_compat import (
+    COMPLETION_TOKENS_DETAILS_WIRE_SHAPE as COMPLETION_TOKENS_DETAILS_WIRE_SHAPE,
+)
+from operatebench.providers.xai_openai_compat import (
+    FUNCTION_WIRE_SHAPE as FUNCTION_WIRE_SHAPE,
+)
+from operatebench.providers.xai_openai_compat import (
+    MESSAGE_WIRE_SHAPE as MESSAGE_WIRE_SHAPE,
+)
+from operatebench.providers.xai_openai_compat import (
+    PROMPT_TOKENS_DETAILS_WIRE_SHAPE as PROMPT_TOKENS_DETAILS_WIRE_SHAPE,
+)
+from operatebench.providers.xai_openai_compat import (
+    RESPONSE_WIRE_SHAPE as RESPONSE_WIRE_SHAPE,
+)
+from operatebench.providers.xai_openai_compat import (
+    TOOL_CALL_WIRE_SHAPE as TOOL_CALL_WIRE_SHAPE,
+)
+from operatebench.providers.xai_openai_compat import (
+    USAGE_WIRE_SHAPE as USAGE_WIRE_SHAPE,
+)
+from operatebench.providers.xai_openai_compat import (
+    check_extensions_agree_under_contract,
+    check_extensions_under_contract,
+    check_wire_completion_under_contract,
+)
+from operatebench.providers.xai_openai_compat import (
+    check_response_model as check_response_model,
+)
+from operatebench.providers.xai_openai_compat import (
+    response_usage as response_usage,
 )
 
 #: The service under test, as recorded in run identity.
@@ -392,29 +449,11 @@ MAX_EXTENSION_COUNT = MAX_EXACT_TOKEN_COUNT
 
 #: The longest reasoning string this contract accepts.
 #:
-#: Tied to this run's own pinned output ceiling rather than guessed at, because
-#: the ceiling is the one thing about the length of a generated answer this build
-#: controls: sixteen characters per token is far above what any tokenizer this
-#: surface could be using emits, so :data:`MAX_OUTPUT_TOKENS` times sixteen
-#: bounds any reasoning text a turn under this ceiling could return. It is also
-#: two orders of magnitude above the longest string the diagnostics observed,
-#: which is what makes it conservative in both directions: nothing real is
-#: refused, and a body held in memory for the length of a turn stays bounded.
+#: Historical configured parser policy: sixteen characters times the track
+#: output ceiling when this contract was fixed (Boundary 1024).
+#: This is not a provider-native maximum and is not dynamically coupled to
+#: the current output budget or runtime settings.
 MAX_REASONING_CONTENT_CHARACTERS = MAX_OUTPUT_TOKENS * 16
-
-
-def _frozen(node: Any) -> Any:
-    """One schema node, deeply immutable. A shared mutable contract is not one."""
-    if isinstance(node, Mapping):
-        return MappingProxyType({key: _frozen(value) for key, value in node.items()})
-    return node
-
-
-def _plain(node: Any) -> Any:
-    """The same node as plain JSON-encodable data, for the digest below."""
-    if isinstance(node, Mapping):
-        return {key: _plain(value) for key, value in node.items()}
-    return node
 
 
 #: Where the assistant message's extension is fixed.
@@ -522,37 +561,6 @@ TYPED_EXTENSION_EXTRAS: Mapping[type, frozenset[str]] = MappingProxyType(
 _EXTENSION_KIND = "named response extension"
 
 
-def _extension_scalar_valid(value: Any, kind: str) -> bool:
-    """Whether one value is the exact wire scalar the contract fixes for it.
-
-    Exact, and by ``type`` rather than by ``isinstance``, everywhere it matters.
-    Python makes ``True`` an ``int``, so an ``isinstance`` count check would
-    accept a boolean as one — and a lenient reader downstream would render it as
-    a measurement nobody took.
-    """
-    if kind == EXTENSION_COUNT:
-        # The same rule the token counts are read under, and deliberately the
-        # same function: two independently written definitions of "an exact
-        # non-negative integer on the wire" would drift.
-        return is_wire_token_count(value) and value <= MAX_EXTENSION_COUNT
-    # :data:`EXTENSION_REASONING_TEXT`, the other of the two. The vocabulary is
-    # closed and is this module's own, so there is no third kind to fall through
-    # to.
-    #
-    # Empty is accepted. A model that stated no reasoning for a turn has made a
-    # statement this build reads nothing out of either way, and refusing it would
-    # refuse a body that can be read perfectly well. What is not accepted is text
-    # UTF-8 cannot encode: a lone surrogate is not a Unicode scalar, nothing in
-    # this build could hash or write it, and a value that could not survive being
-    # recorded is not one to accept in the first place — even here, where it
-    # never will be.
-    return (
-        type(value) is str
-        and len(value) <= MAX_REASONING_CONTENT_CHARACTERS
-        and surrogate_index(value) is None
-    )
-
-
 def check_response_extensions(node: Mapping[str, Any], *, site: str) -> None:
     """Prove every extension one documented object states is the exact fixed shape.
 
@@ -570,112 +578,7 @@ def check_response_extensions(node: Mapping[str, Any], *, site: str) -> None:
     also requires its siblings, because a partly stated group was never observed
     and this contract describes one shape rather than every subset of one.
     """
-    schema = RESPONSE_EXTENSION_SCHEMA[site]
-    present = [name for name in schema if name in node]
-    if (
-        site in RESPONSE_EXTENSION_SITES_REQUIRED_WHOLE
-        and present
-        and len(present) != len(schema)
-    ):
-        raise wire_invalid(
-            f"the response states part of one group of {_EXTENSION_KIND}s that "
-            f"{XAI_COMPAT_RESPONSE_EXTENSIONS} fixes as a whole. A group this "
-            "build reads nothing out of may be absent entirely, but a group that "
-            "is present is a statement, and this contract describes one shape for "
-            "it rather than every subset of one: a partly stated group was never "
-            "observed, so accepting it would widen an exact contract into a guess. "
-            "Which members arrived and which did not is not recorded here: the "
-            "absences are provider-controlled, and a durable failure row records "
-            "only this build's own fixed detail and closed-set values"
-        )
-    for name in present:
-        if not _extension_scalar_valid(node[name], schema[name]):
-            raise wire_invalid(
-                f"the response states a {_EXTENSION_KIND} whose value is not the "
-                f"exact one of kind {schema[name]!r} that "
-                f"{XAI_COMPAT_RESPONSE_EXTENSIONS} fixes for it, so what arrived "
-                "is not the contract this build accepts and the body is refused "
-                "rather than read past. Nothing about the value is recorded here — "
-                "neither which field carried it nor what it was: the field set is "
-                "this contract's own and the value is provider-controlled, and a "
-                "durable failure row records only this build's own fixed detail "
-                "and closed-set values"
-            )
-
-
-def _stated_extensions(node: Any, *, site: str) -> dict[str, Any]:
-    """Exactly the extension members one object states, for the comparison below."""
-    if not isinstance(node, Mapping):
-        return {}
-    return {name: node[name] for name in RESPONSE_EXTENSION_SCHEMA[site] if name in node}
-
-
-def _typed_extras(value: Any) -> Mapping[str, Any]:
-    """One parsed object's undeclared fields, as this SDK parked them."""
-    extra = getattr(value, "model_extra", None)
-    return extra if isinstance(extra, Mapping) else {}
-
-
-def _object_stated_by_both(raw: Any, typed: Any) -> bool:
-    """Whether both readings state the object one site lives on, or neither does.
-
-    Two different questions, because the two readings answer in two different
-    ways: the exact JSON states an object by carrying a JSON object there, and
-    the typed reading states one by resolving it to something rather than to
-    ``None``. A value that is neither — a count where this API documents an
-    object, say — is not an object either reading stated, and the shape checks
-    that surround this refuse it under the field its own reader is about to use.
-    """
-    return isinstance(raw, Mapping) == (typed is not None)
-
-
-def _extension_readings(
-    wire: Mapping[str, Any], parsed: ChatCompletion
-) -> list[tuple[str, Any, Any]]:
-    """Every object this contract fixes names on, as both readings of it.
-
-    One entry per site the *union* of the two readings reaches, each carrying the
-    object as the exact JSON states it beside the object as the typed reading
-    states it — either of which may be nothing, which is precisely what the
-    caller has to be able to see. Driving this from the typed side alone would
-    make a site the SDK resolved to nothing invisible, and an extension stated
-    under such an object would be compared with nothing and accepted although
-    only one of the two readings ever stated it.
-
-    A choice list is walked to the length of the longer reading for the same
-    reason, and the typed one is guarded rather than trusted to be a list: this
-    SDK resolves a union leniently, and a ``choices`` that is not a list is
-    refused a step later by
-    :func:`~boundarybench.providers.common.check_response_collection` rather than
-    here as a ``TypeError``.
-    """
-    raw_choices = wire.get("choices")
-    choices = raw_choices if isinstance(raw_choices, list) else []
-    typed_choices = parsed.choices if isinstance(parsed.choices, list) else []
-    readings: list[tuple[str, Any, Any]] = []
-    for index in range(max(len(choices), len(typed_choices))):
-        raw = choices[index] if index < len(choices) else None
-        choice = typed_choices[index] if index < len(typed_choices) else None
-        readings.append(
-            (
-                MESSAGE_EXTENSION_SITE,
-                raw.get("message") if isinstance(raw, Mapping) else None,
-                getattr(choice, "message", None),
-            )
-        )
-    raw_usage = wire.get("usage")
-    usage = parsed.usage
-    readings.append((USAGE_EXTENSION_SITE, raw_usage, usage))
-    readings.append(
-        (
-            PROMPT_TOKENS_DETAILS_EXTENSION_SITE,
-            raw_usage.get("prompt_tokens_details")
-            if isinstance(raw_usage, Mapping)
-            else None,
-            getattr(usage, "prompt_tokens_details", None),
-        )
-    )
-    return readings
+    check_extensions_under_contract(node, site=site, contract=RESPONSE_EXTENSION_CONTRACT)
 
 
 def check_response_extensions_agree(
@@ -707,112 +610,15 @@ def check_response_extensions_agree(
     the provider never sent. The typed parse stays exactly as the SDK produced
     it.
     """
-    readings = _extension_readings(wire, parsed)
-    if not all(_object_stated_by_both(raw, typed) for _, raw, typed in readings):
-        raise wire_invalid(
-            "the exact JSON the provider sent and this pinned SDK's typed reading "
-            "of the same bytes do not state the same objects at the sites "
-            f"{XAI_COMPAT_RESPONSE_EXTENSIONS} fixes names on, so there is no "
-            "single body here for this build to check that contract against. An "
-            "object only one reading states is a disagreement before any value "
-            "is: the reading that has it could have stated extensions under it "
-            "that the other reading had nowhere to state. Neither reading is "
-            "preferred over the other and neither is edited to agree with the "
-            "other: the response is refused whole. Which objects each reading "
-            "stated is not recorded here: it is provider-controlled, and a "
-            "durable failure row records only this build's own fixed detail and "
-            "closed-set values"
-        )
-    stated = [
-        (
-            site,
-            _stated_extensions(raw, site=site),
-            _stated_extensions(_typed_extras(typed), site=site),
-        )
-        for site, raw, typed in readings
-    ]
-    for site, _, typed in stated:
-        check_response_extensions(typed, site=site)
-    if any(raw != typed for _, raw, typed in stated):
-        raise wire_invalid(
-            "the exact JSON the provider sent and this pinned SDK's typed reading "
-            "of the same bytes do not state the same response extensions, so there "
-            "is no single body here for this build to check against "
-            f"{XAI_COMPAT_RESPONSE_EXTENSIONS}. Neither reading is preferred over "
-            "the other and neither is edited to agree with the other: the response "
-            "is refused whole. What each reading stated is not recorded here: it is "
-            "provider-controlled, and a durable failure row records only this "
-            "build's own fixed detail and closed-set values"
-        )
+    check_extensions_agree_under_contract(
+        wire, parsed, contract=RESPONSE_EXTENSION_CONTRACT
+    )
 
 
-# -- the wire contract --------------------------------------------------------
-#
-# One shape per documented object this build reads, with its allowed field set
-# taken from the pinned SDK's own model for that object rather than hand-listed.
-# The nesting is what matters here: this surface carries the action four levels
-# down — response, choice, message, tool call, function — and a check that
-# looked only at the top level would pass a body whose action was carried by a
-# tool call nobody can describe.
-
-RESPONSE_WIRE_SHAPE = WireShape(
-    kind="completion",
-    allowed=declared_wire_fields(ChatCompletion),
-    required=("model", "choices", "usage"),
-)
-CHOICE_WIRE_SHAPE = WireShape(
-    kind="completion choice",
-    allowed=declared_wire_fields(Choice),
-    required=CHOICE_FIELDS,
-)
-#: The assistant message. Its allowed set is the SDK's declared fields *plus* the
-#: one name this lane's extension contract fixes for a message, and the two
-#: halves are kept visibly separate because they are two different kinds of
-#: claim: the first is the vendor's own schema as the pinned SDK models it, and
-#: the second is what this repository observed the compatibility layer return and
-#: then fixed a shape for. Membership here only buys a name the right to appear
-#: on this object; the shape of whatever it carries is proven by
-#: :func:`check_response_extensions`.
-MESSAGE_WIRE_SHAPE = WireShape(
-    kind="completion message",
-    allowed=declared_wire_fields(ChatCompletionMessage) | MESSAGE_EXTENSION_NAMES,
-    required=(),
-)
-#: One tool call. ``function`` is required because this build reads it, and
-#: requiring it is what turns "``function`` is a list" from an ``AttributeError``
-#: several frames down into a named refusal before anything is read.
-TOOL_CALL_WIRE_SHAPE = WireShape(
-    kind="tool call",
-    allowed=declared_wire_fields(ChatCompletionMessageFunctionToolCall),
-    required=("type", "function"),
-)
-FUNCTION_WIRE_SHAPE = WireShape(
-    kind="tool call function object",
-    allowed=declared_wire_fields(Function),
-    required=("name", "arguments"),
-)
-#: The usage block, and the detail object inside it this lane's extension
-#: contract also names. The same two-halves rule as the message above: the
-#: declared fields are the vendor's schema, and the extension names are this
-#: repository's own observation. ``prompt_tokens_details`` is an object the SDK
-#: *does* declare — what it does not declare is the pair inside it.
-USAGE_WIRE_SHAPE = WireShape(
-    kind="usage block",
-    allowed=declared_wire_fields(CompletionUsage) | USAGE_EXTENSION_NAMES,
-    required=USAGE_FIELDS,
-)
-PROMPT_TOKENS_DETAILS_WIRE_SHAPE = WireShape(
-    kind="prompt token details",
-    allowed=(
-        declared_wire_fields(PromptTokensDetails) | PROMPT_TOKENS_DETAILS_EXTENSION_NAMES
-    ),
-    required=(),
-)
-COMPLETION_TOKENS_DETAILS_WIRE_SHAPE = WireShape(
-    kind="completion token details",
-    allowed=declared_wire_fields(CompletionTokensDetails),
-    required=(),
-)
+# Wire shapes are compatibility aliases of the structurally identical provider
+# kernel definitions. Extension bounds remain this track's own contract, passed
+# explicitly by check_wire_completion; typed admissibility and settlement stay
+# local to Boundary.
 
 
 class XAIConfigurationError(ProviderConfigurationError):
@@ -1035,78 +841,9 @@ def build_chat_request(
 # -- the response ------------------------------------------------------------
 
 
-def check_response_model(response: ChatCompletion, *, model: str) -> None:
-    """Prove the answer came from the model the run pinned and asked for.
-
-    Neither model string is quoted: the response's is provider-controlled text,
-    and the run's is already on every row.
-    """
-    if response.model != model:
-        raise AdapterProviderError(
-            PROVIDER_FAULT_RESPONSE_INVALID,
-            "the response states that a model other than the one this run pinned "
-            "and requested produced it, so it is not evidence about the model "
-            "under test and neither its action nor its token counts are accepted. "
-            "Neither model identifier is recorded here: the response's is "
-            "provider-controlled text, and the run's is already named by the "
-            "adapter identity on every row",
-        )
-
-
 def check_wire_completion(raw: Mapping[str, Any]) -> None:
-    """Prove the exact JSON the provider sent is the contract this build asked for.
-
-    Walked to the depth the action is carried at, because that is where this
-    surface's failures live. The blocker this closes is one of them: a
-    ``function`` that arrives as a list, a string, a number or a boolean
-    survives the SDK's union resolution, passes every check on the parsed
-    object, and reaches ``.name`` several frames later as an ``AttributeError``
-    — after the attempt has been published as a successful response with usage.
-
-    A tool call whose declared type is not ``function`` is deliberately not
-    checked against the function shape. That is a statement about the answer
-    rather than the transport, and :func:`parse_completion` reports it as the
-    protocol failure it is.
-
-    Nothing that arrived is quoted; see :mod:`boundarybench.providers.wire`.
-    """
-    body = checked_wire_object(raw, RESPONSE_WIRE_SHAPE)
-    for entry in checked_wire_list(body["choices"], kind="completion choices"):
-        choice = checked_wire_object(entry, CHOICE_WIRE_SHAPE)
-        message = choice["message"]
-        if message is None:
-            # This API's own "no message", reported by :func:`parse_completion`
-            # as the answer that states no action. Anything else in that field
-            # is a container rather than an absence.
-            continue
-        parsed_message = checked_wire_object(message, MESSAGE_WIRE_SHAPE)
-        check_response_extensions(parsed_message, site=MESSAGE_EXTENSION_SITE)
-        calls = parsed_message.get("tool_calls")
-        if calls is None:
-            continue
-        for raw_call in checked_wire_list(calls, kind="tool calls"):
-            call = checked_wire_mapping(raw_call, kind="tool call")
-            if call.get("type") != "function":
-                continue
-            function = checked_wire_object(call, TOOL_CALL_WIRE_SHAPE)["function"]
-            named = checked_wire_object(function, FUNCTION_WIRE_SHAPE)
-            checked_wire_string(named["name"], kind="tool call name")
-            checked_wire_string(named["arguments"], kind="tool call arguments")
-    usage = checked_wire_object(body["usage"], USAGE_WIRE_SHAPE)
-    check_response_extensions(usage, site=USAGE_EXTENSION_SITE)
-    for field, shape, site in (
-        (
-            "prompt_tokens_details",
-            PROMPT_TOKENS_DETAILS_WIRE_SHAPE,
-            PROMPT_TOKENS_DETAILS_EXTENSION_SITE,
-        ),
-        ("completion_tokens_details", COMPLETION_TOKENS_DETAILS_WIRE_SHAPE, None),
-    ):
-        if usage.get(field) is not None:
-            details = checked_wire_object(usage[field], shape)
-            if site is not None:
-                check_response_extensions(details, site=site)
-    wire_token_usage(usage, fields=USAGE_FIELDS)
+    """Validate wire structure under this track's own extension contract."""
+    check_wire_completion_under_contract(raw, contract=RESPONSE_EXTENSION_CONTRACT)
 
 
 def check_response_admissible(
@@ -1251,40 +988,6 @@ def parse_completion(response: ChatCompletion, request: TurnRequest) -> AdapterC
             "records only this build's own fixed detail and closed-set values"
         )
     return resolved
-
-
-def response_usage(response: WireResponse[ChatCompletion]) -> TokenUsage:
-    """The two counts this build prices a turn on, taken from the wire.
-
-    This surface names them ``prompt_tokens`` and ``completion_tokens`` — not
-    the Responses API's ``input_tokens``/``output_tokens``. Reading the wrong
-    pair would price every turn at null and silently forfeit every reservation,
-    which is a failure that looks like a quiet run rather than like a bug.
-
-    Read off the exact JSON rather than off the parsed model, because this SDK
-    coerces: ``true`` becomes one token and ``"12"`` becomes twelve, and both
-    then look exactly like a measurement. Validated again here rather than
-    trusted from :func:`check_response_admissible`, because this is the function
-    whose return value becomes an
-    :class:`~boundarybench.adapter.AdapterUsage` and a settled cost.
-    """
-    usage = checked_wire_object(response.wire.get("usage"), USAGE_WIRE_SHAPE)
-    return wire_token_usage(usage, fields=USAGE_FIELDS)
-
-
-def classify_exception(exception: Exception) -> Fault | None:
-    """Map one SDK error onto the contract's fault set, or decline."""
-    if isinstance(exception, openai.APITimeoutError):
-        return Fault(PROVIDER_FAULT_TIMEOUT, True, None)
-    if isinstance(exception, openai.APIConnectionError):
-        return Fault(PROVIDER_FAULT_NETWORK_ERROR, True, None)
-    if isinstance(exception, openai.APIResponseValidationError):
-        # A whole body arrived and the SDK refused to read it, so the attempt
-        # records that a response was received. See the OpenAI integration.
-        return Fault(PROVIDER_FAULT_RESPONSE_INVALID, False, None, response_received=True)
-    if isinstance(exception, openai.APIStatusError):
-        return classify_http_status(exception.status_code)
-    return None
 
 
 # -- the adapter -------------------------------------------------------------

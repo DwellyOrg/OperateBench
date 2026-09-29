@@ -35,7 +35,6 @@ from dataclasses import dataclass, field
 from types import MappingProxyType
 from typing import Any, Protocol
 
-from boundarybench.jsonsafe import canonical_json_bytes
 from operatebench.core.clock import SimulatedClock, parse_timestamp, shift_minutes
 from operatebench.core.events import (
     DISPOSITION_ACCEPTED,
@@ -87,6 +86,7 @@ from operatebench.core.retrieval import (
     retrieval_batch_problem,
 )
 from operatebench.core.retrieval_evidence import detached_records
+from operatebench.jsonsafe import canonical_json_bytes
 
 
 class ExecutionObserver(Protocol):

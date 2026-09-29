@@ -37,6 +37,7 @@ KERNEL = REPO_ROOT / "src" / "operatebench" / "providers"
 #: agent, a run or an artefact.
 FORBIDDEN_PREFIXES: tuple[str, ...] = (
     "boundarybench",
+    "tools",
     "operatebench.agents",
     "operatebench.artifact",
     "operatebench.cli",
@@ -94,7 +95,7 @@ def test_every_first_party_kernel_import_is_the_kernel_or_the_json_primitive(
     path: Path,
 ) -> None:
     for module in _imported_modules(path):
-        if not module.startswith(("operatebench", "boundarybench")):
+        if not module.startswith(("operatebench", "boundarybench", "tools")):
             # Standard library and the pinned provider SDKs are exactly what a
             # kernel module is expected to reach for.
             continue
@@ -103,6 +104,10 @@ def test_every_first_party_kernel_import_is_the_kernel_or_the_json_primitive(
             or module.startswith("operatebench.providers.")
             or module in ALLOWED_SIBLINGS
         ), f"{path.name} imports {module}"
+
+
+def test_tools_are_explicitly_outside_the_kernel():
+    assert "tools" in FORBIDDEN_PREFIXES
 
 
 # -- the compatibility re-exports --------------------------------------------

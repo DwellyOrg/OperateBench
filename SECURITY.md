@@ -121,8 +121,10 @@ does not post comments or change licensing policy.
 
 Dependency review is available for public repositories without a paid security
 plan. Dependency graph availability and private vulnerability reporting are
-repository settings, not enabled or proven by these files. Maintainers should
-verify a successful `dependency-review` run before making that check required.
+repository settings, not enabled or proven by these files. The main-branch policy
+requires `dependency-review` alongside the existing test, build, independent secret
+scan and DCO checks. Maintainers must verify actual forge enforcement and graph
+coverage; repository prose and a green check alone cannot prove either.
 
 ## Supported versions
 

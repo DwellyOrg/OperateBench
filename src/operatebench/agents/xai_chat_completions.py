@@ -24,7 +24,12 @@ from operatebench.agents.lifecycle_contract import (
     UndecodableArguments,
     check_model_request,
     elide_null_optionals,
-    outcome_tools,
+)
+from operatebench.agents.lifecycle_contract import (
+    outcome_function_definitions as xai_outcome_tools,
+)
+from operatebench.agents.lifecycle_contract import (
+    outcome_tools as outcome_tools,
 )
 from operatebench.agents.model import (
     MAX_OUTPUT_TOKENS,
@@ -82,19 +87,6 @@ LIFECYCLE_XAI_RETRY_POLICY = ProviderRetryPolicy(
     max_attempts=1, initial_backoff_seconds=0.0, backoff_multiplier=1.0
 )
 COMPLETED_STOP_REASON = "completed"
-
-
-def xai_outcome_tools() -> list[dict[str, Any]]:
-    """Chat Completions function definitions from the neutral Lifecycle authority."""
-    return [
-        {
-            "name": tool["name"],
-            "description": tool["description"],
-            "parameters": tool["parameters"],
-            "strict": tool["strict"],
-        }
-        for tool in outcome_tools()
-    ]
 
 
 def request_instructions(request: ModelRequest) -> str:

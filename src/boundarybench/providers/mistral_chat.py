@@ -126,6 +126,9 @@ from boundarybench.providers.wire import (
 )
 from boundarybench.queries import QUERY_RESOLUTION_CONTRACT
 from boundarybench.scaffold import ACTION_SURFACE_CONTRACT, FACT_AFFORDANCE_CONTRACT
+from operatebench.providers.extensions import frozen_contract as _frozen
+from operatebench.providers.extensions import plain_contract as _plain
+from operatebench.providers.extensions import typed_extras as _typed_extras
 
 #: The service under test, as recorded in run identity.
 MISTRAL_PROVIDER = "mistral"
@@ -371,20 +374,6 @@ EXTENSION_COUNT = "non_negative_bounded_integer"
 MAX_EXTENSION_COUNT = MAX_EXACT_TOKEN_COUNT
 
 
-def _frozen(node: Any) -> Any:
-    """One schema node, deeply immutable. A shared mutable contract is not one."""
-    if isinstance(node, Mapping):
-        return MappingProxyType({key: _frozen(value) for key, value in node.items()})
-    return node
-
-
-def _plain(node: Any) -> Any:
-    """The same node as plain JSON-encodable data, for the digest below."""
-    if isinstance(node, Mapping):
-        return {key: _plain(value) for key, value in node.items()}
-    return node
-
-
 #: The contract itself: the one name the usage block may carry beyond its
 #: declared fields, and the exact shape of the object it names.
 #:
@@ -537,12 +526,6 @@ def _stated_extensions(node: Any) -> dict[str, Any]:
     if not isinstance(node, Mapping):
         return {}
     return {name: node[name] for name in RESPONSE_EXTENSION_SCHEMA if name in node}
-
-
-def _typed_extras(value: Any) -> Mapping[str, Any]:
-    """One parsed object's undeclared fields, as this SDK parked them."""
-    extra = getattr(value, "model_extra", None)
-    return extra if isinstance(extra, Mapping) else {}
 
 
 def check_response_extensions_agree(

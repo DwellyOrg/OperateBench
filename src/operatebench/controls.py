@@ -37,7 +37,6 @@ from typing import Any
 
 import yaml
 
-from boundarybench.jsonsafe import JsonSafetyError, canonical_json_bytes
 from operatebench.core.errors import OperateBenchError
 from operatebench.core.outcomes import OUTCOME_KINDS
 from operatebench.core.protocol import EpisodePlan
@@ -86,6 +85,7 @@ from operatebench.domains.lettings.maintenance.spec import (
     MAINTENANCE_ACTION_PAYLOAD_SCHEMAS,
     OperationSpec,
 )
+from operatebench.jsonsafe import JsonSafetyError, canonical_json_bytes
 
 #: Where the shipped draft manifest lives. A repository example rather than a
 #: packaged resource: it is a template awaiting an independent author, not

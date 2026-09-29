@@ -1,0 +1,226 @@
+{
+  "operatebench.providers.xai_openai_compat:shapes": {
+    "CHOICE_WIRE_SHAPE": [
+      "completion choice",
+      [
+        "finish_reason",
+        "index",
+        "logprobs",
+        "message"
+      ],
+      [
+        "finish_reason",
+        "message"
+      ]
+    ],
+    "COMPLETION_TOKENS_DETAILS_WIRE_SHAPE": [
+      "completion token details",
+      [
+        "accepted_prediction_tokens",
+        "audio_tokens",
+        "reasoning_tokens",
+        "rejected_prediction_tokens"
+      ],
+      []
+    ],
+    "FUNCTION_WIRE_SHAPE": [
+      "tool call function object",
+      [
+        "arguments",
+        "name"
+      ],
+      [
+        "name",
+        "arguments"
+      ]
+    ],
+    "MESSAGE_WIRE_SHAPE": [
+      "completion message",
+      [
+        "annotations",
+        "audio",
+        "content",
+        "function_call",
+        "reasoning_content",
+        "refusal",
+        "role",
+        "tool_calls"
+      ],
+      []
+    ],
+    "PROMPT_TOKENS_DETAILS_WIRE_SHAPE": [
+      "prompt token details",
+      [
+        "audio_tokens",
+        "cache_write_tokens",
+        "cached_tokens",
+        "image_tokens",
+        "text_tokens"
+      ],
+      []
+    ],
+    "RESPONSE_WIRE_SHAPE": [
+      "completion",
+      [
+        "choices",
+        "created",
+        "id",
+        "model",
+        "moderation",
+        "object",
+        "service_tier",
+        "system_fingerprint",
+        "usage"
+      ],
+      [
+        "model",
+        "choices",
+        "usage"
+      ]
+    ],
+    "TOOL_CALL_WIRE_SHAPE": [
+      "tool call",
+      [
+        "function",
+        "id",
+        "type"
+      ],
+      [
+        "type",
+        "function"
+      ]
+    ],
+    "USAGE_WIRE_SHAPE": [
+      "usage block",
+      [
+        "completion_tokens",
+        "completion_tokens_details",
+        "cost_in_usd_ticks",
+        "num_sources_used",
+        "prompt_tokens",
+        "prompt_tokens_details",
+        "total_tokens"
+      ],
+      [
+        "prompt_tokens",
+        "completion_tokens"
+      ]
+    ]
+  },
+  "boundarybench.providers.xai_openai_compat:shapes": {
+    "CHOICE_WIRE_SHAPE": [
+      "completion choice",
+      [
+        "finish_reason",
+        "index",
+        "logprobs",
+        "message"
+      ],
+      [
+        "finish_reason",
+        "message"
+      ]
+    ],
+    "COMPLETION_TOKENS_DETAILS_WIRE_SHAPE": [
+      "completion token details",
+      [
+        "accepted_prediction_tokens",
+        "audio_tokens",
+        "reasoning_tokens",
+        "rejected_prediction_tokens"
+      ],
+      []
+    ],
+    "FUNCTION_WIRE_SHAPE": [
+      "tool call function object",
+      [
+        "arguments",
+        "name"
+      ],
+      [
+        "name",
+        "arguments"
+      ]
+    ],
+    "MESSAGE_WIRE_SHAPE": [
+      "completion message",
+      [
+        "annotations",
+        "audio",
+        "content",
+        "function_call",
+        "reasoning_content",
+        "refusal",
+        "role",
+        "tool_calls"
+      ],
+      []
+    ],
+    "PROMPT_TOKENS_DETAILS_WIRE_SHAPE": [
+      "prompt token details",
+      [
+        "audio_tokens",
+        "cache_write_tokens",
+        "cached_tokens",
+        "image_tokens",
+        "text_tokens"
+      ],
+      []
+    ],
+    "RESPONSE_WIRE_SHAPE": [
+      "completion",
+      [
+        "choices",
+        "created",
+        "id",
+        "model",
+        "moderation",
+        "object",
+        "service_tier",
+        "system_fingerprint",
+        "usage"
+      ],
+      [
+        "model",
+        "choices",
+        "usage"
+      ]
+    ],
+    "TOOL_CALL_WIRE_SHAPE": [
+      "tool call",
+      [
+        "function",
+        "id",
+        "type"
+      ],
+      [
+        "type",
+        "function"
+      ]
+    ],
+    "USAGE_WIRE_SHAPE": [
+      "usage block",
+      [
+        "completion_tokens",
+        "completion_tokens_details",
+        "cost_in_usd_ticks",
+        "num_sources_used",
+        "prompt_tokens",
+        "prompt_tokens_details",
+        "total_tokens"
+      ],
+      [
+        "prompt_tokens",
+        "completion_tokens"
+      ]
+    ]
+  },
+  "operatebench.agents.openai_responses:gpt-5.6-luna": "260ee09d4614dbfbafec2d9d9b0ca93ba78663652da765c6d76b23d4c7fe577c",
+  "operatebench.agents.xai_responses:grok-4.5": "17f03722417a07a93709b3afac8ac7610ec20912bfb07bc6e3e52fcd1d8882fe",
+  "operatebench.agents.xai_responses:grok-4.6": "1a67f5e314398b7406515d95e4d82873f6d8e1a3bee3c2d4e56c859f3a2ca7e7",
+  "function_definitions": "0cca7854215c1dbfc482a3331c352dfc59fa81c5e937f164a41e334ade028b4e",
+  "operatebench.providers.xai_openai_compat": "2929d3c9e78bbd8e989fcfec0c509c7ec4af6f39ba6766bea9f0386fbdc96398",
+  "boundarybench.providers.xai_openai_compat": "f7ceda1429188dcef8117d992efde91419291c4fde151f00f5e43a7931ef6c6f",
+  "boundary_settings": "15564d01b033905995455aa669ae51885bdf30cdbe11c292afdb6f35b34b172f",
+  "lifecycle_settings": "2abb315c878e5eb499f21b28f393b877ce46816f088f8e7eb5db30bbe50a7704"
+}
