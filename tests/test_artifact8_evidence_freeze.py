@@ -160,9 +160,10 @@ def _audit(directory: Path = FIXTURES) -> dict[str, Any]:
     assert (
         _sha(operation.read_bytes()) == manifest["generation"]["operation_fixture_sha256"]
     )
-    assert (
-        _sha((ROOT / "uv.lock").read_bytes()) == manifest["generation"]["uv_lock_sha256"]
-    )
+    # Generation provenance belongs to the archived build, not today's deps.
+    # Reuse its independently pinned source snapshot; no Git is needed at runtime.
+    generation_lock = ROOT / "tests/fixtures/historical_engine_0_9/source/uv.lock"
+    assert _sha(generation_lock.read_bytes()) == manifest["generation"]["uv_lock_sha256"]
 
     resources = ROOT / "src" / "operatebench" / "resources" / "identity"
     identity = manifest["identity"]
@@ -516,22 +517,24 @@ def test_acceptance_constructs_no_provider_transport_socket_or_credentials(
         def get(self, key: str, default: Any = None) -> Any:
             return forbidden(key, default)
 
-    monkeypatch.setattr(os, "environ", ForbiddenEnvironment())
-    monkeypatch.setattr(os, "getenv", forbidden)
-    monkeypatch.setattr(openai, "OpenAI", forbidden)
-    monkeypatch.setattr(httpx, "Client", forbidden)
-    monkeypatch.setattr(httpx, "MockTransport", forbidden)
-    monkeypatch.setattr(socket, "socket", forbidden)
-    monkeypatch.setattr(socket, "create_connection", forbidden)
-    monkeypatch.setattr(
-        "operatebench.agents.openai_responses.OpenAIResponsesTransport", forbidden
-    )
-    monkeypatch.setattr(
-        "operatebench.agents.evidence.EvidenceRecordingModelAgent", forbidden
-    )
-    monkeypatch.setattr("operatebench.agents.evidence.WireCaptureTransport", forbidden)
-    _audit()
-    assert calls == []
+    # Undo even on failure, before pytest/JUnit consults the environment.
+    with monkeypatch.context() as guarded:
+        guarded.setattr(os, "environ", ForbiddenEnvironment())
+        guarded.setattr(os, "getenv", forbidden)
+        guarded.setattr(openai, "OpenAI", forbidden)
+        guarded.setattr(httpx, "Client", forbidden)
+        guarded.setattr(httpx, "MockTransport", forbidden)
+        guarded.setattr(socket, "socket", forbidden)
+        guarded.setattr(socket, "create_connection", forbidden)
+        guarded.setattr(
+            "operatebench.agents.openai_responses.OpenAIResponsesTransport", forbidden
+        )
+        guarded.setattr(
+            "operatebench.agents.evidence.EvidenceRecordingModelAgent", forbidden
+        )
+        guarded.setattr("operatebench.agents.evidence.WireCaptureTransport", forbidden)
+        _audit()
+        assert calls == []
 
 
 def _expected_wheel_package_files(root: Path = ROOT) -> dict[str, Path]:

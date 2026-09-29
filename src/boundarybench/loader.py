@@ -51,9 +51,14 @@ def _refuse_aliases(text: str) -> None:
     for event in yaml.parse(text):
         if isinstance(event, AliasEvent):
             mark = event.start_mark
+            location = (
+                ""
+                if mark is None
+                else f" at line {mark.line + 1}, column {mark.column + 1}"
+            )
             raise AliasError(
-                f"alias *{event.anchor} at line {mark.line + 1}, column "
-                f"{mark.column + 1}: an alias makes the document a graph while "
+                f"alias *{event.anchor}{location}: "
+                "an alias makes the document a graph while "
                 "the reviewed text still reads as a tree, and a shared subgraph "
                 "costs every later traversal one visit per path through it. "
                 "State the structure literally instead"
