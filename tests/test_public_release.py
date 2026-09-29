@@ -92,7 +92,7 @@ def _canonical_distribution(directory: Path) -> tuple[Path, Path]:
             b"\n" + project_readme
         ),
         f"{dist_info}/WHEEL": (
-            b"Wheel-Version: 1.0\nGenerator: hatchling 1.32.0\n"
+            b"Wheel-Version: 1.0\nGenerator: hatchling 1.32.4\n"
             b"Root-Is-Purelib: true\nTag: py3-none-any\n"
         ),
         f"{dist_info}/entry_points.txt": (
@@ -242,7 +242,7 @@ class TestDistributionMetadata:
 
         data = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
         assert data["build-system"] == {
-            "requires": ["hatchling==1.32.0"],
+            "requires": ["hatchling==1.32.4"],
             "build-backend": "hatchling.build",
         }
 
@@ -251,24 +251,30 @@ class TestDistributionMetadata:
         [
             '["hatchling>=1.27"]',
             '["hatchling==1.31.0"]',
-            '["hatchling==1.32.0", "setuptools==80.0.0"]',
+            '["hatchling==1.32.0"]',
+            '["hatchling==1.32.5"]',
+            '["hatchling==1.32.4", "setuptools==80.0.0"]',
         ],
     )
     def test_release_scanner_rejects_build_backend_dependency_drift(
         self, tmp_path: Path, requires: str
     ) -> None:
-        pyproject = (REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8")
-        pyproject = pyproject.replace(
-            'requires = ["hatchling==1.32.0"]', f"requires = {requires}"
+        import tomllib
+
+        original = (REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8")
+        pyproject = original.replace(
+            'requires = ["hatchling==1.32.4"]', f"requires = {requires}"
         )
+        assert pyproject != original
+        actual = tomllib.loads(pyproject)["build-system"]["requires"]
+        assert actual == tomllib.loads(f"requires = {requires}")["requires"]
         (tmp_path / "pyproject.toml").write_text(pyproject, encoding="utf-8")
 
         problems = checks.check_distribution_metadata(tmp_path)
 
-        assert any(
-            "build-system.requires" in problem and "hatchling==1.32.0" in problem
-            for problem in problems
-        )
+        assert (
+            f"build-system.requires is {actual!r}, expected exactly ['hatchling==1.32.4']"
+        ) in problems
 
     def test_the_release_tooling_is_not_packaged_into_the_wheel(self) -> None:
         # tools/ is repository machinery. A wheel that carries the release
@@ -547,6 +553,29 @@ class TestBuiltDistributions:
         # Passes silently when dist/ has not been built: a release gate that
         # demands a build step it cannot perform is one people stop running.
         assert checks.check_built_distributions(REPO_ROOT) == []
+
+    @pytest.mark.parametrize("backend", ["1.32.4", "1.32.0", "1.32.5", "1.31.0"])
+    def test_wheel_generator_matches_exact_reviewed_backend(
+        self, tmp_path: Path, canonical_distribution: DistributionFactory, backend: str
+    ) -> None:
+        distribution = tmp_path / "dist"
+        wheel, _ = canonical_distribution(distribution)
+        name = "operatebench-0.1.0.dist-info/WHEEL"
+        with zipfile.ZipFile(wheel) as archive:
+            original = archive.read(name)
+        assert b"Generator: hatchling 1.32.4\n" in original
+        payload = original.replace(b"hatchling 1.32.4", f"hatchling {backend}".encode())
+        assert (payload != original) == (backend != "1.32.4")
+        _rewrite_wheel(wheel, replace={name: payload})
+        _regenerate_record(wheel)
+        problems = checks.check_built_distributions(
+            REPO_ROOT, distribution_dir=distribution
+        )
+        if backend == "1.32.4":
+            assert problems == []
+        else:
+            assert len(problems) == 1
+            assert problems == [f"dist/{wheel.name}::{name}: invalid WHEEL (ValueError)"]
 
     def test_an_extracted_sdist_rejects_the_test_only_matched_grammar(
         self, tmp_path: Path
