@@ -16,6 +16,7 @@ from decimal import Decimal
 from pathlib import Path
 
 import httpx
+import httpx2
 import pytest
 
 from boundarybench.cli import main
@@ -29,8 +30,8 @@ GLOBAL_CAP = "50.00"
 def no_transport(monkeypatch: pytest.MonkeyPatch) -> None:
     """Break every HTTP send for the duration of a test.
 
-    Installed on ``httpx.Client.send`` rather than on any SDK's own entry point,
-    because that is the one chokepoint all three SDKs in this build go through.
+    Installed on both HTTP client send methods rather than an SDK entry point:
+    Anthropic uses httpx2, while OpenAI and Mistral use httpx.
     A guard placed higher up would only prove that the code path a test happened
     to know about was not taken.
     """
@@ -41,6 +42,7 @@ def no_transport(monkeypatch: pytest.MonkeyPatch) -> None:
         )
 
     monkeypatch.setattr(httpx.Client, "send", forbidden)
+    monkeypatch.setattr(httpx2.Client, "send", forbidden)
 
 
 def _credentials(monkeypatch: pytest.MonkeyPatch) -> None:

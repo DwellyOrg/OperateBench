@@ -66,7 +66,10 @@ from operatebench.execution_ledger import (
     LedgerControls,
     read_execution_ledger,
 )
-from operatebench.providers.anthropic_messages import ANTHROPIC_BASE_URL
+from operatebench.providers.anthropic_messages import (
+    ANTHROPIC_BASE_URL,
+    anthropic_http_client,
+)
 from operatebench.providers.mistral_chat import build_client as build_mistral_client
 from operatebench.providers.openai_responses import OPENAI_BASE_URL
 from operatebench.providers.xai_openai_compat import XAI_BASE_URL
@@ -543,7 +546,6 @@ def _run_offline_cell(
     handler = _ScriptedReference(provider=cell["provider"], model=cell["model"])
     capture = WireCaptureTransport()
     capture.attach(httpx.MockTransport(handler))
-    http_client = httpx.Client(transport=capture)
     configured = DIAGNOSTIC_PLAN["controls"]
     deadline = configured["turn_deadline_seconds"]
     max_output_tokens = configured["max_output_tokens_per_call"]
@@ -552,19 +554,19 @@ def _run_offline_cell(
             api_key=_PLACEHOLDER_KEY,
             base_url=(OPENAI_BASE_URL if cell["provider"] == "openai" else XAI_BASE_URL),
             max_retries=0,
-            http_client=http_client,
+            http_client=httpx.Client(transport=capture),
         )
     elif cell["provider"] == "anthropic":
         client = anthropic.Anthropic(
             api_key=_PLACEHOLDER_KEY,
             base_url=ANTHROPIC_BASE_URL,
             max_retries=0,
-            http_client=http_client,
+            http_client=anthropic_http_client(transport=capture),
         )
     else:
         client = build_mistral_client(
             api_key=_PLACEHOLDER_KEY,
-            http_client=http_client,
+            http_client=httpx.Client(transport=capture),
         )
 
     # Zero rates describe this synthetic in-process transport, not provider pricing.

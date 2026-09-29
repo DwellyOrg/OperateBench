@@ -243,11 +243,15 @@ class HTTPCampaignTransport:
         if transport_policy == "paced-safe-errors-v1":
             self.wire.pacer = MISTRAL_PACER
             self.request_mapping += "-" + transport_policy
-        self.http = httpx.Client(
-            transport=self.wire,
-            trust_env=False,
-            timeout=network_timeout,
-            follow_redirects=False,
+        self.http = (
+            ap.anthropic_http_client(transport=self.wire, timeout=network_timeout)
+            if provider == "anthropic"
+            else httpx.Client(
+                transport=self.wire,
+                trust_env=False,
+                timeout=network_timeout,
+                follow_redirects=False,
+            )
         )
         self.client: Any
         if provider == "openai":
@@ -269,6 +273,7 @@ class HTTPCampaignTransport:
                 http_client=self.http,
             )
         else:
+            assert isinstance(self.http, httpx.Client)
             quiet = logging.Logger("three-flow-sdk-disabled")
             quiet.disabled = True
             self.client = Mistral(
@@ -423,9 +428,9 @@ class HTTPCampaignTransport:
             return op.response_usage(wire), oa.model_response_from(wire)
         if self.provider == "anthropic":
             raw = self.client.messages.with_raw_response.create(
-                **payload, timeout=self.network_timeout
+                **ap.anthropic_sdk_kwargs(payload), timeout=self.network_timeout
             )
-            wire = WireResponse(raw.text, raw.parse, kind="Fable campaign")
+            wire = WireResponse(raw.text(), raw.parse, kind="Fable campaign")
             # Validate hidden reasoning blocks, then use the unchanged legacy
             # validator on the semantic text/tool projection. Full raw retained.
             body = dict(wire.wire)

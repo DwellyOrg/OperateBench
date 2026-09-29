@@ -10,6 +10,7 @@ import stat
 from pathlib import Path
 
 import httpx
+import httpx2
 import pytest
 
 from tools import three_flow_live as live
@@ -512,7 +513,8 @@ def test_cli_error_projection_before_publication(
             # Inspect the actual SDK exception, not a synthetic parser. The
             # SDK must still receive the untouched response in memory.
             response = getattr(exc, "response", getattr(exc, "raw_response", None))
-            assert isinstance(response, httpx.Response)
+            response_type = httpx2.Response if provider == "anthropic" else httpx.Response
+            assert isinstance(response, response_type)
             assert response.content == raw
             assert response.status_code == status
             sdk_errors.append(type(exc).__module__)

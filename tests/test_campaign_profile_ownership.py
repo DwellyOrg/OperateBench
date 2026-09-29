@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+from importlib.metadata import version
 
 import pytest
 
@@ -91,7 +92,12 @@ def test_sdk_bytes_and_settings_golden(tmp_path, monkeypatch, key, expected):
             prompt=prompt,
         )
         transport.send(request)
+        # Historical SDK provenance stays in the immutable fixture. Qualify
+        # current settings separately; the exact wire pin below still applies.
         settings = dict(expected["settings"])
+        if provider == "anthropic":
+            assert settings["sdk_version"] == "0.121.0"
+            settings["sdk_version"] = version("anthropic")
         if provider == "mistral":
             # Preserve the frozen capture; this build uses the reviewed SDK update.
             assert settings["sdk_version"] == "2.9.2"

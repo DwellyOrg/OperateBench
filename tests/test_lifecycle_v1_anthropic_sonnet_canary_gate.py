@@ -534,22 +534,24 @@ def mock_live_transport(wire: Wire, **kwargs: Any) -> Any:
 # -- the tool is one cell wide ------------------------------------------------
 
 
+# Anthropic 1.8: only the shared client-factory import and its three construction
+# sites changed; census, assignments, classes and all other functions stay pinned.
 _FROZEN_SECURITY_AST = {
     "haiku": {
-        "module": "90b3f86e625cdb6954cc8f3a2efac655735b8752150bc979947613819bef64bb",
+        "module": "a5dc419467c63d391ba3b772d9e09be164ea2bf798ed1ed8a88cd6b929bec87f",
         "census": "b9264e1ce421cb48a0baabbdcf066904240914500179e46e484037977571237f",
-        "imports": "69820bc2e24babc5268e91bb4dc79cbe2e40d9dab55fbbd0542391cb680cb6b5",
+        "imports": "c7be1328d38823e7ac67c8e5f23874f4b3b2c442f02c54196af334c4e982645c",
         "assignments": "5f7e0d9fdc5a6314eb753826d5aebf6110c6496c859a925520653acd4709c4d1",
         "classes": "d04ce42247b8854581857d3d5d2d1349604dbcf1b9f10ebe9913a44e64c192e0",
-        "functions": "faf3831380975f0750e65cd867bbf50375b8e14df437ba03d43085b767749872",
+        "functions": "ca4beba8a2d472b7fcf3349cb43349c1d2c31ef694ea081c4af7bd87566dc0b1",
     },
     "sonnet": {
-        "module": "9195312c3b7f271ef21780ba78bd1d74f7dc15cadfa6316e5c359e0dfdb22341",
+        "module": "07e9394c6173fad1276cf523011f32e51432a8e26536c8af26b07ce0a71832ba",
         "census": "1e6ec72e4b35da62612d57a297eff3cdcd0dfc180dd3cf78e58ef3261f57d9bb",
-        "imports": "03227beee5c252d8e16ab4d21934026a64973eae5c041d3be415b671333d4418",
+        "imports": "4ad5166cbef67aeaef7ec786d64c23e7b9f8c4ad79ca7a8d9b41d4675c49787b",
         "assignments": "624fdcf1dc243ad3d1161c51257dd50c55ebdfdd01510c6ce3659ff8f50ae4ad",
         "classes": "b52c541038122132eaed8e7c97165f0eea0fd8584b1e78ed39b85822eef5a22b",
-        "functions": "82cf8e6717e4fbe09d3f539777a6e18e9c3fdeeb858ffa2a20085a1e5d1a418b",
+        "functions": "09d06beebe62fcbc73c852154a28fb090dad7469dbb76157edfec736183c7101",
     },
 }
 

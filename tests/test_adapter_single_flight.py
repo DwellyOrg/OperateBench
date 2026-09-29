@@ -42,6 +42,7 @@ from boundarybench.providers.mistral_chat import MistralChatAdapter
 from boundarybench.providers.openai_responses import OpenAIResponsesAdapter
 from boundarybench.providers.xai_openai_compat import XAIOpenAICompatAdapter
 from boundarybench.scaffold import STANDARD_SCAFFOLD, Scaffold, load_scaffold
+from operatebench.providers.anthropic_messages import anthropic_http_client
 from tests import mistral_transport, openai_transport
 from tests.anthropic_transport import (
     RecordingTransport as AnthropicTransport,
@@ -125,7 +126,7 @@ def _anthropic() -> tuple[Any, Any, _Reentrant]:
         api_key=FAKE_API_KEY,
         base_url=FAKE_BASE_URL,
         max_retries=0,
-        http_client=httpx.Client(transport=httpx.MockTransport(nested.handler)),
+        http_client=anthropic_http_client(transport=httpx.MockTransport(nested.handler)),
     )
     adapter = AnthropicMessagesAdapter(model=ANTHROPIC_MODEL, client=client)
     nested.adapter = adapter
