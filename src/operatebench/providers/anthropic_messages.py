@@ -16,6 +16,9 @@ from typing import Any, Protocol
 import anthropic
 from anthropic.types import Message, TextBlock, ToolUseBlock, Usage
 
+from operatebench.providers.anthropic_http import (
+    anthropic_http_client as anthropic_http_client,
+)
 from operatebench.providers.config import (
     ProviderConfigurationError,
     check_endpoint,
@@ -81,6 +84,23 @@ _COMMON_REQUEST_FIELDS = (
 
 class AnthropicConfigurationError(ProviderConfigurationError):
     """The injected Anthropic client or request profile is not the pinned one."""
+
+
+def anthropic_sdk_kwargs(payload: Mapping[str, Any]) -> dict[str, Any]:
+    """Adapt a validated logical payload to the Anthropic 1.x call surface.
+
+    Sampling fields left the SDK signature. Move only the declared temperature
+    into extra_body; the logical request remains unchanged for budget and identity
+    checks. Refuse an escape hatch that could override those validated fields.
+    """
+    if "extra_body" in payload:
+        raise AnthropicConfigurationError(
+            "the logical payload must not contain extra_body"
+        )
+    kwargs = dict(payload)
+    if "temperature" in kwargs:
+        kwargs["extra_body"] = {"temperature": kwargs.pop("temperature")}
+    return kwargs
 
 
 class ProviderDispatchObserver(Protocol):
@@ -424,8 +444,10 @@ class AnthropicMessagesExchange:
     def _dispatch(
         self, payload: Mapping[str, Any], timeout: float
     ) -> WireResponse[Message]:
-        raw = self._client.messages.with_raw_response.create(**payload, timeout=timeout)
-        return WireResponse(raw.text, raw.parse, kind="Anthropic message")
+        raw = self._client.messages.with_raw_response.create(
+            **anthropic_sdk_kwargs(payload), timeout=timeout
+        )
+        return WireResponse(raw.text(), raw.parse, kind="Anthropic message")
 
 
 __all__ = [
@@ -441,6 +463,8 @@ __all__ = [
     "AnthropicMessagesExchange",
     "ProviderDispatchObserver",
     "RequestProfile",
+    "anthropic_http_client",
+    "anthropic_sdk_kwargs",
     "check_request_profile",
     "request_profile_for",
 ]

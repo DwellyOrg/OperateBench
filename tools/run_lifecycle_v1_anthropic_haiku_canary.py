@@ -156,6 +156,7 @@ from operatebench.providers.anthropic_messages import (
     HAIKU_4_5_MODEL,
     HAIKU_4_5_PROFILE,
     TOOL_CHOICE,
+    anthropic_http_client,
     check_client_endpoint,
     check_request_profile,
 )
@@ -1109,7 +1110,9 @@ def open_live_client(
         api_key=api_key,
         base_url=ANTHROPIC_BASE_URL,
         max_retries=SDK_MAX_RETRIES,
-        http_client=httpx.Client(transport=transport, timeout=TURN_DEADLINE_SECONDS),
+        http_client=anthropic_http_client(
+            transport=transport, timeout=TURN_DEADLINE_SECONDS
+        ),
     )
 
 
@@ -1119,7 +1122,7 @@ def open_offline_client(handler: Callable[[httpx.Request], httpx.Response]) -> A
         api_key=PLACEHOLDER_KEY,
         base_url=ANTHROPIC_BASE_URL,
         max_retries=SDK_MAX_RETRIES,
-        http_client=httpx.Client(transport=httpx.MockTransport(handler)),
+        http_client=anthropic_http_client(transport=httpx.MockTransport(handler)),
     )
 
 
@@ -1368,7 +1371,7 @@ def run_offline_preflight(
             api_key=PLACEHOLDER_KEY,
             base_url=ANTHROPIC_BASE_URL,
             max_retries=SDK_MAX_RETRIES,
-            http_client=httpx.Client(transport=wire),
+            http_client=anthropic_http_client(transport=wire),
         )
         result = _execute_one_cell(
             spec,

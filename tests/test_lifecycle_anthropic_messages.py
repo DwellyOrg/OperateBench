@@ -46,6 +46,7 @@ from operatebench.providers.anthropic_messages import (
     SONNET_5_MODEL,
     SONNET_5_PROFILE,
     AnthropicConfigurationError,
+    anthropic_http_client,
 )
 from operatebench.providers.faults import AdapterProviderError
 from operatebench.providers.wire import MAX_PROVIDER_RESPONSE_ID_CHARACTERS
@@ -131,7 +132,9 @@ class Wire:
             api_key="test-key-not-a-credential",
             base_url=base_url,
             max_retries=max_retries,
-            http_client=httpx.Client(transport=httpx.MockTransport(self.handler)),
+            http_client=anthropic_http_client(
+                transport=httpx.MockTransport(self.handler)
+            ),
         )
 
 
@@ -228,7 +231,7 @@ def test_anthropic_spend_limit_fault_records_a_received_response_without_raw_dat
         api_key="test-key-not-a-credential",
         base_url=ANTHROPIC_BASE_URL,
         max_retries=0,
-        http_client=httpx.Client(transport=httpx.MockTransport(handler)),
+        http_client=anthropic_http_client(transport=httpx.MockTransport(handler)),
     )
     lane = AnthropicMessagesTransport(
         model=HAIKU_4_5_MODEL,
@@ -304,7 +307,7 @@ def test_anthropic_invalid_request_stays_ambiguous_and_records_the_response() ->
             api_key="test-key-not-a-credential",
             base_url=ANTHROPIC_BASE_URL,
             max_retries=0,
-            http_client=httpx.Client(transport=httpx.MockTransport(handler)),
+            http_client=anthropic_http_client(transport=httpx.MockTransport(handler)),
         ),
         deadline_seconds=30.0,
         clock=lambda: 0.0,
@@ -360,7 +363,7 @@ def test_anthropic_unrecognized_bad_requests_fail_closed_without_raw_fallback(
             api_key="test-key-not-a-credential",
             base_url=ANTHROPIC_BASE_URL,
             max_retries=0,
-            http_client=httpx.Client(transport=httpx.MockTransport(handler)),
+            http_client=anthropic_http_client(transport=httpx.MockTransport(handler)),
         ),
         deadline_seconds=30.0,
         clock=lambda: 0.0,
@@ -424,7 +427,7 @@ def test_anthropic_spend_limit_allowlist_rejects_near_misses(message: str) -> No
             api_key="test-key-not-a-credential",
             base_url=ANTHROPIC_BASE_URL,
             max_retries=0,
-            http_client=httpx.Client(transport=httpx.MockTransport(handler)),
+            http_client=anthropic_http_client(transport=httpx.MockTransport(handler)),
         ),
         deadline_seconds=30.0,
         clock=lambda: 0.0,
@@ -469,7 +472,7 @@ def test_every_anthropic_http_error_records_that_a_response_arrived(
             api_key="test-key-not-a-credential",
             base_url=ANTHROPIC_BASE_URL,
             max_retries=0,
-            http_client=httpx.Client(transport=httpx.MockTransport(handler)),
+            http_client=anthropic_http_client(transport=httpx.MockTransport(handler)),
         ),
         deadline_seconds=30.0,
         clock=lambda: 0.0,
@@ -501,7 +504,7 @@ def test_anthropic_transport_failure_still_records_no_received_response() -> Non
             api_key="test-key-not-a-credential",
             base_url=ANTHROPIC_BASE_URL,
             max_retries=0,
-            http_client=httpx.Client(transport=httpx.MockTransport(handler)),
+            http_client=anthropic_http_client(transport=httpx.MockTransport(handler)),
         ),
         deadline_seconds=30.0,
         clock=lambda: 0.0,
@@ -530,7 +533,7 @@ def test_dispatch_observer_runs_once_at_the_real_sdk_boundary() -> None:
             api_key="test-key-not-a-credential",
             base_url=ANTHROPIC_BASE_URL,
             max_retries=0,
-            http_client=httpx.Client(transport=httpx.MockTransport(handler)),
+            http_client=anthropic_http_client(transport=httpx.MockTransport(handler)),
         ),
         deadline_seconds=30.0,
         clock=lambda: 0.0,
@@ -561,7 +564,7 @@ def test_dispatch_observer_exception_is_a_zero_attempt_pre_dispatch_failure() ->
             api_key="test-key-not-a-credential",
             base_url=ANTHROPIC_BASE_URL,
             max_retries=0,
-            http_client=httpx.Client(transport=httpx.MockTransport(handler)),
+            http_client=anthropic_http_client(transport=httpx.MockTransport(handler)),
         ),
         deadline_seconds=30.0,
         clock=lambda: 0.0,
@@ -610,7 +613,7 @@ def test_dispatch_observer_can_stop_at_fifty_without_beginning_call_fifty_one() 
             api_key="test-key-not-a-credential",
             base_url=ANTHROPIC_BASE_URL,
             max_retries=0,
-            http_client=httpx.Client(transport=httpx.MockTransport(handler)),
+            http_client=anthropic_http_client(transport=httpx.MockTransport(handler)),
         ),
         deadline_seconds=30.0,
         clock=lambda: 0.0,

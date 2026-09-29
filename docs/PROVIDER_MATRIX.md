@@ -50,6 +50,17 @@ checked against it before the answer's action or its token counts are accepted.
 | xAI | `grok-4.5` | 36 | `XAI_API_KEY` |
 | Mistral | `mistral-small-2603` | 36 | `MISTRAL_API_KEY` |
 
+The current Anthropic integration requires SDK `>=1.8.0,<2` and uses an explicit
+`httpx2` client over the shared `httpx` capture and budget transports. The SDK
+receives any declared temperature through `extra_body`; logical request JSON and
+budget validation remain unchanged. Anthropic raw responses use `text()`.
+OpenAI and Mistral continue to use `httpx`, without a global package alias.
+Qualification uses the real SDK with offline mock transports. It establishes
+current JSON semantics, response parsing, retry classification and close ownership,
+not historical SDK wire-byte equality: moving temperature can change field order
+and request hashes. Historical fixtures and result claims retain their original
+SDK provenance and byte pins.
+
 The separate fixed one-cell Sonnet operator is
 `tools/run_lifecycle_v1_anthropic_sonnet_canary.py`. It is **offline-verified only**:
 the real pinned Anthropic SDK was exercised over `httpx.MockTransport`, including

@@ -22,7 +22,11 @@ from operatebench.agents.model import ModelAgent
 from operatebench.agents.transport import ModelRequest
 from operatebench.core.protocol import AgentObservation
 from operatebench.execution_ledger import read_execution_ledger
-from operatebench.providers.anthropic_messages import ANTHROPIC_BASE_URL, HAIKU_4_5_MODEL
+from operatebench.providers.anthropic_messages import (
+    ANTHROPIC_BASE_URL,
+    HAIKU_4_5_MODEL,
+    anthropic_http_client,
+)
 from operatebench.providers.faults import AdapterProviderError
 from tests.execution_ledger_fixtures import DIGEST_A, controls
 from tests.openai_transport import RecordingTransport, error_body
@@ -93,7 +97,7 @@ def _anthropic_lane(
         api_key="offline-placeholder-not-a-credential",
         base_url=ANTHROPIC_BASE_URL,
         max_retries=0,
-        http_client=httpx.Client(transport=httpx.MockTransport(handler)),
+        http_client=anthropic_http_client(transport=httpx.MockTransport(handler)),
     )
     lane = AnthropicMessagesTransport(
         model=HAIKU_4_5_MODEL,

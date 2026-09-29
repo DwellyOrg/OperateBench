@@ -22,6 +22,8 @@ from typing import Any
 import anthropic
 import httpx
 
+from operatebench.providers.anthropic_messages import anthropic_http_client
+
 #: Not a credential. The transport never leaves the process, and the SDK
 #: requires *some* key to build a client, so this is the placeholder used to
 #: prove that the key the adapter resolves is the one the header carries.
@@ -114,7 +116,9 @@ class RecordingTransport:
             api_key=FAKE_API_KEY,
             base_url=FAKE_BASE_URL,
             max_retries=max_retries,
-            http_client=httpx.Client(transport=httpx.MockTransport(self.handler)),
+            http_client=anthropic_http_client(
+                transport=httpx.MockTransport(self.handler)
+            ),
         )
 
 

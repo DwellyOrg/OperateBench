@@ -11,6 +11,7 @@ import pytest
 from operatebench.agents.model import ModelResponse
 from operatebench.providers import anthropic_messages as ap
 from operatebench.providers import openai_responses as op
+from operatebench.providers.anthropic_messages import anthropic_http_client
 from operatebench.providers.faults import AdapterProviderError
 from operatebench.providers.wire import WireResponse
 from tools.three_flow_http import (
@@ -93,7 +94,12 @@ def dispatch(provider, body):
         calls.append(1)
         return httpx.Response(200, json=body)
 
-    with httpx.Client(transport=httpx.MockTransport(handle), trust_env=False) as http:
+    http_client = (
+        anthropic_http_client(transport=httpx.MockTransport(handle))
+        if provider == "anthropic"
+        else httpx.Client(transport=httpx.MockTransport(handle), trust_env=False)
+    )
+    with http_client as http:
         client = explicit_sdk_client(
             openai.OpenAI if provider == "openai" else anthropic.Anthropic,
             api_key="offline-placeholder",

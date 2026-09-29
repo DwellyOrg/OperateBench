@@ -204,6 +204,10 @@ class WireCaptureTransport(httpx.BaseTransport):
         )
         return self._inner.handle_request(request)
 
+    def close(self) -> None:
+        if self._inner is not None:
+            self._inner.close()
+
 
 # ------------------------------------------------------------- response binding
 

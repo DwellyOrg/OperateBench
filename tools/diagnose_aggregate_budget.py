@@ -32,6 +32,7 @@ from operatebench.agents.mistral_chat import MistralChatCompletionsTransport
 from operatebench.agents.openai_responses import OpenAIResponsesTransport
 from operatebench.agents.pricing import LifecyclePricingPolicy
 from operatebench.agents.xai_responses import XAIResponsesTransport
+from operatebench.providers.anthropic_messages import anthropic_http_client
 from operatebench.providers.mistral_chat import build_client as build_mistral_client
 from tools.aggregate_budget import CELLS, Budget, FairTransport, SharedGuard
 
@@ -68,6 +69,14 @@ class DispatchTransport(httpx.BaseTransport):
 
 
 def client_for(cell: str, key: str, wire: httpx.BaseTransport) -> Any:
+    if cell not in ("luna56", "mistralsmall") and not cell.startswith("grok"):
+        return anthropic.Anthropic(
+            api_key=key,
+            base_url="https://api.anthropic.com",
+            max_retries=0,
+            timeout=None,
+            http_client=anthropic_http_client(transport=wire, timeout=None),
+        )
     http = httpx.Client(
         transport=wire, timeout=None, follow_redirects=False, trust_env=False
     )
@@ -87,15 +96,7 @@ def client_for(cell: str, key: str, wire: httpx.BaseTransport) -> Any:
             timeout=None,
             http_client=http,
         )
-    if cell == "mistralsmall":
-        return build_mistral_client(api_key=key, http_client=http)
-    return anthropic.Anthropic(
-        api_key=key,
-        base_url="https://api.anthropic.com",
-        max_retries=0,
-        timeout=None,
-        http_client=http,
-    )
+    return build_mistral_client(api_key=key, http_client=http)
 
 
 def execute_cell(

@@ -94,6 +94,7 @@ from boundarybench.scaffold import (
     ActionParameter,
     ActionSchema,
 )
+from operatebench.providers.anthropic_messages import anthropic_sdk_kwargs
 
 #: The service under test, as recorded in run identity.
 ANTHROPIC_PROVIDER = "anthropic"
@@ -1406,7 +1407,9 @@ class AnthropicMessagesAdapter:
                 # Annotated rather than inferred: ``**payload`` is a plain
                 # mapping, so the SDK's overloads resolve to ``Any`` and the
                 # loop's return type would silently become untyped.
-                message: Message = self._client.messages.create(**payload, timeout=budget)
+                message: Message = self._client.messages.create(
+                    **anthropic_sdk_kwargs(payload), timeout=budget
+                )
             except Exception as exception:
                 failed_at = self._clock()
                 # An attempt that returned nothing this build could measure keeps
