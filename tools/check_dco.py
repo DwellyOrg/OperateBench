@@ -13,7 +13,8 @@ REVISION_RANGE = re.compile(r"[0-9a-fA-F]{40}\.\.[0-9a-fA-F]{40}\Z")
 def has_valid_sign_off(body: str) -> bool:
     """Use Git's end-of-message trailer block semantics for DCO sign-offs."""
     parsed = subprocess.run(
-        ["git", "interpret-trailers", "--parse"],
+        # Input is a raw commit message, not a patch; --- may be body metadata.
+        ["git", "interpret-trailers", "--parse", "--no-divider"],
         input=body,
         check=True,
         capture_output=True,
