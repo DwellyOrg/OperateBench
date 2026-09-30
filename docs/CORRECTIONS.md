@@ -1,4 +1,32 @@
-# Private repository corrections
+# Repository corrections
+
+## OB-CORR-2026-09-30-COMMERCE-REFUND-CLOCK
+
+- **Date / scope:** 2026-09-30; evaluator-only correction to refund-branch
+  grading in development pack `commerce.return_refund.profiles.v1`, profiles
+  `UK`, `DE`, `US_CA` and `AU_VIC`. The prior evaluators shipped with pack
+  versions 0.1.0 and 0.2.0 without a separate emitted `evaluator_version`.
+  The corrected evaluator emits `evaluator_version=0.3.0`; the operation/pack
+  remains 0.2.0. Engine 0.13.0 and distribution 0.1.0 are independent identities
+  and do not change for this correction.
+- **Defect / correction:** missing settlement previously implied a missed
+  deadline, while no submission could bypass the clock check. The clock now
+  activates on return proof (UK/DE), or proof plus approval (US_CA/AU_VIC),
+  independently of submission or handoff. Settlement after the inclusive
+  deadline, or observation ending after it without settlement, establishes
+  lateness. Unsettled observation ending at or before the deadline is diagnostic
+  only; completion and settlement checks remain separate. Missing or inconsistent
+  required evidence fails as `REFUND_CLOCK_INSUFFICIENT_DATA`. An observed failed
+  processor attempt uses its submission time only after settlement-history
+  consistency checks; a fixture's future failure mode is insufficient.
+- **Comparability / preservation:** affected clock grades across this boundary
+  must not be pooled as equivalent. Original artifacts and grades remain
+  preserved; historical readability does not establish successful current replay
+  or a rerun/regrade. Current comparable results require fresh runs; no official
+  rerun or regrade, or publication of model results, is part of this correction.
+  Pre-correction source remains preserved in repository history. The required
+  pre-correction tag under the [corrections policy](VERSIONING.md#corrections-policy)
+  is pending authorized publication; the requirement has not been waived.
 
 ## OB-CORR-2026-09-26-MAINTENANCE-WAIT-NOTICE
 

@@ -114,7 +114,9 @@ Maintenance exposes the enforced scenario checkpoint budget. Malformed decision
 feedback distinguishes ACT evidence references from RETRIEVE requests. These
 model-visible changes are bound to engine 0.13.0. Provider mapping algorithms,
 Artifact 8, ledger shape and operation fixture 0.6.0 are unchanged. Source-owner
-projection v5 is additive; v1–v4 remain frozen. Commerce grading is unchanged.
+projection v5 is additive; v1–v4 remain frozen. Commerce grading was unchanged
+by this Maintenance correction; the later development-profile evaluator change
+is recorded in [the refund-clock correction](CORRECTIONS.md#ob-corr-2026-09-30-commerce-refund-clock).
 
 Historical artifacts remain readable with stored grades; replay requires the
 original engine identity and refuses older engines before execution. These

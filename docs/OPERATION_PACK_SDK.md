@@ -67,8 +67,8 @@ reserved authority cannot self-declare `maintainer`.
 The contributor retains ownership under the project licence and DCO; no
 copyright assignment is required. Registration records technical inclusion
 only; evidence admission, legal approval, publication approval and human review
-remain outside this status. This private development repository does not claim
-that the workflow is already public or self-service proven.
+remain outside this status. Public repository access does not establish that
+the contributor workflow is self-service proven.
 
 The repository's completed Commerce pack demonstrates that transition.
 From the root of a source checkout, the shipped runnable example is:
