@@ -189,11 +189,36 @@ def _execute(
     ).run()
 
 
+def _evaluation_fields(grade: Any, pack_id: str) -> set[str]:
+    """Accept paired commerce clock metadata without opening other envelopes."""
+    fields = {"reliable", "dimensions", "findings", "terminal_outcome"}
+    if (
+        isinstance(grade, dict)
+        and pack_id == "commerce.return_refund.profiles.v1"
+        and {"evaluator_version", "diagnostics"} & grade.keys()
+    ):
+        if (
+            not isinstance(grade.get("evaluator_version"), str)
+            or not grade["evaluator_version"]
+            or not isinstance(grade.get("diagnostics"), list)
+            or not all(
+                isinstance(item, dict)
+                and set(item) == {"dimension", "code"}
+                and item["dimension"] == "clock"
+                and item["code"] == "REFUND_UNSETTLED_AT_OBSERVATION_END"
+                for item in grade["diagnostics"]
+            )
+        ):
+            raise DevelopmentRuntimeError("invalid evaluation clock metadata")
+        fields |= {"evaluator_version", "diagnostics"}
+    return fields
+
+
 def _grade(
     factories: DevelopmentFactories, episode: EpisodeOutcome, spec: Any, scenario: str
 ) -> dict[str, Any]:
     grade = dict(factories.evaluate_episode(episode, spec, scenario))
-    if set(grade) != {"reliable", "dimensions", "findings", "terminal_outcome"}:
+    if set(grade) != _evaluation_fields(grade, factories.pack_id):
         raise DevelopmentRuntimeError("evaluator fields differ from contract")
     if (
         type(grade["reliable"]) is not bool

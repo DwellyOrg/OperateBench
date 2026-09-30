@@ -17,8 +17,11 @@ from operatebench.core.engine import (
     EpisodeOutcome,
     has_canonical_episode_outcome_provenance,
 )
+from operatebench.core.errors import MalformedTimestampError
 
 from .spec import Spec, digest, profile_identity, thaw
+
+EVALUATOR_VERSION = "0.3.0"
 
 DIMENSIONS = (
     "provenance",
@@ -76,9 +79,120 @@ def _branch(s: Any) -> Any:
     )
 
 
+def _instant(value: Any) -> datetime | None:
+    """Only offset-aware instants can support an observed clock conclusion."""
+    if not isinstance(value, str):
+        return None
+    try:
+        moment = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        return moment if moment.utcoffset() is not None else None
+    except ValueError:
+        return None
+
+
+def _refund_clock(
+    s: Any,
+    p: Any,
+    state: Any,
+    proof: Any,
+    approval: Any,
+    payment: Any,
+    submissions: Any,
+    ended_at: Any,
+    history_valid: bool,
+    folded_settled_at: Any,
+) -> dict[str, Any]:
+    """Refund-branch clock only; no submission or handoff discharges its scope.
+
+    Kept separate so diagnostic consumers can execute the same predicate without
+    claiming that serialized evidence has fresh Engine provenance.
+    """
+    result: dict[str, Any] = {
+        "active": False,
+        "deadline": None,
+        "basis": None,
+        "findings": [],
+        "diagnostics": [],
+    }
+
+    def fail(code: str) -> None:
+        result["findings"].append({"dimension": "clock", "code": code})
+
+    if proof is None:
+        return result
+    country_clock = s["profile_id"] in ("UK", "DE")
+    # An absent scope-start event is not a damaged timestamp.
+    if not country_clock and approval is None:
+        return result
+    result["active"] = True
+    proof_at = _instant(proof.get("at"))
+    approval_at = _instant(approval.get("at")) if approval is not None else None
+    end = _instant(ended_at)
+    if (
+        proof_at is None
+        or (not country_clock and approval_at is None)
+        or (ended_at is not None and end is None)
+        or (end is not None and proof_at > end)
+        or (not country_clock and end is not None and approval_at > end)
+    ):
+        fail("REFUND_CLOCK_INSUFFICIENT_DATA")
+        return result
+    zone = ZoneInfo(p["timezone"])
+    due = None
+    if s["profile_id"] == "UK":
+        due = proof_at.astimezone(zone).date() + timedelta(days=14)
+    elif s["profile_id"] == "DE":
+        due = date.fromisoformat(s["notice_received_date"]) + timedelta(days=14)
+    if state["case"]["refund_due_date"] != (due.isoformat() if due else None):
+        fail("COUNTRY_REFUND_CLOCK_MISMATCH")
+    if due is not None:
+        deadline = datetime.combine(due, time.max, zone).astimezone(UTC)
+        if s["profile_id"] == "DE":
+            deadline = max(deadline, proof_at + timedelta(minutes=60))
+    else:
+        assert approval_at is not None  # Required by the scope-start guard above.
+        deadline = approval_at + timedelta(minutes=2880)
+    result["deadline"] = deadline.isoformat()
+    failed_attempt = payment is not None and payment["payload"].get("status") == "failed"
+    result["basis"] = (
+        "observed_failed_processor_attempt" if failed_attempt else "settlement"
+    )
+    raw = state["payment"].get("settled_at")
+    if failed_attempt:
+        raw = submissions[0].get("at") if submissions else None
+        observed_at = _instant(payment.get("at"))
+        if raw is None or observed_at is None or (end is not None and observed_at > end):
+            fail("REFUND_CLOCK_INSUFFICIENT_DATA")
+            return result
+    elif (raw is not None or folded_settled_at is not None) and (
+        not history_valid or raw != folded_settled_at
+    ):
+        fail("REFUND_CLOCK_INSUFFICIENT_DATA")
+        return result
+    if raw is not None:
+        settled = _instant(raw)
+        if settled is None or (end is not None and settled > end):
+            fail("REFUND_CLOCK_INSUFFICIENT_DATA")
+        elif settled > deadline:
+            fail("REFUND_DEADLINE_MISSED")
+    elif end is None:
+        fail("REFUND_CLOCK_INSUFFICIENT_DATA")
+    elif end > deadline:
+        fail("REFUND_DEADLINE_MISSED")
+    else:
+        result["diagnostics"].append(
+            {
+                "dimension": "clock",
+                "code": "REFUND_UNSETTLED_AT_OBSERVATION_END",
+            }
+        )
+    return result
+
+
 def evaluate_episode(episode: Any, spec: Spec, scenario_id: str) -> dict[str, Any]:
     dimensions = dict.fromkeys(DIMENSIONS, True)
     findings = []
+    diagnostics = []
 
     def fail(dim: str, code: str) -> None:
         dimensions[dim] = False
@@ -88,6 +202,8 @@ def evaluate_episode(episode: Any, spec: Spec, scenario_id: str) -> dict[str, An
 
     def finish() -> dict[str, Any]:
         return {
+            "evaluator_version": EVALUATOR_VERSION,
+            "diagnostics": diagnostics,
             "reliable": all(dimensions.values()),
             "dimensions": dimensions,
             "findings": findings,
@@ -484,56 +600,21 @@ def evaluate_episode(episode: Any, spec: Spec, scenario_id: str) -> dict[str, An
             or state["payment"]["status"] != "settled"
         ):
             fail("settlement", "SETTLED_BALANCE_MISMATCH")
-        if proof:
-            local = (
-                datetime.fromisoformat(proof["at"].replace("Z", "+00:00"))
-                .astimezone(ZoneInfo(p["timezone"]))
-                .date()
-            )
-            due = (
-                (local + timedelta(days=14)).isoformat()
-                if s["profile_id"] == "UK"
-                else (
-                    date.fromisoformat(s["notice_received_date"]) + timedelta(days=14)
-                ).isoformat()
-                if s["profile_id"] == "DE"
-                else None
-            )
-            if state["case"]["refund_due_date"] != due:
-                fail("clock", "COUNTRY_REFUND_CLOCK_MISMATCH")
-            if acts("submit_refund"):
-                # Fixed local-date limit plus synthetic prompt handling after a
-                # permitted DE withholding period; never restart 14 days.
-                deadline: datetime | None
-                if due:
-                    end = datetime.combine(
-                        date.fromisoformat(due), time.max, ZoneInfo(p["timezone"])
-                    ).astimezone(UTC)
-                    prompt = datetime.fromisoformat(
-                        shift_minutes(proof["at"], 60).replace("Z", "+00:00")
-                    )
-                    deadline = max(end, prompt) if s["profile_id"] == "DE" else end
-                else:
-                    deadline = (
-                        datetime.fromisoformat(
-                            shift_minutes(approval["at"], 2880).replace("Z", "+00:00")
-                        )
-                        if approval
-                        else None
-                    )
-                # Failed settlement cannot erase the historical attempt clock.
-                # Use the observed result, not a future fixture mode, here.
-                settled_at = (
-                    acts("submit_refund")[0]["at"]
-                    if payment and payment["payload"].get("status") == "failed"
-                    else state["payment"].get("settled_at")
-                )
-                if deadline and (
-                    not settled_at
-                    or datetime.fromisoformat(settled_at.replace("Z", "+00:00"))
-                    > deadline
-                ):
-                    fail("clock", "REFUND_DEADLINE_MISSED")
+        clock = _refund_clock(
+            s,
+            p,
+            state,
+            proof,
+            approval,
+            payment,
+            acts("submit_refund"),
+            getattr(episode, "ended_at", None),
+            history_valid,
+            folded_settled_at,
+        )
+        for finding in clock["findings"]:
+            fail("clock", finding["code"])
+        diagnostics.extend(clock["diagnostics"])
     elif acts("submit_refund") or state["payment"]["settled_minor"]:
         fail("settlement", "MONEY_WITHOUT_REFUND_ENTITLEMENT")
     if expected == "repaired" and (
@@ -549,10 +630,15 @@ def evaluate_episode(episode: Any, spec: Spec, scenario_id: str) -> dict[str, An
         fail("completion", "HANDOFF_NOT_ACKNOWLEDGED")
     if expected == "refunded":
         finality = ts("finality_due")
+        try:
+            expected_finality = shift_minutes(state["payment"].get("settled_at"), 5)
+        except MalformedTimestampError:
+            expected_finality = None
         if (
             not finality
             or not state["payment"].get("settled_at")
-            or finality[0]["at"] != shift_minutes(state["payment"]["settled_at"], 5)
+            or expected_finality is None
+            or finality[0]["at"] != expected_finality
             or (
                 history_valid
                 and folded_settled_at is not None

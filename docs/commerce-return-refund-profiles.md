@@ -250,3 +250,41 @@ Unknown payment query, duplicate webhook, failed tender, CAS rejection and bound
 review are implemented; they must not be advertised as the broader reconciliation
 or chargeback system. This finite simulator is a development benchmark process,
 not a production returns engine or an official cross-domain/model ranking.
+
+## Refund clock evaluation 0.3.0
+
+The domain-local `EVALUATOR_VERSION` is emitted as `evaluator_version`, alongside
+an additive `diagnostics` list. Existing dimensions remain booleans and finding
+objects retain their `dimension`/`code` shape.
+
+A reliable settlement at or before the applicable deadline is timely. A later
+settlement, or an active obligation still unsettled after observation passes the
+deadline, yields `REFUND_DEADLINE_MISSED`. An unsettled obligation observed before
+or exactly at the deadline instead yields the nonfailure diagnostic
+`REFUND_UNSETTLED_AT_OBSERVATION_END`. This does not satisfy the independent
+completion, settlement, reconciliation or finality checks.
+
+The clock applies only to the refund branch with accepted return proof. UK/DE
+need no accepted submission; other profiles also require accepted approval.
+Absent scope-start events leave the clock inapplicable. UK uses proof local date
+plus 14 days; DE retains notice local date plus 14 days and the maximum of that
+local day's end and proof plus 60 minutes. Other profiles use approval plus 2880
+minutes. Handoff does not discharge an active obligation. An observed failed
+processor result preserves the first accepted submission's historical attempt
+clock; a future fixture failure mode alone does not activate this exception.
+
+Required absent, malformed or naive timestamps, timestamps beyond a reliable
+observation end, and disagreement between settlement state and valid processor
+history yield `REFUND_CLOCK_INSUFFICIENT_DATA`, not lateness. Reliable settlement
+can be compared without an observation end; censored settlement requires one.
+Core emits canonical event timestamps; defensive clock tests also cover data
+that Core itself would reject. Invalid stored settlement timestamps fail closed
+without crashing the independent finality check.
+
+The SDK accepts the paired commerce metadata and still reads historical
+four-field evaluations. Current implementation/runtime content digests change
+automatically and supported replay checks both bindings and exact grades. The
+fixture/pack version remains 0.2.0; no historical source pins or fixtures are
+rewritten. Old serialized records cannot become official 0.3.0 grades through
+unsupported replay or diagnostic adapters. Fresh grades still require Engine
+provenance.
