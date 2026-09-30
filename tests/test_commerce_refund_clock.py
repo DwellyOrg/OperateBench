@@ -97,9 +97,18 @@ def test_settlement_can_stand_without_observation_end(inputs):
     assert not codes(evaluator._refund_clock(**inputs))
 
 
+@pytest.mark.parametrize("failed_attempt", [False, True])
+@pytest.mark.parametrize("raw", ["2026-01-13T12:20:00Z", "bad"])
 @pytest.mark.parametrize("invalid_history", [False, True])
-def test_settlement_requires_matching_valid_processor_history(inputs, invalid_history):
-    inputs["state"]["payment"]["settled_at"] = "2026-01-13T12:20:00Z"
+def test_settlement_requires_matching_valid_processor_history(
+    inputs, invalid_history, raw, failed_attempt
+):
+    if failed_attempt:
+        inputs["payment"] = {
+            "payload": {"status": "failed"},
+            "at": "2026-01-13T12:20:00Z",
+        }
+    inputs["state"]["payment"]["settled_at"] = raw
     inputs["folded_settled_at"] = "2026-01-13T12:20:00Z" if invalid_history else None
     inputs["history_valid"] = not invalid_history
     assert codes(evaluator._refund_clock(**inputs)) == {"REFUND_CLOCK_INSUFFICIENT_DATA"}
@@ -225,26 +234,48 @@ def test_genuine_engine_censoring_and_no_submit_remain_incomplete(action, late):
 
 
 @pytest.mark.parametrize(
-    "bad", [None, "bad", "2026-01-13T12:20:00", "2099-01-01T00:00:00Z"]
+    "case,bad",
+    [
+        ("UK_NORMAL", bad)
+        for bad in [None, "bad", "2026-01-13T12:20:00", "2099-01-01T00:00:00Z"]
+    ]
+    + [
+        ("UK_PAYMENT_FAILED", bad)
+        for bad in [
+            "2026-01-13T12:20:00Z",
+            "bad",
+            "2026-01-13T12:20:00",
+            "2099-01-01T00:00:00Z",
+        ]
+    ],
 )
-def test_real_evaluator_handles_unreliable_stored_settlement(bad):
+def test_real_evaluator_handles_unreliable_stored_settlement(case, bad):
     class Domain(CommerceProfilesDomain):
         def reduce_event(self, state, event, context):
-            if event.event_type == "finality_due":
+            failed = case == "UK_PAYMENT_FAILED"
+            if event.event_type == ("review_acknowledged" if failed else "finality_due"):
                 before = deepcopy(state)
                 state["payment"]["settled_at"] = bad
-                state["case"]["finality_ready"] = True
+                state["case"]["review_ack" if failed else "finality_ready"] = True
                 return self._commit(state, context, event.event_type, before)
             return super().reduce_event(state, event, context)
 
     spec = load_spec(FIXTURE)
-    episode = run(domain=Domain(spec, "UK_NORMAL"))
+    episode = run(case, domain=Domain(spec, case))
     assert has_canonical_episode_outcome_provenance(episode)
-    grade = evaluator.evaluate_episode(episode, spec, "UK_NORMAL")
+    assert episode.final_state["payment"]["settled_at"] == bad
+    if case == "UK_PAYMENT_FAILED":
+        assert episode.final_state["payment"]["status"] == "failed"
+        assert episode.final_state["payment"]["settled_minor"] == 0
+        assert episode.final_state["case"]["review_ack"]
+    grade = evaluator.evaluate_episode(episode, spec, case)
     assert "REFUND_CLOCK_INSUFFICIENT_DATA" in codes(grade)
     assert "REFUND_DEADLINE_MISSED" not in codes(grade)
+    assert not grade["dimensions"]["clock"]
+    assert not grade["diagnostics"]
     assert not grade["dimensions"]["settlement"]
-    assert not grade["dimensions"]["completion"]
+    if case == "UK_NORMAL":
+        assert not grade["dimensions"]["completion"]
 
 
 @pytest.mark.parametrize(

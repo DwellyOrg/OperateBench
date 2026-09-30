@@ -163,17 +163,17 @@ def _refund_clock(
         "observed_failed_processor_attempt" if failed_attempt else "settlement"
     )
     raw = state["payment"].get("settled_at")
+    if (raw is not None or folded_settled_at is not None) and (
+        not history_valid or raw != folded_settled_at
+    ):
+        fail("REFUND_CLOCK_INSUFFICIENT_DATA")
+        return result
     if failed_attempt:
         raw = submissions[0].get("at") if submissions else None
         observed_at = _instant(payment.get("at"))
         if raw is None or observed_at is None or (end is not None and observed_at > end):
             fail("REFUND_CLOCK_INSUFFICIENT_DATA")
             return result
-    elif (raw is not None or folded_settled_at is not None) and (
-        not history_valid or raw != folded_settled_at
-    ):
-        fail("REFUND_CLOCK_INSUFFICIENT_DATA")
-        return result
     if raw is not None:
         settled = _instant(raw)
         if settled is None or (end is not None and settled > end):
