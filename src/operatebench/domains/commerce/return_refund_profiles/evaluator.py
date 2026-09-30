@@ -133,7 +133,12 @@ def _refund_clock(
         or (not country_clock and approval_at is None)
         or (ended_at is not None and end is None)
         or (end is not None and proof_at > end)
-        or (not country_clock and end is not None and approval_at > end)
+        or (
+            not country_clock
+            and end is not None
+            and approval_at is not None
+            and approval_at > end
+        )
     ):
         fail("REFUND_CLOCK_INSUFFICIENT_DATA")
         return result
@@ -192,7 +197,7 @@ def _refund_clock(
 def evaluate_episode(episode: Any, spec: Spec, scenario_id: str) -> dict[str, Any]:
     dimensions = dict.fromkeys(DIMENSIONS, True)
     findings = []
-    diagnostics = []
+    diagnostics: list[dict[str, str]] = []
 
     def fail(dim: str, code: str) -> None:
         dimensions[dim] = False
