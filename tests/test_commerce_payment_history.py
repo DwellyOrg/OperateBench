@@ -83,10 +83,14 @@ def test_query_history_not_permissive_settlement(mutation):
     )
     assert grade["reliable"] is (mutation is None)
     failed = {key for key, ok in grade["dimensions"].items() if not ok}
-    expected = {"settlement", "deduplication"} if mutation else set()
+    expected = {"settlement", "deduplication", "clock"} if mutation else set()
     if mutation and mutation[0] == "delay_minutes":
         expected = {"deduplication"}
     assert failed == expected
+    if "clock" in expected:
+        assert {f["code"] for f in grade["findings"] if f["dimension"] == "clock"} == {
+            "REFUND_CLOCK_INSUFFICIENT_DATA"
+        }
 
 
 @pytest.mark.parametrize(
@@ -155,11 +159,15 @@ def test_duplicate_evidence_and_finality_come_from_core(mode):
             "valid": set(),
             "no_marker": set(),
             "marker_only": {"deduplication"},
-            "conflict": {"settlement", "deduplication"},
-            "reset": {"settlement", "completion"},
+            "conflict": {"settlement", "deduplication", "clock"},
+            "reset": {"settlement", "completion", "clock"},
             "early": {"completion"},
         }[mode]
     )
+    if mode in ("conflict", "reset"):
+        assert {f["code"] for f in grade["findings"] if f["dimension"] == "clock"} == {
+            "REFUND_CLOCK_INSUFFICIENT_DATA"
+        }
     if mode in ("valid", "no_marker"):
         query = next(e for e in episode.events if e["event_id"] == "query_result_1")
         assert episode.final_state["payment"]["settled_at"] == query["at"]

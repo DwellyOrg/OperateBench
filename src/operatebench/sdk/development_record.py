@@ -28,6 +28,7 @@ from operatebench.sdk.development_runtime import (
     RUN_FORMAT,
     SCOPE,
     DevelopmentRuntimeError,
+    _evaluation_fields,
 )
 
 MAX_RUN_BYTES = 16 * 1024 * 1024
@@ -295,7 +296,7 @@ def validate_record(record: Any) -> dict[str, Any]:
     evaluation = record["evaluation"]
     _fields(
         evaluation,
-        ("reliable", "dimensions", "findings", "terminal_outcome"),
+        _evaluation_fields(evaluation, record["binding"]["pack_id"]),
         "evaluation",
     )
     if (
