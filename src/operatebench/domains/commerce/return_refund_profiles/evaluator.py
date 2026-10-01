@@ -21,7 +21,7 @@ from operatebench.core.errors import MalformedTimestampError
 
 from .spec import Spec, digest, profile_identity, thaw
 
-EVALUATOR_VERSION = "0.3.0"
+EVALUATOR_VERSION = "0.3.1"
 
 DIMENSIONS = (
     "provenance",
@@ -169,6 +169,9 @@ def _refund_clock(
         fail("REFUND_CLOCK_INSUFFICIENT_DATA")
         return result
     if failed_attempt:
+        if not history_valid:
+            fail("REFUND_CLOCK_INSUFFICIENT_DATA")
+            return result
         raw = submissions[0].get("at") if submissions else None
         observed_at = _instant(payment.get("at"))
         if raw is None or observed_at is None or (end is not None and observed_at > end):

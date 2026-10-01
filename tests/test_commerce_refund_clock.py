@@ -114,6 +114,63 @@ def test_settlement_requires_matching_valid_processor_history(
     assert codes(evaluator._refund_clock(**inputs)) == {"REFUND_CLOCK_INSUFFICIENT_DATA"}
 
 
+@pytest.mark.parametrize("history_valid", [False, True])
+def test_failed_attempt_without_settlement_requires_valid_history(inputs, history_valid):
+    inputs["payment"] = {
+        "payload": {"status": "failed"},
+        "at": "2026-01-13T12:20:00Z",
+    }
+    inputs["history_valid"] = history_valid
+    assert inputs["state"]["payment"].get("settled_at") is None
+    assert inputs["folded_settled_at"] is None
+    result = evaluator._refund_clock(**inputs)
+    assert result["basis"] == "observed_failed_processor_attempt"
+    assert codes(result) == (
+        set() if history_valid else {"REFUND_CLOCK_INSUFFICIENT_DATA"}
+    )
+    assert not result["diagnostics"]
+
+
+@pytest.mark.parametrize("valid_history", [False, True])
+def test_engine_failed_attempt_history_controls_clock_dimension(valid_history):
+    class Domain(CommerceProfilesDomain):
+        def build_plan(self):
+            plan = super().build_plan()
+            return replace(
+                plan,
+                events=tuple(
+                    replace(e, payload=dict(e.payload) | {"webhook_id": "wrong_webhook"})
+                    if not valid_history and e.event_id == "processor_1"
+                    else e
+                    for e in plan.events
+                ),
+            )
+
+    spec = load_spec(FIXTURE)
+    case = "UK_PAYMENT_FAILED"
+    episode = run(case, domain=Domain(spec, case))
+    assert has_canonical_episode_outcome_provenance(episode)
+    assert episode.terminal_outcome == "reviewed"
+    payment = next(e for e in episode.events if e["event_id"] == "processor_1")
+    assert payment["disposition"] == "accepted"
+    assert payment["payload"]["status"] == "failed"
+    assert episode.final_state["payment"]["status"] == "failed"
+    assert episode.final_state["payment"].get("settled_at") is None
+    assert episode.final_state["payment"]["settled_minor"] == 0
+    grade = evaluator.evaluate_episode(episode, spec, case)
+    # Binary reliability already rejects bad history; the clock dimension must
+    # independently refuse its use as evidence of a timely failed attempt.
+    assert grade["reliable"] is valid_history
+    assert grade["dimensions"]["settlement"] is valid_history
+    assert grade["dimensions"]["clock"] is valid_history
+    assert codes(grade) == (
+        set()
+        if valid_history
+        else {"WRONG_AUTHORED_PROCESSOR_RESULT", "REFUND_CLOCK_INSUFFICIENT_DATA"}
+    )
+    assert not grade["diagnostics"]
+
+
 @pytest.mark.parametrize("profile", ["UK", "DE", "US_CA", "AU_VIC"])
 @pytest.mark.parametrize(
     "proof,approval", [(False, False), (False, True), (True, False), (True, True)]
@@ -281,10 +338,10 @@ def test_real_evaluator_handles_unreliable_stored_settlement(case, bad):
 @pytest.mark.parametrize(
     "metadata",
     [
-        {"evaluator_version": "0.3.0"},
+        {"evaluator_version": "0.3.1"},
         {"diagnostics": []},
         {"evaluator_version": "", "diagnostics": []},
-        {"evaluator_version": "0.3.0", "diagnostics": [True]},
+        {"evaluator_version": "0.3.1", "diagnostics": [True]},
     ],
 )
 def test_paired_metadata_is_strict(metadata):
@@ -343,7 +400,11 @@ def test_new_metadata_round_trip_and_legacy_envelope():
     factories = COMMERCE_COMMANDS.factories
     record = runtime.run(factories, FIXTURE, "UK_NORMAL")
     assert codec.validate_record(record) == record
-    assert record["evaluation"]["evaluator_version"] == evaluator.EVALUATOR_VERSION
+    assert (
+        record["evaluation"]["evaluator_version"]
+        == evaluator.EVALUATOR_VERSION
+        == "0.3.1"
+    )
     assert (
         runtime.replay(factories, FIXTURE, record)["evaluation"] == record["evaluation"]
     )

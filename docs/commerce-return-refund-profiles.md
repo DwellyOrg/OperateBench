@@ -251,7 +251,7 @@ review are implemented; they must not be advertised as the broader reconciliatio
 or chargeback system. This finite simulator is a development benchmark process,
 not a production returns engine or an official cross-domain/model ranking.
 
-## Refund clock evaluation 0.3.0
+## Refund clock evaluation 0.3.1
 
 The domain-local `EVALUATOR_VERSION` is emitted as `evaluator_version`, alongside
 an additive `diagnostics` list. Existing dimensions remain booleans and finding
@@ -271,7 +271,9 @@ plus 14 days; DE retains notice local date plus 14 days and the maximum of that
 local day's end and proof plus 60 minutes. Other profiles use approval plus 2880
 minutes. Handoff does not discharge an active obligation. An observed failed
 processor result preserves the first accepted submission's historical attempt
-clock; a future fixture failure mode alone does not activate this exception.
+clock only when the accepted processor history is valid, including when both
+settlement timestamps are absent; a future fixture failure mode alone does not
+activate this exception.
 
 Required absent, malformed or naive timestamps, timestamps beyond a reliable
 observation end, and disagreement between settlement state and valid processor
@@ -285,6 +287,6 @@ The SDK accepts the paired commerce metadata and still reads historical
 four-field evaluations. Current implementation/runtime content digests change
 automatically and supported replay checks both bindings and exact grades. The
 fixture/pack version remains 0.2.0; no historical source pins or fixtures are
-rewritten. Old serialized records cannot become official 0.3.0 grades through
+rewritten. Old serialized records cannot become official 0.3.1 grades through
 unsupported replay or diagnostic adapters. Fresh grades still require Engine
 provenance.

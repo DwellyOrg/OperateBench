@@ -1,5 +1,27 @@
 # Repository corrections
 
+## OB-CORR-2026-10-01-COMMERCE-FAILED-ATTEMPT-HISTORY
+
+- **Scope / identity:** finite failed-attempt clock followup in development pack
+  `commerce.return_refund.profiles.v1`; evaluator 0.3.0 → 0.3.1. Operation/pack
+  0.2.0, engine 0.13.0, distribution 0.1.0 and runtime contracts do not change.
+- **Defect / correction:** with both stored and folded settlement timestamps
+  absent, invalid accepted processor history bypassed the consistency guard and
+  could receive timely-clock credit from the failed attempt's submission time.
+  Substitution now requires valid history and otherwise emits
+  `REFUND_CLOCK_INSUFFICIENT_DATA`. Valid failed attempts retain their clock;
+  ordinary valid unfinished observations before the deadline remain nonpenalized.
+- **Evidence / impact:** synthetic helper and genuine Engine regressions reproduce
+  the defect. In the invalid-history Engine control, binary reliability already
+  fails settlement; the corrected clock dimension independently changes from
+  pass to fail. This is not evidence of changed corpus grades. No corpus impact,
+  paid run, official rerun or regrade is claimed. Current SDK consumers emit the
+  successor identity; implementation digests follow source content automatically.
+- **Preservation:** historical paid records and fixtures are unchanged. Clock
+  grades across this boundary must not be pooled as equivalent; comparable
+  results require fresh runs. The prior correction's pending publication/tag
+  requirement remains pending; this candidate performs no publication.
+
 ## OB-CORR-2026-09-30-COMMERCE-REFUND-CLOCK
 
 - **Date / scope:** 2026-09-30; evaluator-only correction to refund-branch
