@@ -193,7 +193,7 @@ def check_client_endpoint(client: anthropic.Anthropic) -> None:
     )
 
 
-# Observed root metadata, not declared by anthropic 0.121.0 Message.
+# Observed root metadata; diagnostics became declared in anthropic 1.11.0.
 # Only absence/null is established; a non-null payload has no accepted contract.
 NULL_ROOT_METADATA = frozenset({"diagnostics"})
 
@@ -266,9 +266,19 @@ def check_response_admissible(response: WireResponse[Message], *, model: str) ->
     parsed = response.parsed
     check_response_contract(parsed, allowed_root_extras=NULL_ROOT_METADATA)
     extra = parsed.model_extra or {}
-    if any(extra.get(name) is not None for name in NULL_ROOT_METADATA) or {
-        name for name in NULL_ROOT_METADATA if name in wire
-    } != {name for name in NULL_ROOT_METADATA if name in extra}:
+    # Declared optional fields default to None even when absent. Use fields_set
+    # for their presence, and extras for older SDKs that do not declare them.
+    declared_metadata = NULL_ROOT_METADATA & type(parsed).model_fields.keys()
+    typed_metadata = (declared_metadata & parsed.model_fields_set) | (
+        NULL_ROOT_METADATA & extra.keys()
+    )
+    if (
+        any(
+            getattr(parsed, name, None) is not None or extra.get(name) is not None
+            for name in NULL_ROOT_METADATA
+        )
+        or {name for name in NULL_ROOT_METADATA if name in wire} != typed_metadata
+    ):
         raise AdapterProviderError(
             PROVIDER_FAULT_RESPONSE_INVALID,
             "the wire and SDK optional root metadata disagree",

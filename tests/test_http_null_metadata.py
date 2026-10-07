@@ -205,14 +205,38 @@ def test_raw_typed_metadata_disagreement_rejected(provider, change):
         else anthropic.types.Message
     )
     typed = model.model_validate(body)
+    declared = key in model.model_fields
     if change == "drop":
-        typed.model_extra.pop(key)
+        if declared:
+            typed.model_fields_set.remove(key)
+        else:
+            typed.model_extra.pop(key)
     elif change == "add":
         body.pop(key)
     else:
-        typed.model_extra[key] = {}
+        if declared:
+            setattr(typed, key, {})
+        else:
+            typed.model_extra[key] = {}
     wire = WireResponse(json.dumps(body), lambda: typed, kind="offline metadata test")
     adapter = op if provider == "openai" else ap
     with pytest.raises(AdapterProviderError) as error:
         adapter.check_response_admissible(wire, model=MODELS[provider])
     assert error.value.fault == "provider_response_invalid"
+
+
+@pytest.mark.parametrize("present", [False, True])
+def test_anthropic_declared_null_metadata_preserves_presence(present):
+    body = response_body("anthropic")
+    if present:
+        body["diagnostics"] = None
+    typed = anthropic.types.Message.model_validate(body)
+    assert ("diagnostics" in typed.model_fields_set) is present
+    if "diagnostics" in anthropic.types.Message.model_fields:
+        assert "diagnostics" not in typed.model_extra
+        assert typed.diagnostics is None
+    else:
+        assert ("diagnostics" in typed.model_extra) is present
+    wire = WireResponse(json.dumps(body), lambda: typed, kind="offline metadata test")
+    ap.check_response_admissible(wire, model=MODELS["anthropic"])
+    assert ap.response_usage(wire).input_tokens == 7
