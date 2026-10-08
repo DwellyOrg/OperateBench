@@ -21,6 +21,7 @@ import httpx
 import openai
 from anthropic.types import Message
 from mistralai.client import Mistral
+from mistralai.client.httpclient import HttpClient
 
 from operatebench.agents import anthropic_messages as aa
 from operatebench.agents import mistral_chat as ma
@@ -279,7 +280,7 @@ class HTTPCampaignTransport:
             self.client = Mistral(
                 api_key=api_key,
                 server_url=mp.MISTRAL_BASE_URL,
-                client=self.http,
+                client=cast("HttpClient", self.http),
                 retry_config=mp._no_sdk_retries(),
                 debug_logger=quiet,
             )

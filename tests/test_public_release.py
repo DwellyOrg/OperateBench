@@ -88,7 +88,7 @@ def _canonical_distribution(directory: Path) -> tuple[Path, Path]:
             b"Requires-Dist: httpx<1,>=0.28.1\n"
             b"Requires-Dist: httpx2<3,>=2.13.1\n"
             b"Requires-Dist: openai<3,>=2.53.0\n"
-            b"Requires-Dist: mistralai<3,>=2.9.2\n"
+            b"Requires-Dist: mistralai<4,>=2.9.2\n"
             b"Requires-Dist: pyyaml>=6.0\n"
             b"Description-Content-Type: text/markdown\n"
             b"\n" + project_readme
