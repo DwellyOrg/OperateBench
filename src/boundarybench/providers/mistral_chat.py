@@ -52,6 +52,7 @@ from types import MappingProxyType
 from typing import Any, cast
 
 import httpx
+import httpx2
 from mistralai.client import Mistral
 from mistralai.client.errors import (
     MistralError,
@@ -637,9 +638,9 @@ class CapturedHttpClient:
     anywhere. Nothing durable in this build carries a provider body.
     """
 
-    def __init__(self, inner: HttpClient) -> None:
+    def __init__(self, inner: httpx.Client | httpx2.Client) -> None:
         self._inner = inner
-        self._captured: list[httpx.Response] = []
+        self._captured: list[httpx.Response | httpx2.Response] = []
         # The adapter instance this capture belongs to, once one has claimed it.
         # A strong reference on purpose: the claim is decided with ``is``, and an
         # owner that could be collected would free its ``id`` for a later object
@@ -703,13 +704,17 @@ class CapturedHttpClient:
             "`build_client`"
         )
 
-    def send(self, request: httpx.Request, **kwargs: Any) -> httpx.Response:
+    def send(
+        self, request: httpx.Request | httpx2.Request, **kwargs: Any
+    ) -> httpx.Response | httpx2.Response:
         """Delegate the send, and remember what came back."""
-        response = self._inner.send(request, **kwargs)
+        response = cast("HttpClient", self._inner).send(cast("Any", request), **kwargs)
         self._captured.append(response)
         return response
 
-    def build_request(self, method: str, url: Any, **kwargs: Any) -> httpx.Request:
+    def build_request(
+        self, method: str, url: Any, **kwargs: Any
+    ) -> httpx.Request | httpx2.Request:
         """Delegate. The request is the SDK's; this object does not shape it."""
         return self._inner.build_request(method, url, **kwargs)
 
@@ -721,7 +726,7 @@ class CapturedHttpClient:
         """Forget any response held, before the request whose one this will be."""
         self._captured.clear()
 
-    def take(self) -> httpx.Response:
+    def take(self) -> httpx.Response | httpx2.Response:
         """The one response this call produced, or a refusal.
 
         Refused rather than guessed at in both directions. None captured means
@@ -846,17 +851,21 @@ REJECTED_VARIABLES: tuple[str, ...] = ("MISTRAL_BASE_URL", "MISTRAL_SERVER_URL")
 _NO_SDK_RETRIES = RetryConfig("none", BackoffStrategy(1, 1, 1, 1), False)
 
 
-def build_client(*, api_key: str, http_client: httpx.Client | None = None) -> Mistral:
+def build_client(
+    *, api_key: str, http_client: httpx.Client | httpx2.Client | None = None
+) -> Mistral:
     """The SDK client this build talks through, with its retry loop disabled.
 
     ``http_client`` exists so a test can bind a real client to an in-process
     transport. It is not a way to reach a different service: the server URL is
     pinned here and is not a parameter.
     """
+    # SDK 3's protocol annotations name httpx2; the SDK also builds through
+    # existing explicit httpx clients, verified at the mocked wire boundary.
     return Mistral(
         api_key=api_key,
         server_url=MISTRAL_BASE_URL,
-        client=http_client,
+        client=cast("HttpClient | None", http_client),
         retry_config=_NO_SDK_RETRIES,
     )
 
@@ -1300,16 +1309,16 @@ def response_usage(response: WireResponse[ChatCompletionResponse]) -> TokenUsage
 def classify_exception(exception: Exception) -> Fault | None:
     """Map one SDK error onto the contract's fault set, or decline.
 
-    This SDK talks through ``httpx`` and lets transport exceptions out
-    unwrapped, so the two ``httpx`` cases are checked here rather than being
-    reachable only through an SDK type. ``ResponseValidationError`` is checked
+    This SDK talks through ``httpx2`` (``httpx`` in SDK 2) and lets transport
+    exceptions out unwrapped, so both transport families are checked here rather
+    than being reachable only through an SDK type. ``ResponseValidationError`` is checked
     before its ``MistralError`` base: it carries the status of a response that
     *arrived* — often a 200 — so classifying it by status would file a body this
     build could not parse as a rejected request.
     """
-    if isinstance(exception, httpx.TimeoutException):
+    if isinstance(exception, (httpx.TimeoutException, httpx2.TimeoutException)):
         return Fault(PROVIDER_FAULT_TIMEOUT, True, None)
-    if isinstance(exception, httpx.TransportError):
+    if isinstance(exception, (httpx.TransportError, httpx2.TransportError)):
         return Fault(PROVIDER_FAULT_NETWORK_ERROR, True, None)
     if isinstance(exception, NoResponseError):
         return Fault(PROVIDER_FAULT_NETWORK_ERROR, True, None)
