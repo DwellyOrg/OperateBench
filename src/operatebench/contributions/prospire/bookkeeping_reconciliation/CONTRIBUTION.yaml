@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: CC-BY-4.0
+schema_version: 1
+owner_id: prospire
+pack_id: accounting.bookkeeping_reconciliation.synthetic.v1
+operation_id: bookkeeping_reconciliation_synthetic_v1
+operation_type: accounting.bookkeeping_reconciliation.synthetic.v1
+aliases: []
+module: operatebench.contributions.prospire.bookkeeping_reconciliation
+source_path: src/operatebench/contributions/prospire/bookkeeping_reconciliation
+test_path: tests/contributions/prospire/bookkeeping_reconciliation/test_contract.py
+fixture_path: examples/contributions/prospire/bookkeeping_reconciliation/operation.yaml
+documentation_path: docs/contributions/prospire/bookkeeping_reconciliation.md
