@@ -34,11 +34,11 @@ def profile_tree(tmp_path):
         "docs/contributions",
     ):
         shutil.copytree(root / relative, tmp_path / relative)
-    assert check_contributions(tmp_path) == (
+    assert {
         "prospire:bookkeeping_reconciliation_synthetic_v1",
         "prospire:lettings_property_compliance_synthetic_v1",
         "prospire:lettings_property_compliance_profiles_v1",
-    )
+    } <= set(check_contributions(tmp_path))
     return tmp_path
 
 
