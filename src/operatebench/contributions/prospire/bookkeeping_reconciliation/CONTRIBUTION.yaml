@@ -7,6 +7,6 @@ operation_type: accounting.bookkeeping_reconciliation.synthetic.v1
 aliases: []
 module: operatebench.contributions.prospire.bookkeeping_reconciliation
 source_path: src/operatebench/contributions/prospire/bookkeeping_reconciliation
-test_path: tests/contributions/prospire/bookkeeping_reconciliation/test_contract.py
+test_path: tests/contributions/prospire/bookkeeping_reconciliation/test_pack.py
 fixture_path: examples/contributions/prospire/bookkeeping_reconciliation/operation.yaml
 documentation_path: docs/contributions/prospire/bookkeeping_reconciliation.md
