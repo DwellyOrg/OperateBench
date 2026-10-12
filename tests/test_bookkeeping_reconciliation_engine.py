@@ -1,4 +1,4 @@
-"""Trusted maintainer Engine/replay integration, outside the owner import boundary."""
+"""Maintainer-authored synthetic proposal Engine/replay integration."""
 
 import json
 from copy import deepcopy
@@ -11,23 +11,21 @@ from operatebench.agents.playback import (
     RecordingAgent,
     tape_from_records,
 )
-from operatebench.contributions.prospire.bookkeeping_reconciliation.agents import (
-    BookkeepingAgent,
-)
-from operatebench.contributions.prospire.bookkeeping_reconciliation.evaluator import (
-    evaluate,
-)
-from operatebench.contributions.prospire.bookkeeping_reconciliation.operation import (
-    BookkeepingDomain,
-)
-from operatebench.contributions.prospire.bookkeeping_reconciliation.spec import load_spec
 from operatebench.core.engine import Engine, has_canonical_episode_outcome_provenance
 from operatebench.sdk.builtins import BUILTIN_PACKS
+from tests.proposals.integral.bookkeeping_reconciliation.agents import (
+    BookkeepingAgent,
+)
+from tests.proposals.integral.bookkeeping_reconciliation.evaluator import (
+    evaluate,
+)
+from tests.proposals.integral.bookkeeping_reconciliation.operation import (
+    BookkeepingDomain,
+)
+from tests.proposals.integral.bookkeeping_reconciliation.spec import load_spec
 
 ROOT = Path(__file__).resolve().parents[1]
-FIXTURE = (
-    ROOT / "examples/contributions/prospire/bookkeeping_reconciliation/operation.yaml"
-)
+FIXTURE = ROOT / "examples/proposals/integral/bookkeeping_reconciliation/operation.yaml"
 CONTROLS = json.loads((FIXTURE.parent / "negative_controls.json").read_text())["controls"]
 
 

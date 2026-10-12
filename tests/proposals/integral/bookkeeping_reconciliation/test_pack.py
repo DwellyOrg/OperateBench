@@ -1,4 +1,4 @@
-"""Owner-scoped refusal and strict input checks; Engine checks are maintainer-owned."""
+"""Synthetic proposal refusal and strict input checks; no partner authorship."""
 
 from copy import deepcopy
 from pathlib import Path
@@ -6,17 +6,15 @@ from types import SimpleNamespace
 
 import pytest
 
-from operatebench.contributions.prospire.bookkeeping_reconciliation.operation import (
+from operatebench.core.errors import SpecSchemaError
+from tests.proposals.integral.bookkeeping_reconciliation.operation import (
     ISSUERS,
     BookkeepingDomain,
 )
-from operatebench.contributions.prospire.bookkeeping_reconciliation.spec import load_spec
-from operatebench.core.errors import SpecSchemaError
+from tests.proposals.integral.bookkeeping_reconciliation.spec import load_spec
 
 ROOT = Path(__file__).resolve().parents[4]
-FIXTURE = (
-    ROOT / "examples/contributions/prospire/bookkeeping_reconciliation/operation.yaml"
-)
+FIXTURE = ROOT / "examples/proposals/integral/bookkeeping_reconciliation/operation.yaml"
 
 
 @pytest.mark.parametrize(

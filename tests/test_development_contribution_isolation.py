@@ -35,7 +35,6 @@ def profile_tree(tmp_path):
     ):
         shutil.copytree(root / relative, tmp_path / relative)
     assert {
-        "prospire:bookkeeping_reconciliation_synthetic_v1",
         "prospire:lettings_property_compliance_synthetic_v1",
         "prospire:lettings_property_compliance_profiles_v1",
     } <= set(check_contributions(tmp_path))

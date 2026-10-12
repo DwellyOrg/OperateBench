@@ -1,1 +1,0 @@
-"""Synthetic bookkeeping contract tests."""

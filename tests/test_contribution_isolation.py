@@ -345,7 +345,6 @@ def test_positive_controls(tmp_path: Path) -> None:
         "riverside:riverside_sample",
     )
     assert {
-        "prospire:bookkeeping_reconciliation_synthetic_v1",
         "prospire:lettings_property_compliance_synthetic_v1",
         "prospire:lettings_property_compliance_profiles_v1",
     } <= set(check_contributions(Path.cwd()))

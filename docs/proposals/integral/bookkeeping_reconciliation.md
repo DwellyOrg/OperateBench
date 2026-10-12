@@ -1,9 +1,12 @@
-# Synthetic bookkeeping reconciliation development slice
+# Pending Integral feedback: synthetic bookkeeping reconciliation proposal
 
-Maintainer-authored under `prospire`, fully invented, development-only and
-non-evidence. No outside contribution, review, affiliation or endorsement is
-claimed. This is not any company's actual workflow or policy, accounting advice,
-a tax-law test, or an official benchmark pack. No legal deadlines are used.
+Maintainer-authored proposal for Integral feedback; pending acceptance. This is
+not their contribution or endorsement, not an official pack, and not a tax-law test.
+No Integral representative has agreed to author, own or review this work. The
+`integral` workspace names the intended feedback audience, not an owner or an
+authorship authority. This fully invented, test-only reference implementation is
+non-evidence, not any company's actual workflow or policy or accounting advice.
+No legal deadlines, proprietary data or real thresholds are used.
 
 One invented company, month, transaction and receipt use integer minor amounts
 in invented SYN currency. Connector import status, counts and claimed amounts
@@ -24,13 +27,17 @@ old quiet timers cannot close the corrected report. Source history and prior
 reports remain visible. Events after guarded FINAL are audited without mutation.
 Unknown or incomplete states cannot be promoted to success.
 
-The candidate is development-only and unregistered. From a source checkout
-with Python 3.11+ and the project's development dependencies installed:
+The proposal is test-only, outside canonical contribution and admission trees,
+without an owner manifest, contribution manifest, pack adapter or registry entry.
+Its Python lives under `tests/proposals/integral` and is excluded from the wheel.
+The generic synthetic operation and pack IDs do not identify Integral policy.
+From a source checkout with Python 3.11+ and the project's development dependencies
+installed:
 
 ```sh
 PYTHONPATH=src python -m pytest -v -s -o addopts= \
   tests/test_bookkeeping_reconciliation_engine.py \
-  tests/contributions/prospire/bookkeeping_reconciliation
+  tests/proposals/integral/bookkeeping_reconciliation
 PYTHONPATH=src python -m tools.check_contribution_isolation
 ```
 
@@ -45,4 +52,15 @@ contract and is unused. The site operator identified by its
 [imprint](https://www.integral.de/de/imprint) has not contributed to, reviewed or
 endorsed this work. No marketing text is copied.
 
-Source/tests: Apache-2.0; fixture/docs: CC-BY-4.0, per existing owner declaration.
+Promotion to `contributions/integral` requires a real authorized Integral
+participant to substantively review, adopt or edit the implementation and
+sign their contribution under the project DCO. Only then may an accurately
+attributed partner owner and contribution declaration be proposed through the
+normal contribution checks. Authorship authority is distinct from registration:
+see [Operation Pack SDK](../../OPERATION_PACK_SDK.md). Separate maintainer review
+and registration remain necessary for any official pack; evidence admission is
+also separate. None of those steps has happened or is implied by this workspace.
+
+Source/tests: Apache-2.0; fixture/docs: CC-BY-4.0. Existing maintainer copyright
+(PROSPIRE TECHNOLOGIES LTD) remains covered by repository `REUSE.toml`; no Integral
+copyright, co-author, DCO signer or endorsement is claimed.
