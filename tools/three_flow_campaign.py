@@ -30,6 +30,7 @@ from operatebench.agents.transport import ProviderFailure, content_digest
 from operatebench.sdk.profile_packs.pack import COMMERCE_COMMANDS, COMPLIANCE_COMMANDS
 from tools.aggregate_budget import SharedGuard, canonical, decimal
 from tools.three_flow_budget import CampaignBudget
+from tools.three_flow_errors import MetaRatePacer
 from tools.three_flow_http import LATEST_HTTP_MODELS, HTTPCampaignTransport
 from tools.three_flow_mock import SDKMockTransport
 from tools.three_flow_profiles import (
@@ -584,6 +585,19 @@ def run_campaign(
         raise
 
     construction = Lock()
+    meta_pacer = MetaRatePacer(enabled=evidence_origin != "SDK_MOCK_NOT_LLM")
+
+    def pending(slot: dict[str, Any]) -> dict[str, Any]:
+        return {
+            **slot,
+            "classification": "pending",
+            "fault": "meta_dispatch_stopped",
+            "evidence_origin": evidence_origin,
+            "evaluation": None,
+            "completion": None,
+            "estimated_usd": None,
+            "eligible_for_live_results": False,
+        }
 
     def worker(slot: dict[str, Any], evidence_origin: str) -> dict[str, Any]:
         ident = slot["trial_id"]
@@ -617,6 +631,8 @@ def run_campaign(
             row = financial_row(row, budget)
             write_private(closure_path, canonical(row))
             return row
+        if slot["provider"] == "meta" and meta_pacer.stopped.is_set():
+            return financial_row(pending(slot), budget)
         write_private(assigned_path, canonical(slot))
         transport: Any = None
         try:
@@ -674,6 +690,11 @@ def run_campaign(
                     guard=guard,
                     max_output_tokens=maximum,
                 )
+            if slot["provider"] == "meta":
+                transport.wire.meta_pacer = meta_pacer
+                transport.settings["pacing_scope"] = (
+                    "campaign-per-model; fleet HTTP429 fail-stop"
+                )
             trial = Trial(
                 campaign_id,
                 ident,
@@ -724,6 +745,24 @@ def run_campaign(
         finally:
             if transport is not None:
                 transport.close()
+        if (
+            transport is not None
+            and transport.local_failure == "meta_dispatch_stopped"
+            and not transport.wire.captures
+        ):
+            # No wire attempt: resume may start this same stable trial ID.
+            archive = root / (ident + ".undispatched-" + str(uuid4()))
+            archive.mkdir(mode=0o700)
+            assigned_path.rename(archive / "assigned.json")
+            binding = root / (ident + ".binding.json")
+            if binding.exists():
+                binding.rename(archive / "binding.json")
+            runtime = root / ident
+            if runtime.exists():
+                runtime.rename(archive / "runtime")
+            return financial_row(
+                {**pending(slot), "predispatch_evidence": archive.name}, budget
+            )
         if transport is not None and "pricing_basis" in transport.settings:
             row["pricing_basis"] = transport.settings["pricing_basis"]
         row = financial_row(row, budget)
@@ -740,13 +779,31 @@ def run_campaign(
                 max_workers=workers, thread_name_prefix="http"
             ) as http_pool,
         ):
+            submission = list(selected)
+            meta_slots = [s for s in selected if s["provider"] == "meta"]
+            models = list(dict.fromkeys(s["model"] for s in meta_slots))
+            queues = [[s for s in meta_slots if s["model"] == m] for m in models]
+            interleaved = [
+                queue[i]
+                for i in range(max(map(len, queues), default=0))
+                for queue in queues
+                if i < len(queue)
+            ]
+            iterator = iter(interleaved)
+            submission = [
+                next(iterator) if s["provider"] == "meta" else s for s in submission
+            ]
             futures = [
                 (river_pool if slot["provider"] == "river" else http_pool).submit(
                     worker, slot, evidence_origin
                 )
-                for slot in selected
+                for slot in submission
             ]
-            rows = [future.result() for future in futures]
+            by_id = {
+                s["trial_id"]: f.result()
+                for s, f in zip(submission, futures, strict=True)
+            }
+            rows = [by_id[s["trial_id"]] for s in selected]
         reports(
             report_root,
             rows,
@@ -766,6 +823,10 @@ def run_campaign(
                     "rows_sha256": content_digest(rows),
                     "source_digest": source_binding(),
                     "mode": mode,
+                    "complete": not any(r["classification"] == "pending" for r in rows),
+                    "pending_trial_ids": [
+                        r["trial_id"] for r in rows if r["classification"] == "pending"
+                    ],
                 }
             ),
         )

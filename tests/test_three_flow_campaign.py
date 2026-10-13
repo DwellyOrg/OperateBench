@@ -674,3 +674,108 @@ def test_excluded_mixed_origins_are_conservative(tmp_path):
     assert json.loads((tmp_path / "scorecard.json").read_text())["scope"] == scope
     assert f"Scope: {scope}" in (tmp_path / "scorecard.md").read_text()
     assert not any(row["eligible_for_live_results"] for row in rows)
+
+
+def test_meta_429_preserves_pending_and_submission_order(tmp_path):
+    import httpx
+
+    from tests.test_three_flow_meta_http import bridge
+    from tools.three_flow_campaign import assignments, run_campaign
+    from tools.three_flow_profiles import META_ROSTER_PROFILE
+
+    all_slots = assignments("test", META_ROSTER_PROFILE)
+    models = list(dict.fromkeys(s["model"] for s in all_slots))
+    slots = [s for m in models for s in all_slots if s["model"] == m][:2]
+    slots += [s for s in all_slots if s["model"] == models[1]][:2]
+    constructed = []
+
+    def factory(slot, budget):
+        path = tmp_path / ("factory-" + slot["trial_id"])
+        path.mkdir()
+        old, _, transport, _, _ = bridge(path, slot["model"])
+        old.close()
+        transport.guard.budget = budget
+        transport.guard.cell = slot["trial_id"]
+        transport.wire.inner = httpx.MockTransport(lambda r: httpx.Response(429))
+        constructed.append(slot["model"])
+        return transport
+
+    root = tmp_path / "campaign"
+    rows = run_campaign(
+        root,
+        campaign_id="test",
+        slots=slots,
+        workers=1,
+        roster_profile=META_ROSTER_PROFILE,
+        transport_factory=factory,
+        evidence_origin="SDK_MOCK_NOT_LLM",
+    )
+    assert constructed == [models[0]]
+    assert [r["trial_id"] for r in rows] == [s["trial_id"] for s in slots]
+    assert rows[0]["safe_status"] == 429
+    assert all(r["classification"] == "pending" for r in rows[1:])
+    for slot in slots[1:]:
+        assert not (root / (slot["trial_id"] + ".assigned.json")).exists()
+        assert not (root / (slot["trial_id"] + ".closure.json")).exists()
+    terminal = json.loads((root / "terminal.json").read_text())
+    assert terminal["complete"] is False
+    assert len(terminal["pending_trial_ids"]) == 3
+    resumed = run_campaign(
+        root,
+        campaign_id="test",
+        slots=slots,
+        workers=1,
+        resume=True,
+        roster_profile=META_ROSTER_PROFILE,
+        transport_factory=factory,
+        evidence_origin="SDK_MOCK_NOT_LLM",
+    )
+    assert constructed == [models[0], models[1]]
+    assert sum(r["classification"] == "pending" for r in resumed) == 2
+
+
+def test_meta_boundary_stop_archives_unsent_runtime_for_resume(tmp_path, monkeypatch):
+    import httpx
+
+    from tests.test_three_flow_meta_http import bridge
+    from tools import three_flow_campaign as campaign
+    from tools.three_flow_profiles import META_ROSTER_PROFILE
+
+    slot = campaign.assignments("test", META_ROSTER_PROFILE)[0]
+    calls = []
+
+    def factory(slot, budget):
+        path = tmp_path / ("factory" + str(len(calls)))
+        path.mkdir()
+        old, _, transport, _, _ = bridge(path, slot["model"])
+        old.close()
+        transport.guard.budget = budget
+        transport.guard.cell = slot["trial_id"]
+        transport.wire.inner = httpx.MockTransport(lambda r: httpx.Response(429))
+        calls.append(transport)
+        return transport
+
+    original = campaign.run_trial
+
+    def stop_before_first_dispatch(trial, transport, **kwargs):
+        if len(calls) == 1:
+            transport.wire.meta_pacer.stopped.set()
+        return original(trial, transport, **kwargs)
+
+    monkeypatch.setattr(campaign, "run_trial", stop_before_first_dispatch)
+    root = tmp_path / "campaign"
+    kwargs = {
+        "campaign_id": "test",
+        "slots": [slot],
+        "workers": 1,
+        "roster_profile": META_ROSTER_PROFILE,
+        "transport_factory": factory,
+        "evidence_origin": "SDK_MOCK_NOT_LLM",
+    }
+    first = campaign.run_campaign(root, **kwargs)[0]
+    assert first["classification"] == "pending"
+    assert (root / first["predispatch_evidence"] / "runtime").is_dir()
+    assert not (root / slot["trial_id"]).exists()
+    second = campaign.run_campaign(root, resume=True, **kwargs)[0]
+    assert second["safe_status"] == 429
+    assert second["classification"] != "pending"

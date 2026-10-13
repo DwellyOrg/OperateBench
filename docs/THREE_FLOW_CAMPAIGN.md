@@ -409,3 +409,21 @@ admission. Every new excluded or aborted closure retains that origin, including
 failures before transport construction. Reports retain provider scope when no
 rows score; mixed mock/provider rows retain mixed scope. Scored records must
 agree with the trusted execution origin before they are eligible for results.
+
+Meta Standard dispatch uses `meta-standard-rolling-60s-v1`: independent rolling
+60-second windows per model, 3000 requests and 4,000,000 reserved tokens.
+Each actual dispatch reserves the conservative complete serialized input bound
+plus its dynamically requested output maximum; measured usage does not refund
+that window. This pacing imposes no generation, call-count, money, or wall-time
+ceiling. Connect/pool timeouts remain finite; read/write deadlines remain absent.
+Mock transports disable waits, retaining the fail-stop gate.
+
+An HTTP429 or transport exception trips the campaign's shared Meta gate. An
+already dispatched attempt retains its original accounting and no-resubmission
+contract. Unsent cells are reported as `pending`, with no assignment or closure
+marker; `terminal.json` declares `complete: false` and lists their trial IDs.
+Explicit resume starts those cells under a fresh rate window and stop gate.
+Already dispatched cells are reconciled rather than resubmitted. Independent
+model lanes may already have requests in flight when the gate trips.
+Submission interleaves models while assignment manifests, trial IDs and returned
+row order retain their canonical order.

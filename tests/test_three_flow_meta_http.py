@@ -537,3 +537,130 @@ def test_guard_uses_shared_campaign_exposure(tmp_path, model):
         assert budget.totals()["unknown"] == 989
     finally:
         budget.close()
+
+
+def test_meta_rate_windows_and_predispatch_failure():
+    from tools.three_flow_errors import MetaDispatchStopped, MetaRatePacer
+
+    now = [0.0]
+    sleeps = []
+
+    def sleep(delay):
+        sleeps.append(delay)
+        now[0] += delay
+
+    pacer = MetaRatePacer(clock=lambda: now[0], sleep=sleep)
+    sent = []
+
+    def dispatch(model, tokens, status=200):
+        def send():
+            pacer.commit(model, tokens)
+            sent.append((model, now[0]))
+            if status == 429:
+                pacer.stopped.set()
+            return httpx.Response(status)
+
+        return pacer.call(model, tokens, send)
+
+    for _ in range(3):
+        dispatch("wonder", 1_030_000)
+    dispatch("spark", 1_030_000)
+    assert sleeps == []
+    dispatch("wonder", 1_030_000)
+    assert sleeps == [60]
+    assert sent[-1] == ("wonder", 60)
+    before = dict(pacer.windows)
+    with pytest.raises(ValueError):
+        pacer.call("wonder", 1, lambda: (_ for _ in ()).throw(ValueError()))
+    assert pacer.windows == before
+    dispatch("spark", 1, 429)
+    with pytest.raises(MetaDispatchStopped):
+        dispatch("wonder", 1)
+    assert len(sent) == 6
+
+
+def test_meta_rpm_boundary():
+    from tools.three_flow_errors import MetaRatePacer
+
+    now = [0.0]
+    pacer = MetaRatePacer(
+        clock=lambda: now[0], sleep=lambda d: now.__setitem__(0, now[0] + d)
+    )
+
+    def send():
+        pacer.commit("wonder", 1)
+        return httpx.Response(200)
+
+    for _ in range(3001):
+        pacer.call("wonder", 1, send)
+    assert now[0] == 60
+    assert len(pacer.windows["wonder"]) == 1
+
+
+def test_meta_real_wire_boundary_fake_clock(tmp_path):
+    from tools.three_flow_errors import MetaRatePacer
+
+    budget, _, transport, trial, requests = bridge(tmp_path, META_MODELS[0])
+    now = [0.0]
+    transport.wire.meta_pacer = MetaRatePacer(
+        clock=lambda: now[0], sleep=lambda d: now.__setitem__(0, now[0] + d)
+    )
+    record = run_trial(trial, transport, output=tmp_path / "trial")
+    assert requests
+    assert record["provider_turns"]
+    window = transport.wire.meta_pacer.windows[META_MODELS[0]]
+    assert sum(n for _, n in window) <= 4_000_000
+    assert transport.settings["max_retries"] == 0
+    transport.close()
+    budget.close()
+
+
+def test_meta_local_wire_tripwire_consumes_no_provider_quota(tmp_path):
+    from tools.three_flow_errors import MetaRatePacer
+
+    budget, _, transport, _, requests = bridge(tmp_path, META_MODELS[0])
+    pacer = MetaRatePacer()
+    transport.wire.meta_pacer = pacer
+    transport.wire.expected_payload = {"different": True}
+    request = httpx.Request(
+        "POST",
+        transport.settings["endpoint"],
+        json={"model": META_MODELS[0], "max_output_tokens": 1},
+    )
+    with pytest.raises(ValueError, match="SDK wire differs"):
+        transport.wire.handle_request(request)
+    assert pacer.windows[META_MODELS[0]] == []
+    assert not pacer.stopped.is_set()
+    assert requests == []
+    transport.close()
+    budget.close()
+
+
+def test_meta_threads_share_model_window():
+    import threading
+    from concurrent.futures import ThreadPoolExecutor
+
+    from tools.three_flow_errors import MetaRatePacer
+
+    now = [0.0]
+    clock_lock = threading.Lock()
+
+    def sleep(delay):
+        with clock_lock:
+            now[0] += delay
+
+    pacer = MetaRatePacer(clock=lambda: now[0], sleep=sleep)
+    sent = []
+
+    def send():
+        pacer.commit("wonder", 1_000_000)
+        sent.append(now[0])
+        return httpx.Response(200)
+
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        results = list(
+            pool.map(lambda _: pacer.call("wonder", 1_000_000, send), range(12))
+        )
+    assert len(results) == 12
+    for timestamp in sent:
+        assert sum(timestamp <= t < timestamp + 60 for t in sent) <= 4

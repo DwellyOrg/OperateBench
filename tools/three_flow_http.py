@@ -34,11 +34,19 @@ from operatebench.providers import anthropic_messages as ap
 from operatebench.providers import meta_responses as metap
 from operatebench.providers import mistral_chat as mp
 from operatebench.providers import openai_responses as op
-from operatebench.providers.cost import request_input_token_bound
+from operatebench.providers.cost import (
+    conservative_input_token_bound,
+    request_input_token_bound,
+)
 from operatebench.providers.faults import AdapterProviderError, SingleFlight
 from operatebench.providers.wire import WireResponse, wire_invalid
 from tools.aggregate_budget import SharedGuard
-from tools.three_flow_errors import ProviderPacer, http_error
+from tools.three_flow_errors import (
+    MetaDispatchStopped,
+    MetaRatePacer,
+    ProviderPacer,
+    http_error,
+)
 from tools.three_flow_meta import validate_meta_profile
 from tools.three_flow_profiles import (
     ENDPOINTS as ENDPOINTS,
@@ -61,6 +69,7 @@ from tools.three_flow_profiles import (
 )
 
 MISTRAL_PACER = ProviderPacer()
+META_PACER = MetaRatePacer()
 
 
 def explicit_sdk_client(cls: Any, **kwargs: Any) -> Any:
@@ -99,8 +108,26 @@ class BudgetWire(httpx.BaseTransport):
         self.expected_payload: dict[str, Any] | None = None
         self.local_failure: str | None = None
         self.pacer: ProviderPacer | None = None
+        self.meta_pacer: MetaRatePacer | None = None
+        self.meta_tokens = 0
 
     def handle_request(self, request: httpx.Request) -> httpx.Response:
+        if self.meta_pacer is not None:
+            raw = request.read()
+            body = json.loads(raw)
+            self.meta_tokens = max(
+                conservative_input_token_bound(len(raw)),
+                request_input_token_bound(body, "complete Meta serialized input"),
+            ) + int(body["max_output_tokens"])
+            try:
+                return self.meta_pacer.call(
+                    body["model"],
+                    self.meta_tokens,
+                    lambda: self._handle_request(request),
+                )
+            except MetaDispatchStopped:
+                self.local_failure = "meta_dispatch_stopped"
+                raise
         if self.pacer is not None:
             return self.pacer.call(lambda: self._handle_request(request))
         return self._handle_request(request)
@@ -108,7 +135,7 @@ class BudgetWire(httpx.BaseTransport):
     def _handle_request(self, request: httpx.Request) -> httpx.Response:
         if str(request.url) != self.endpoint or request.method != "POST":
             raise ValueError("noncanonical provider endpoint")
-        if self.guard._allows_no_money_cap:
+        if self.guard._allows_no_money_cap and self.meta_pacer is None:
             # Mistral 2.x substitutes 300000ms for timeout_ms=None. Override at
             # the real HTTP transport boundary, not with a large deadline.
             # Only the explicit successor policy reaches this branch; old capped
@@ -148,7 +175,16 @@ class BudgetWire(httpx.BaseTransport):
             self.guard.budget.raw_rpc(
                 self.guard.cell, self.endpoint, row["request_sha256"]
             )
-        response = self.inner.handle_request(request)
+        if self.meta_pacer is not None:
+            self.meta_pacer.commit(body["model"], self.meta_tokens)
+        try:
+            response = self.inner.handle_request(request)
+        except BaseException:
+            if self.meta_pacer is not None:
+                self.meta_pacer.stopped.set()
+            raise
+        if self.meta_pacer is not None and response.status_code == 429:
+            self.meta_pacer.stopped.set()
         data = response.read()
         row["status_code"] = response.status_code
         if response.is_success:
@@ -273,6 +309,12 @@ class HTTPCampaignTransport:
             self.request_mapping = "three-flow-meta-snapshot-minimal-auto-v3"
         self.guard, self.max_output_tokens = guard, max_output_tokens
         self.wire = BudgetWire(inner, guard, ENDPOINTS[provider])
+        if meta:
+            self.wire.meta_pacer = (
+                MetaRatePacer(enabled=False)
+                if isinstance(inner, httpx.MockTransport)
+                else META_PACER
+            )
         if transport_policy == "paced-safe-errors-v1":
             self.wire.pacer = MISTRAL_PACER
             self.request_mapping += "-" + transport_policy
@@ -387,6 +429,13 @@ class HTTPCampaignTransport:
         if meta:
             self.settings.pop("reasoning_items_contract", None)
             self.settings.update(
+                pacing_policy="meta-standard-rolling-60s-v1",
+                pacing_scope="process-wide-per-model; fleet HTTP429 fail-stop",
+                requests_per_minute=3000,
+                tokens_per_minute=4_000_000,
+                reservation_basis="complete serialized input bound + requested output",
+                pacing_enabled=not isinstance(inner, httpx.MockTransport),
+                automatic_resubmission=False,
                 sdk="openai",
                 provider="meta",
                 comparison="equal-scaffold independent snapshots",
@@ -653,7 +702,7 @@ class HTTPCampaignTransport:
                 }
                 if getattr(self.guard, "diagnostic", False) and self.wire.captures:
                     status = self.wire.captures[-1].get("status_code")
-                    if status in (400, 422):
+                    if status in (400, 422, 429):
                         self.last_turn.update(
                             diagnostic_category="provider_request_refusal",
                             safe_status=status,

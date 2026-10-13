@@ -45,6 +45,59 @@ class ProviderPacer:
             return response
 
 
+class MetaDispatchStopped(RuntimeError):
+    """Local fail-stop; the blocked request was never dispatched."""
+
+
+class MetaRatePacer:
+    """Standard rolling quotas, independent model windows, shared 429 tripwire.
+
+    Reservations use complete serialized input plus requested output. They are
+    never discounted by actual usage. No retry or generation deadline is added.
+    """
+
+    def __init__(
+        self,
+        *,
+        clock: Callable[[], float] = time.monotonic,
+        sleep: Callable[[float], None] = time.sleep,
+        enabled: bool = True,
+    ) -> None:
+        self.clock, self.sleep, self.enabled = clock, sleep, enabled
+        self.lock = threading.Lock()
+        self.windows: dict[str, list[tuple[float, int]]] = {}
+        self.model_locks: dict[str, Any] = {}
+        self.stopped = threading.Event()
+
+    def call(
+        self, model: str, tokens: int, send: Callable[[], httpx.Response]
+    ) -> httpx.Response:
+        if tokens > 4_000_000 or tokens <= 0:
+            raise ValueError("request reservation cannot fit Meta Standard TPM window")
+        with self.lock:
+            model_lock = self.model_locks.setdefault(model, threading.Lock())
+        while True:
+            with model_lock:
+                if self.stopped.is_set():
+                    raise MetaDispatchStopped("Meta fleet stopped after provider failure")
+                now = self.clock()
+                window = self.windows.setdefault(model, [])
+                window[:] = [(t, n) for t, n in window if t + 60 > now]
+                if not self.enabled or (
+                    len(window) < 3000 and sum(n for _, n in window) + tokens <= 4_000_000
+                ):
+                    # send's local preparation runs before commit(); failures there
+                    # consume no quota. The caller commits at the inner boundary.
+                    return send()
+                delay = window[0][0] + 60 - now
+            # Do not hold the shared lock while waiting for an independent model.
+            self.sleep(delay)
+
+    def commit(self, model: str, tokens: int) -> None:
+        """Called under the model lock immediately before actual dispatch."""
+        self.windows[model].append((self.clock(), tokens))
+
+
 def grpc_error(exception: BaseException, operation: str) -> dict[str, Any]:
     grpc = importlib.import_module("grpc")
     code_method = getattr(exception, "code", None)
