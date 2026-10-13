@@ -123,6 +123,6 @@ They also preserve the distinction between the campaign runtime and Lifecycle's
 Meta-rejecting artifact reader. Mocked transport evidence is not live endpoint
 acceptance or model performance evidence.
 
-Clean-source qualification, including the full 88-slot mocked consume, remains
-pending. Actual live compatibility across both supported models is not yet
-proven. This snapshot does not claim the source-bound gates have passed.
+The final clean source must pass the full 88-slot mocked consume before any paid attempt;
+this check proves source-bound offline behavior, not Meta live compatibility or scored quality.
+Live compatibility and model performance remain unproven.
