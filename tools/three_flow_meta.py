@@ -8,6 +8,7 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import Any
 
+from tools.three_flow_budget import META_UNCAPPED_PROFILE
 from tools.three_flow_profiles import ENDPOINTS, META_ENVELOPES
 
 
@@ -28,7 +29,10 @@ def validate_meta_profile(profile: dict[str, Any], provider: str, model: str) ->
         or profile["bounds_policy"].get("source") != "https://dev.meta.ai/docs"
         or profile["bounds_policy"].get("scope") != "endpoint"
         or profile["bounds_policy"].get("interpretation") != "published-integer"
-        or "execution_policy" in profile
+        or (
+            "execution_policy" in profile
+            and profile["execution_policy"] != META_UNCAPPED_PROFILE
+        )
         or "owner_output_cap_tokens" in profile
         or Decimal(profile["input_usd_per_million"]) != Decimal(input_rate)
         or Decimal(profile["output_usd_per_million"]) != Decimal(output_rate)

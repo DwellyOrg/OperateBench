@@ -48,13 +48,14 @@ The shared campaign registry and Meta HTTP bridge use explicit
 evaluator. The campaign has its own durable `three_flow_runtime` records and
 replay; it does not depend on admitting Meta to the Lifecycle artifact reader.
 
-Campaign requests dynamically bound output by remaining published context and
-available money, rather than the Lifecycle 4096 ceiling. There is no generation
+Campaign requests dynamically bound output by remaining published context and,
+for the original capped profile, available money. There is no generation
 wall deadline or read/write timeout; connect and pool timeouts remain finite.
 The unknown native output maximum is retained as unknown. Snapshot turns do not
 replay encrypted reasoning, previous response IDs or native tool-result state.
 
-Two disjoint persistent budgets sum to the user's **USD 1000 hard total**:
+The original capped admission profile uses two disjoint persistent budgets
+with a **USD 1000 hard total**:
 **MAX USD 10** for at most a few real Meta API compatibility probes (not scored),
 and **USD 990 shared across both models** for all 88 scored campaign cells,
 campaign retries and unknown exposure. The total includes provider diagnostics
@@ -67,6 +68,32 @@ are irreversible and continue consuming the campaign budget. Estimated spend
 under the admitted pricing and reported-usage assumptions is not an invoice
 guarantee. It does not establish provider tariff coverage, account access or
 billing completeness.
+
+## Explicit uncapped Meta successor
+
+A distinct `three-flow-meta-uncapped-v1` policy permits `cap_usd: null` only
+for the same Meta Standard roster. Each selected Meta profile must carry the
+matching `execution_policy`. The existing generic optional policy does not
+admit Meta; other providers and their existing USD 1000 capped behavior remain
+unchanged. The original USD 990 Meta campaign profile remains available as a
+separate legacy policy without optional execution controls.
+
+This successor requires external owner evidence, the exact clean source SHA,
+and a historical-liability manifest digest in `limit_policy`; code supplies no
+approval or real evidence record. A distinct series and null-cap ledger genesis
+cannot reuse an original capped journal. The fixed 44 cases per model, 88 initial
+slots and one trial per case remain unchanged. No automatic paid resubmission
+or historical grade changes are authorized.
+
+There is no owner monetary ceiling, artificial model-call or cumulative-token
+limit, or local generation-wall cap. Requests still respect published physical
+context, finite connect/pool transport safety and required account quota pacing.
+No arbitrary large money sentinel replaces the null cap. Exact Standard pricing,
+account-access and usage guarantees remain admission requirements. Known usage
+estimates, pending reservations and unknown exposure remain durably accounted;
+unknown exposure is retained across restart. Uncapped means no monetary ceiling,
+not zero cost or a known invoice. Offline validation is not proof of live success
+across the 44 scenarios.
 
 ## Tool selection and comparability
 

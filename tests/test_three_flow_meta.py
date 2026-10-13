@@ -362,12 +362,223 @@ def test_meta_preflight_preserves_other_profiles():
 @pytest.mark.parametrize("cap", [None, Decimal("1000"), Decimal("989")])
 def test_meta_budget_rejects_other_caps_before_journal(tmp_path, cap):
     tmp_path.chmod(0o700)
-    with pytest.raises(ValueError, match="shared hard USD 990"):
+    with pytest.raises(ValueError, match=r"shared hard USD 990|explicit optional limits"):
         CampaignBudget(
             tmp_path,
             campaign_id="meta-new",
             cap=cap,
             roster_profile=META_ROSTER_PROFILE,
+            create=True,
+        )
+    assert not (tmp_path / "campaign-budget.jsonl").exists()
+
+
+def uncapped_admission():
+    """Synthetic contract only; these placeholder digests confer no authority."""
+    from tests.test_three_flow_latest_http import admission
+    from tools.three_flow_admission import GUARANTEES
+    from tools.three_flow_budget import META_UNCAPPED_PROFILE
+
+    a = admission()
+    a.update(
+        cap_usd=None,
+        roster_profile=META_ROSTER_PROFILE,
+        registry=registry(
+            roster_profile=META_ROSTER_PROFILE, mode_profile="off-or-minimum-v1"
+        ),
+        limit_policy={
+            "mode": META_UNCAPPED_PROFILE,
+            "owner_accepted": True,
+            "owner_evidence_sha256": "a" * 64,
+            "source_sha": a["source_sha"],
+            "historical_liability_manifest_sha256": "b" * 64,
+        },
+    )
+    slots = assignments(a["campaign_id"], META_ROSTER_PROFILE)
+    a["selected"] = a["pending"] = [slots[0]["trial_id"]]
+    model = slots[0]["model"]
+    a["profiles"] = {
+        model: dict(
+            profile(model),
+            execution_policy=META_UNCAPPED_PROFILE,
+            rate_evidence_sha256="a" * 64,
+            bounds_evidence_sha256="b" * 64,
+            pricing_policy="conservative-all-tier-envelope-v1",
+            guarantees={
+                **dict.fromkeys(GUARANTEES, True),
+                "provider_bounds_verified": False,
+            },
+        )
+    }
+    return a
+
+
+def test_meta_uncapped_admission_and_context_only_guard(tmp_path):
+    import json
+
+    from tools.three_flow_admission import validate
+    from tools.three_flow_budget import META_UNCAPPED_PROFILE
+    from tools.three_flow_live_factory import AdmittedGuard
+
+    a = uncapped_admission()
+    validate(a, a["source_sha"], synthetic=True)
+    tmp_path.chmod(0o700)
+    options = {
+        "campaign_id": a["campaign_id"],
+        "cap": None,
+        "roster_profile": META_ROSTER_PROFILE,
+        "limit_policy": a["limit_policy"],
+    }
+    budget = CampaignBudget(tmp_path, create=True, **options)
+    p = next(iter(a["profiles"].values()))
+    pricing = LifecyclePricingPolicy(
+        "meta-uncapped-test",
+        Decimal(p["input_usd_per_million"]),
+        Decimal(p["output_usd_per_million"]),
+    )
+    try:
+        guard = AdmittedGuard(
+            profile=p,
+            budget=budget,
+            cell="measured",
+            policy=pricing,
+            max_output_tokens=p["context_max"] - 100,
+        )
+        assert guard.output_bound(100) == p["context_max"] - 100
+        known = guard.authorize(input_tokens_upper_bound=100)
+        budget.dispatch("measured", {"max_output_tokens": p["context_max"] - 100})
+        guard.settle(known, input_tokens=10, output_tokens=20)
+        unknown = budget.reserve(
+            "unknown", input_bound=100, output_bound=200, policy=pricing
+        )
+        budget.forfeit(unknown)
+        budget.reserve("pending", input_bound=100, output_bound=200, policy=pricing)
+        totals = budget.totals()
+        assert totals["known"] > 0 and totals["unknown"] > 0 and totals["pending"] > 0
+        assert totals["remaining"] is None
+        assert guard.output_bound(100) == p["context_max"] - 100
+        with pytest.raises(ValueError):
+            guard.check_context(p["context_max"], 1)
+    finally:
+        budget.close()
+    genesis = json.loads((tmp_path / "campaign-budget.jsonl").read_text().splitlines()[0])
+    assert (
+        genesis["cap"] is None and genesis["controller_profile"] == META_UNCAPPED_PROFILE
+    )
+    assert genesis["limit_policy"] == a["limit_policy"]
+    reopened = CampaignBudget(tmp_path, **options)
+    try:
+        assert reopened.totals()["unknown"] == totals["unknown"] + totals["pending"]
+        assert reopened.totals()["remaining"] is None
+    finally:
+        reopened.close()
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        "cap",
+        "generic-tag",
+        "execution",
+        "source",
+        "owner-hash",
+        "history-hash",
+        "price",
+        "context",
+        "other-roster",
+        "missing-policy",
+        "old-journal",
+        "account-access",
+        "null-execution",
+        "source-sha",
+    ],
+)
+def test_meta_uncapped_refuses_before_custody(tmp_path, monkeypatch, mutation):
+    import json
+
+    from tools import three_flow_live
+    from tools.three_flow_admission import validate
+    from tools.three_flow_budget import OPTIONAL_PROFILE
+
+    a = uncapped_admission()
+    p = next(iter(a["profiles"].values()))
+    if mutation == "cap":
+        a["cap_usd"] = "990"
+    elif mutation == "generic-tag":
+        a["limit_policy"]["mode"] = OPTIONAL_PROFILE
+    elif mutation == "execution":
+        p["execution_policy"] = OPTIONAL_PROFILE
+    elif mutation == "source":
+        a["limit_policy"]["source_sha"] = "0" * 40
+    elif mutation == "owner-hash":
+        a["limit_policy"]["owner_evidence_sha256"] = None
+    elif mutation == "history-hash":
+        a["limit_policy"]["historical_liability_manifest_sha256"] = "wrong"
+    elif mutation == "price":
+        p["output_usd_per_million"] = "21"
+    elif mutation == "context":
+        p["context_max"] += 1
+    elif mutation == "other-roster":
+        a["roster_profile"] = "latest-http-v1"
+    elif mutation == "missing-policy":
+        del a["limit_policy"]
+    elif mutation == "account-access":
+        p["guarantees"]["account_access_verified"] = False
+    elif mutation == "null-execution":
+        p["execution_policy"] = None
+    elif mutation == "source-sha":
+        a["source_sha"] = "0" * 40
+    else:
+        a["journal_sha256"] = "a" * 64
+    sha = "c" * 40
+    with pytest.raises(ValueError):
+        validate(a, sha, synthetic=True)
+    path = tmp_path / "synthetic.json"
+    path.write_text("{}")
+    monkeypatch.setattr(three_flow_live, "read_private", lambda _: json.dumps(a).encode())
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("invalid admission reached custody or credentials")
+
+    monkeypatch.setattr(three_flow_live, "private_directory", forbidden)
+    monkeypatch.setattr(three_flow_live, "private_fd", forbidden)
+    with pytest.raises(ValueError):
+        three_flow_live.consume(tmp_path / "synthetic.json", sha, network=object())
+
+
+def test_meta_uncapped_cannot_reopen_capped_journal(tmp_path):
+    a = uncapped_admission()
+    tmp_path.chmod(0o700)
+    capped = CampaignBudget(
+        tmp_path,
+        campaign_id=a["campaign_id"],
+        cap=Decimal("990"),
+        roster_profile=META_ROSTER_PROFILE,
+        create=True,
+    )
+    capped.close()
+    journal = tmp_path / "campaign-budget.jsonl"
+    before = journal.read_bytes()
+    with pytest.raises(ValueError, match="foreign campaign or cap"):
+        CampaignBudget(
+            tmp_path,
+            campaign_id=a["campaign_id"],
+            cap=None,
+            roster_profile=META_ROSTER_PROFILE,
+            limit_policy=a["limit_policy"],
+        )
+    assert journal.read_bytes() == before
+
+
+def test_meta_uncapped_tag_refused_for_other_provider_before_journal(tmp_path):
+    a = uncapped_admission()
+    tmp_path.chmod(0o700)
+    with pytest.raises(ValueError, match="optional limits consent"):
+        CampaignBudget(
+            tmp_path,
+            campaign_id="other-provider",
+            cap=None,
+            limit_policy=a["limit_policy"],
             create=True,
         )
     assert not (tmp_path / "campaign-budget.jsonl").exists()

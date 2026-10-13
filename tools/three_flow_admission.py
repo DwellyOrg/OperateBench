@@ -13,7 +13,11 @@ from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
-from tools.three_flow_budget import OPTIONAL_PROFILE, validate_limit_policy
+from tools.three_flow_budget import (
+    META_UNCAPPED_PROFILE,
+    OPTIONAL_PROFILE,
+    validate_limit_policy,
+)
 from tools.three_flow_campaign import (
     CONFIGURATIONS,
     LATEST_ROSTER_PROFILE,
@@ -168,8 +172,6 @@ def _validate(
     if correction:
         fields.add("correction_binding")
     optional = isinstance(admission, dict) and "limit_policy" in admission
-    if optional and admission.get("roster_profile") == META_ROSTER_PROFILE:
-        raise ValueError("Meta series requires one shared hard USD 990 cap")
     if optional:
         fields.add("limit_policy")
     if not isinstance(admission, dict) or set(admission) != fields:
@@ -185,7 +187,12 @@ def _validate(
         a["correction_binding"]["original_source_sha"] if correction else sha
     )
     if optional:
-        validate_limit_policy(a["limit_policy"])
+        validate_limit_policy(
+            a["limit_policy"],
+            mode=META_UNCAPPED_PROFILE
+            if a.get("roster_profile") == META_ROSTER_PROFILE
+            else OPTIONAL_PROFILE,
+        )
         if a["limit_policy"]["source_sha"] != financial_source:
             raise ValueError("optional limits source binding mismatch")
     if (
@@ -241,7 +248,12 @@ def _validate(
         )
         if a.get("roster_profile") == LATEST_ROSTER_PROFILE:
             validate_latest_http_profile(p, slot["model"])
-        if optional != (p.get("execution_policy") == OPTIONAL_PROFILE):
+        expected_execution = (
+            META_UNCAPPED_PROFILE
+            if a.get("roster_profile") == META_ROSTER_PROFILE
+            else OPTIONAL_PROFILE
+        )
+        if optional != (p.get("execution_policy") == expected_execution):
             raise ValueError("execution controls differ from monetary policy")
         if "owner_pricing" in p:
             owner = p["owner_pricing"]
@@ -648,7 +660,12 @@ def validate_profile(
     optional = isinstance(p, dict) and "execution_policy" in p
     if optional:
         fields.add("execution_policy")
-        if p["execution_policy"] != OPTIONAL_PROFILE:
+        expected_execution = (
+            META_UNCAPPED_PROFILE
+            if provider == "meta" and roster_profile == META_ROSTER_PROFILE
+            else OPTIONAL_PROFILE
+        )
+        if p["execution_policy"] != expected_execution:
             raise ValueError("unknown execution controls")
     owner = isinstance(p, dict) and p.get("pricing_policy") == OWNER_PRICING_POLICY
     if owner:
