@@ -233,7 +233,8 @@ def registry(
                 "settings_source": "tools/three_flow_http.py",
                 "retries": 0,
                 "output_limit": (
-                    "unknown native maximum; admitted local context/budget bound"
+                    "unknown native maximum; admitted local context/budget bound "
+                    "and optional owner operational output cap"
                 ),
                 "admitted": False,
             }

@@ -758,6 +758,7 @@ def run_campaign(
         if (
             transport is not None
             and transport.local_failure == "meta_dispatch_stopped"
+            and not transport.wire.current_turn_dispatched
             and not transport.wire.captures
         ):
             # No wire attempt: resume may start this same stable trial ID.
@@ -772,6 +773,21 @@ def run_campaign(
                 runtime.rename(archive / "runtime")
             return financial_row(
                 {**pending(slot), "predispatch_evidence": archive.name}, budget
+            )
+        if (
+            transport is not None
+            and transport.local_failure == "meta_dispatch_stopped"
+            and not transport.wire.current_turn_dispatched
+            and transport.wire.captures
+        ):
+            # Partial Core/model state cannot be reconstructed by this runner.
+            # Keep the original binding/runtime and close against resubmission.
+            row.update(
+                classification="aborted",
+                fault="partial_trial_needs_correction_no_resubmit",
+                current_turn_dispatched=False,
+                automatic_resubmission=False,
+                recovery_requires="reconstruction of prior Core/model state",
             )
         if transport is not None and "pricing_basis" in transport.settings:
             row["pricing_basis"] = transport.settings["pricing_basis"]

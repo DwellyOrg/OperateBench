@@ -28,7 +28,7 @@ def no_network(monkeypatch):
     monkeypatch.setattr(socket, "create_connection", forbidden)
 
 
-def bridge(tmp_path, model, fault=None, *, uncapped=False):
+def bridge(tmp_path, model, fault=None, *, uncapped=False, owner_cap=None):
     tmp_path.chmod(0o700)
     from tests.test_three_flow_meta import uncapped_admission
 
@@ -44,7 +44,9 @@ def bridge(tmp_path, model, fault=None, *, uncapped=False):
     p = profile(model)
     if uncapped:
         p["execution_policy"] = limit_policy["mode"]
-    maximum = p["context_max"]
+    if owner_cap is not None:
+        p["owner_output_cap_tokens"] = owner_cap
+    maximum = min(p["context_max"], owner_cap or p["context_max"])
     guard = AdmittedGuard(
         profile=p,
         budget=budget,
@@ -105,11 +107,11 @@ def bridge(tmp_path, model, fault=None, *, uncapped=False):
         inner=httpx.MockTransport(handle),
         guard=guard,
         max_output_tokens=maximum,
-        context_tokens=maximum,
+        context_tokens=p["context_max"],
         mode_profile="off-or-minimum-v1",
     )
     transport.settings.update(
-        bounds_policy=p["bounds_policy"], context_request_bound=maximum
+        bounds_policy=p["bounds_policy"], context_request_bound=p["context_max"]
     )
     trial = Trial(
         "test",
@@ -300,8 +302,12 @@ def test_mutated_sdk_capability_never_reaches_inner(tmp_path, model, mutation):
         budget.close()
 
 
-@pytest.mark.parametrize("uncapped", [False, True])
-def test_source_bound_meta_consume_all_88(tmp_path, uncapped):
+@pytest.mark.parametrize(
+    "uncapped,owner_cap",
+    [(False, None), (True, None), (True, 16384)],
+    ids=["capped", "uncapped", "uncapped-output16384"],
+)
+def test_source_bound_meta_consume_all_88(tmp_path, uncapped, owner_cap):
     """Run after commit: deliberately requires the production clean-source gate."""
     from pathlib import Path
 
@@ -361,6 +367,8 @@ def test_source_bound_meta_consume_all_88(tmp_path, uncapped):
         }
         for p in a["profiles"].values():
             p["execution_policy"] = META_UNCAPPED_PROFILE
+            if owner_cap is not None:
+                p["owner_output_cap_tokens"] = owner_cap
     path = custody / "admission.json"
     write(path, a)
 
@@ -398,6 +406,12 @@ def test_source_bound_meta_consume_all_88(tmp_path, uncapped):
         assert row["mapping"] == "three-flow-meta-snapshot-minimal-auto-v3"
         assert record["provider"]["settings"]["tool_choice"] == "auto"
         assert all(call["tool_choice"] == "auto" for call in mock.calls)
+        if owner_cap is not None:
+            assert trial.max_output_tokens == owner_cap
+            assert record["provider"]["settings"]["owner_output_cap_tokens"] == owner_cap
+            assert record["provider"]["settings"]["context_request_bound"] == 1048576
+            assert record["provider"]["settings"]["dedicated_output_max"] is None
+            assert all(0 < call["max_output_tokens"] <= owner_cap for call in mock.calls)
         for key, value in row["request_settings"].items():
             assert record["provider"]["settings"][key] == value
         p = profile(slot["model"])
@@ -724,7 +738,7 @@ def test_meta_stop_cancels_only_proven_unsent(tmp_path, fault):
         assert sum(e["kind"] == "raw_rpc" for e in events) == len(requests)
         assert (
             budget.totals()["unknown"] == 0
-            if fault == "stopped"
+            if fault in ("stopped", "captured")
             else budget.totals()["unknown"] > 0
         )
         assert not (tmp_path / "trial" / "record.json").exists()
@@ -965,3 +979,109 @@ def test_meta_stale_headers_restore_conservative_window():
     for _ in range(4):
         pacer.call("wonder", 1_030_000, lambda: send({}))
     assert now[0] == 120
+
+
+@pytest.mark.parametrize("model", META_MODELS)
+def test_meta_owner_cap_sdk_wire_and_context(tmp_path, model):
+    budget, _, transport, trial, requests = bridge(
+        tmp_path, model, uncapped=True, owner_cap=16384
+    )
+    try:
+        assert transport.context_tokens == 1048576
+        assert transport.guard.profile["output_max"] is None
+        assert transport.guard.output_bound(1048576 - 23) == 23
+        record = run_trial(trial, transport, output=tmp_path / "trial")
+        assert record["evaluation"]["reliable"]
+        for request in requests:
+            body = json.loads(request.content)
+            assert body["max_output_tokens"] == 16384
+            assert body["tool_choice"] == "auto"
+            assert body["reasoning"] == {"effort": "minimal"}
+        assert budget.totals()["remaining"] is None
+        assert budget.totals()["unknown"] == 0
+    finally:
+        transport.close()
+        budget.close()
+
+
+@pytest.mark.parametrize("prior_turns", [0, 4])
+def test_meta_real_sdk_stop_after_prior_successes(tmp_path, prior_turns):
+    budget, _, transport, trial, requests = bridge(
+        tmp_path, META_MODELS[0], uncapped=True, owner_cap=16384
+    )
+    inner = transport.wire.inner
+
+    def handle(request):
+        response = inner.handle_request(request)
+        if len(requests) == prior_turns:
+            transport.wire.meta_pacer.stopped.set()
+        return response
+
+    transport.wire.inner = httpx.MockTransport(handle)
+    if prior_turns == 0:
+        transport.wire.meta_pacer.stopped.set()
+    try:
+        with pytest.raises((ProviderFailure, RuntimeError)):
+            run_trial(trial, transport, output=tmp_path / "trial")
+        assert len(requests) == prior_turns
+        assert not transport.wire.current_turn_dispatched
+        assert budget.totals()["unknown"] == budget.totals()["pending"] == 0
+        assert (budget.totals()["known"] > 0) == (prior_turns > 0)
+        states = [r["state"] for r in budget.records.values()]
+        assert states.count("cancelled") == 1
+        assert transport.last_turn.get("safe_status") is None
+    finally:
+        transport.close()
+        budget.close()
+
+
+def test_meta_owner_cap_factory_settings_and_replay(tmp_path):
+    from tests.test_three_flow_meta import uncapped_admission
+    from tools.three_flow_live_factory import live_factory
+
+    a = uncapped_admission()
+    model, p = next(iter(a["profiles"].items()))
+    p["owner_output_cap_tokens"] = 16384
+    mock = SDKMockTransport("openai", "commerce", model=model)
+
+    class Network:
+        def http(self, slot):
+            return mock
+
+    tmp_path.chmod(0o700)
+    budget = CampaignBudget(
+        tmp_path,
+        campaign_id=a["campaign_id"],
+        cap=None,
+        roster_profile=META_ROSTER_PROFILE,
+        limit_policy=a["limit_policy"],
+        create=True,
+    )
+    transport = live_factory(
+        a, {"MODEL_API_KEY": "synthetic-meta-key"}, network=Network()
+    )({"provider": "meta", "model": model, "trial_id": "trial"}, budget)
+    try:
+        assert transport.max_output_tokens == 16384
+        assert transport.settings["owner_output_cap_tokens"] == 16384
+        assert transport.settings["dedicated_output_max"] is None
+        assert transport.settings["context_request_bound"] == 1048576
+        trial = Trial(
+            a["campaign_id"],
+            "trial",
+            "commerce",
+            "UK_NORMAL",
+            model,
+            16384,
+            provider_identity(transport),
+        )
+        record = run_trial(trial, transport, output=tmp_path / "trial")
+        assert record["provider"]["settings"]["owner_output_cap_tokens"] == 16384
+        assert (
+            replay_trial(trial, record, expected_record_digest=record["record_digest"])[
+                "provider_calls"
+            ]
+            == 0
+        )
+    finally:
+        transport.close()
+        budget.close()

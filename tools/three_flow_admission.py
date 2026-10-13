@@ -656,12 +656,19 @@ def validate_profile(
     if isinstance(p, dict) and "owner_output_cap_tokens" in p:
         fields.add("owner_output_cap_tokens")
         if (
-            provider != "river"
+            provider not in ("river", "meta")
+            or (
+                provider == "meta"
+                and (
+                    p.get("execution_policy") != META_UNCAPPED_PROFILE
+                    or p["owner_output_cap_tokens"] != 16384
+                )
+            )
             or p.get("bounds_policy") is None
             or type(p["owner_output_cap_tokens"]) is not int
             or p["owner_output_cap_tokens"] <= 0
         ):
-            raise ValueError("positive River diagnostic owner output cap required")
+            raise ValueError("admitted diagnostic owner output cap required")
     optional = isinstance(p, dict) and "execution_policy" in p
     if optional:
         fields.add("execution_policy")

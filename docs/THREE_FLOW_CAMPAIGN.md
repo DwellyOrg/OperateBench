@@ -420,8 +420,14 @@ Mock transports disable waits, retaining the fail-stop gate.
 
 An HTTP429 or transport exception trips the campaign's shared Meta gate. An
 already dispatched attempt retains its original accounting and no-resubmission
-contract. Unsent cells are reported as `pending`, with no assignment or closure
-marker; `terminal.json` declares `complete: false` and lists their trial IDs.
+contract. Trials with no prior wire dispatch are reported as `pending`, with no active
+assignment or closure marker; unsent binding/runtime evidence is archived. A stopped
+current turn cancels only its still-reserved ticket, even after prior paid turns.
+Partially progressed trials retain their binding/runtime and close as `aborted`
+with `partial_trial_needs_correction_no_resubmit`: this runner cannot reconstruct
+prior Core/model state safely, so resume must not replay their paid decisions.
+For wholly unsent trials, `terminal.json` declares `complete: false` and lists
+their trial IDs.
 Explicit resume starts those cells under a fresh rate window and stop gate.
 Already dispatched cells are reconciled rather than resubmitted. Independent
 model lanes may already have requests in flight when the gate trips.
@@ -442,3 +448,12 @@ not wait. This does not establish a native output maximum or add owner ceilings.
 Team traffic outside this process can consume quota after observation; HTTP429
 still stops dispatch without retries. Provider headers are not persisted as raw
 response evidence; the policy and signal are bound in settings and registry.
+
+Meta profiles may optionally bind `owner_output_cap_tokens: 16384` only under
+`execution_policy: three-flow-meta-uncapped-v1`. This owner-selected operational
+ceiling is not a native/provider maximum: `output_max` remains null and context
+remains 1,048,576 tokens. Admission digests, provider settings and replay identity
+bind the cap. Each SDK request uses the lesser of the cap and remaining context,
+with `tool_choice: auto` and minimal reasoning. An absent cap preserves the old
+profile. This adds no monetary, call-count or generation-time ceiling and does
+not authorize retrying any sealed series.

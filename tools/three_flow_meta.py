@@ -33,7 +33,14 @@ def validate_meta_profile(profile: dict[str, Any], provider: str, model: str) ->
             "execution_policy" in profile
             and profile["execution_policy"] != META_UNCAPPED_PROFILE
         )
-        or "owner_output_cap_tokens" in profile
+        or (
+            "owner_output_cap_tokens" in profile
+            and (
+                profile.get("execution_policy") != META_UNCAPPED_PROFILE
+                or type(profile["owner_output_cap_tokens"]) is not int
+                or profile["owner_output_cap_tokens"] != 16384
+            )
+        )
         or Decimal(profile["input_usd_per_million"]) != Decimal(input_rate)
         or Decimal(profile["output_usd_per_million"]) != Decimal(output_rate)
     ):

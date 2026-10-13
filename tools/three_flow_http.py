@@ -110,6 +110,7 @@ class BudgetWire(httpx.BaseTransport):
         self.pacer: ProviderPacer | None = None
         self.meta_pacer: MetaRatePacer | None = None
         self.meta_tokens = 0
+        self.current_turn_dispatched = False
 
     def handle_request(self, request: httpx.Request) -> httpx.Response:
         if self.meta_pacer is not None:
@@ -163,6 +164,7 @@ class BudgetWire(httpx.BaseTransport):
             if self.guard.budget.broken:
                 self.local_failure = "dispatch_journal_error"
             raise
+        self.current_turn_dispatched = True
         row: dict[str, Any] = {
             "request_utf8": raw.decode(),
             "request_sha256": hashlib.sha256(raw).hexdigest(),
@@ -254,8 +256,11 @@ class HTTPCampaignTransport:
             metap.check_model(cast(str, model))
             metap.check_key(api_key)
             validate_meta_profile(cast(Any, guard).profile, provider, cast(str, model))
-            if max_output_tokens != context_tokens:
-                raise ValueError("Meta initial envelope must equal admitted context")
+            profile = cast(Any, guard).profile
+            if max_output_tokens != min(
+                context_tokens, profile.get("owner_output_cap_tokens", context_tokens)
+            ):
+                raise ValueError("Meta initial envelope must equal admitted output bound")
             if (
                 mode_profile != "off-or-minimum-v1"
                 or network_timeout is not None
@@ -263,7 +268,7 @@ class HTTPCampaignTransport:
                 or context_tokens != 1048576
             ):
                 raise ValueError(
-                    "Meta requires diagnostic context and unbounded generation"
+                    "Meta requires diagnostic context and no generation deadline"
                 )
         model = MODELS.get(provider) if model is None else model
         if (
@@ -456,6 +461,8 @@ class HTTPCampaignTransport:
                     "previous_response_id",
                 ],
             )
+        if meta and "owner_output_cap_tokens" in profile:
+            self.settings["owner_output_cap_tokens"] = profile["owner_output_cap_tokens"]
         self.last_turn: dict[str, Any] | None = None
         self.flight = SingleFlight(adapter="three-flow HTTP")
 
@@ -648,6 +655,8 @@ class HTTPCampaignTransport:
     def send(self, request: ModelRequest) -> ModelResponse:
         with self.flight:
             self.last_turn = None
+            capture_start = len(self.wire.captures)
+            self.wire.current_turn_dispatched = False
             payload = self.payload(request)
             self.wire.expected_payload = payload
             self.guard._max_output_tokens = int(
@@ -685,7 +694,8 @@ class HTTPCampaignTransport:
                     ticket = self.guard.ticket
                     if (
                         self.wire.local_failure == "meta_dispatch_stopped"
-                        and not self.wire.captures
+                        and not self.wire.current_turn_dispatched
+                        and len(self.wire.captures) == capture_start
                         and self.guard.budget.records[ticket[0]]["state"] == "reserved"
                     ):
                         self.guard.cancel(reservation, input_tokens_upper_bound=ticket[2])
@@ -710,7 +720,10 @@ class HTTPCampaignTransport:
                     "measured_usd": None,
                     "latency_seconds": time.monotonic() - started,
                 }
-                if getattr(self.guard, "diagnostic", False) and self.wire.captures:
+                if (
+                    getattr(self.guard, "diagnostic", False)
+                    and len(self.wire.captures) > capture_start
+                ):
                     status = self.wire.captures[-1].get("status_code")
                     if status in (400, 422, 429):
                         self.last_turn.update(

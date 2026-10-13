@@ -582,3 +582,29 @@ def test_meta_uncapped_tag_refused_for_other_provider_before_journal(tmp_path):
             create=True,
         )
     assert not (tmp_path / "campaign-budget.jsonl").exists()
+
+
+@pytest.mark.parametrize("cap", [True, "16384", -1, 0, 4096, 16385])
+def test_meta_owner_output_cap_rejects_invalid_admission(cap):
+    from tools.three_flow_admission import validate
+
+    a = uncapped_admission()
+    p = next(iter(a["profiles"].values()))
+    p["owner_output_cap_tokens"] = cap
+    with pytest.raises(ValueError):
+        validate(a, a["source_sha"], synthetic=True)
+
+
+def test_meta_owner_output_cap_binds_uncapped_admission_only():
+    from tools.three_flow_admission import digest, validate
+
+    a = uncapped_admission()
+    p = next(iter(a["profiles"].values()))
+    before = digest(p)
+    p["owner_output_cap_tokens"] = 16384
+    validate(a, a["source_sha"], synthetic=True)
+    assert digest(p) != before
+    assert p["output_max"] is None
+    del p["execution_policy"]
+    with pytest.raises(ValueError):
+        validate(a, a["source_sha"], synthetic=True)

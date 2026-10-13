@@ -779,3 +779,62 @@ def test_meta_boundary_stop_archives_unsent_runtime_for_resume(tmp_path, monkeyp
     second = campaign.run_campaign(root, resume=True, **kwargs)[0]
     assert second["safe_status"] == 429
     assert second["classification"] != "pending"
+
+
+def test_meta_partial_stop_closes_without_resubmission(tmp_path):
+    import httpx
+
+    from tests.test_three_flow_meta_http import bridge
+    from tools.three_flow_campaign import assignments, run_campaign
+    from tools.three_flow_profiles import META_ROSTER_PROFILE
+
+    slot = assignments("test", META_ROSTER_PROFILE)[0]
+    calls = []
+    constructions = []
+
+    def factory(slot, budget):
+        path = tmp_path / "factory"
+        path.mkdir()
+        old, _, transport, _, _ = bridge(path, slot["model"])
+        old.close()
+        transport.guard.budget = budget
+        transport.guard.cell = slot["trial_id"]
+        inner = transport.wire.inner
+
+        def handle(request):
+            calls.append(request)
+            response = inner.handle_request(request)
+            if len(calls) == 4:
+                transport.wire.meta_pacer.stopped.set()
+            return response
+
+        transport.wire.inner = httpx.MockTransport(handle)
+        constructions.append(transport)
+        return transport
+
+    root = tmp_path / "campaign"
+    kwargs = {
+        "campaign_id": "test",
+        "slots": [slot],
+        "workers": 1,
+        "roster_profile": META_ROSTER_PROFILE,
+        "transport_factory": factory,
+        "evidence_origin": "SDK_MOCK_NOT_LLM",
+    }
+    row = run_campaign(root, **kwargs)[0]
+    assert row["classification"] == "aborted"
+    assert row["fault"] == "partial_trial_needs_correction_no_resubmit"
+    assert row["automatic_resubmission"] is False
+    assert row["current_turn_dispatched"] is False
+    assert len(calls) == 4
+    assert (root / slot["trial_id"]).is_dir()
+    assert (root / (slot["trial_id"] + ".binding.json")).exists()
+    resumed = run_campaign(root, resume=True, **kwargs)[0]
+    assert resumed["fault"] == row["fault"]
+    assert len(calls) == 4 and len(constructions) == 1
+    events = [
+        json.loads(line)
+        for line in (root / "campaign-budget.jsonl").read_text().splitlines()
+    ]
+    assert sum(e["kind"] == "raw_rpc" for e in events) == 4
+    assert not any(e["kind"] == "forfeit" for e in events)
