@@ -47,9 +47,9 @@ from operatebench.providers.meta_responses import (
 )
 from operatebench.providers.openai_responses import ProviderDispatchObserver
 from operatebench.providers.telemetry import AdapterUsage, ProviderTelemetry, TurnDeadline
-from operatebench.providers.wire import WireResponse
+from operatebench.providers.wire import WireResponse, wire_invalid
 
-MAPPING_VERSION = "lifecycle_meta_responses_snapshot_v1"
+MAPPING_VERSION = "lifecycle_meta_responses_snapshot_auto_v2"
 PRICING_SOURCE = "https://dev.meta.ai/docs/pricing-rate-limits"
 # Cached rates are disclosed; the fixed two-count guard conservatively prices
 # all input at the uncached rate. It cannot claim an exact discounted invoice.
@@ -81,7 +81,7 @@ def build_model_payload(request: ModelRequest, *, model: str) -> dict[str, Any]:
             f"request_digest_sha256: {request.request_digest_sha256}"
         ),
         "tools": outcome_tools(),
-        "tool_choice": "required",
+        "tool_choice": "auto",
         "parallel_tool_calls": False,
         "store": False,
         "input": [
@@ -159,7 +159,7 @@ class MetaResponsesTransport:
             "api": self.api,
             "base_url": BASE_URL,
             "request_mapping": MAPPING_VERSION,
-            "request_profile": "meta_standard_snapshot_v1",
+            "request_profile": "meta_standard_snapshot_auto_v2",
             "comparison": "equal_scaffold_stateless",
             "reasoning_continuity": False,
             "request_fields_sent": [
@@ -187,7 +187,7 @@ class MetaResponsesTransport:
             "null_elision": LIFECYCLE_NULL_ELISION,
             "tool_names": list(AGENT_TOOL_NAMES),
             "tool_strict_mode": False,
-            "tool_choice": "required",
+            "tool_choice": "auto",
             "parallel_tool_calls": False,
             "store": False,
             "response_capture": "openai_sdk_with_raw_response_v1",
@@ -235,7 +235,10 @@ class MetaResponsesTransport:
                         cancelled=lambda: (self._clock() - started) >= budget,
                     ),
                 )
-                answer = model_response_from(wire)
+                projected = model_response_from(wire)
+                if not projected.tool_calls:
+                    raise wire_invalid("Meta auto response has no Core function call")
+                answer = projected
             return answer
         except AdapterProviderError as exc:
             fault = exc.fault

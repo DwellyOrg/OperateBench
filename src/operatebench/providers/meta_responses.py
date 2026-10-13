@@ -241,7 +241,7 @@ class MetaResponsesExchange:
             or payload["model"] != self.model
             or payload["store"] is not False
             or payload["max_output_tokens"] != 4096
-            or payload["tool_choice"] != "required"
+            or payload["tool_choice"] != "auto"
             or payload["parallel_tool_calls"] is not False
         ):
             raise MetaConfigurationError("Meta request differs from the snapshot profile")

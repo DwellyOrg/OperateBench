@@ -93,6 +93,7 @@ def test_sdk_snapshot_and_replay(model, key):
     assert transport.settings["comparison"] == "equal_scaffold_stateless"
     assert transport.settings["max_output_tokens_policy"] == "scaffold_ceiling"
     assert payload["max_output_tokens"] == 4096
+    assert payload["tool_choice"] == transport.settings["tool_choice"] == "auto"
     assert payload["store"] is False
     assert set(payload) == {
         "model",
@@ -305,8 +306,15 @@ def test_full_core_episode_ledger_and_playback(model, tmp_path):
 
 
 @pytest.mark.parametrize("model", MODELS)
-def test_refusal_is_paid_but_has_no_tool_call(model):
-    from operatebench.agents.model import ModelReturnedNoToolCall
+@pytest.mark.parametrize(
+    "content",
+    [
+        {"type": "refusal", "refusal": "secret-marker"},
+        {"type": "output_text", "text": "secret-marker", "annotations": []},
+    ],
+)
+def test_text_without_tool_call_is_paid_but_excluded(model, content):
+    from operatebench.agents.transport import ProviderFailure
 
     body = responses_body(
         [
@@ -315,7 +323,7 @@ def test_refusal_is_paid_but_has_no_tool_call(model):
                 "id": "msg_test",
                 "role": "assistant",
                 "status": "completed",
-                "content": [{"type": "refusal", "refusal": "secret-marker"}],
+                "content": [content],
             }
         ],
         model=model,
@@ -330,10 +338,10 @@ def test_refusal_is_paid_but_has_no_tool_call(model):
             model=model, client=client, deadline_seconds=10
         )
         agent = ModelAgent(transport, model=model, agent_id="test")
-        decision = agent.decide(observation())
-        assert isinstance(decision, ModelReturnedNoToolCall)
+        with pytest.raises(ProviderFailure) as exc:
+            agent.decide(observation())
         assert transport.last_usage().output_tokens == 29
-        assert "secret-marker" not in repr(decision)
+        assert "secret-marker" not in str(exc.value)
 
 
 @pytest.mark.parametrize(
@@ -395,9 +403,10 @@ def test_sdk_errors_are_sanitized(status):
 
 
 @pytest.mark.parametrize(
-    "mutation", ["web_tool", "strict", "previous_response_id", "input"]
+    "mutation", ["web_tool", "strict", "previous_response_id", "required", "input"]
 )
-def test_exchange_refuses_non_snapshot_requests(mutation):
+@pytest.mark.parametrize("model", MODELS)
+def test_exchange_refuses_non_snapshot_requests(mutation, model):
     from operatebench.providers.meta_responses import MetaResponsesExchange
     from operatebench.providers.telemetry import TurnDeadline
 
@@ -406,17 +415,19 @@ def test_exchange_refuses_non_snapshot_requests(mutation):
         transport=httpx.MockTransport(lambda r: captured.append(r))
     ) as http:
         client = build_client(
-            model=MODELS[0], environ={"MODEL_API_KEY": "LLM|0|offline"}, http_client=http
+            model=model, environ={"MODEL_API_KEY": "LLM|0|offline"}, http_client=http
         )
-        exchange = MetaResponsesExchange(model=MODELS[0], client=client)
-        request = ModelAgent(None, model=MODELS[0], agent_id="test").build_request(
+        exchange = MetaResponsesExchange(model=model, client=client)
+        request = ModelAgent(None, model=model, agent_id="test").build_request(
             observation()
         )
-        payload = build_model_payload(request, model=MODELS[0])
+        payload = build_model_payload(request, model=model)
         if mutation == "web_tool":
             payload["tools"] = [{"type": "web_search"}]
         elif mutation == "strict":
             payload["tools"][0]["strict"] = True
+        elif mutation == "required":
+            payload["tool_choice"] = "required"
         elif mutation == "previous_response_id":
             payload["previous_response_id"] = "secret-marker"
         else:

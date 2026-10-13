@@ -4,14 +4,14 @@ The candidate supports exactly `muse-wonder-1.0` and `muse-spark-1.3` in
 Standard mode through two distinct integrations. Both use independent observation
 snapshots for an equal-scaffold comparison. Neither claims Meta-native reasoning
 continuity or full-capability agentic performance. The original evaluator and
-grades are unchanged. All current implementation evidence is offline;
-**no paid inference, model results or ranking exists yet**.
+grades are unchanged. Current implementation verification is offline;
+**no scored runs, model results or ranking exist for the current candidate**.
 
 ## Standalone Lifecycle adapter
 
 `operatebench.agents.meta_responses.MetaResponsesTransport` implements
 `send(ModelRequest) -> ModelResponse` using the separate
-`lifecycle_meta_responses_snapshot_v1` mapping. It uses Core's existing
+`lifecycle_meta_responses_snapshot_auto_v2` mapping. It uses Core's existing
 non-strict function schemas, common executor, finite turn deadline and scaffold
 output ceiling of 4096 tokens. That ceiling is policy, not a published Meta
 output maximum. Reasoning remains provider-default in this adapter.
@@ -32,7 +32,8 @@ adapter is not the campaign route.
 The `meta-standard-same44-v1` roster adds 88 slots: the same 44 public synthetic
 cases for each Standard model, across maintenance, commerce and compliance.
 The shared campaign registry and Meta HTTP bridge use explicit
-`reasoning.effort:minimal`, validated Responses projection and the unchanged
+`reasoning.effort:minimal` and the registry/runtime mapping
+`three-flow-meta-snapshot-minimal-auto-v2`, validated Responses projection and the unchanged
 evaluator. The campaign has its own durable `three_flow_runtime` records and
 replay; it does not depend on admitting Meta to the Lifecycle artifact reader.
 
@@ -46,15 +47,25 @@ Two disjoint persistent budgets sum to the user's **USD 1000 hard total**:
 **MAX USD 10** for at most a few real Meta API compatibility probes (not scored),
 and **USD 990 shared across both models** for all 88 scored campaign cells,
 campaign retries and unknown exposure. The total includes provider diagnostics
-and retries; it is authorization, not a spending target. The parent operator
-maintains separate durable diagnostic and campaign ledgers and verifies totals;
-neither budget may be reset, reused or transferred to the other.
+and retries; it is authorization, not a spending target. Separate durable
+diagnostic and campaign ledgers track totals; neither budget may be reset,
+reused or transferred to the other.
 
 Campaign reservations and accounting persist across restarts. Unknown reserves
 are irreversible and continue consuming the campaign budget. Estimated spend
 under the admitted pricing and reported-usage assumptions is not an invoice
 guarantee. It does not establish provider tariff coverage, account access or
 billing completeness.
+
+## Tool selection and comparability
+
+Meta forces `tool_choice:auto` as a provider constraint in both integrations;
+other tool-required providers retain `required`. The shared Core parser and
+outcome validation are unchanged. Plain text without a valid Core function call
+is excluded and not scored as a tool outcome, while any incurred usage remains
+accounted. Auto selection can produce fewer valid tool outcomes, so comparisons
+with tool-required providers must disclose this difference. This snapshot does
+not establish equivalent tool-selection behavior or live compatibility.
 
 ## Pricing and scope
 
@@ -70,6 +81,17 @@ input at the uncached rate; recorded cost is not an exact discounted invoice.
 Campaign profiles bind the Standard tariff and published context diagnostic.
 Neither integration adds Contributor, Wonder Full, older Spark models,
 streaming, background execution, multimodal input or built-in web tools.
+
+## Request compatibility review
+
+The public Responses and tool-calling docs explicitly support `store:false`,
+`parallel_tool_calls:false`, string `instructions` and string `input`; the
+reasoning docs support `reasoning.effort:minimal` for both Standard models. No
+other explicit unsupported field was found in the current campaign payload.
+These documented contracts are not successful live acceptance evidence.
+Non-streaming generations remain subject to Meta's server-side time limit and
+can return HTTP 504 even though the campaign has no local generation deadline.
+The snapshot deliberately does not add streaming or reasoning continuity.
 
 ## Official sources
 
@@ -90,8 +112,6 @@ They also preserve the distinction between the campaign runtime and Lifecycle's
 Meta-rejecting artifact reader. Mocked transport evidence is not live endpoint
 acceptance or model performance evidence.
 
-The parent must commit the reviewed candidate and run the source-bound gates,
-including the full 88-slot mocked consume, against that clean source. That
-clean-source qualification and live endpoint acceptance remain pending. Final
-verification must be reported against the resulting source binding; this snapshot
-does not claim those gates have passed.
+Clean-source qualification, including the full 88-slot mocked consume, remains
+pending. Actual live compatibility across both supported models is not yet
+proven. This snapshot does not claim the source-bound gates have passed.

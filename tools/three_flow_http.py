@@ -270,7 +270,7 @@ class HTTPCampaignTransport:
         if mode_profile != "legacy-v1":
             self.request_mapping += "-" + mode_profile
         if meta:
-            self.request_mapping = "three-flow-meta-snapshot-minimal-v1"
+            self.request_mapping = "three-flow-meta-snapshot-minimal-auto-v2"
         self.guard, self.max_output_tokens = guard, max_output_tokens
         self.wire = BudgetWire(inner, guard, ENDPOINTS[provider])
         if transport_policy == "paced-safe-errors-v1":
@@ -336,7 +336,11 @@ class HTTPCampaignTransport:
             "max_retries": 0,
             "credential_source": "explicit capability; constructor environment disabled",
             "timeout": network_timeout,
-            "tool_choice": {"type": "auto"} if provider == "anthropic" else "required",
+            "tool_choice": {"type": "auto"}
+            if provider == "anthropic"
+            else "auto"
+            if meta
+            else "required",
             "model_contract_verified": False,
             "admission": False,
             "evidence_origin": "SDK_MOCK_NOT_LLM"
@@ -445,7 +449,7 @@ class HTTPCampaignTransport:
                     else oa.request_instructions(request)
                 ),
                 "tools": outcome_tools(),
-                "tool_choice": "required",
+                "tool_choice": "auto" if self.provider == "meta" else "required",
                 "parallel_tool_calls": False,
                 "store": False,
                 "input": text,
@@ -624,7 +628,6 @@ class HTTPCampaignTransport:
                     "latency_seconds": time.monotonic() - started,
                     "wire": dict(self.wire.captures[-1]),
                 }
-                return response
             except BaseException as exc:
                 if self.guard.ticket is not None and not self.guard.budget.broken:
                     self.guard.forfeit(reservation)
@@ -662,6 +665,9 @@ class HTTPCampaignTransport:
                 raise
             finally:
                 self.http.cookies.clear()
+            if self.provider == "meta" and not response.tool_calls:
+                raise wire_invalid("Meta auto response has no Core function call")
+            return response
 
     def close(self) -> None:
         self.http.close()

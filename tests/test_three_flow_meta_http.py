@@ -64,6 +64,18 @@ def bridge(tmp_path, model, fault=None):
             input_tokens_details={"cached_tokens": 1},
             output_tokens_details={"reasoning_tokens": 1},
         )
+        if fault == "prose":
+            body["output"] = [
+                {
+                    "type": "message",
+                    "id": "msg_test",
+                    "role": "assistant",
+                    "status": "completed",
+                    "content": [
+                        {"type": "output_text", "text": "done", "annotations": []}
+                    ],
+                }
+            ]
         if fault == "model":
             body["model"] = "muse-wonder-1.0-contributor"
         if fault == "usage":
@@ -109,7 +121,8 @@ def test_meta_runtime_sdk_bytes_partial_and_replay(tmp_path, model):
         assert record["evaluation"]["reliable"]
         assert record["provider"]["provider"] == "meta"
         assert (
-            record["provider"]["request_mapping"] == "three-flow-meta-snapshot-minimal-v1"
+            record["provider"]["request_mapping"]
+            == "three-flow-meta-snapshot-minimal-auto-v2"
         )
         assert len(requests) == len(record["provider_turns"]) > 1
         for request, body, turn in zip(
@@ -127,12 +140,13 @@ def test_meta_runtime_sdk_bytes_partial_and_replay(tmp_path, model):
                 "reasoning",
             }
             assert body["model"] == model
+            assert body["tool_choice"] == transport.settings["tool_choice"] == "auto"
             assert body["reasoning"] == {"effort": "minimal"}
             assert body["store"] is body["parallel_tool_calls"] is False
             assert all(
                 t["type"] == "function" and t["strict"] is False for t in body["tools"]
             )
-            assert "three-flow-meta-snapshot-minimal-v1" in body["instructions"]
+            assert "three-flow-meta-snapshot-minimal-auto-v2" in body["instructions"]
             assert "openai" not in body["instructions"]
             assert turn["wire"]["request_utf8"] == request.content.decode()
             assert turn["output_tokens"] == turn["input_tokens"] == 1
@@ -186,12 +200,37 @@ def test_meta_faults_keep_unknown_and_partial(tmp_path, model, fault):
 
 
 @pytest.mark.parametrize("model", META_MODELS)
-def test_sdk_unexpected_field_refused_before_rpc(tmp_path, model):
+def test_meta_plain_text_is_paid_and_excluded(tmp_path, model):
+    budget, _, transport, trial, requests = bridge(tmp_path, model, "prose")
+    try:
+        with pytest.raises(ProviderFailure):
+            run_trial(trial, transport, output=tmp_path / "trial")
+        assert len(requests) == 1
+        assert budget.totals()["known"] > 0
+        assert budget.totals()["unknown"] == 0
+        assert not (tmp_path / "trial" / "record.json").exists()
+        events = [
+            json.loads(line)
+            for line in (tmp_path / "trial" / "partial.ndjson").read_text().splitlines()
+        ]
+        assert events[-1]["classification"] == "excluded"
+    finally:
+        transport.close()
+        budget.close()
+
+
+@pytest.mark.parametrize("model", META_MODELS)
+@pytest.mark.parametrize("mutation", ["temperature", "required"])
+def test_sdk_unexpected_field_refused_before_rpc(tmp_path, model, mutation):
     budget, _, transport, trial, requests = bridge(tmp_path, model)
     create = transport.client.responses.with_raw_response.create
 
     def changed(**kwargs):
-        return create(**kwargs, temperature=0)
+        if mutation == "required":
+            kwargs["tool_choice"] = "required"
+        else:
+            kwargs["temperature"] = 0
+        return create(**kwargs)
 
     transport.client.responses.with_raw_response.create = changed
     try:
@@ -321,6 +360,9 @@ def test_source_bound_meta_consume_all_88(tmp_path):
         )
         row = next(r for r in a["registry"] if r["model"] == slot["model"])
         assert record["provider"]["request_mapping"] == row["mapping"]
+        assert row["mapping"] == "three-flow-meta-snapshot-minimal-auto-v2"
+        assert record["provider"]["settings"]["tool_choice"] == "auto"
+        assert all(call["tool_choice"] == "auto" for call in mock.calls)
         for key, value in row["request_settings"].items():
             assert record["provider"]["settings"][key] == value
         p = profile(slot["model"])
