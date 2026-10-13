@@ -38,8 +38,10 @@ By participating you agree to the [Code of Conduct](CODE_OF_CONDUCT.md).
   multiply a single semantic mistake. Scenario count is not currently a goal.
 - **LLM judges in core correctness.** Authority, state, timing and evidence
   predicates stay deterministic. A judge model may diagnose surface quality only.
-- **Leaderboard, ranking or scoring aggregation.** Not supported by the
-  evidence, and not accepted as a feature.
+- **Official leaderboard, general model ranking or composite capability score.**
+  Not supported by the evidence, and not accepted as a feature. The bounded
+  [exploratory retrospective results table](docs/MODEL_RESULTS.md) is descriptive
+  and does not change this evidence requirement.
 - **Any real production data.** No customer records, contacts, real
   identifiers, proprietary text or real thresholds — in fixtures, tests,
   examples, issues or pull requests.

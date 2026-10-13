@@ -4,8 +4,11 @@ The candidate supports exactly `muse-wonder-1.0` and `muse-spark-1.3` in
 Standard mode through two distinct integrations. Both use independent observation
 snapshots for an equal-scaffold comparison. Neither claims Meta-native reasoning
 continuity or full-capability agentic performance. The original evaluator and
-grades are unchanged. Current implementation verification is offline;
-**no scored runs, model results or ranking exist for the current candidate**.
+grades are unchanged. Offline implementation verification is distinct from the
+completed source-bound series summarized in the
+[retrospective results table](MODEL_RESULTS.md). That table separates historical
+cohorts and reports the Meta series without claiming official Lifecycle evidence
+or independent validation.
 
 ## Standalone Lifecycle adapter
 
@@ -103,7 +106,8 @@ outcome validation are unchanged. Plain text without a valid Core function call
 is excluded and not scored as a tool outcome, while any incurred usage remains
 accounted. Auto selection can produce fewer valid tool outcomes, so comparisons
 with tool-required providers must disclose this difference. This snapshot does
-not establish equivalent tool-selection behavior or live compatibility.
+not establish equivalent tool-selection behavior. The table's Meta column reports
+the bounded live series and does not establish general compatibility.
 
 ## Pricing and scope
 
@@ -152,7 +156,9 @@ acceptance or model performance evidence.
 
 The final clean source must pass the full 88-slot mocked consume before any paid attempt;
 this check proves source-bound offline behavior, not Meta live compatibility or scored quality.
-Live compatibility and model performance remain unproven.
+Offline checks alone do not prove live compatibility or model performance.
+The [results page](MODEL_RESULTS.md) separately reports the completed series
+and its limitations; it does not validate general capability.
 
 The capped predecessor retains USD 990 for the campaign plus USD 10 for diagnostics.
 An optional `three-flow-meta-uncapped-v1` successor requires explicit source-bound

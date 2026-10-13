@@ -12,8 +12,10 @@ external events change independently of the agent.
 > has one Semantic Scenario with three frozen scenario variants of synthetic
 > Maintenance. Commerce and Property Compliance are separate SDK incubators,
 > not additional official benchmark evidence. Boundary is a separate track.
-> There are no published benchmark model results. No proven incremental
-> lifecycle signal, ranking or leaderboard is claimed.
+> The [model results table](docs/MODEL_RESULTS.md)
+> reports all 28 tested exact IDs across separate retrospective cohorts.
+> No official Lifecycle model results or leaderboard are published. No proven incremental lifecycle
+> signal is claimed.
 
 ## Quickstart
 
@@ -139,10 +141,11 @@ compare results by packaging. The distribution version stays where it belongs,
 in the installed distribution's own metadata. Results produced under a
 different `engine_version` are not comparable with these.
 
-Not built: any release-grade matched-control model evaluation or published
-benchmark model result. Additional release-admitted domains, independently
-authored official Semantic Scenarios and multi-operation evaluation are also
-absent. The Commerce and Property Compliance packs are incubator architecture checks,
+Not built: any release-grade matched-control model evaluation or official
+Lifecycle benchmark model result. The exploratory retrospective table
+is separate from official Lifecycle evidence. Additional release-admitted domains,
+independently authored official Semantic Scenarios and multi-operation evaluation
+are also absent. The Commerce and Property Compliance packs are incubator architecture checks,
 not additional official benchmark operations or evidence sources. See
 [Claims and non-claims](#claims-and-non-claims).
 
@@ -305,11 +308,14 @@ Reliable Operation Rate, and the rate-shaped metrics an aggregate report is
 built from — Critical Violation Rate, Operation Completion Rate, Correct
 Wait/Follow-up Rate, Duplicate/Invalid Action Rate, SLA Violations, Recovery
 Rate, Stability@k — are defined over a *population* of episodes. This preview
-runs single episodes and publishes no aggregate, so what a run emits is the
-per-episode vector above. Provider cost is not part of the benchmark result
-vector. The documented public/offline benchmark commands make no provider calls.
-Private operator-only diagnostic runs are excluded from published benchmark
-evidence, and neither their execution nor their cost is a published model result.
+runs single episodes and publishes no official Lifecycle aggregate, so what a
+run emits is the per-episode vector above. The separate
+[model results table](docs/MODEL_RESULTS.md) reports separate historical
+cohorts descriptively; they do not establish the Lifecycle construct. Provider cost
+is not part of the benchmark result vector. The documented public/offline
+benchmark commands make no provider calls.
+Historical operator diagnostics in the retrospective table are exploratory
+observations, not release-grade benchmark evidence.
 
 ### Human Load
 
@@ -389,8 +395,9 @@ release is retroactively an OperateBench version.
   documented public/offline commands are deterministic and in-process. Model-capable
   operator tooling also exists; private diagnostics and superseded mappings are not
   published benchmark evidence or validation of current model capability.
-- **No leaderboard, score or ranking.** None is published, and none would be
-  valid from one authored scenario.
+- **No official Lifecycle leaderboard, composite score or general model ranking.**
+  None would be valid from one authored scenario. The separate retrospective
+  table lists observed results alphabetically without ranking across cohorts.
 - **No novelty claim.** Dynamic user simulation, stateful tool worlds,
   enterprise task suites, long-horizon professional workflows, cross-task
   longitudinal streams and controlled recovery evaluation are all prior art and
@@ -481,6 +488,10 @@ alone is not proof of benchmark validity.
   model-performance evidence.
 - [Three-flow latest HTTP roster](docs/THREE_FLOW_LATEST_HTTP.md) — explicit
   roster and mode profile selection, pricing safeguards and compatibility boundaries.
+- [Meta Muse Standard snapshot method](docs/META_MUSE_SNAPSHOT.md) — provider
+  settings, integration boundaries and pricing.
+- [Model results — exploratory retrospective table](docs/MODEL_RESULTS.md) —
+  all 28 exact model IDs, with separate cohorts, exclusions and evidence limits.
 - [Three-flow River](docs/THREE_FLOW_RIVER.md) — optional SDK, pinned tokenizer
   assets and native protobuf mock transport; full-matrix qualification remains
   pending.

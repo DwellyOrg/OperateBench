@@ -106,12 +106,14 @@ def test_codeowners_uses_broad_root_anchored_rules() -> None:
 def test_readme_states_the_bounded_non_claim_and_execution_boundary() -> None:
     readme = _flowed("README.md")
     assert (
-        "Not built: any release-grade matched-control model evaluation or published "
-        "benchmark model result." in readme
+        "Not built: any release-grade matched-control model evaluation or official "
+        "Lifecycle benchmark model result." in readme
     )
     assert "documented public/offline benchmark commands make no provider calls" in readme
-    assert "Private operator-only diagnostic runs" in readme
-    assert "excluded from published benchmark evidence" in readme
+    assert "Historical operator diagnostics in the retrospective table" in readme
+    assert "not release-grade benchmark evidence" in readme
+    assert "all 28 tested exact IDs across separate retrospective cohorts" in readme
+    assert "without ranking across cohorts" in readme
     assert "Provider cost is not part of the benchmark result vector" in readme
 
 
@@ -137,8 +139,8 @@ def test_public_docs_do_not_overstate_the_provider_call_boundary() -> None:
     methodology = _flowed("docs/METHODOLOGY.md")
     assert "documented public/offline benchmark commands" in methodology
     assert "make no provider calls" in methodology
-    assert "operator-only diagnostics" in methodology
-    assert "excluded from published benchmark evidence" in methodology
+    assert "Historical operator diagnostics in the retrospective table" in methodology
+    assert "rather than release-grade benchmark evidence" in methodology
     assert "Provider cost is not part of the benchmark result vector" in methodology
     assert "cannot establish current capability" in methodology
 
