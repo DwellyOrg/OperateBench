@@ -401,3 +401,11 @@ Original historical launchers and outstanding historical authorities are unchang
 and are outside this series. The operator's no-intervening-spend obligation is
 an operational prerequisite, not mechanically enforced fleet-wide exclusion.
 Offline qualification and the authority boundary above apply before any paid launch.
+
+Campaign provenance is supplied by the executing transport path, independently
+of admission mode. Real provider transport produces `PROVIDER_CANDIDATE`;
+injected mock transport produces `SDK_MOCK_NOT_LLM`, including under paid
+admission. Every new excluded or aborted closure retains that origin, including
+failures before transport construction. Reports retain provider scope when no
+rows score; mixed mock/provider rows retain mixed scope. Scored records must
+agree with the trusted execution origin before they are eligible for results.

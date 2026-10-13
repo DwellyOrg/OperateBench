@@ -414,9 +414,11 @@ def test_constructor_failure_releases_lane_and_http_progress(tmp_path):
         campaign_id="resource-test",
         slots=selected,
         transport_factory=factory,
+        evidence_origin="SDK_MOCK_NOT_LLM",
     )
     assert len(rows) == 4 and len(constructed) == 4
     assert all(r["classification"] == "aborted" for r in rows)
+    assert all(r["evidence_origin"] == "SDK_MOCK_NOT_LLM" for r in rows)
     assert peak <= 2 and active == 0
 
 

@@ -373,6 +373,9 @@ def consume(path: Path, sha: str, *, network: Any = None) -> list[dict[str, Any]
             resume=a["operation"] != "initial",
             campaign_budget=budget,
             transport_factory=factory,
+            evidence_origin="PROVIDER_CANDIDATE"
+            if network is None
+            else "SDK_MOCK_NOT_LLM",
             mode=a["mode"],
             attempt_id=a["attempt_id"],
             selected_corrections=corrections,

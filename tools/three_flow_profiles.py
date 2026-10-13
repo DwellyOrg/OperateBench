@@ -213,7 +213,7 @@ def registry(
                 "provider": "meta",
                 "model": model,
                 "endpoint": ENDPOINTS["meta"],
-                "mapping": "three-flow-meta-snapshot-minimal-auto-v2",
+                "mapping": "three-flow-meta-snapshot-minimal-auto-v3",
                 "request_settings": {
                     "reasoning": {"effort": "minimal"},
                     "store": False,

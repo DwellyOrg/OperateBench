@@ -270,7 +270,7 @@ class HTTPCampaignTransport:
         if mode_profile != "legacy-v1":
             self.request_mapping += "-" + mode_profile
         if meta:
-            self.request_mapping = "three-flow-meta-snapshot-minimal-auto-v2"
+            self.request_mapping = "three-flow-meta-snapshot-minimal-auto-v3"
         self.guard, self.max_output_tokens = guard, max_output_tokens
         self.wire = BudgetWire(inner, guard, ENDPOINTS[provider])
         if transport_policy == "paced-safe-errors-v1":
@@ -503,10 +503,11 @@ class HTTPCampaignTransport:
             )
             wire = WireResponse(raw.text, raw.parse, kind=self.provider + " campaign")
             if self.provider == "meta":
-                metap.check_response(wire, model=self.model)
+                meta_projection = metap.check_response(wire, model=self.model)
             else:
                 op.check_response_admissible(wire, model=self.model)
-            return op.response_usage(wire), oa.model_response_from(wire)
+                meta_projection = wire
+            return op.response_usage(wire), oa.model_response_from(meta_projection)
         if self.provider == "anthropic":
             raw = self.client.messages.with_raw_response.create(
                 **ap.anthropic_sdk_kwargs(payload), timeout=self.network_timeout

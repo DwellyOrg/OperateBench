@@ -11,7 +11,7 @@ grades are unchanged. Current implementation verification is offline;
 
 `operatebench.agents.meta_responses.MetaResponsesTransport` implements
 `send(ModelRequest) -> ModelResponse` using the separate
-`lifecycle_meta_responses_snapshot_auto_v2` mapping. It uses Core's existing
+`lifecycle_meta_responses_snapshot_auto_v3` mapping. It uses Core's existing
 non-strict function schemas, common executor, finite turn deadline and scaffold
 output ceiling of 4096 tokens. That ceiling is policy, not a published Meta
 output maximum. Reasoning remains provider-default in this adapter.
@@ -23,6 +23,17 @@ instructions and one user snapshot, with `store:false`; reasoning items are
 validated and discarded as non-actions. Output usage already includes reasoning
 and is never charged twice.
 
+The Meta-only response reader accepts an optional root `store` only when it is
+literal `false`, and removes it solely from a validation projection. When
+`input_tokens_details` supplies `cached_tokens` without `cache_write_tokens`,
+the projection inserts zero to satisfy the pinned SDK schema. This zero is a
+synthetic schema placeholder, not billed provider telemetry. A supplied
+cache-write count must be an exact integer zero. Unknown fields and malformed
+counts fail closed. The unchanged OpenAI validator checks the projection, and
+strict SDK validation supplies typed tool actions. Original response bytes and
+raw input/output usage remain unchanged in captures and accounting. The v3
+mappings identify this reader change; they do not reclassify earlier records.
+
 Lifecycle execution ledgers and deterministic Core replay work offline. Its
 frozen generic artifact reader still rejects Meta-bound bundles. This standalone
 adapter is not the campaign route.
@@ -33,7 +44,7 @@ The `meta-standard-same44-v1` roster adds 88 slots: the same 44 public synthetic
 cases for each Standard model, across maintenance, commerce and compliance.
 The shared campaign registry and Meta HTTP bridge use explicit
 `reasoning.effort:minimal` and the registry/runtime mapping
-`three-flow-meta-snapshot-minimal-auto-v2`, validated Responses projection and the unchanged
+`three-flow-meta-snapshot-minimal-auto-v3`, validated Responses projection and the unchanged
 evaluator. The campaign has its own durable `three_flow_runtime` records and
 replay; it does not depend on admitting Meta to the Lifecycle artifact reader.
 

@@ -5,6 +5,7 @@ Independent snapshots only. No server state, built-in tools or continuity.
 
 from __future__ import annotations
 
+import json
 import time
 from collections.abc import Mapping
 from typing import Any
@@ -136,15 +137,46 @@ def check_client(client: openai.OpenAI) -> None:
         )
 
 
-def check_response(response: WireResponse[Response], *, model: str) -> None:
-    """Reuse SDK-declared Responses shapes, but forbid OpenAI server extensions.
+def check_response(
+    response: WireResponse[Response], *, model: str
+) -> WireResponse[Response]:
+    """Validate a Meta-only SDK projection, retaining the original wire untouched.
 
-    Meta's documented cached/reasoning detail counts are accepted and checked;
-    output_tokens already includes reasoning and must never be added twice.
+    The inserted cache-write zero is a schema placeholder, never provider usage.
+    Return the strictly validated typed projection for action parsing; callers
+    must continue to read measured usage and capture bytes from the original.
     """
-    if not set(response.wire) <= set(Response.model_fields):
+    body = response.wire
+    if not set(body) <= set(Response.model_fields) | {"store"}:
         raise wire_invalid("Meta response has unsupported server fields")
-    check_sdk_response(response, model=model)
+    if "store" in body and body["store"] is not False:
+        raise wire_invalid("Meta response has invalid store field")
+    projected = dict(body)
+    projected.pop("store", None)
+    usage = body.get("usage")
+    if not isinstance(usage, Mapping):
+        raise wire_invalid("Meta response has invalid usage block")
+    details = usage.get("input_tokens_details")
+    if details is not None:
+        if (
+            not isinstance(details, Mapping)
+            or not {"cached_tokens"} <= set(details)
+            or not set(details) <= {"cached_tokens", "cache_write_tokens"}
+            or any(not is_wire_token_count(value) for value in details.values())
+            or ("cache_write_tokens" in details and details["cache_write_tokens"] != 0)
+        ):
+            raise wire_invalid("Meta response has invalid input usage details")
+        projected["usage"] = dict(usage)
+        projected_details = dict(details)
+        if "cache_write_tokens" not in projected_details:
+            projected_details["cache_write_tokens"] = 0
+        projected["usage"]["input_tokens_details"] = projected_details
+    projection = WireResponse(
+        json.dumps(projected),
+        lambda: Response.model_validate(projected, strict=True),
+        kind="Meta validation projection",
+    )
+    check_sdk_response(projection, model=model)
     usage = response.wire["usage"]
     for field, count, ceiling in (
         ("input_tokens_details", "cached_tokens", "input_tokens"),
@@ -167,6 +199,7 @@ def check_response(response: WireResponse[Response], *, model: str) -> None:
     ):
         raise wire_invalid("Meta response has inconsistent total usage")
     response.admit_response_id()
+    return projection
 
 
 class MetaResponsesExchange:
@@ -273,9 +306,12 @@ class MetaResponsesExchange:
             dispatch=lambda timeout: self._dispatch(payload, timeout),
             check_before_dispatch=self._preflight,
             classify=classify_exception,
-            check_identity=lambda response: check_response(response, model=self.model),
+            check_identity=self._check_response,
             usage_of=response_usage,
         )
+
+    def _check_response(self, response: WireResponse[Response]) -> None:
+        check_response(response, model=self.model)
 
     def _dispatch(
         self, payload: Mapping[str, Any], timeout: float

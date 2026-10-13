@@ -199,14 +199,19 @@ def reports(
     *,
     grouped: bool = True,
     limit_policy: dict[str, Any] | None = None,
+    evidence_origin: str | None = None,
 ) -> None:
     origins = {r.get("evidence_origin") for r in rows}
+    if evidence_origin is not None:
+        origins.add(evidence_origin)
     scope = (
         "MIXED_MOCK_AND_PROVIDER_CANDIDATE"
         if {"SDK_MOCK_NOT_LLM", "PROVIDER_CANDIDATE"} <= origins
         else "PROVIDER_CANDIDATE"
         if "PROVIDER_CANDIDATE" in origins
         else "OFFLINE_SDK_MOCK_NOT_LLM_RESULTS"
+        if origins == {"SDK_MOCK_NOT_LLM"}
+        else "UNKNOWN_PROVENANCE"
     )
     write_private(
         root / "scorecard.json",
@@ -355,6 +360,7 @@ def reconcile_closure(
                 raise ValueError("retained trial differs from slot")
             if (
                 record["trial"] != asdict(trial)
+                or record["evidence_origin"] != row.get("evidence_origin")
                 or record["record_digest"] != row["record_digest"]
                 or record["record_digest"]
                 != content_digest(
@@ -383,6 +389,7 @@ def reconcile_closure(
             row = {
                 **slot,
                 "classification": "aborted",
+                "evidence_origin": original.get("evidence_origin"),
                 "fault": "evidence_reconciliation",
                 "evidence_reason": reason,
                 "evaluation": None,
@@ -471,6 +478,7 @@ def run_campaign(
     transport_factory: Any = None,
     campaign_budget: CampaignBudget | None = None,
     mode: str = "SDK_MOCK_NOT_LLM",
+    evidence_origin: str,
     attempt_id: str | None = None,
     selected_corrections: list[dict[str, Any]] | None = None,
     assignment_prepared: bool = False,
@@ -480,6 +488,10 @@ def run_campaign(
         raise ValueError("corrections require resume and nonempty original slot mapping")
     if type(workers) is not int or not 1 <= workers <= 4:
         raise ValueError("one to four worker threads required")
+    if evidence_origin not in ("SDK_MOCK_NOT_LLM", "PROVIDER_CANDIDATE"):
+        raise ValueError("invalid evidence origin")
+    if transport_factory is None and evidence_origin != "SDK_MOCK_NOT_LLM":
+        raise ValueError("offline transport cannot produce provider evidence")
     roster = assignments(campaign_id, roster_profile)
     selected = (
         [s for s in roster if s["provider"] in providers] if slots is None else slots
@@ -573,7 +585,7 @@ def run_campaign(
 
     construction = Lock()
 
-    def worker(slot: dict[str, Any]) -> dict[str, Any]:
+    def worker(slot: dict[str, Any], evidence_origin: str) -> dict[str, Any]:
         ident = slot["trial_id"]
         closure_path = root / (ident + ".closure.json")
         assigned_path = root / (ident + ".assigned.json")
@@ -592,6 +604,7 @@ def run_campaign(
             row = {
                 **slot,
                 "classification": "aborted",
+                "evidence_origin": evidence_origin,
                 "fault": "interrupted_no_resubmit",
                 "evaluation": None,
                 "completion": None,
@@ -672,11 +685,14 @@ def run_campaign(
             )
             write_private(root / (ident + ".binding.json"), canonical(asdict(trial)))
             record = run_trial(trial, transport, output=root / ident)
+            if record["evidence_origin"] != evidence_origin:
+                raise ValueError("scored record differs from trusted evidence origin")
             row = score_row(slot, record)
         except Exception as exc:
             liability = budget.cell_accounting(ident)["full_unknown_usd"]
             row = {
                 **slot,
+                "evidence_origin": evidence_origin,
                 "classification": "excluded"
                 if isinstance(exc, ProviderFailure)
                 else "aborted",
@@ -726,7 +742,7 @@ def run_campaign(
         ):
             futures = [
                 (river_pool if slot["provider"] == "river" else http_pool).submit(
-                    worker, slot
+                    worker, slot, evidence_origin
                 )
                 for slot in selected
             ]
@@ -736,6 +752,7 @@ def run_campaign(
             rows,
             {**budget.totals(), **({"cap": None} if budget.cap is None else {})},
             limit_policy=budget.limit_policy,
+            evidence_origin=evidence_origin,
         )
         write_private(
             report_root / "terminal.json",
@@ -759,6 +776,9 @@ def run_campaign(
 
 def run_offline(root: Path, **kwargs: Any) -> list[dict[str, Any]]:
     """Compatibility facade over the common executor; never supplies live capability."""
+    kwargs.setdefault("evidence_origin", "SDK_MOCK_NOT_LLM")
+    if kwargs["evidence_origin"] != "SDK_MOCK_NOT_LLM":
+        raise ValueError("offline executor requires mock evidence origin")
     return run_campaign(root, **kwargs)
 
 

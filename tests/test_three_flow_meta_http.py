@@ -1,5 +1,6 @@
 """Meta campaign bridge through real SDK/runtime, with synthetic capabilities only."""
 
+import hashlib
 import json
 import socket
 from decimal import Decimal
@@ -60,6 +61,7 @@ def bridge(tmp_path, model, fault=None):
         assert "openai-project" not in request.headers
         result = mock.handle(request)
         body = json.loads(result.content)
+        body["store"] = False
         body["usage"].update(
             input_tokens_details={"cached_tokens": 1},
             output_tokens_details={"reasoning_tokens": 1},
@@ -86,7 +88,9 @@ def bridge(tmp_path, model, fault=None):
             return httpx.Response(
                 307, headers={"location": "https://api.openai.com/v1/responses"}
             )
-        return httpx.Response(200, json=body)
+        response = httpx.Response(200, json=body)
+        request.extensions["synthetic_response_bytes"] = response.content
+        return response
 
     transport = HTTPCampaignTransport(
         provider="meta",
@@ -122,7 +126,7 @@ def test_meta_runtime_sdk_bytes_partial_and_replay(tmp_path, model):
         assert record["provider"]["provider"] == "meta"
         assert (
             record["provider"]["request_mapping"]
-            == "three-flow-meta-snapshot-minimal-auto-v2"
+            == "three-flow-meta-snapshot-minimal-auto-v3"
         )
         assert len(requests) == len(record["provider_turns"]) > 1
         for request, body, turn in zip(
@@ -146,9 +150,18 @@ def test_meta_runtime_sdk_bytes_partial_and_replay(tmp_path, model):
             assert all(
                 t["type"] == "function" and t["strict"] is False for t in body["tools"]
             )
-            assert "three-flow-meta-snapshot-minimal-auto-v2" in body["instructions"]
+            assert "three-flow-meta-snapshot-minimal-auto-v3" in body["instructions"]
             assert "openai" not in body["instructions"]
             assert turn["wire"]["request_utf8"] == request.content.decode()
+            actual_response = request.extensions["synthetic_response_bytes"]
+            assert turn["wire"]["response_utf8"].encode() == actual_response
+            assert (
+                turn["wire"]["response_sha256"]
+                == hashlib.sha256(actual_response).hexdigest()
+            )
+            raw_body = json.loads(actual_response)
+            assert raw_body["store"] is False
+            assert "cache_write_tokens" not in raw_body["usage"]["input_tokens_details"]
             assert turn["output_tokens"] == turn["input_tokens"] == 1
             assert body["max_output_tokens"] > 4096
             assert request.extensions["timeout"] == {
@@ -360,7 +373,7 @@ def test_source_bound_meta_consume_all_88(tmp_path):
         )
         row = next(r for r in a["registry"] if r["model"] == slot["model"])
         assert record["provider"]["request_mapping"] == row["mapping"]
-        assert row["mapping"] == "three-flow-meta-snapshot-minimal-auto-v2"
+        assert row["mapping"] == "three-flow-meta-snapshot-minimal-auto-v3"
         assert record["provider"]["settings"]["tool_choice"] == "auto"
         assert all(call["tool_choice"] == "auto" for call in mock.calls)
         for key, value in row["request_settings"].items():

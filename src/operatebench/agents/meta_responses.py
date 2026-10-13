@@ -44,12 +44,13 @@ from operatebench.providers.meta_responses import (
     PROVIDER,
     MetaResponsesExchange,
     check_model,
+    check_response,
 )
 from operatebench.providers.openai_responses import ProviderDispatchObserver
 from operatebench.providers.telemetry import AdapterUsage, ProviderTelemetry, TurnDeadline
 from operatebench.providers.wire import WireResponse, wire_invalid
 
-MAPPING_VERSION = "lifecycle_meta_responses_snapshot_auto_v2"
+MAPPING_VERSION = "lifecycle_meta_responses_snapshot_auto_v3"
 PRICING_SOURCE = "https://dev.meta.ai/docs/pricing-rate-limits"
 # Cached rates are disclosed; the fixed two-count guard conservatively prices
 # all input at the uncached rate. It cannot claim an exact discounted invoice.
@@ -159,7 +160,7 @@ class MetaResponsesTransport:
             "api": self.api,
             "base_url": BASE_URL,
             "request_mapping": MAPPING_VERSION,
-            "request_profile": "meta_standard_snapshot_auto_v2",
+            "request_profile": "meta_standard_snapshot_auto_v3",
             "comparison": "equal_scaffold_stateless",
             "reasoning_continuity": False,
             "request_fields_sent": [
@@ -191,7 +192,7 @@ class MetaResponsesTransport:
             "parallel_tool_calls": False,
             "store": False,
             "response_capture": "openai_sdk_with_raw_response_v1",
-            "response_contract": "meta_sdk_declared_responses_usage_v1",
+            "response_contract": "meta_strict_responses_projection_v2",
             "sdk": "openai",
             "sdk_version": openai.__version__,
             "retry": self._exchange.retry.as_dict(),
@@ -235,7 +236,7 @@ class MetaResponsesTransport:
                         cancelled=lambda: (self._clock() - started) >= budget,
                     ),
                 )
-                projected = model_response_from(wire)
+                projected = model_response_from(check_response(wire, model=self.model))
                 if not projected.tool_calls:
                     raise wire_invalid("Meta auto response has no Core function call")
                 answer = projected

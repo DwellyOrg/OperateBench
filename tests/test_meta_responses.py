@@ -18,10 +18,19 @@ from operatebench.providers.meta_responses import (
     build_client,
     check_key,
 )
-from tests.openai_transport import function_call_item, responses_body
+from tests.openai_transport import function_call_item
+from tests.openai_transport import responses_body as openai_responses_body
 from tests.test_lifecycle_openai_bridge import observation
 
 MODELS = ("muse-wonder-1.0", "muse-spark-1.3")
+
+
+def responses_body(*args, **kwargs):
+    body = openai_responses_body(*args, **kwargs)
+    body["store"] = False
+    body["usage"]["input_tokens_details"] = {"cached_tokens": 0}
+    body["usage"]["output_tokens_details"] = {"reasoning_tokens": 0}
+    return body
 
 
 @pytest.mark.parametrize("model", MODELS)
@@ -34,6 +43,7 @@ def test_sdk_snapshot_and_replay(model, key):
         model=model,
         output_tokens=29,
     )
+    body["store"] = False
     body["usage"]["input_tokens_details"] = {"cached_tokens": 7}
     body["usage"]["output_tokens_details"] = {"reasoning_tokens": 11}
     body["output"].insert(0, {"type": "reasoning", "id": "rs_test", "summary": []})
@@ -461,3 +471,104 @@ def test_final_observer_cannot_redirect_a_request():
             transport.send(request)
     assert calls == []
     assert "secret-marker" not in str(exc.value)
+
+
+@pytest.mark.parametrize("model", MODELS)
+def test_meta_projection_preserves_wire_and_strict_typed_action(model):
+    from openai.types.responses import Response, ResponseFunctionToolCall
+    from pydantic import ValidationError
+
+    from operatebench.agents.openai_responses import model_response_from
+    from operatebench.providers.meta_responses import check_response
+    from operatebench.providers.openai_responses import response_usage
+    from operatebench.providers.wire import WireResponse
+
+    body = responses_body(
+        [function_call_item("complete", '{"summary":"synthetic"}')],
+        model=model,
+        input_tokens=5604,
+        output_tokens=108,
+    )
+    body["usage"]["input_tokens_details"] = {"cached_tokens": 13}
+    actual = json.dumps(body, indent=2).encode() + b"\n"
+    captured = []
+
+    def handler(request):
+        captured.append(actual)
+        return httpx.Response(200, content=actual)
+
+    with httpx.Client(transport=httpx.MockTransport(handler)) as http:
+        client = build_client(
+            model=model, environ={"MODEL_API_KEY": "synthetic-meta-key"}, http_client=http
+        )
+        raw = client.responses.with_raw_response.create(model=model, input="synthetic")
+        typed = raw.parse()
+        # SDK parsing is tolerant: it preserves store as an extra and leaves
+        # the required cache-write field absent. It is not strict validation.
+        assert isinstance(typed, Response)
+        assert typed.model_extra["store"] is False
+        assert (
+            "cache_write_tokens" not in typed.usage.input_tokens_details.model_fields_set
+        )
+        with pytest.raises(ValidationError):
+            Response.model_validate({k: v for k, v in body.items() if k != "store"})
+        wire = WireResponse(raw.text, raw.parse, kind="synthetic Meta")
+        projection = check_response(wire, model=model)
+        answer = model_response_from(projection)
+    assert captured == [actual]
+    assert (
+        hashlib.sha256(raw.http_response.content).digest()
+        == hashlib.sha256(actual).digest()
+    )
+    assert wire.wire == body
+    assert "cache_write_tokens" not in wire.wire["usage"]["input_tokens_details"]
+    assert projection.parsed.usage.input_tokens_details.cache_write_tokens == 0
+    assert isinstance(projection.parsed.output[0], ResponseFunctionToolCall)
+    assert answer.tool_calls[0].name == "complete"
+    assert answer.tool_calls[0].arguments == {"summary": "synthetic"}
+    assert response_usage(wire).input_tokens == 5604
+    assert response_usage(wire).output_tokens == answer.output_tokens == 108
+
+
+@pytest.mark.parametrize("model", MODELS)
+@pytest.mark.parametrize(
+    "path,value",
+    [
+        (("store",), True),
+        (("store",), 0),
+        (("store",), None),
+        (("store",), "false"),
+        (("unknown",), False),
+        (("usage", "input_tokens_details", "cache_write_tokens"), 1),
+        (("usage", "input_tokens_details", "cache_write_tokens"), False),
+        (("usage", "input_tokens_details", "cache_write_tokens"), "0"),
+        (("usage", "input_tokens_details", "cache_write_tokens"), 0.0),
+        (("usage", "input_tokens_details", "cache_write_tokens"), None),
+        (("usage", "input_tokens_details", "unknown"), 0),
+        (("usage", "input_tokens_details", "cached_tokens"), -1),
+        (("usage", "input_tokens_details", "cached_tokens"), True),
+        (("usage", "input_tokens_details", "cached_tokens"), "1"),
+        (("usage", "input_tokens_details", "cached_tokens"), 5605),
+        (("usage", "input_tokens"), True),
+        (("usage", "input_tokens"), -1),
+        (("usage", "output_tokens"), "108"),
+        (("usage", "output_tokens_details", "reasoning_tokens"), True),
+        (("usage", "total_tokens"), 1),
+        (("model",), "other-model"),
+    ],
+)
+def test_meta_projection_negative_controls(model, path, value):
+    from operatebench.providers.faults import AdapterProviderError
+    from operatebench.providers.meta_responses import check_response
+    from operatebench.providers.wire import WireResponse
+
+    body = responses_body([], model=model, input_tokens=5604, output_tokens=108)
+    node = body
+    for key in path[:-1]:
+        node = node[key]
+    node[path[-1]] = value
+    # Invalid wire must be rejected before any tolerant SDK parse is trusted.
+    wire = WireResponse(json.dumps(body), lambda: None, kind="synthetic Meta")
+    with pytest.raises(AdapterProviderError) as exc:
+        check_response(wire, model=model)
+    assert exc.value.fault == "provider_response_invalid"
