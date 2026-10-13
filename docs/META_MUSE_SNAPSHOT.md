@@ -42,11 +42,19 @@ wall deadline or read/write timeout; connect and pool timeouts remain finite.
 The unknown native output maximum is retained as unknown. Snapshot turns do not
 replay encrypted reasoning, previous response IDs or native tool-result state.
 
-One shared **USD 1000 hard estimated-exposure cap** covers both models,
-diagnostics, retries and reruns, with durable reservations and accounting across
-restarts. This is an estimated token-exposure control under the admitted pricing
-and reported-usage assumptions, not a monetary invoice guarantee. It does not
-establish provider tariff coverage, account access or billing completeness.
+Two disjoint persistent budgets sum to the user's **USD 1000 hard total**:
+**MAX USD 10** for at most a few real Meta API compatibility probes (not scored),
+and **USD 990 shared across both models** for all 88 scored campaign cells,
+campaign retries and unknown exposure. The total includes provider diagnostics
+and retries; it is authorization, not a spending target. The parent operator
+maintains separate durable diagnostic and campaign ledgers and verifies totals;
+neither budget may be reset, reused or transferred to the other.
+
+Campaign reservations and accounting persist across restarts. Unknown reserves
+are irreversible and continue consuming the campaign budget. Estimated spend
+under the admitted pricing and reported-usage assumptions is not an invoice
+guarantee. It does not establish provider tariff coverage, account access or
+billing completeness.
 
 ## Pricing and scope
 

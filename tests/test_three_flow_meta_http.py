@@ -14,7 +14,7 @@ from tools.three_flow_budget import CampaignBudget
 from tools.three_flow_http import HTTPCampaignTransport
 from tools.three_flow_live_factory import AdmittedGuard
 from tools.three_flow_mock import SDKMockTransport
-from tools.three_flow_profiles import META_MODELS
+from tools.three_flow_profiles import META_MODELS, META_ROSTER_PROFILE
 from tools.three_flow_runtime import Trial, provider_identity, replay_trial, run_trial
 
 
@@ -30,7 +30,11 @@ def no_network(monkeypatch):
 def bridge(tmp_path, model, fault=None):
     tmp_path.chmod(0o700)
     budget = CampaignBudget(
-        tmp_path, campaign_id="test", cap=Decimal("1000"), create=True
+        tmp_path,
+        campaign_id="test",
+        cap=Decimal("990"),
+        roster_profile=META_ROSTER_PROFILE,
+        create=True,
     )
     p = profile(model)
     maximum = p["context_max"]
@@ -259,9 +263,11 @@ def test_source_bound_meta_consume_all_88(tmp_path):
     slots = assignments(a["campaign_id"], META_ROSTER_PROFILE)
     a.update(
         source_sha=sha,
+        cap_usd="990",
         roster_profile=META_ROSTER_PROFILE,
         registry=registry(
-            roster_profile=META_ROSTER_PROFILE, mode_profile="off-or-minimum-v1"
+            roster_profile=META_ROSTER_PROFILE,
+            mode_profile="off-or-minimum-v1",
         ),
         campaign_root=str(tmp_path / "campaign"),
         custody_root=str(custody),
@@ -323,7 +329,12 @@ def test_source_bound_meta_consume_all_88(tmp_path):
             * len(mock.calls)
             / 1000000
         )
-    budget = CampaignBudget(root, campaign_id=a["campaign_id"], cap=Decimal("1000"))
+    budget = CampaignBudget(
+        root,
+        campaign_id=a["campaign_id"],
+        cap=Decimal("990"),
+        roster_profile=META_ROSTER_PROFILE,
+    )
     try:
         assert budget.totals()["known"] == expected
         assert budget.totals()["unknown"] == 0
@@ -360,9 +371,11 @@ def test_meta_admitted_factory_each_flow(tmp_path, model, flow, scenario):
         guarantees={**dict.fromkeys(GUARANTEES, True), "provider_bounds_verified": False},
     )
     a.update(
+        cap_usd="990",
         roster_profile=META_ROSTER_PROFILE,
         registry=registry(
-            roster_profile=META_ROSTER_PROFILE, mode_profile="off-or-minimum-v1"
+            roster_profile=META_ROSTER_PROFILE,
+            mode_profile="off-or-minimum-v1",
         ),
         selected=[slot["trial_id"]],
         pending=[slot["trial_id"]],
@@ -378,7 +391,11 @@ def test_meta_admitted_factory_each_flow(tmp_path, model, flow, scenario):
 
     tmp_path.chmod(0o700)
     budget = CampaignBudget(
-        tmp_path, campaign_id=a["campaign_id"], cap=Decimal("1000"), create=True
+        tmp_path,
+        campaign_id=a["campaign_id"],
+        cap=Decimal("990"),
+        roster_profile=META_ROSTER_PROFILE,
+        create=True,
     )
     transport = live_factory(
         a, {"MODEL_API_KEY": "synthetic-meta-key"}, network=Network()
@@ -412,4 +429,56 @@ def test_meta_admitted_factory_each_flow(tmp_path, model, flow, scenario):
         )
     finally:
         transport.close()
+        budget.close()
+
+
+@pytest.mark.parametrize("model", META_MODELS)
+def test_guard_uses_shared_campaign_exposure(tmp_path, model):
+    tmp_path.chmod(0o700)
+    budget = CampaignBudget(
+        tmp_path,
+        campaign_id="shared-meta",
+        cap=Decimal("990"),
+        roster_profile=META_ROSTER_PROFILE,
+        create=True,
+    )
+    try:
+        # Another model's irreversible unknown exposure leaves only USD 1.
+        first = profile(META_MODELS[0])
+        reservation = budget.reserve(
+            META_MODELS[0],
+            input_bound=0,
+            output_bound=49450000,
+            policy=LifecyclePricingPolicy("synthetic", Decimal("4"), Decimal("20")),
+        )
+        budget.forfeit(reservation)
+        p = profile(model)
+        guard = AdmittedGuard(
+            profile=p,
+            budget=budget,
+            cell=model,
+            policy=LifecyclePricingPolicy(
+                "synthetic",
+                Decimal(p["input_usd_per_million"]),
+                Decimal(p["output_usd_per_million"]),
+            ),
+            max_output_tokens=first["context_max"],
+        )
+        from operatebench.providers.cost import CostCapExceededError
+
+        assert guard.output_bound(0) == int(
+            Decimal("1000000") / Decimal(p["output_usd_per_million"])
+        )
+        with pytest.raises(CostCapExceededError):
+            guard.authorize(input_tokens_upper_bound=0)
+        with pytest.raises(FileExistsError):
+            CampaignBudget(
+                tmp_path,
+                campaign_id=model,
+                cap=Decimal("990"),
+                roster_profile=META_ROSTER_PROFILE,
+                create=True,
+            )
+        assert budget.totals()["unknown"] == 989
+    finally:
         budget.close()

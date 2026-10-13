@@ -23,6 +23,7 @@ from pathlib import Path
 from typing import Any
 
 from tools.aggregate_budget import Budget, canonical, money
+from tools.three_flow_profiles import META_ROSTER_PROFILE
 
 PROFILE = "three-flow-global-usd-v1"
 OPTIONAL_PROFILE = "three-flow-optional-limits-v1"
@@ -72,12 +73,16 @@ class CampaignBudget(Budget):
         campaign_id: str,
         cap: Decimal | None,
         limit_policy: dict[str, Any] | None = None,
+        roster_profile: str = "legacy-v1",
         create: bool = False,
         expected_journal_sha256: str | None = None,
         expected_genesis_sha256: str | None = None,
     ) -> None:
         if type(campaign_id) is not str or not campaign_id or len(campaign_id) > 200:
             raise ValueError("nonempty bounded campaign ID required")
+        meta = roster_profile == META_ROSTER_PROFILE
+        if meta and cap != Decimal("990"):
+            raise ValueError("Meta requires one shared hard USD 990 cap")
         if cap is None:
             validate_limit_policy(limit_policy)
         elif limit_policy is not None:
@@ -85,7 +90,7 @@ class CampaignBudget(Budget):
         self.limit_policy = copy.deepcopy(limit_policy)
         self.controller_profile = OPTIONAL_PROFILE if cap is None else PROFILE
         self.cap = None if cap is None else money(cap)
-        if self.cap is not None and self.cap != 1000:
+        if self.cap is not None and self.cap != (990 if meta else 1000):
             raise ValueError("this successor requires the global USD 1000 cap")
         if root != root.resolve(strict=True) or root.is_symlink():
             raise ValueError("canonical private root required")
@@ -104,7 +109,7 @@ class CampaignBudget(Budget):
         genesis: dict[str, Any] = {
             "kind": "genesis",
             "namespace": campaign_id,
-            "cap": None if cap is None else "1000",
+            "cap": None if cap is None else ("990" if meta else "1000"),
             "currency": "USD",
             "controller_profile": self.controller_profile,
         }

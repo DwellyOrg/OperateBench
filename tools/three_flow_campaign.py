@@ -38,6 +38,9 @@ from tools.three_flow_profiles import (
 from tools.three_flow_profiles import (
     LATEST_ROSTER_PROFILE as LATEST_ROSTER_PROFILE,
 )
+from tools.three_flow_profiles import (
+    META_ROSTER_PROFILE,
+)
 from tools.three_flow_profiles import MODELS as MODELS
 from tools.three_flow_profiles import (
     RIVER_MODELS as RIVER_MODELS,
@@ -76,7 +79,12 @@ def preflight(roster_profile: str = "legacy-v1") -> dict[str, Any]:
         "admitted": False,
         "source_digest": source_binding(),
         "source_commit": source_commit(),
-        "global_cap_usd": "1000",
+        "global_cap_usd": "990" if roster_profile == META_ROSTER_PROFILE else "1000",
+        **(
+            {"diagnostic_ceiling_usd": "10"}
+            if roster_profile == META_ROSTER_PROFILE
+            else {}
+        ),
         "workers": 4,
         "river_workers": 2,
         "native_construction": "serialized",

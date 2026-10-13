@@ -276,6 +276,7 @@ def consume(path: Path, sha: str, *, network: Any = None) -> list[dict[str, Any]
                 root,
                 campaign_id=a["campaign_id"],
                 cap=cap,
+                roster_profile=a.get("roster_profile", "legacy-v1"),
                 limit_policy=limit_policy,
                 create=False,
                 expected_journal_sha256=a["journal_sha256"],
@@ -345,6 +346,7 @@ def consume(path: Path, sha: str, *, network: Any = None) -> list[dict[str, Any]
                 root,
                 campaign_id=a["campaign_id"],
                 cap=cap,
+                roster_profile=a.get("roster_profile", "legacy-v1"),
                 limit_policy=limit_policy,
                 create=True,
             )

@@ -169,7 +169,7 @@ def _validate(
         fields.add("correction_binding")
     optional = isinstance(admission, dict) and "limit_policy" in admission
     if optional and admission.get("roster_profile") == META_ROSTER_PROFILE:
-        raise ValueError("Meta series requires one shared hard USD 1000 cap")
+        raise ValueError("Meta series requires one shared hard USD 990 cap")
     if optional:
         fields.add("limit_policy")
     if not isinstance(admission, dict) or set(admission) != fields:
@@ -205,7 +205,12 @@ def _validate(
                 )
             )
         )
-        or (a["cap_usd"] is not None if optional else a["cap_usd"] != "1000")
+        or (
+            a["cap_usd"] is not None
+            if optional
+            else a["cap_usd"]
+            != ("990" if a.get("roster_profile") == META_ROSTER_PROFILE else "1000")
+        )
         or digest(a["resource_policy"]) != digest(RESOURCE_POLICY)
         or not all(identifier(a[k]) for k in ("campaign_id", "attempt_id"))
         or a["parent_gates"] is not True

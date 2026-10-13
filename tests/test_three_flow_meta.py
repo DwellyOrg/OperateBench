@@ -8,7 +8,7 @@ import pytest
 from operatebench.agents.pricing import LifecyclePricingPolicy
 from operatebench.providers.cost import CostCapExceededError
 from tools.three_flow_budget import CampaignBudget
-from tools.three_flow_campaign import assignments
+from tools.three_flow_campaign import assignments, preflight
 from tools.three_flow_meta import validate_meta_profile
 from tools.three_flow_profiles import (
     ENDPOINTS,
@@ -159,11 +159,23 @@ def test_exact_prices_unknown_output_and_settings(model):
         registry(roster_profile=META_ROSTER_PROFILE)
 
 
-def test_two_models_diagnostics_and_restart_share_cap(tmp_path):
+def test_two_models_retries_and_restart_share_cap(tmp_path):
     tmp_path.chmod(0o700)
     budget = CampaignBudget(
-        tmp_path, campaign_id="meta-new", cap=Decimal("1000"), create=True
+        tmp_path,
+        campaign_id="meta-new",
+        cap=Decimal("990"),
+        roster_profile=META_ROSTER_PROFILE,
+        create=True,
     )
+    with pytest.raises(FileExistsError):
+        CampaignBudget(
+            tmp_path,
+            campaign_id=META_MODELS[1],
+            cap=Decimal("990"),
+            roster_profile=META_ROSTER_PROFILE,
+            create=True,
+        )
     policies = {
         m: LifecyclePricingPolicy("meta-offline-" + m, Decimal(ir), Decimal(out))
         for m, (_, ir, out) in META_ENVELOPES.items()
@@ -184,28 +196,38 @@ def test_two_models_diagnostics_and_restart_share_cap(tmp_path):
         )  # $340
         with pytest.raises(CostCapExceededError):
             budget.reserve(
-                "diagnostic",
+                "campaign-retry",
                 input_bound=0,
-                output_bound=4000000,
+                output_bound=3000000,
                 policy=policies[META_MODELS[0]],
             )
         assert budget.exposure == 940
     finally:
         budget.close()
-    recovered = CampaignBudget(tmp_path, campaign_id="meta-new", cap=Decimal("1000"))
+    recovered = CampaignBudget(
+        tmp_path,
+        campaign_id="meta-new",
+        cap=Decimal("990"),
+        roster_profile=META_ROSTER_PROFILE,
+    )
     try:
         assert recovered.totals()["unknown"] == 940
         with pytest.raises(CostCapExceededError):
             recovered.reserve(
                 "retry",
                 input_bound=0,
-                output_bound=4000000,
+                output_bound=3000000,
                 policy=policies[META_MODELS[0]],
             )
     finally:
         recovered.close()
     with pytest.raises(ValueError):
-        CampaignBudget(tmp_path, campaign_id="foreign-series", cap=Decimal("1000"))
+        CampaignBudget(
+            tmp_path,
+            campaign_id="foreign-series",
+            cap=Decimal("990"),
+            roster_profile=META_ROSTER_PROFILE,
+        )
 
 
 def test_admission_requires_shared_cap_and_new_authority(monkeypatch):
@@ -213,6 +235,7 @@ def test_admission_requires_shared_cap_and_new_authority(monkeypatch):
     from tools.three_flow_admission import GUARANTEES, validate
 
     a = admission()
+    a["cap_usd"] = "990"
     a["roster_profile"] = META_ROSTER_PROFILE
     a["registry"] = registry(
         roster_profile=META_ROSTER_PROFILE, mode_profile="off-or-minimum-v1"
@@ -263,6 +286,9 @@ def test_admission_requires_shared_cap_and_new_authority(monkeypatch):
         validate(invalid, a["source_sha"], synthetic=True)
     assert calls == [first_model]
     for bad in [
+        {**a, "cap_usd": "1000"},
+        {**a, "cap_usd": "989"},
+        {**a, "cap_usd": 990},
         {**a, "cap_usd": "2000"},
         {**a, "cap_usd": None},
         {**a, "limit_policy": {}},
@@ -304,6 +330,7 @@ def test_invalid_meta_refused_before_custody(tmp_path, monkeypatch):
     from tools import three_flow_live
 
     a = admission()
+    a["cap_usd"] = "990"
     a["roster_profile"] = META_ROSTER_PROFILE
     path = tmp_path / "invalid.json"
     path.write_text("{}")
@@ -317,3 +344,30 @@ def test_invalid_meta_refused_before_custody(tmp_path, monkeypatch):
     monkeypatch.setattr(three_flow_live, "private_directory", forbidden)
     with pytest.raises(ValueError):
         three_flow_live.consume(path, a["source_sha"], network=object())
+
+
+def test_meta_preflight_preserves_other_profiles():
+    from tools.three_flow_profiles import LATEST_ROSTER_PROFILE
+
+    meta = preflight(META_ROSTER_PROFILE)
+    assert meta["global_cap_usd"] == "990"
+    assert meta["diagnostic_ceiling_usd"] == "10"
+    assert meta["initial_assignments"] == 88
+    for roster in ("legacy-v1", LATEST_ROSTER_PROFILE):
+        report = preflight(roster)
+        assert report["global_cap_usd"] == "1000"
+        assert "diagnostic_ceiling_usd" not in report
+
+
+@pytest.mark.parametrize("cap", [None, Decimal("1000"), Decimal("989")])
+def test_meta_budget_rejects_other_caps_before_journal(tmp_path, cap):
+    tmp_path.chmod(0o700)
+    with pytest.raises(ValueError, match="shared hard USD 990"):
+        CampaignBudget(
+            tmp_path,
+            campaign_id="meta-new",
+            cap=cap,
+            roster_profile=META_ROSTER_PROFILE,
+            create=True,
+        )
+    assert not (tmp_path / "campaign-budget.jsonl").exists()
