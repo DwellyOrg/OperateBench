@@ -3,8 +3,9 @@
 How OperateBench models an operation, advances the world, decides what is true,
 and grades what the agent did. This document describes the technical preview:
 one official synthetic operation, deterministic agents, and no official Lifecycle
-model results. A separate [exploratory retrospective results table](MODEL_RESULTS.md)
-reports separate historical cohorts without validating the Lifecycle construct.
+model results. A separate [descriptive full44 comparison](MODEL_RESULTS.md)
+reports 19 exact IDs with separately completed successors, without validating
+the Lifecycle construct.
 
 Terms used throughout: **OperationSpec** (the versioned definition),
 **OperationEpisode** (one replayable case instance), **Semantic Scenario** (the
@@ -372,14 +373,15 @@ this table and the evaluator's own `DIMENSIONS` tuple stay the same list.
 
 Two things named in the RFC are deliberately absent. **Provider cost is not part
 of the benchmark result vector.** The documented public/offline benchmark
-commands make no provider calls. Historical operator diagnostics in the retrospective
-table remain exploratory observations, including their cost, rather than release-grade
+commands make no provider calls. Historical full44 observations in the results page
+remain exploratory observations, including their cost, rather than release-grade
 benchmark evidence. **Stability@k** needs
 repeated trials, which single-episode commands do not produce.
 
 No composite score or official Lifecycle leaderboard is published, because
-neither would be justified before construct validation. The retrospective
-results table lists all tested IDs alphabetically and keeps cohorts separate.
+neither would be justified before construct validation. The descriptive full44
+comparison orders the original 16 IDs by strict fraction and goal and keeps
+the three separately completed successors separate.
 
 ### Provider execution evidence (draft, bound to the artefact, and not yet live)
 
@@ -535,7 +537,7 @@ under their own exact historical semantics; this build reproduces contract 8
 only.
 
 **No general model rankings or release-grade provider results are published.**
-The separate retrospective results table reports bounded historical observations.
+The descriptive full44 comparison reports bounded historical observations.
 This preview exposes executable mechanisms and synthetic controls. Historical
 interfaces and execution records cannot establish current capability. Private
 execution records and accounting are not part of this publication candidate.

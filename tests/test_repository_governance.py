@@ -110,9 +110,9 @@ def test_readme_states_the_bounded_non_claim_and_execution_boundary() -> None:
         "Lifecycle benchmark model result." in readme
     )
     assert "documented public/offline benchmark commands make no provider calls" in readme
-    assert "Historical operator diagnostics in the retrospective table" in readme
+    assert "Historical full44 observations in the results page" in readme
     assert "not release-grade benchmark evidence" in readme
-    assert "all 28 tested exact IDs across separate retrospective cohorts" in readme
+    assert "a descriptive full44 comparison of 19 exact IDs" in readme
     assert "without ranking across cohorts" in readme
     assert "Provider cost is not part of the benchmark result vector" in readme
 
@@ -139,7 +139,7 @@ def test_public_docs_do_not_overstate_the_provider_call_boundary() -> None:
     methodology = _flowed("docs/METHODOLOGY.md")
     assert "documented public/offline benchmark commands" in methodology
     assert "make no provider calls" in methodology
-    assert "Historical operator diagnostics in the retrospective table" in methodology
+    assert "Historical full44 observations in the results page" in methodology
     assert "rather than release-grade benchmark evidence" in methodology
     assert "Provider cost is not part of the benchmark result vector" in methodology
     assert "cannot establish current capability" in methodology
