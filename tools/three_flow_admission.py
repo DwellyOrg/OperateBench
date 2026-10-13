@@ -20,12 +20,14 @@ from tools.three_flow_campaign import (
     assignments,
     selected_roster,
 )
-from tools.three_flow_profiles import ENDPOINTS
+from tools.three_flow_meta import validate_meta_profile
+from tools.three_flow_profiles import ENDPOINTS, META_ROSTER_PROFILE
 from tools.three_flow_profiles import minimum_effort as minimum_effort
 from tools.three_flow_profiles import registry as registry
 from tools.three_flow_runtime import ROOT, source_binding
 
 VARIABLES = {
+    "meta": "MODEL_API_KEY",
     "openai": "OPENAI_API_KEY",
     "anthropic": "ANTHROPIC_API_KEY",
     "mistral": "MISTRAL_API_KEY",
@@ -70,7 +72,7 @@ def runtime_identity() -> dict[str, Any]:
 
 def proposal(sha: str, roster_profile: str = "legacy-v1") -> dict[str, Any]:
     """Pure description, never an approval template with approved defaults."""
-    return {
+    result: dict[str, Any] = {
         "schema": "three-flow-preflight-v1",
         "source_sha": sha,
         "runtime": runtime_identity(),
@@ -96,6 +98,15 @@ def proposal(sha: str, roster_profile: str = "legacy-v1") -> dict[str, Any]:
             "qualification and no-intervening-spend required",
         ],
     }
+
+    if roster_profile == META_ROSTER_PROFILE:
+        result["blockers"].append(
+            "Meta campaign wire/evidence/replay integration is not ready"
+        )
+        result["budget_scope"] = (
+            "one series, both models, diagnostics, retries and reruns"
+        )
+    return result
 
 
 def identifier(value: Any) -> bool:
@@ -140,7 +151,8 @@ def _validate(
     if isinstance(admission, dict) and "roster_profile" in admission:
         fields.add("roster_profile")
         if (
-            admission["roster_profile"] != LATEST_ROSTER_PROFILE
+            admission["roster_profile"]
+            not in (LATEST_ROSTER_PROFILE, META_ROSTER_PROFILE)
             or admission.get("mode_profile") != "off-or-minimum-v1"
         ):
             raise ValueError("explicit latest roster requires off-or-minimum profile")
@@ -156,6 +168,8 @@ def _validate(
     if correction:
         fields.add("correction_binding")
     optional = isinstance(admission, dict) and "limit_policy" in admission
+    if optional and admission.get("roster_profile") == META_ROSTER_PROFILE:
+        raise ValueError("Meta series requires one shared hard USD 1000 cap")
     if optional:
         fields.add("limit_policy")
     if not isinstance(admission, dict) or set(admission) != fields:
@@ -215,6 +229,8 @@ def _validate(
     for slot in slots:
         p = a["profiles"][slot["model"]]
         validate_profile(p, slot["provider"])
+        if a.get("roster_profile") == META_ROSTER_PROFILE:
+            validate_meta_profile(p, slot["provider"], slot["model"])
         if a.get("roster_profile") == LATEST_ROSTER_PROFILE:
             validate_latest_http_profile(p, slot["model"])
         if optional != (p.get("execution_policy") == OPTIONAL_PROFILE):

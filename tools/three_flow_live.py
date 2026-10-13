@@ -197,6 +197,10 @@ def consume(path: Path, sha: str, *, network: Any = None) -> list[dict[str, Any]
     if admission_path.is_relative_to(ROOT):
         raise ValueError("external admission required")
     a = validate(decode(read_private(str(path))), sha, synthetic=network is not None)
+    if a.get("roster_profile") == "meta-standard-same44-v1":
+        from tools.three_flow_meta import campaign_transport
+
+        campaign_transport()  # Refuse before custody mutation or credential access.
     cap = None if a["cap_usd"] is None else Decimal(a["cap_usd"])
     limit_policy = a.get("limit_policy")
     custody = normal_path(a["custody_root"])
@@ -391,6 +395,11 @@ def main(argv: list[str] | None = None, *, network: Any = None) -> int:
     parser.add_argument(
         "mode", choices=("preflight", "run"), default="preflight", nargs="?"
     )
+    parser.add_argument(
+        "--roster-profile",
+        default="legacy-v1",
+        choices=("legacy-v1", "latest-http-v1", "meta-standard-same44-v1"),
+    )
     parser.add_argument("--expected-source")
     parser.add_argument("--admission")
     args = parser.parse_args(argv)
@@ -402,7 +411,7 @@ def main(argv: list[str] | None = None, *, network: Any = None) -> int:
         if args.mode == "preflight":
             from tools.three_flow_admission import proposal
 
-            print(json.dumps(proposal(sha), indent=2))
+            print(json.dumps(proposal(sha, args.roster_profile), indent=2))
             return 0
         rows = consume(normal_path(args.admission), sha, network=network)
         print(
