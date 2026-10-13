@@ -8,7 +8,8 @@ UK_NORMAL covers 17 one-episode attempts. Maintenance V1 covers 17 one-episode
 attempts: 14 fresh and 3 renewed, labelled in each cell. Earlier V1 diagnostics
 cover 6 one-episode attempts: 3 scored incomplete and 3 excluded. Meta covers
 44 assigned synthetic cases per model, executed on 2026-10-13 UTC; Wonder's
-Maintenance V1 is excluded, leaving 43 scored cases, while Spark has 44.
+V1 case within the Meta 44-case maintenance flow is excluded, leaving 43 scored
+cases, while Spark has 44.
 
 The exact Meta paid execution source is [this public commit](https://github.com/DwellyOrg/OperateBench/commit/c6fb49bf2a3714c094c4).
 

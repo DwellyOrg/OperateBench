@@ -838,3 +838,31 @@ def test_meta_partial_stop_closes_without_resubmission(tmp_path):
     ]
     assert sum(e["kind"] == "raw_rpc" for e in events) == 4
     assert not any(e["kind"] == "forfeit" for e in events)
+
+
+def test_meta_offline_without_factory_rejects_before_root_or_dispatch(
+    tmp_path, monkeypatch
+):
+    calls = []
+
+    def forbidden(self, request):
+        calls.append(request)
+        raise AssertionError("provider dispatch forbidden")
+
+    monkeypatch.setattr(SDKMockTransport, "handle", forbidden)
+    roster_profile = "meta-standard-same44-v1"
+    slot = assignments("test", roster_profile)[0]
+    assert slot["provider"] == "meta"
+    root = tmp_path / "campaign"
+    with pytest.raises(
+        ValueError, match=r"Meta offline route requires.*transport_factory"
+    ):
+        run_offline(
+            root,
+            campaign_id="test",
+            roster_profile=roster_profile,
+            providers=("meta",),
+            slots=[slot],
+        )
+    assert not root.exists()
+    assert calls == []

@@ -1085,3 +1085,88 @@ def test_meta_owner_cap_factory_settings_and_replay(tmp_path):
     finally:
         transport.close()
         budget.close()
+
+
+def test_meta_fleet_stop_interrupts_production_quota_wait():
+    import threading
+
+    from tools.three_flow_errors import MetaDispatchStopped, MetaRatePacer
+
+    pacer = MetaRatePacer()
+    waiting = threading.Event()
+    original_wait = pacer.stopped.wait
+    sent = []
+    failures = []
+
+    def wait(delay):
+        assert 0 < delay <= 60
+        # Both locks must be free while the lane waits.
+        assert pacer.lock.acquire(blocking=False)
+        pacer.lock.release()
+        assert pacer.model_locks["wonder"].acquire(blocking=False)
+        pacer.model_locks["wonder"].release()
+        waiting.set()
+        return original_wait(delay)
+
+    pacer.stopped.wait = wait
+    pacer.observe("wonder", httpx.Headers(quota_headers(tokens="0")))
+
+    def worker():
+        try:
+            pacer.call("wonder", 1, lambda: sent.append("wonder"))
+        except BaseException as exc:
+            failures.append(exc)
+
+    thread = threading.Thread(target=worker, daemon=True)
+    thread.start()
+    try:
+        assert waiting.wait(2)
+
+        def stop_other_model():
+            pacer.commit("spark", 1)
+            pacer.stopped.set()
+            return httpx.Response(429)
+
+        assert pacer.call("spark", 1, stop_other_model).status_code == 429
+        thread.join(2)
+        assert not thread.is_alive()
+        assert len(failures) == 1
+        assert isinstance(failures[0], MetaDispatchStopped)
+        assert sent == []
+        assert pacer.windows["wonder"] == []
+    finally:
+        pacer.stopped.set()
+        thread.join(2)
+
+
+@pytest.mark.parametrize(
+    "headers", [{}, quota_headers(), {"x-ratelimit-remaining-tokens": "?"}]
+)
+def test_meta_non_success_clears_quota_without_refunding_reservations(headers):
+    from tools.three_flow_errors import MetaRatePacer
+
+    now = [0.0]
+    sleeps = []
+    sent = []
+
+    def sleep(delay):
+        sleeps.append(delay)
+        now[0] += delay
+
+    pacer = MetaRatePacer(clock=lambda: now[0], sleep=sleep)
+
+    def send(status, response_headers):
+        pacer.commit("wonder", 1_030_000)
+        sent.append((now[0], status))
+        # No usage evidence: the complete reservation must remain consumed.
+        return httpx.Response(status, headers=response_headers)
+
+    for _ in range(3):
+        pacer.call("wonder", 1_030_000, lambda: send(200, quota_headers()))
+    pacer.call("wonder", 1_030_000, lambda: send(504, headers))
+    assert "wonder" not in pacer.remaining
+    assert sum(n for _, n in pacer.windows["wonder"]) == 4_120_000
+    assert sleeps == []
+    pacer.call("wonder", 1_030_000, lambda: send(200, {}))
+    assert sleeps == [60]
+    assert sent == [(0, 200), (0, 200), (0, 200), (0, 504), (60, 200)]

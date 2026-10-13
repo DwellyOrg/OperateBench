@@ -543,6 +543,8 @@ def run_campaign(
         and river_assets is None
     ):
         raise ValueError("River offline route requires explicit pinned assets")
+    if transport_factory is None and any(s["provider"] == "meta" for s in selected):
+        raise ValueError("Meta offline route requires an explicit transport_factory")
     if not resume and campaign_budget is None:
         root.mkdir(mode=0o700)
     budget = campaign_budget or CampaignBudget(

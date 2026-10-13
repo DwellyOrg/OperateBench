@@ -65,6 +65,7 @@ class MetaRatePacer:
         enabled: bool = True,
     ) -> None:
         self.clock, self.sleep, self.enabled = clock, sleep, enabled
+        self._interruptible_wait = sleep is time.sleep
         self.lock = threading.Lock()
         self.windows: dict[str, list[tuple[float, int]]] = {}
         self.model_locks: dict[str, Any] = {}
@@ -105,6 +106,8 @@ class MetaRatePacer:
                     response = send()
                     if response.is_success:
                         self.observe(model, response.headers)
+                    else:
+                        self.remaining.pop(model, None)
                     return response
                 delay = (
                     observed[0] + 60 - now
@@ -113,8 +116,11 @@ class MetaRatePacer:
                 )
                 if not local_ready:
                     delay = min(delay, window[0][0] + 60 - now)
-            # Do not hold the shared lock while waiting for an independent model.
-            self.sleep(delay)
+            # Release both locks; production waits wake promptly on fleet stop.
+            if self._interruptible_wait:
+                self.stopped.wait(delay)
+            else:
+                self.sleep(delay)
 
     def observe(self, model: str, headers: httpx.Headers) -> None:
         """Replace quota under the model lock; incomplete signals clear authority."""

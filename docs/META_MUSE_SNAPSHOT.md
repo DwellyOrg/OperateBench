@@ -57,14 +57,17 @@ wall deadline or read/write timeout; connect and pool timeouts remain finite.
 The unknown native output maximum is retained as unknown. Snapshot turns do not
 replay encrypted reasoning, previous response IDs or native tool-result state.
 
-The original capped admission profile uses two disjoint persistent budgets
-with a **USD 1000 hard total**:
+The original capped authorization allocated a **USD 1000 hard total**:
 **MAX USD 10** for at most a few real Meta API compatibility probes (not scored),
 and **USD 990 shared across both models** for all 88 scored campaign cells,
-campaign retries and unknown exposure. The total includes provider diagnostics
-and retries; it is authorization, not a spending target. Separate durable
-diagnostic and campaign ledgers track totals; neither budget may be reset,
-reused or transferred to the other.
+campaign retries and unknown exposure. The total included provider diagnostics
+and retries; it was authorization, not a spending target. The repository code
+mechanically enforced only the USD 990 campaign budget through its durable ledger.
+The USD 10 diagnostic allocation was operator-controlled outside the repository,
+with an external ledger and private one-shot evidence. Keeping the allocations
+separate, without resetting, reusing or transferring them, was an owner obligation.
+This historical capped authorization has expired; later execution required the
+separate explicitly admitted null-cap policy described below.
 
 Campaign reservations and accounting persist across restarts. Unknown reserves
 are irreversible and continue consuming the campaign budget. Estimated spend
@@ -160,7 +163,8 @@ Offline checks alone do not prove live compatibility or model performance.
 The [results page](MODEL_RESULTS.md) separately reports the completed series
 and its limitations; it does not validate general capability.
 
-The capped predecessor retains USD 990 for the campaign plus USD 10 for diagnostics.
+The expired capped predecessor allocated USD 990 to the mechanically enforced
+campaign budget and USD 10 to externally controlled diagnostics.
 An optional `three-flow-meta-uncapped-v1` successor requires explicit source-bound
 owner admission for a distinct series. Its single global ledger has a null monetary
 cap and retains measured costs and unknown liabilities with a historical-liability
@@ -180,8 +184,9 @@ ranges and remaining values must not exceed their positive reported limits.
 Under each model's network lock, a fresh observation authorizes the next request
 when remaining tokens cover its complete serialized input bound plus requested
 output and at least one request remains, even if local maximum reservations exceed
-TPM. Each success replaces that observation; missing or invalid headers restore
-conservative rolling reservations. Insufficient quota blocks until the observation
+TPM. Each success replaces that observation; non-success responses and missing or
+invalid headers restore conservative rolling reservations. Insufficient quota blocks
+until the observation
 expires after 60 seconds, then conservative pacing resumes. Mock transports do
 not wait. This does not establish a native output maximum or add owner ceilings.
 Team traffic outside this process can consume quota after observation; HTTP429
