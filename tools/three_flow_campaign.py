@@ -82,7 +82,17 @@ def preflight(roster_profile: str = "legacy-v1") -> dict[str, Any]:
         "source_commit": source_commit(),
         "global_cap_usd": "990" if roster_profile == META_ROSTER_PROFILE else "1000",
         **(
-            {"diagnostic_ceiling_usd": "10"}
+            {
+                "diagnostic_ceiling_usd": "10",
+                "optional_successor": {
+                    "limit_policy": "three-flow-meta-uncapped-v1",
+                    "cap_usd": None,
+                    "admitted": False,
+                    "requires": (
+                        "explicit source-bound owner admission for a distinct series"
+                    ),
+                },
+            }
             if roster_profile == META_ROSTER_PROFILE
             else {}
         ),

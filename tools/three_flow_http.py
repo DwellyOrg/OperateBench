@@ -135,7 +135,7 @@ class BudgetWire(httpx.BaseTransport):
     def _handle_request(self, request: httpx.Request) -> httpx.Response:
         if str(request.url) != self.endpoint or request.method != "POST":
             raise ValueError("noncanonical provider endpoint")
-        if self.guard._allows_no_money_cap and self.meta_pacer is None:
+        if self.guard._allows_no_money_cap and self.endpoint == ENDPOINTS["mistral"]:
             # Mistral 2.x substitutes 300000ms for timeout_ms=None. Override at
             # the real HTTP transport boundary, not with a large deadline.
             # Only the explicit successor policy reaches this branch; old capped
@@ -179,13 +179,13 @@ class BudgetWire(httpx.BaseTransport):
             self.meta_pacer.commit(body["model"], self.meta_tokens)
         try:
             response = self.inner.handle_request(request)
+            data = response.read()
         except BaseException:
             if self.meta_pacer is not None:
                 self.meta_pacer.stopped.set()
             raise
         if self.meta_pacer is not None and response.status_code == 429:
             self.meta_pacer.stopped.set()
-        data = response.read()
         row["status_code"] = response.status_code
         if response.is_success:
             # Successful bodies retain their exact binding and SDK/replay path.
@@ -429,7 +429,8 @@ class HTTPCampaignTransport:
         if meta:
             self.settings.pop("reasoning_items_contract", None)
             self.settings.update(
-                pacing_policy="meta-standard-rolling-60s-v1",
+                pacing_policy="meta-standard-rolling-60s-headers-v2",
+                provider_header_signal="remaining tokens/requests; 60s",
                 pacing_scope="process-wide-per-model; fleet HTTP429 fail-stop",
                 requests_per_minute=3000,
                 tokens_per_minute=4_000_000,
@@ -659,6 +660,7 @@ class HTTPCampaignTransport:
                     self.wire_payload(payload), "campaign request"
                 )
             )
+            self.wire.local_failure = None
             started = time.monotonic()
             try:
                 usage, response = self._dispatch(payload)
@@ -680,7 +682,15 @@ class HTTPCampaignTransport:
                 }
             except BaseException as exc:
                 if self.guard.ticket is not None and not self.guard.budget.broken:
-                    self.guard.forfeit(reservation)
+                    ticket = self.guard.ticket
+                    if (
+                        self.wire.local_failure == "meta_dispatch_stopped"
+                        and not self.wire.captures
+                        and self.guard.budget.records[ticket[0]]["state"] == "reserved"
+                    ):
+                        self.guard.cancel(reservation, input_tokens_upper_bound=ticket[2])
+                    else:
+                        self.guard.forfeit(reservation)
                 fault = None
                 if isinstance(exc, AdapterProviderError):
                     fault = exc.fault

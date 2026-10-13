@@ -221,6 +221,14 @@ def registry(
                     "parallel_tool_calls": False,
                     "comparison": "equal-scaffold independent snapshots",
                     "native_reasoning_continuation": False,
+                    "pacing_policy": "meta-standard-rolling-60s-headers-v2",
+                    "provider_header_signal": "remaining tokens/requests; 60s",
+                    "requests_per_minute": 3000,
+                    "tokens_per_minute": 4_000_000,
+                    "reservation_basis": (
+                        "complete serialized input bound + requested output"
+                    ),
+                    "automatic_resubmission": False,
                 },
                 "settings_source": "tools/three_flow_http.py",
                 "retries": 0,

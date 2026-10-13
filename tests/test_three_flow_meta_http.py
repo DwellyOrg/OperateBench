@@ -28,16 +28,22 @@ def no_network(monkeypatch):
     monkeypatch.setattr(socket, "create_connection", forbidden)
 
 
-def bridge(tmp_path, model, fault=None):
+def bridge(tmp_path, model, fault=None, *, uncapped=False):
     tmp_path.chmod(0o700)
+    from tests.test_three_flow_meta import uncapped_admission
+
+    limit_policy = uncapped_admission()["limit_policy"] if uncapped else None
     budget = CampaignBudget(
         tmp_path,
         campaign_id="test",
-        cap=Decimal("990"),
+        cap=None if uncapped else Decimal("990"),
+        limit_policy=limit_policy,
         roster_profile=META_ROSTER_PROFILE,
         create=True,
     )
     p = profile(model)
+    if uncapped:
+        p["execution_policy"] = limit_policy["mode"]
     maximum = p["context_max"]
     guard = AdmittedGuard(
         profile=p,
@@ -294,7 +300,8 @@ def test_mutated_sdk_capability_never_reaches_inner(tmp_path, model, mutation):
         budget.close()
 
 
-def test_source_bound_meta_consume_all_88(tmp_path):
+@pytest.mark.parametrize("uncapped", [False, True])
+def test_source_bound_meta_consume_all_88(tmp_path, uncapped):
     """Run after commit: deliberately requires the production clean-source gate."""
     from pathlib import Path
 
@@ -312,6 +319,8 @@ def test_source_bound_meta_consume_all_88(tmp_path):
     credential.write_text("MODEL_API_KEY=synthetic-meta-key\n")
     credential.chmod(0o600)
     a = admission()
+    if uncapped:
+        a["campaign_id"] = "meta-distinct-uncapped-series"
     slots = assignments(a["campaign_id"], META_ROSTER_PROFILE)
     a.update(
         source_sha=sha,
@@ -339,6 +348,19 @@ def test_source_bound_meta_consume_all_88(tmp_path):
                 "provider_bounds_verified": False,
             },
         )
+    if uncapped:
+        from tools.three_flow_budget import META_UNCAPPED_PROFILE
+
+        a["cap_usd"] = None
+        a["limit_policy"] = {
+            "mode": META_UNCAPPED_PROFILE,
+            "owner_accepted": True,
+            "owner_evidence_sha256": "a" * 64,
+            "source_sha": sha,
+            "historical_liability_manifest_sha256": "b" * 64,
+        }
+        for p in a["profiles"].values():
+            p["execution_policy"] = META_UNCAPPED_PROFILE
     path = custody / "admission.json"
     write(path, a)
 
@@ -387,7 +409,8 @@ def test_source_bound_meta_consume_all_88(tmp_path):
     budget = CampaignBudget(
         root,
         campaign_id=a["campaign_id"],
-        cap=Decimal("990"),
+        cap=None if uncapped else Decimal("990"),
+        limit_policy=a.get("limit_policy"),
         roster_profile=META_ROSTER_PROFILE,
     )
     try:
@@ -398,6 +421,10 @@ def test_source_bound_meta_consume_all_88(tmp_path):
     with pytest.raises(ValueError):
         live.consume(path, sha, network=network)
     assert len(network.mocks) == 88
+    scorecard = json.loads((root / "scorecard.json").read_text())
+    if uncapped:
+        assert scorecard["global_budget"]["remaining"] is None
+        assert scorecard["global_budget"]["cap"] is None
 
 
 @pytest.mark.parametrize("model", META_MODELS)
@@ -664,3 +691,277 @@ def test_meta_threads_share_model_window():
     assert len(results) == 12
     for timestamp in sent:
         assert sum(timestamp <= t < timestamp + 60 for t in sent) <= 4
+
+
+@pytest.mark.parametrize("fault", ["stopped", "captured", "429", "inflight"])
+def test_meta_stop_cancels_only_proven_unsent(tmp_path, fault):
+    from tools.three_flow_errors import MetaRatePacer
+
+    budget, _, transport, trial, requests = bridge(tmp_path, META_MODELS[0])
+    pacer = MetaRatePacer(enabled=False)
+    transport.wire.meta_pacer = pacer
+    if fault in ("stopped", "captured"):
+        pacer.stopped.set()
+        if fault == "captured":
+            transport.wire.captures.append({"status_code": 200})
+    else:
+
+        def fail(request):
+            requests.append(request)
+            if fault == "inflight":
+                raise httpx.ReadError("synthetic in-flight failure")
+            return httpx.Response(429, json={"error": {"message": "synthetic"}})
+
+        transport.wire.inner = httpx.MockTransport(fail)
+    try:
+        with pytest.raises((ProviderFailure, RuntimeError)):
+            run_trial(trial, transport, output=tmp_path / "trial")
+        events = [
+            json.loads(line)
+            for line in (tmp_path / "campaign-budget.jsonl").read_text().splitlines()
+        ]
+        assert len(requests) == (0 if fault in ("stopped", "captured") else 1)
+        assert sum(e["kind"] == "raw_rpc" for e in events) == len(requests)
+        assert (
+            budget.totals()["unknown"] == 0
+            if fault == "stopped"
+            else budget.totals()["unknown"] > 0
+        )
+        assert not (tmp_path / "trial" / "record.json").exists()
+        assert pacer.stopped.is_set()
+    finally:
+        transport.close()
+        budget.close()
+
+
+@pytest.mark.parametrize("model", META_MODELS)
+@pytest.mark.parametrize("pacing", [False, True])
+def test_uncapped_meta_live_shaped_timeout(tmp_path, model, pacing):
+    from tools.three_flow_errors import MetaRatePacer
+
+    budget, _, transport, trial, requests = bridge(tmp_path, model, uncapped=True)
+    now = [0.0]
+    transport.wire.meta_pacer = (
+        MetaRatePacer(
+            clock=lambda: now[0], sleep=lambda delay: now.__setitem__(0, now[0] + delay)
+        )
+        if pacing
+        else None
+    )
+    try:
+        run_trial(trial, transport, output=tmp_path / "trial")
+        assert requests[0].extensions["timeout"] == {
+            "connect": 10,
+            "pool": 10,
+            "read": None,
+            "write": None,
+        }
+    finally:
+        transport.close()
+        budget.close()
+
+
+def test_meta_two_models_progress_independently():
+    import threading
+    from concurrent.futures import ThreadPoolExecutor
+
+    from tools.three_flow_errors import MetaRatePacer
+
+    pacer = MetaRatePacer()
+    entered = threading.Event()
+    release = threading.Event()
+
+    def wonder():
+        pacer.commit(META_MODELS[0], 1_000_000)
+        entered.set()
+        assert release.wait(5)
+        return httpx.Response(200)
+
+    def spark():
+        pacer.commit(META_MODELS[1], 1_000_000)
+        return httpx.Response(200)
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        first = pool.submit(pacer.call, META_MODELS[0], 1_000_000, wonder)
+        try:
+            assert entered.wait(5)
+            second = pool.submit(pacer.call, META_MODELS[1], 1_000_000, spark)
+            assert second.result(timeout=5).status_code == 200
+        finally:
+            release.set()
+        assert first.result(timeout=5).status_code == 200
+    assert set(pacer.windows) == set(META_MODELS)
+
+
+@pytest.mark.parametrize("mutation", ["source", "policy"])
+def test_real_shaped_uncapped_refusal_precredential(tmp_path, monkeypatch, mutation):
+    from tests.test_three_flow_live import write
+    from tests.test_three_flow_meta import uncapped_admission
+    from tools import three_flow_live as live
+    from tools.three_flow_admission import validate
+
+    a = uncapped_admission()
+    a.update(approved=True, mode="paid")
+    sha = a["source_sha"]
+    validate(a, sha, synthetic=False)
+    if mutation == "source":
+        a["limit_policy"]["source_sha"] = "0" * 40
+    else:
+        a["limit_policy"]["mode"] = "three-flow-optional-limits-v1"
+    path = tmp_path / "admission.json"
+    write(path, a)
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("refused admission reached credential custody")
+
+    monkeypatch.setattr(live, "private_directory", forbidden)
+    original_fd = live.private_fd
+
+    def admission_only(value):
+        if value != str(path):
+            forbidden()
+        return original_fd(value)
+
+    monkeypatch.setattr(live, "private_fd", admission_only)
+    with pytest.raises(ValueError):
+        live.consume(path, sha)
+
+
+def test_meta_preflight_optional_policy_is_description_only():
+    from tools.three_flow_admission import proposal
+    from tools.three_flow_campaign import preflight
+    from tools.three_flow_profiles import registry
+
+    report = proposal("c" * 40, META_ROSTER_PROFILE)
+    assert report["cap_usd"] == "990"
+    assert report["diagnostic_ceiling_usd"] == "10"
+    assert "integration is not ready" not in " ".join(report["blockers"])
+    for value in (report, preflight(META_ROSTER_PROFILE)):
+        assert value["admitted"] is False
+        assert value["optional_successor"]["cap_usd"] is None
+        assert value["optional_successor"]["admitted"] is False
+        assert (
+            value["optional_successor"]["limit_policy"] == "three-flow-meta-uncapped-v1"
+        )
+    for row in registry(
+        roster_profile=META_ROSTER_PROFILE, mode_profile="off-or-minimum-v1"
+    ):
+        assert "pacing_enabled" not in row["request_settings"]
+        assert row["request_settings"]["tokens_per_minute"] == 4_000_000
+        assert row["request_settings"]["requests_per_minute"] == 3000
+        assert row["request_settings"]["automatic_resubmission"] is False
+
+
+def quota_headers(tokens="3999999", requests="2999"):
+    return {
+        "x-ratelimit-limit-tokens": "4000000",
+        "x-ratelimit-remaining-tokens": tokens,
+        "x-ratelimit-limit-requests": "3000",
+        "x-ratelimit-remaining-requests": requests,
+    }
+
+
+def test_meta_header_authority_fast_serialized_requests():
+    from tools.three_flow_errors import MetaRatePacer
+
+    now = [0.0]
+    sleeps = []
+    pacer = MetaRatePacer(clock=lambda: now[0], sleep=sleeps.append)
+    sent = []
+
+    def send():
+        pacer.commit("wonder", 1_030_000)
+        sent.append(now[0])
+        now[0] += 0.1
+        return httpx.Response(200, headers=quota_headers())
+
+    for _ in range(44):
+        pacer.call("wonder", 1_030_000, send)
+    assert len(sent) == 44
+    assert sleeps == []
+    assert sum(n for _, n in pacer.windows["wonder"]) > 4_000_000
+
+
+@pytest.mark.parametrize("tokens,requests", [("100", "2999"), ("3999999", "0")])
+def test_meta_low_headers_wait_and_models_independent(tokens, requests):
+    from tools.three_flow_errors import MetaRatePacer
+
+    now = [0.0]
+    sleeps = []
+
+    def sleep(delay):
+        sleeps.append(delay)
+        now[0] += delay
+
+    pacer = MetaRatePacer(clock=lambda: now[0], sleep=sleep)
+
+    def send(model, headers):
+        pacer.commit(model, 1_030_000)
+        return httpx.Response(200, headers=headers)
+
+    pacer.call(
+        "wonder", 1_030_000, lambda: send("wonder", quota_headers(tokens, requests))
+    )
+    pacer.call("spark", 1_030_000, lambda: send("spark", quota_headers()))
+    assert sleeps == []
+    pacer.call("wonder", 1_030_000, lambda: send("wonder", {}))
+    assert sleeps == [60]
+    assert "wonder" not in pacer.remaining
+
+
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("remaining-tokens", None),
+        ("remaining-tokens", "-1"),
+        ("remaining-tokens", "1.0"),
+        ("remaining-tokens", "+1"),
+        ("remaining-tokens", "4000001"),
+        ("remaining-requests", "3001"),
+        ("limit-tokens", "100"),
+        ("limit-requests", "0"),
+        ("limit-tokens", "4000001"),
+    ],
+)
+def test_meta_invalid_headers_clear_authority_and_fallback(field, value):
+    from tools.three_flow_errors import MetaRatePacer
+
+    now = [0.0]
+    pacer = MetaRatePacer(
+        clock=lambda: now[0], sleep=lambda delay: now.__setitem__(0, now[0] + delay)
+    )
+    headers = quota_headers()
+    if value is None:
+        del headers["x-ratelimit-" + field]
+    else:
+        headers["x-ratelimit-" + field] = value
+
+    def send(response_headers):
+        pacer.commit("wonder", 1_030_000)
+        return httpx.Response(200, headers=response_headers)
+
+    pacer.call("wonder", 1_030_000, lambda: send(quota_headers()))
+    pacer.call("wonder", 1_030_000, lambda: send(headers))
+    assert "wonder" not in pacer.remaining
+    pacer.call("wonder", 1_030_000, lambda: send({}))
+    pacer.call("wonder", 1_030_000, lambda: send({}))
+    assert now[0] == 60
+
+
+def test_meta_stale_headers_restore_conservative_window():
+    from tools.three_flow_errors import MetaRatePacer
+
+    now = [0.0]
+    pacer = MetaRatePacer(
+        clock=lambda: now[0], sleep=lambda delay: now.__setitem__(0, now[0] + delay)
+    )
+
+    def send(headers):
+        pacer.commit("wonder", 1_030_000)
+        return httpx.Response(200, headers=headers)
+
+    pacer.call("wonder", 1_030_000, lambda: send(quota_headers()))
+    now[0] = 60
+    for _ in range(4):
+        pacer.call("wonder", 1_030_000, lambda: send({}))
+    assert now[0] == 120

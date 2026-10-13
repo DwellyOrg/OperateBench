@@ -50,10 +50,11 @@ class MetaDispatchStopped(RuntimeError):
 
 
 class MetaRatePacer:
-    """Standard rolling quotas, independent model windows, shared 429 tripwire.
+    """Standard quotas, independent serialized model lanes, shared stop tripwire.
 
     Reservations use complete serialized input plus requested output. They are
-    never discounted by actual usage. No retry or generation deadline is added.
+    retained for fallback; fresh provider remaining quota can authorize dispatch.
+    No retry or generation deadline is added.
     """
 
     def __init__(
@@ -68,6 +69,7 @@ class MetaRatePacer:
         self.windows: dict[str, list[tuple[float, int]]] = {}
         self.model_locks: dict[str, Any] = {}
         self.stopped = threading.Event()
+        self.remaining: dict[str, tuple[float, int, int]] = {}
 
     def call(
         self, model: str, tokens: int, send: Callable[[], httpx.Response]
@@ -83,15 +85,65 @@ class MetaRatePacer:
                 now = self.clock()
                 window = self.windows.setdefault(model, [])
                 window[:] = [(t, n) for t, n in window if t + 60 > now]
-                if not self.enabled or (
+                observed = self.remaining.get(model)
+                if observed is not None and observed[0] + 60 <= now:
+                    self.remaining.pop(model)
+                    observed = None
+                local_ready = (
                     len(window) < 3000 and sum(n for _, n in window) + tokens <= 4_000_000
+                )
+                provider_ready = (
+                    observed is not None and observed[1] >= tokens and observed[2] > 0
+                )
+                if (
+                    not self.enabled
+                    or provider_ready
+                    or (observed is None and local_ready)
                 ):
-                    # send's local preparation runs before commit(); failures there
-                    # consume no quota. The caller commits at the inner boundary.
-                    return send()
-                delay = window[0][0] + 60 - now
+                    # Preparation precedes commit; observation and dispatch stay
+                    # under the same model lock, so quota is never reused in flight.
+                    response = send()
+                    if response.is_success:
+                        self.observe(model, response.headers)
+                    return response
+                delay = (
+                    observed[0] + 60 - now
+                    if observed is not None
+                    else window[0][0] + 60 - now
+                )
+                if not local_ready:
+                    delay = min(delay, window[0][0] + 60 - now)
             # Do not hold the shared lock while waiting for an independent model.
             self.sleep(delay)
+
+    def observe(self, model: str, headers: httpx.Headers) -> None:
+        """Replace quota under the model lock; incomplete signals clear authority."""
+        self.remaining.pop(model, None)
+        values = []
+        for name, maximum in (
+            ("limit-tokens", 4_000_000),
+            ("remaining-tokens", 4_000_000),
+            ("limit-requests", 3000),
+            ("remaining-requests", 3000),
+        ):
+            value = headers.get("x-ratelimit-" + name)
+            if (
+                value is None
+                or not value.isascii()
+                or not value.isdecimal()
+                or len(value) > 7
+            ):
+                return
+            number = int(value)
+            if number > maximum:
+                return
+            values.append(number)
+        token_limit, tokens, request_limit, requests = values
+        if token_limit == 0 or request_limit == 0:
+            return
+        if tokens > token_limit or requests > request_limit:
+            return
+        self.remaining[model] = (self.clock(), tokens, requests)
 
     def commit(self, model: str, tokens: int) -> None:
         """Called under the model lock immediately before actual dispatch."""

@@ -104,9 +104,14 @@ def proposal(sha: str, roster_profile: str = "legacy-v1") -> dict[str, Any]:
     }
 
     if roster_profile == META_ROSTER_PROFILE:
-        result["blockers"].append(
-            "Meta campaign wire/evidence/replay integration is not ready"
-        )
+        result["cap_usd"] = "990"
+        result["diagnostic_ceiling_usd"] = "10"
+        result["optional_successor"] = {
+            "limit_policy": "three-flow-meta-uncapped-v1",
+            "cap_usd": None,
+            "admitted": False,
+            "requires": "explicit source-bound owner admission for a distinct series",
+        }
         result["budget_scope"] = (
             "one series, both models, diagnostics, retries and reruns"
         )

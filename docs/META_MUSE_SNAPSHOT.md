@@ -153,3 +153,31 @@ acceptance or model performance evidence.
 The final clean source must pass the full 88-slot mocked consume before any paid attempt;
 this check proves source-bound offline behavior, not Meta live compatibility or scored quality.
 Live compatibility and model performance remain unproven.
+
+The capped predecessor retains USD 990 for the campaign plus USD 10 for diagnostics.
+An optional `three-flow-meta-uncapped-v1` successor requires explicit source-bound
+owner admission for a distinct series. Its single global ledger has a null monetary
+cap and retains measured costs and unknown liabilities with a historical-liability
+manifest binding. Preflight describes this policy without admitting it.
+Meta execution keeps finite 10-second connect and pool timeouts, unbounded local
+read/write time, physical context bounds, and per-model rolling quota pacing at
+3000 RPM and 4 million TPM. Reservations cover complete serialized input plus
+requested output; there is no automatic resubmission. HTTP 429 stops fleet dispatch
+and leaves unsent trial IDs pending. Resume audits previously started trials without
+resubmitting them; unsent slots remain eligible under explicit admission.
+No ranking is established by offline mocked results.
+
+Meta pacing uses all four successful-response `x-ratelimit-*` token/request
+limit and remaining headers documented in [Meta rate limits](https://dev.meta.ai/docs/pricing-rate-limits).
+Exact nonnegative ASCII integers must fit the published 4,000,000 TPM / 3000 RPM
+ranges and remaining values must not exceed their positive reported limits.
+Under each model's network lock, a fresh observation authorizes the next request
+when remaining tokens cover its complete serialized input bound plus requested
+output and at least one request remains, even if local maximum reservations exceed
+TPM. Each success replaces that observation; missing or invalid headers restore
+conservative rolling reservations. Insufficient quota blocks until the observation
+expires after 60 seconds, then conservative pacing resumes. Mock transports do
+not wait. This does not establish a native output maximum or add owner ceilings.
+Team traffic outside this process can consume quota after observation; HTTP429
+still stops dispatch without retries. Provider headers are not persisted as raw
+response evidence; the policy and signal are bound in settings and registry.
