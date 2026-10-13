@@ -154,6 +154,9 @@ def test_manifest_excludes_private_diagnostics_and_capability_authority() -> Non
     manifest = json.loads((ROOT / "PUBLICATION_MANIFEST.json").read_text())
     declarations = manifest["declarations"]
     assert declarations["no_published_benchmark_model_results"]["value"] is True
+    assert declarations["no_published_benchmark_model_results"]["scope"] == (
+        "official_benchmark_results"
+    )
     assert declarations["no_published_live_provider_evidence"]["value"] is True
     assert "private_lifecycle_diagnostics" not in declarations
     assert "approvals" not in manifest
@@ -222,4 +225,55 @@ def test_ruleset_activation_is_blocked_until_both_distinct_roles_are_verified() 
     assert (
         "Until both prerequisites exist, the independent-approval rule is deferred; "
         "existing branch protections and required checks remain in force." in governance
+    )
+
+
+def test_descriptive_exception_does_not_authorize_official_or_human_pass() -> None:
+    manifest = json.loads((ROOT / "PUBLICATION_MANIFEST.json").read_text())
+    assert manifest["manifest_schema_version"] == "0.3.0"
+    declarations = manifest["declarations"]
+    report = declarations["descriptive_model_results"]
+    assert report["value"] is True
+    assert report["path"] == "docs/MODEL_RESULTS.md"
+    assert report["scope"] == "owner_directed_retrospective_descriptive_only"
+    assert report["human_semantic_validation"] == "pending"
+    assert report["official_release_authorized"] is False
+    assert declarations["no_leaderboard_or_ranking"]["value"] is True
+    statement = report["statement"]
+    for boundary in (
+        "19 exact IDs",
+        "16-model, 704-assignment",
+        "three separately executed",
+        "44 related synthetic cases",
+        "technical exclusions",
+        "scored denominators",
+        "Raw traces remain private",
+        "no ranking across cohorts",
+        "not independent approval",
+        "No official Lifecycle Track leaderboard",
+    ):
+        assert boundary in statement
+    gates = {gate["id"]: gate for gate in manifest["gates"]}
+    for key in (
+        "G8_claims_scan",
+        "G11_independent_human_gate",
+        "G12_explicit_publication_approval",
+    ):
+        assert gates[key]["status"] == "pending"
+        assert gates[key]["blocking"] is True
+    assert manifest["candidate_acceptance"]["status"] == "requires_exact_source_record"
+    assert "original prepublication blanket results ban" in " ".join(manifest["notes"])
+    excluded = {item["class"]: item for item in manifest["excluded_classes"]}
+    assert (
+        "explicit descriptive-table exception"
+        in excluded["unvalidated_results"]["description"]
+    )
+    assert "Raw provider traces" in excluded["provider_run_artifacts"]["reason"]
+    checklist = _flowed("PUBLIC_RELEASE_CHECKLIST.md")
+    assert "Only the independently labelled, owner-directed retrospective" in checklist
+    assert "This exception does not close G8, G11 or G12" in checklist
+    assert "Apart from the specific descriptive-table exception in section 6" in checklist
+    assert (
+        "Any leaderboard, ranking, composite capability score, or comparison"
+        not in checklist
     )

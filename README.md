@@ -44,9 +44,9 @@ Source is publicly available at
 [DwellyOrg/OperateBench](https://github.com/DwellyOrg/OperateBench). This source
 checkout workflow does not depend on package-index availability. The
 [publication manifest](PUBLICATION_MANIFEST.json) records the historical
-prepublication posture, not current repository visibility; it is preserved rather
-than rewritten as a new authorization. See also the
-[verification record](PUBLIC_CANDIDATE_VERIFICATION.md). The badge reports hosted
+prepublication posture and an explicit current descriptive-table scope revision,
+not current repository visibility or a new official-release authorization. See
+also the [verification record](PUBLIC_CANDIDATE_VERIFICATION.md). The badge reports hosted
 workflow state, not release approval or scientific validity.
 
 ## A task is not an operation
