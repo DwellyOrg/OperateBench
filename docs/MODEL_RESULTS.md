@@ -10,6 +10,8 @@ cover 6 one-episode attempts: 3 scored incomplete and 3 excluded. Meta covers
 44 assigned synthetic cases per model, executed on 2026-10-13 UTC; Wonder's
 Maintenance V1 is excluded, leaving 43 scored cases, while Spark has 44.
 
+The exact Meta paid execution source is [this public commit](https://github.com/DwellyOrg/OperateBench/commit/c6fb49bf2a3714c094c4).
+
 `—` = untested in that cohort; `excluded` = unscored due to the stated adapter,
 budget or provider condition; `operator-stopped` = unscored after an operator stop.
 Goal completion and strict reliability are separate evaluator outcomes.
