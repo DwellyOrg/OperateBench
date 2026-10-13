@@ -1,119 +1,89 @@
-# Meta Muse Standard snapshot adapter
+# Meta Muse Standard snapshot comparison
 
-The provider-isolated Lifecycle transport supports exactly `muse-wonder-1.0`
-and `muse-spark-1.3` in Standard mode. It is an **equal-scaffold stateless
-comparison**, not Meta-native or full-capability agentic performance. No live
-provider admission or model score is claimed. No paid calls were made.
+The candidate supports exactly `muse-wonder-1.0` and `muse-spark-1.3` in
+Standard mode through two distinct integrations. Both use independent observation
+snapshots for an equal-scaffold comparison. Neither claims Meta-native reasoning
+continuity or full-capability agentic performance. The original evaluator and
+grades are unchanged. All current implementation evidence is offline;
+**no paid inference, model results or ranking exists yet**.
 
-`operatebench.agents.meta_responses.MetaResponsesTransport` implements the
-existing `send(ModelRequest) -> ModelResponse` boundary. Its separate
-`lifecycle_meta_responses_snapshot_v1` mapping uses Core's existing non-strict
-function schemas, including arbitrary ACT payloads and retrieval. The Meta
-exchange uses the common executor for cost reservations, deadlines, one attempt,
-usage and telemetry. The OpenAI SDK serializes requests and supplies raw and typed
-Responses readings; the existing checked Responses projection reads outcomes.
-No shared runner, historical mapping, fixture or existing provider is changed.
+## Standalone Lifecycle adapter
 
-## Construction and identity
+`operatebench.agents.meta_responses.MetaResponsesTransport` implements
+`send(ModelRequest) -> ModelResponse` using the separate
+`lifecycle_meta_responses_snapshot_v1` mapping. It uses Core's existing
+non-strict function schemas, common executor, finite turn deadline and scaffold
+output ceiling of 4096 tokens. That ceiling is policy, not a published Meta
+output maximum. Reasoning remains provider-default in this adapter.
 
-Use `operatebench.providers.meta_responses.build_client(model=..., environ=...)`
-and pass that client to `MetaResponsesTransport` with an explicit turn deadline.
-The factory accepts credentials only from `MODEL_API_KEY`, pins
-`https://api.meta.ai/v1`, and disables SDK retries. It never falls back to
-`OPENAI_API_KEY`. It rejects redirect/account environment overrides, unsupported
-model IDs (including Contributor and older Spark IDs), and credentials that are
-not 1–4096 visible ASCII characters without whitespace or control characters.
-Opaque bearer values need no particular prefix; header-valid punctuation such
-as `:` is permitted. Backend authorization and model access are checked via a
-separate account `GET https://api.meta.ai/v1/models`, not a credential regex.
-The factory does not perform that request; local validation cannot prove
-validity, revocation status or model access offline.
+The factory pins `https://api.meta.ai/v1`, accepts only `MODEL_API_KEY`, disables
+SDK retries and rejects endpoint overrides and unsupported models. Local
+credential validation cannot establish account access. Requests carry fixed Core
+instructions and one user snapshot, with `store:false`; reasoning items are
+validated and discarded as non-actions. Output usage already includes reasoning
+and is never charged twice.
 
-Transport settings bind Meta identity, endpoint, mapping/profile, Standard rates,
-SDK version, provider-default reasoning and snapshot comparison scope. Each
-request sends one canonical user snapshot plus fixed Core instructions and its
-request identity digest. Function tools are explicitly non-strict; `store:false`
-is explicit. There is no built-in web tool, encrypted-reasoning include, previous
-response ID, function-call-output replay or server-side conversation state.
-Reasoning output items are validated and discarded as non-actions. Refusals
-produce the existing no-tool-call outcome and still retain billable usage.
+Lifecycle execution ledgers and deterministic Core replay work offline. Its
+frozen generic artifact reader still rejects Meta-bound bundles. This standalone
+adapter is not the campaign route.
 
-The **4096 output-token ceiling is scaffold policy**, not Meta's advertised
-maximum. This change establishes no provider output maximum. Output usage
-already includes reasoning tokens; those tokens are validated but never added
-a second time. Documented cached-input and reasoning detail fields are accepted;
-unsupported server fields fail closed, including OpenAI-specific extensions.
+## Added 44 × 2 candidate campaign
 
-## Pricing and limitations
+The `meta-standard-same44-v1` roster adds 88 slots: the same 44 public synthetic
+cases for each Standard model, across maintenance, commerce and compliance.
+The shared campaign registry and Meta HTTP bridge use explicit
+`reasoning.effort:minimal`, validated Responses projection and the unchanged
+evaluator. The campaign has its own durable `three_flow_runtime` records and
+replay; it does not depend on admitting Meta to the Lifecycle artifact reader.
 
-Dated Standard rates in USD per million tokens (verified 2026-10-13):
+Campaign requests dynamically bound output by remaining published context and
+available money, rather than the Lifecycle 4096 ceiling. There is no generation
+wall deadline or read/write timeout; connect and pool timeouts remain finite.
+The unknown native output maximum is retained as unknown. Snapshot turns do not
+replay encrypted reasoning, previous response IDs or native tool-result state.
+
+One shared **USD 1000 hard estimated-exposure cap** covers both models,
+diagnostics, retries and reruns, with durable reservations and accounting across
+restarts. This is an estimated token-exposure control under the admitted pricing
+and reported-usage assumptions, not a monetary invoice guarantee. It does not
+establish provider tariff coverage, account access or billing completeness.
+
+## Pricing and scope
+
+Pinned Standard rates in USD per million tokens:
 
 | Model | Uncached input | Cached input | Output |
 | --- | ---: | ---: | ---: |
 | `muse-wonder-1.0` | 4.00 | 0.20 | 20.00 |
 | `muse-spark-1.3` | 1.25 | 0.15 | 4.25 |
 
-`pricing_profile(model)` returns a separately identified, operator-pinned
-Lifecycle pricing policy based on these published rates. The existing guard
-and ledger settle only total input and output counts. They conservatively charge
-all input at the uncached rate; **recorded cost is an upper bound when cache hits
-occur, not an exact discounted invoice**. Cached rates are disclosed in settings.
-No Contributor rates, web-search charges or paid budget are authorized here.
-
-Known incompatibilities and excluded capabilities:
-
-- No reasoning continuity, native tool-result association or conversation reset
-  protocol. Each turn independently reads the fixed observation snapshot.
-- The frozen provider-execution-binding-v1 schema and artifact reader allow only
-  existing providers. Meta execution ledgers validate, and full Core episodes
-  deterministically replay, but Meta-bound artifact bundles fail the current
-  artifact reader. The adapter is a smaller offline PR deliverable, **not an
-  admitted production campaign route**. A separately authorized artifact binding
-  successor is the next integration step; do not rewrite the frozen schema or
-  label Meta as OpenAI to bypass it.
-- No campaign registry, CLI canary, Boundary Track route or public model admission
-  is added. Parent admission requires a secure key and explicit paid budget.
-- No streaming, background execution, multimodal inputs, built-in tools, custom
-  endpoint, Contributor, older models, Wonder Full or SDK-external response
-  extensions. Non-streaming service time limits remain provider faults.
-- Provider-default reasoning and sampling remain the default for this mapping;
-  no unsupported `reasoning.effort:none` is sent. The 4096 scaffold ceiling can
-  truncate reasoning and answers and does not establish provider capacity.
-- Cache discount accounting and details retention need a separately versioned
-  usage/ledger contract if exact invoice reconciliation is required.
+Lifecycle's separately identified pricing policy conservatively charges all
+input at the uncached rate; recorded cost is not an exact discounted invoice.
+Campaign profiles bind the Standard tariff and published context diagnostic.
+Neither integration adds Contributor, Wonder Full, older Spark models,
+streaming, background execution, multimodal input or built-in web tools.
 
 ## Official sources
 
-Verified the supplied official [models](https://dev.meta.ai/docs/models),
+First-party references: [models](https://dev.meta.ai/docs/models),
 [Responses](https://dev.meta.ai/docs/protocols/responses),
 [authentication](https://dev.meta.ai/docs/authentication),
-[reasoning](https://dev.meta.ai/docs/reasoning), and
-[pricing](https://dev.meta.ai/docs/pricing-rate-limits) documentation.
-Additional supplied references:
+[reasoning](https://dev.meta.ai/docs/reasoning),
+[pricing](https://dev.meta.ai/docs/pricing-rate-limits),
 [overview](https://dev.meta.ai/docs/overview) and
 [tool calling](https://dev.meta.ai/docs/tool-calling).
-Meta recommends encrypted reasoning replay for agentic continuity; this mapping
-intentionally implements independent turns under the shared snapshot scaffold.
 
-## Offline acceptance
+## Verification and remaining acceptance
 
-TDD began with the new Meta transport import failing. Tests use real OpenAI SDK
-clients over `httpx.MockTransport`; no credential files, secrets or model network
-requests are read or made. Both exact model IDs have byte-level request assertions,
-repeated snapshot request/response identity, request-ID digests, non-strict tools,
-usage including reasoning, refusal handling, sanitized errors and zero-dispatch
-preflight checks. Full maintenance V1 episodes pass through the fixed Core runner
-and produce verified execution ledgers with exact billable token totals and
-re-derived conservative cost; Core's deterministic replay check passes. Tests
-explicitly prove the frozen artifact reader rejects Meta-bound bundles.
+Offline tests exercise SDK request bytes, exact model selection, minimal campaign
+reasoning, dynamic caps, usage including reasoning, refusals, partial/fault
+accounting, pre-dispatch rejection, durable records and deterministic replay.
+They also preserve the distinction between the campaign runtime and Lifecycle's
+Meta-rejecting artifact reader. Mocked transport evidence is not live endpoint
+acceptance or model performance evidence.
 
-Final verification: **30 Meta tests passed on Python 3.11.15 and 3.14.4** with
-OpenAI SDK 2.53.0. The broader affected-provider/compatibility suite produced
-**558 passes and one failure on each interpreter**: the existing
-`test_reasoning_combined_consuming_cli_and_zero_call_replay` refuses staged
-changes through its clean-source gate. That gate was neither changed nor bypassed.
-Historical projection/fault digests and frozen schema contracts passed.
-Repository-wide Ruff lint/format, mypy (`src tools`, 200 source files), all
-14 public-release checks and REUSE (871/871 files) passed. No commit or push;
-only the four reviewed adapter/test/document paths are staged. The superseded
-untracked gap diagnostics were removed.
+The parent must commit the reviewed candidate and run the source-bound gates,
+including the full 88-slot mocked consume, against that clean source. That
+clean-source qualification and live endpoint acceptance remain pending. Final
+verification must be reported against the resulting source binding; this snapshot
+does not claim those gates have passed.

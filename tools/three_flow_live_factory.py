@@ -115,11 +115,7 @@ def live_factory(
         inner: Any = None
         transport: Any
         try:
-            if slot["provider"] == "meta":
-                from tools.three_flow_meta import campaign_transport
-
-                transport = campaign_transport()
-            elif slot["provider"] == "river":
+            if slot["provider"] == "river":
                 from tools.three_flow_river import (
                     GRPC_OPTIONS,
                     ExplicitRiverChannel,

@@ -9,7 +9,7 @@ from operatebench.agents.pricing import LifecyclePricingPolicy
 from operatebench.providers.cost import CostCapExceededError
 from tools.three_flow_budget import CampaignBudget
 from tools.three_flow_campaign import assignments
-from tools.three_flow_meta import campaign_transport, validate_meta_profile
+from tools.three_flow_meta import validate_meta_profile
 from tools.three_flow_profiles import (
     ENDPOINTS,
     META_ENVELOPES,
@@ -28,7 +28,13 @@ def profile(model):
         "context_max": context,
         "input_max": None,
         "output_max": None,
-        "bounds_policy": {"mode": "published-context-diagnostic-v1"},
+        "bounds_policy": {
+            "mode": "published-context-diagnostic-v1",
+            "source": "https://dev.meta.ai/docs",
+            "scope": "endpoint",
+            "interpretation": "published-integer",
+        },
+        "network_timeout_seconds": None,
         "input_usd_per_million": ir,
         "output_usd_per_million": out,
     }
@@ -130,6 +136,13 @@ def test_exact_prices_unknown_output_and_settings(model):
     validate_meta_profile(p, "meta", model)
     for key, value in [
         ("output_max", 128000),
+        ("network_timeout_seconds", 17),
+        ("input_max", 100000),
+        ("output_usd_per_million", "1"),
+        ("endpoint", "https://api.openai.com/v1/responses"),
+        ("execution_policy", "optional-execution-v1"),
+        ("owner_output_cap_tokens", 4096),
+        ("bounds_policy", {**p["bounds_policy"], "source": "https://example.com"}),
         ("input_usd_per_million", "8"),
         ("context_max", 1000000),
     ]:
@@ -195,12 +208,7 @@ def test_two_models_diagnostics_and_restart_share_cap(tmp_path):
         CampaignBudget(tmp_path, campaign_id="foreign-series", cap=Decimal("1000"))
 
 
-def test_launch_is_explicitly_blocked_pending_cross_lane_bridge():
-    with pytest.raises(ValueError, match="integration is not ready"):
-        campaign_transport()
-
-
-def test_admission_requires_shared_cap_and_new_authority():
+def test_admission_requires_shared_cap_and_new_authority(monkeypatch):
     from tests.test_three_flow_latest_http import admission
     from tools.three_flow_admission import GUARANTEES, validate
 
@@ -215,7 +223,7 @@ def test_admission_requires_shared_cap_and_new_authority():
     for model in META_MODELS:
         p = profile(model)
         p.update(
-            network_timeout_seconds=17,
+            network_timeout_seconds=None,
             rate_evidence_sha256="a" * 64,
             bounds_evidence_sha256="b" * 64,
             pricing_policy="conservative-all-tier-envelope-v1",
@@ -230,7 +238,30 @@ def test_admission_requires_shared_cap_and_new_authority():
             interpretation="published-integer",
         )
         a["profiles"][model] = p
+    from tools import three_flow_admission
+
+    calls = []
+    original = three_flow_admission.validate_meta_profile
+
+    def checked(p, provider, model):
+        calls.append(model)
+        original(p, provider, model)
+
+    monkeypatch.setattr(three_flow_admission, "validate_meta_profile", checked)
     validate(a, a["source_sha"], synthetic=True)
+    assert calls == [s["model"] for s in slots]
+    calls.clear()
+    first_model = slots[0]["model"]
+    invalid = {
+        **a,
+        "profiles": {
+            **a["profiles"],
+            first_model: {**a["profiles"][first_model], "network_timeout_seconds": 17},
+        },
+    }
+    with pytest.raises(ValueError, match="Meta requires exact tariff/context"):
+        validate(invalid, a["source_sha"], synthetic=True)
+    assert calls == [first_model]
     for bad in [
         {**a, "cap_usd": "2000"},
         {**a, "cap_usd": None},
@@ -241,24 +272,48 @@ def test_admission_requires_shared_cap_and_new_authority():
             validate(bad, a["source_sha"], synthetic=True)
 
 
-def test_unready_launch_refuses_before_credentials_or_consumption(tmp_path, monkeypatch):
-    from tools import three_flow_admission, three_flow_live
+def test_null_timeout_requires_exact_meta_roster():
+    from tests.test_three_flow_latest_http import admission
+    from tools.three_flow_admission import GUARANTEES, validate_profile
 
-    path = tmp_path / "offline-admission.json"
+    meta = dict(
+        profile(META_MODELS[0]),
+        rate_evidence_sha256="a" * 64,
+        bounds_evidence_sha256="b" * 64,
+        pricing_policy="conservative-all-tier-envelope-v1",
+        guarantees={**dict.fromkeys(GUARANTEES, True), "provider_bounds_verified": False},
+    )
+    validate_profile(
+        meta, "meta", model=META_MODELS[0], roster_profile=META_ROSTER_PROFILE
+    )
+    for model, roster in [
+        (META_MODELS[0], "legacy-v1"),
+        ("muse-wonder-1.0-contributor", META_ROSTER_PROFILE),
+    ]:
+        with pytest.raises(ValueError):
+            validate_profile(meta, "meta", model=model, roster_profile=roster)
+
+    p = next(iter(admission()["profiles"].values()))
+    p["network_timeout_seconds"] = None
+    with pytest.raises(ValueError, match="network timeout"):
+        validate_profile(p, "openai")
+
+
+def test_invalid_meta_refused_before_custody(tmp_path, monkeypatch):
+    from tests.test_three_flow_latest_http import admission
+    from tools import three_flow_live
+
+    a = admission()
+    a["roster_profile"] = META_ROSTER_PROFILE
+    path = tmp_path / "invalid.json"
     path.write_text("{}")
-    monkeypatch.setattr(three_flow_live, "read_private", lambda _: b"{}")
     monkeypatch.setattr(
-        three_flow_admission,
-        "validate",
-        lambda *args, **kwargs: {"roster_profile": META_ROSTER_PROFILE},
+        three_flow_live, "read_private", lambda _: __import__("json").dumps(a).encode()
     )
 
     def forbidden(*args, **kwargs):
-        raise AssertionError("custody and credentials must remain untouched")
+        raise AssertionError("invalid admission reached custody")
 
     monkeypatch.setattr(three_flow_live, "private_directory", forbidden)
-    monkeypatch.setattr(three_flow_live, "private_fd", forbidden)
-    monkeypatch.setattr(three_flow_live, "publish", forbidden)
-    with pytest.raises(ValueError, match="integration is not ready"):
-        three_flow_live.consume(path, "c" * 40)
-    assert list(tmp_path.iterdir()) == [path]
+    with pytest.raises(ValueError):
+        three_flow_live.consume(path, a["source_sha"], network=object())

@@ -228,9 +228,12 @@ def _validate(
         raise ValueError("exact selected model profiles required")
     for slot in slots:
         p = a["profiles"][slot["model"]]
-        validate_profile(p, slot["provider"])
-        if a.get("roster_profile") == META_ROSTER_PROFILE:
-            validate_meta_profile(p, slot["provider"], slot["model"])
+        validate_profile(
+            p,
+            slot["provider"],
+            model=slot["model"],
+            roster_profile=a.get("roster_profile", "legacy-v1"),
+        )
         if a.get("roster_profile") == LATEST_ROSTER_PROFILE:
             validate_latest_http_profile(p, slot["model"])
         if optional != (p.get("execution_policy") == OPTIONAL_PROFILE):
@@ -608,7 +611,13 @@ def validate_latest_http_profile(p: dict[str, Any], model: str) -> None:
         raise ValueError("latest HTTP envelope loses known published tier rates")
 
 
-def validate_profile(p: Any, provider: str) -> None:
+def validate_profile(
+    p: Any,
+    provider: str,
+    *,
+    model: str | None = None,
+    roster_profile: str = "legacy-v1",
+) -> None:
     fields = {
         "endpoint",
         "input_max",
@@ -722,7 +731,9 @@ def validate_profile(p: Any, provider: str) -> None:
         if not value.is_finite() or value <= 0:
             raise ValueError("missing or nonfinite prices")
     t = p["network_timeout_seconds"]
-    if optional:
+    if provider == "meta" and roster_profile == META_ROSTER_PROFILE:
+        validate_meta_profile(p, provider, model or "")
+    elif optional:
         if t is not None or not diagnostic:
             raise ValueError(
                 "optional execution requires null timeout and dynamic context bound"

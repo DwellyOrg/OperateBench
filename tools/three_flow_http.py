@@ -31,6 +31,7 @@ from operatebench.agents.model import MAX_OUTPUT_TOKENS, MODEL_PROTOCOL_VERSION
 from operatebench.agents.transport import ModelRequest, ModelResponse
 from operatebench.jsonsafe import canonical_json_text
 from operatebench.providers import anthropic_messages as ap
+from operatebench.providers import meta_responses as metap
 from operatebench.providers import mistral_chat as mp
 from operatebench.providers import openai_responses as op
 from operatebench.providers.cost import request_input_token_bound
@@ -38,6 +39,7 @@ from operatebench.providers.faults import AdapterProviderError, SingleFlight
 from operatebench.providers.wire import WireResponse, wire_invalid
 from tools.aggregate_budget import SharedGuard
 from tools.three_flow_errors import ProviderPacer, http_error
+from tools.three_flow_meta import validate_meta_profile
 from tools.three_flow_profiles import (
     ENDPOINTS as ENDPOINTS,
 )
@@ -46,6 +48,7 @@ from tools.three_flow_profiles import (
 )
 from tools.three_flow_profiles import (
     MODE_PROFILES,
+    CampaignSelection,
     http_mode_fields,
     http_reasoning_mode,
     selection_for,
@@ -163,6 +166,7 @@ class BudgetWire(httpx.BaseTransport):
                 ENDPOINTS[k]: v
                 for k, v in (
                     ("openai", "responses"),
+                    ("meta", "responses"),
                     ("anthropic", "messages"),
                     ("mistral", "chat_completions"),
                 )
@@ -209,23 +213,49 @@ class HTTPCampaignTransport:
             raise ValueError("pacing policy is Mistral-only")
         if mode_profile not in MODE_PROFILES:
             raise ValueError("unknown reasoning mode profile")
+        meta = provider == "meta"
+        if meta:
+            metap.check_model(cast(str, model))
+            metap.check_key(api_key)
+            validate_meta_profile(cast(Any, guard).profile, provider, cast(str, model))
+            if max_output_tokens != context_tokens:
+                raise ValueError("Meta initial envelope must equal admitted context")
+            if (
+                mode_profile != "off-or-minimum-v1"
+                or network_timeout is not None
+                or not getattr(guard, "diagnostic", False)
+                or context_tokens != 1048576
+            ):
+                raise ValueError(
+                    "Meta requires diagnostic context and unbounded generation"
+                )
         model = MODELS.get(provider) if model is None else model
         if (
             not isinstance(model, str)
-            or provider not in MODELS
-            or selection_for(provider, model, "off-or-minimum-v1") is None
+            or (provider not in MODELS and not meta)
+            or (not meta and selection_for(provider, model, "off-or-minimum-v1") is None)
         ):
             raise ValueError("unsupported HTTP provider/model pair")
-        selection = selection_for(provider, model, mode_profile)
+        selection = (
+            CampaignSelection(
+                "meta", model, "responses", mode_profile, "tools/three_flow_http.py"
+            )
+            if meta
+            else selection_for(provider, model, mode_profile)
+        )
         if selection is None:
             raise ValueError("new models require explicit off-or-minimum profile")
         self.mode_profile = mode_profile
-        self.mode_fields = http_mode_fields(provider, model, mode_profile)
-        if provider not in MODELS:
+        self.mode_fields = (
+            {"reasoning": {"effort": "minimal"}}
+            if meta
+            else http_mode_fields(provider, model, mode_profile)
+        )
+        if provider not in MODELS and not meta:
             raise ValueError("unsupported HTTP provider")
         if type(max_output_tokens) is not int or max_output_tokens <= 0:
             raise ValueError("explicit output profile required")
-        if provider != "mistral" and max_output_tokens != 128000:
+        if provider not in ("mistral", "meta") and max_output_tokens != 128000:
             raise ValueError("successor flagship output profile is 128000")
         if guard._max_output_tokens != max_output_tokens:
             raise ValueError("guard and request output differ")
@@ -239,6 +269,8 @@ class HTTPCampaignTransport:
         self.request_mapping = "three-flow-" + provider + "-v1"
         if mode_profile != "legacy-v1":
             self.request_mapping += "-" + mode_profile
+        if meta:
+            self.request_mapping = "three-flow-meta-snapshot-minimal-v1"
         self.guard, self.max_output_tokens = guard, max_output_tokens
         self.wire = BudgetWire(inner, guard, ENDPOINTS[provider])
         if transport_policy == "paced-safe-errors-v1":
@@ -250,18 +282,22 @@ class HTTPCampaignTransport:
             else httpx.Client(
                 transport=self.wire,
                 trust_env=False,
-                timeout=network_timeout,
+                timeout=httpx.Timeout(None, connect=10, pool=10)
+                if meta
+                else network_timeout,
                 follow_redirects=False,
             )
         )
         self.client: Any
-        if provider == "openai":
+        if provider in ("openai", "meta"):
             self.client = explicit_sdk_client(
                 openai.OpenAI,
                 api_key=api_key,
-                base_url="https://api.openai.com/v1",
+                base_url=metap.BASE_URL if meta else "https://api.openai.com/v1",
+                organization=None,
+                project=None,
                 max_retries=0,
-                timeout=network_timeout,
+                timeout=self.http.timeout if meta else network_timeout,
                 http_client=self.http,
             )
         elif provider == "anthropic":
@@ -286,9 +322,13 @@ class HTTPCampaignTransport:
             )
         if provider == "mistral":
             self.client.sdk_configuration.__dict__["telemetry"] = False
+        if meta:
+            metap.check_client(self.client)
         self.settings = {
             "sdk": provider,
-            "sdk_version": version("mistralai" if provider == "mistral" else provider),
+            "sdk_version": version(
+                "openai" if meta else "mistralai" if provider == "mistral" else provider
+            ),
             "endpoint": ENDPOINTS[provider],
             "protocol_version": MODEL_PROTOCOL_VERSION,
             "max_output_tokens": max_output_tokens,
@@ -307,7 +347,7 @@ class HTTPCampaignTransport:
             self.settings.update(
                 thinking={"type": "adaptive"}, output_config={"effort": "high"}
             )
-        elif provider == "openai":
+        elif provider in ("openai", "meta"):
             self.settings.update(
                 reasoning_items_contract=op.OPENAI_REASONING_ITEMS_CONTRACT,
                 store=False,
@@ -327,9 +367,9 @@ class HTTPCampaignTransport:
             self.settings.update(self.mode_fields)
             self.settings.update(
                 mode_profile=mode_profile,
-                reasoning_mode=http_reasoning_mode(model),
+                reasoning_mode="MINIMUM" if meta else http_reasoning_mode(model),
             )
-            if provider == "openai":
+            if provider in ("openai", "meta"):
                 self.settings["omitted"] = ["temperature", "top_p", "seed"]
         if transport_policy != "legacy-v1":
             self.settings.update(
@@ -339,6 +379,28 @@ class HTTPCampaignTransport:
                 retry_after_max_seconds=86400,
                 retry_eligibility="none-proven",
                 automatic_resubmission=False,
+            )
+        if meta:
+            self.settings.pop("reasoning_items_contract", None)
+            self.settings.update(
+                sdk="openai",
+                provider="meta",
+                comparison="equal-scaffold independent snapshots",
+                native_reasoning_continuation=False,
+                tool_strict_mode=False,
+                bounds_policy=cast(Any, guard).profile["bounds_policy"],
+                context_request_bound=context_tokens,
+                dedicated_output_max=None,
+                connection_timeout_seconds=10,
+                pool_timeout_seconds=10,
+                billing_assurance="estimated usage exposure; not invoice guarantee",
+                omitted=[
+                    "temperature",
+                    "top_p",
+                    "seed",
+                    "include",
+                    "previous_response_id",
+                ],
             )
         self.last_turn: dict[str, Any] | None = None
         self.flight = SingleFlight(adapter="three-flow HTTP")
@@ -371,11 +433,17 @@ class HTTPCampaignTransport:
         ):
             raise ValueError("request output differs from bound settings")
         text = canonical_json_text(request.prompt, "campaign prompt")
-        if self.provider == "openai":
+        if self.provider in ("openai", "meta"):
             return {
                 "model": self.model,
                 "max_output_tokens": request.max_output_tokens,
-                "instructions": oa.request_instructions(request),
+                "instructions": (
+                    oa.request_instructions(request).replace(
+                        oa.LIFECYCLE_OPENAI_REQUEST_MAPPING_VERSION, self.request_mapping
+                    )
+                    if self.provider == "meta"
+                    else oa.request_instructions(request)
+                ),
                 "tools": outcome_tools(),
                 "tool_choice": "required",
                 "parallel_tool_calls": False,
@@ -420,12 +488,20 @@ class HTTPCampaignTransport:
         return payload
 
     def _dispatch(self, payload: dict[str, Any]) -> tuple[Any, ModelResponse]:
-        if self.provider == "openai":
+        if self.provider in ("openai", "meta"):
+            if self.provider == "meta":
+                metap.check_client(self.client)
             raw = self.client.responses.with_raw_response.create(
-                **payload, timeout=self.network_timeout
+                **payload,
+                timeout=self.http.timeout
+                if self.provider == "meta"
+                else self.network_timeout,
             )
-            wire = WireResponse(raw.text, raw.parse, kind="OpenAI campaign")
-            op.check_response_admissible(wire, model=self.model)
+            wire = WireResponse(raw.text, raw.parse, kind=self.provider + " campaign")
+            if self.provider == "meta":
+                metap.check_response(wire, model=self.model)
+            else:
+                op.check_response_admissible(wire, model=self.model)
             return op.response_usage(wire), oa.model_response_from(wire)
         if self.provider == "anthropic":
             raw = self.client.messages.with_raw_response.create(
@@ -521,7 +597,7 @@ class HTTPCampaignTransport:
             self.wire.expected_payload = payload
             self.guard._max_output_tokens = int(
                 payload["max_output_tokens"]
-                if self.provider == "openai"
+                if self.provider in ("openai", "meta")
                 else payload["max_tokens"]
             )
             reservation = self.guard.authorize(
@@ -556,7 +632,12 @@ class HTTPCampaignTransport:
                 if isinstance(exc, AdapterProviderError):
                     fault = exc.fault
                 elif isinstance(exc, Exception):
-                    module = {"openai": op, "anthropic": ap, "mistral": mp}[self.provider]
+                    module = {
+                        "openai": op,
+                        "meta": metap,
+                        "anthropic": ap,
+                        "mistral": mp,
+                    }[self.provider]
                     classified = module.classify_exception(exc)
                     fault = None if classified is None else classified.fault
                 self.last_turn = {

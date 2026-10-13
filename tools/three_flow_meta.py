@@ -1,4 +1,4 @@
-"""Finite Meta Standard selection checks; launch remains fail-closed pending integration.
+"""Meta Standard campaign selection checks.
 
 No credential access, provider requests or admission generation lives here.
 """
@@ -6,7 +6,7 @@ No credential access, provider requests or admission generation lives here.
 from __future__ import annotations
 
 from decimal import Decimal
-from typing import Any, NoReturn
+from typing import Any
 
 from tools.three_flow_profiles import ENDPOINTS, META_ENVELOPES
 
@@ -18,10 +18,16 @@ def validate_meta_profile(profile: dict[str, Any], provider: str, model: str) ->
     context, input_rate, output_rate = META_ENVELOPES[model]
     if (
         profile["endpoint"] != ENDPOINTS["meta"]
+        or "network_timeout_seconds" not in profile
+        or profile["network_timeout_seconds"] is not None
         or profile["context_max"] != context
         or profile["input_max"] is not None
         or profile["output_max"] is not None
-        or profile.get("bounds_policy") is None
+        or not isinstance(profile.get("bounds_policy"), dict)
+        or profile["bounds_policy"].get("mode") != "published-context-diagnostic-v1"
+        or profile["bounds_policy"].get("source") != "https://dev.meta.ai/docs"
+        or profile["bounds_policy"].get("scope") != "endpoint"
+        or profile["bounds_policy"].get("interpretation") != "published-integer"
         or "execution_policy" in profile
         or "owner_output_cap_tokens" in profile
         or Decimal(profile["input_usd_per_million"]) != Decimal(input_rate)
@@ -30,14 +36,3 @@ def validate_meta_profile(profile: dict[str, Any], provider: str, model: str) ->
         raise ValueError(
             "Meta requires exact tariff/context and unknown native output bound"
         )
-
-
-def campaign_transport() -> NoReturn:
-    """Never substitute OpenAI or claim the separate snapshot adapter is ready.
-
-    Integration TODO: operatebench.agents.meta_responses.MetaResponsesTransport
-    and operatebench.providers.meta_responses.build_client. A reviewed bridge must
-    bind the existing SharedGuard, pre-wire dispatch journal, raw wire evidence,
-    provider observers and offline replay, with no artificial turn deadline.
-    """
-    raise ValueError("Meta campaign wire/evidence/replay integration is not ready")

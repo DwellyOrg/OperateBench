@@ -197,10 +197,6 @@ def consume(path: Path, sha: str, *, network: Any = None) -> list[dict[str, Any]
     if admission_path.is_relative_to(ROOT):
         raise ValueError("external admission required")
     a = validate(decode(read_private(str(path))), sha, synthetic=network is not None)
-    if a.get("roster_profile") == "meta-standard-same44-v1":
-        from tools.three_flow_meta import campaign_transport
-
-        campaign_transport()  # Refuse before custody mutation or credential access.
     cap = None if a["cap_usd"] is None else Decimal(a["cap_usd"])
     limit_policy = a.get("limit_policy")
     custody = normal_path(a["custody_root"])

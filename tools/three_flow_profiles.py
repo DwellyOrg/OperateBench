@@ -213,7 +213,7 @@ def registry(
                 "provider": "meta",
                 "model": model,
                 "endpoint": ENDPOINTS["meta"],
-                "mapping": "lifecycle_meta_responses_snapshot_v1",
+                "mapping": "three-flow-meta-snapshot-minimal-v1",
                 "request_settings": {
                     "reasoning": {"effort": "minimal"},
                     "store": False,
@@ -222,7 +222,7 @@ def registry(
                     "comparison": "equal-scaffold independent snapshots",
                     "native_reasoning_continuation": False,
                 },
-                "settings_source": "tools/three_flow_meta.py",
+                "settings_source": "tools/three_flow_http.py",
                 "retries": 0,
                 "output_limit": (
                     "unknown native maximum; admitted local context/budget bound"
