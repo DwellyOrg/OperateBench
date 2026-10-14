@@ -57,7 +57,7 @@ def test_sdk_async_native_transport_auth_payload_and_usage() -> None:
 
 
 def test_default_sdk_clients_are_admitted_without_dispatch() -> None:
-    assert version("mistralai") == "3.0.0"
+    assert version("mistralai") == "3.2.0"
     client = lifecycle.build_client(api_key="offline-placeholder")
     try:
         assert type(client.sdk_configuration.client) is httpx2.Client
