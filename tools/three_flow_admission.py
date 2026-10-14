@@ -13,19 +13,25 @@ from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
-from tools.three_flow_budget import OPTIONAL_PROFILE, validate_limit_policy
+from tools.three_flow_budget import (
+    META_UNCAPPED_PROFILE,
+    OPTIONAL_PROFILE,
+    validate_limit_policy,
+)
 from tools.three_flow_campaign import (
     CONFIGURATIONS,
     LATEST_ROSTER_PROFILE,
     assignments,
     selected_roster,
 )
-from tools.three_flow_profiles import ENDPOINTS
+from tools.three_flow_meta import validate_meta_profile
+from tools.three_flow_profiles import ENDPOINTS, META_ROSTER_PROFILE
 from tools.three_flow_profiles import minimum_effort as minimum_effort
 from tools.three_flow_profiles import registry as registry
 from tools.three_flow_runtime import ROOT, source_binding
 
 VARIABLES = {
+    "meta": "MODEL_API_KEY",
     "openai": "OPENAI_API_KEY",
     "anthropic": "ANTHROPIC_API_KEY",
     "mistral": "MISTRAL_API_KEY",
@@ -70,7 +76,7 @@ def runtime_identity() -> dict[str, Any]:
 
 def proposal(sha: str, roster_profile: str = "legacy-v1") -> dict[str, Any]:
     """Pure description, never an approval template with approved defaults."""
-    return {
+    result: dict[str, Any] = {
         "schema": "three-flow-preflight-v1",
         "source_sha": sha,
         "runtime": runtime_identity(),
@@ -96,6 +102,20 @@ def proposal(sha: str, roster_profile: str = "legacy-v1") -> dict[str, Any]:
             "qualification and no-intervening-spend required",
         ],
     }
+
+    if roster_profile == META_ROSTER_PROFILE:
+        result["cap_usd"] = "990"
+        result["diagnostic_ceiling_usd"] = "10"
+        result["optional_successor"] = {
+            "limit_policy": "three-flow-meta-uncapped-v1",
+            "cap_usd": None,
+            "admitted": False,
+            "requires": "explicit source-bound owner admission for a distinct series",
+        }
+        result["budget_scope"] = (
+            "one series, both models, diagnostics, retries and reruns"
+        )
+    return result
 
 
 def identifier(value: Any) -> bool:
@@ -140,7 +160,8 @@ def _validate(
     if isinstance(admission, dict) and "roster_profile" in admission:
         fields.add("roster_profile")
         if (
-            admission["roster_profile"] != LATEST_ROSTER_PROFILE
+            admission["roster_profile"]
+            not in (LATEST_ROSTER_PROFILE, META_ROSTER_PROFILE)
             or admission.get("mode_profile") != "off-or-minimum-v1"
         ):
             raise ValueError("explicit latest roster requires off-or-minimum profile")
@@ -171,7 +192,12 @@ def _validate(
         a["correction_binding"]["original_source_sha"] if correction else sha
     )
     if optional:
-        validate_limit_policy(a["limit_policy"])
+        validate_limit_policy(
+            a["limit_policy"],
+            mode=META_UNCAPPED_PROFILE
+            if a.get("roster_profile") == META_ROSTER_PROFILE
+            else OPTIONAL_PROFILE,
+        )
         if a["limit_policy"]["source_sha"] != financial_source:
             raise ValueError("optional limits source binding mismatch")
     if (
@@ -191,7 +217,12 @@ def _validate(
                 )
             )
         )
-        or (a["cap_usd"] is not None if optional else a["cap_usd"] != "1000")
+        or (
+            a["cap_usd"] is not None
+            if optional
+            else a["cap_usd"]
+            != ("990" if a.get("roster_profile") == META_ROSTER_PROFILE else "1000")
+        )
         or digest(a["resource_policy"]) != digest(RESOURCE_POLICY)
         or not all(identifier(a[k]) for k in ("campaign_id", "attempt_id"))
         or a["parent_gates"] is not True
@@ -214,10 +245,20 @@ def _validate(
         raise ValueError("exact selected model profiles required")
     for slot in slots:
         p = a["profiles"][slot["model"]]
-        validate_profile(p, slot["provider"])
+        validate_profile(
+            p,
+            slot["provider"],
+            model=slot["model"],
+            roster_profile=a.get("roster_profile", "legacy-v1"),
+        )
         if a.get("roster_profile") == LATEST_ROSTER_PROFILE:
             validate_latest_http_profile(p, slot["model"])
-        if optional != (p.get("execution_policy") == OPTIONAL_PROFILE):
+        expected_execution = (
+            META_UNCAPPED_PROFILE
+            if a.get("roster_profile") == META_ROSTER_PROFILE
+            else OPTIONAL_PROFILE
+        )
+        if optional != (p.get("execution_policy") == expected_execution):
             raise ValueError("execution controls differ from monetary policy")
         if "owner_pricing" in p:
             owner = p["owner_pricing"]
@@ -592,7 +633,13 @@ def validate_latest_http_profile(p: dict[str, Any], model: str) -> None:
         raise ValueError("latest HTTP envelope loses known published tier rates")
 
 
-def validate_profile(p: Any, provider: str) -> None:
+def validate_profile(
+    p: Any,
+    provider: str,
+    *,
+    model: str | None = None,
+    roster_profile: str = "legacy-v1",
+) -> None:
     fields = {
         "endpoint",
         "input_max",
@@ -609,16 +656,28 @@ def validate_profile(p: Any, provider: str) -> None:
     if isinstance(p, dict) and "owner_output_cap_tokens" in p:
         fields.add("owner_output_cap_tokens")
         if (
-            provider != "river"
+            provider not in ("river", "meta")
+            or (
+                provider == "meta"
+                and (
+                    p.get("execution_policy") != META_UNCAPPED_PROFILE
+                    or p["owner_output_cap_tokens"] != 16384
+                )
+            )
             or p.get("bounds_policy") is None
             or type(p["owner_output_cap_tokens"]) is not int
             or p["owner_output_cap_tokens"] <= 0
         ):
-            raise ValueError("positive River diagnostic owner output cap required")
+            raise ValueError("admitted diagnostic owner output cap required")
     optional = isinstance(p, dict) and "execution_policy" in p
     if optional:
         fields.add("execution_policy")
-        if p["execution_policy"] != OPTIONAL_PROFILE:
+        expected_execution = (
+            META_UNCAPPED_PROFILE
+            if provider == "meta" and roster_profile == META_ROSTER_PROFILE
+            else OPTIONAL_PROFILE
+        )
+        if p["execution_policy"] != expected_execution:
             raise ValueError("unknown execution controls")
     owner = isinstance(p, dict) and p.get("pricing_policy") == OWNER_PRICING_POLICY
     if owner:
@@ -706,7 +765,9 @@ def validate_profile(p: Any, provider: str) -> None:
         if not value.is_finite() or value <= 0:
             raise ValueError("missing or nonfinite prices")
     t = p["network_timeout_seconds"]
-    if optional:
+    if provider == "meta" and roster_profile == META_ROSTER_PROFILE:
+        validate_meta_profile(p, provider, model or "")
+    elif optional:
         if t is not None or not diagnostic:
             raise ValueError(
                 "optional execution requires null timeout and dynamic context bound"

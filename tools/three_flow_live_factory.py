@@ -12,6 +12,7 @@ import httpx
 from operatebench.agents.pricing import LifecyclePricingPolicy
 from tools.aggregate_budget import SharedGuard
 from tools.three_flow_admission import VARIABLES, digest
+from tools.three_flow_budget import META_UNCAPPED_PROFILE
 from tools.three_flow_http import HTTPCampaignTransport
 
 
@@ -27,6 +28,14 @@ class AdmittedGuard(SharedGuard):
     def __init__(self, *, profile: dict[str, Any], **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.profile = profile
+
+    @property
+    def _allows_no_money_cap(self) -> bool:
+        # SharedGuard already admits the generic optional controller. Meta has
+        # a distinct validated genesis and reuses that same nullable primitive.
+        return super()._allows_no_money_cap or (
+            getattr(self.budget, "controller_profile", None) == META_UNCAPPED_PROFILE
+        )
 
     @property
     def diagnostic(self) -> bool:

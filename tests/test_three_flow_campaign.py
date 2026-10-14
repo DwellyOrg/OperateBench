@@ -105,7 +105,10 @@ def test_report_scope_preserves_row_eligibility(tmp_path, origins, scope):
 
     slot = _http_slot("maintenance")
     root = tmp_path / "execution"
-    run_offline(root, campaign_id="test", slots=[slot])
+    run_offline(root, campaign_id="test", slots=[slot], mode="paid")
+    assert json.loads((root / "scorecard.json").read_text())["scope"] == (
+        "OFFLINE_SDK_MOCK_NOT_LLM_RESULTS"
+    )
     record = json.loads((root / slot["trial_id"] / "record.json").read_text())
     rows = [score_row(slot, {**record, "evidence_origin": origin}) for origin in origins]
     report = tmp_path / "report"
@@ -182,6 +185,7 @@ def test_direct_correction_refused_before_any_side_effect(tmp_path, monkeypatch,
             attempt_id="second",
             selected_corrections=selected,
             transport_factory=forbidden,
+            evidence_origin="SDK_MOCK_NOT_LLM",
         )
     assert not root.exists()
 
@@ -209,6 +213,7 @@ def test_direct_canonical_correction_executes_and_replays(tmp_path, monkeypatch)
         resume=True,
         attempt_id="second",
         selected_corrections=[correction],
+        evidence_origin="SDK_MOCK_NOT_LLM",
     )
     assert rows[0]["classification"] == "scored"
     assert not rows[0]["eligible_for_live_results"]
@@ -542,3 +547,322 @@ def test_network_failure_remains_provider_exclusion_on_resume(
     ]
     assert partial[-1]["classification"] == "excluded"
     assert partial[-1]["exclusion_code"] == "provider_network_error"
+
+
+@pytest.mark.parametrize("origin", ["PROVIDER_CANDIDATE", "SDK_MOCK_NOT_LLM"])
+@pytest.mark.parametrize("prewire", [False, True])
+def test_all_excluded_trusted_provenance(tmp_path, origin, prewire):
+    from operatebench.agents.transport import ExecutionRecord, ProviderFailure
+    from tools.three_flow_campaign import run_campaign
+
+    failure = ProviderFailure(
+        ExecutionRecord(
+            "synthetic",
+            None,
+            None,
+            None,
+            0,
+            0,
+            (),
+            True,
+            "provider_error",
+            "synthetic refusal",
+        ),
+        "synthetic refusal",
+    )
+
+    class FailedTransport:
+        max_output_tokens = 128000
+
+        def __init__(self):
+            self.settings = {"evidence_origin": origin}
+
+        local_failure = None
+        last_turn = None
+
+        def close(self):
+            pass
+
+    def factory(slot, budget):
+        if prewire:
+            raise failure
+        return FailedTransport()
+
+    # Synthetic factory exercises the paid-candidate producer without a network.
+    # Failure after construction uses the same classified provider failure path.
+    from unittest.mock import patch
+
+    root = tmp_path / "future"
+    slots = assignments("future")[:2]
+    with (
+        patch(
+            "tools.three_flow_campaign.run_trial",
+            side_effect=failure,
+        ),
+        patch("tools.three_flow_campaign.provider_identity", return_value={}),
+    ):
+        rows = run_campaign(
+            root,
+            campaign_id="future",
+            slots=slots,
+            transport_factory=factory,
+            evidence_origin=origin,
+            mode="paid",
+        )
+    scope = (
+        origin if origin == "PROVIDER_CANDIDATE" else "OFFLINE_SDK_MOCK_NOT_LLM_RESULTS"
+    )
+    assert all(row["classification"] == "excluded" for row in rows)
+    assert sum(row["eligible_for_live_results"] for row in rows) == 0
+    assert json.loads((root / "scorecard.json").read_text())["scope"] == scope
+    assert f"Scope: {scope}" in (root / "scorecard.md").read_text()
+    for slot in slots:
+        closure = json.loads((root / (slot["trial_id"] + ".closure.json")).read_text())
+        assert closure["evidence_origin"] == origin
+
+
+def test_injected_factory_requires_trusted_origin(tmp_path):
+    from tools.three_flow_campaign import run_campaign
+
+    with pytest.raises(TypeError, match="evidence_origin"):
+        run_campaign(tmp_path / "unused", campaign_id="test", transport_factory=object())
+    assert not (tmp_path / "unused").exists()
+
+
+def test_scored_origin_mismatch_aborts(tmp_path, monkeypatch):
+    # Real mock execution produces SDK_MOCK_NOT_LLM, even under paid mode.
+    from tools import three_flow_campaign as campaign
+    from tools.three_flow_campaign import run_campaign
+
+    original = campaign.run_trial
+
+    def mismatched(*args, **kwargs):
+        record = original(*args, **kwargs)
+        return {**record, "evidence_origin": "PROVIDER_CANDIDATE"}
+
+    monkeypatch.setattr(campaign, "run_trial", mismatched)
+    rows = run_campaign(
+        tmp_path / "mismatch",
+        campaign_id="test",
+        slots=[_http_slot("maintenance")],
+        evidence_origin="SDK_MOCK_NOT_LLM",
+        mode="paid",
+    )
+    assert rows[0]["classification"] == "aborted"
+    assert rows[0]["evidence_origin"] == "SDK_MOCK_NOT_LLM"
+    assert not rows[0]["eligible_for_live_results"]
+
+
+def test_excluded_mixed_origins_are_conservative(tmp_path):
+    from tools.three_flow_campaign import reports
+
+    rows = [
+        {
+            **slot,
+            "classification": "excluded",
+            "eligible_for_live_results": False,
+            "evidence_origin": origin,
+        }
+        for slot, origin in zip(
+            assignments("mixed")[:2],
+            ("SDK_MOCK_NOT_LLM", "PROVIDER_CANDIDATE"),
+            strict=True,
+        )
+    ]
+    reports(tmp_path, rows, {})
+    scope = "MIXED_MOCK_AND_PROVIDER_CANDIDATE"
+    assert json.loads((tmp_path / "scorecard.json").read_text())["scope"] == scope
+    assert f"Scope: {scope}" in (tmp_path / "scorecard.md").read_text()
+    assert not any(row["eligible_for_live_results"] for row in rows)
+
+
+def test_meta_429_preserves_pending_and_submission_order(tmp_path):
+    import httpx
+
+    from tests.test_three_flow_meta_http import bridge
+    from tools.three_flow_campaign import assignments, run_campaign
+    from tools.three_flow_profiles import META_ROSTER_PROFILE
+
+    all_slots = assignments("test", META_ROSTER_PROFILE)
+    models = list(dict.fromkeys(s["model"] for s in all_slots))
+    slots = [s for m in models for s in all_slots if s["model"] == m][:2]
+    slots += [s for s in all_slots if s["model"] == models[1]][:2]
+    constructed = []
+
+    def factory(slot, budget):
+        path = tmp_path / ("factory-" + slot["trial_id"])
+        path.mkdir()
+        old, _, transport, _, _ = bridge(path, slot["model"])
+        old.close()
+        transport.guard.budget = budget
+        transport.guard.cell = slot["trial_id"]
+        transport.wire.inner = httpx.MockTransport(lambda r: httpx.Response(429))
+        constructed.append(slot["model"])
+        return transport
+
+    root = tmp_path / "campaign"
+    rows = run_campaign(
+        root,
+        campaign_id="test",
+        slots=slots,
+        workers=1,
+        roster_profile=META_ROSTER_PROFILE,
+        transport_factory=factory,
+        evidence_origin="SDK_MOCK_NOT_LLM",
+    )
+    assert constructed == [models[0]]
+    assert [r["trial_id"] for r in rows] == [s["trial_id"] for s in slots]
+    assert rows[0]["safe_status"] == 429
+    assert all(r["classification"] == "pending" for r in rows[1:])
+    for slot in slots[1:]:
+        assert not (root / (slot["trial_id"] + ".assigned.json")).exists()
+        assert not (root / (slot["trial_id"] + ".closure.json")).exists()
+    terminal = json.loads((root / "terminal.json").read_text())
+    assert terminal["complete"] is False
+    assert len(terminal["pending_trial_ids"]) == 3
+    resumed = run_campaign(
+        root,
+        campaign_id="test",
+        slots=slots,
+        workers=1,
+        resume=True,
+        roster_profile=META_ROSTER_PROFILE,
+        transport_factory=factory,
+        evidence_origin="SDK_MOCK_NOT_LLM",
+    )
+    assert constructed == [models[0], models[1]]
+    assert sum(r["classification"] == "pending" for r in resumed) == 2
+
+
+def test_meta_boundary_stop_archives_unsent_runtime_for_resume(tmp_path, monkeypatch):
+    import httpx
+
+    from tests.test_three_flow_meta_http import bridge
+    from tools import three_flow_campaign as campaign
+    from tools.three_flow_profiles import META_ROSTER_PROFILE
+
+    slot = campaign.assignments("test", META_ROSTER_PROFILE)[0]
+    calls = []
+
+    def factory(slot, budget):
+        path = tmp_path / ("factory" + str(len(calls)))
+        path.mkdir()
+        old, _, transport, _, _ = bridge(path, slot["model"])
+        old.close()
+        transport.guard.budget = budget
+        transport.guard.cell = slot["trial_id"]
+        transport.wire.inner = httpx.MockTransport(lambda r: httpx.Response(429))
+        calls.append(transport)
+        return transport
+
+    original = campaign.run_trial
+
+    def stop_before_first_dispatch(trial, transport, **kwargs):
+        if len(calls) == 1:
+            transport.wire.meta_pacer.stopped.set()
+        return original(trial, transport, **kwargs)
+
+    monkeypatch.setattr(campaign, "run_trial", stop_before_first_dispatch)
+    root = tmp_path / "campaign"
+    kwargs = {
+        "campaign_id": "test",
+        "slots": [slot],
+        "workers": 1,
+        "roster_profile": META_ROSTER_PROFILE,
+        "transport_factory": factory,
+        "evidence_origin": "SDK_MOCK_NOT_LLM",
+    }
+    first = campaign.run_campaign(root, **kwargs)[0]
+    assert first["classification"] == "pending"
+    assert (root / first["predispatch_evidence"] / "runtime").is_dir()
+    assert not (root / slot["trial_id"]).exists()
+    second = campaign.run_campaign(root, resume=True, **kwargs)[0]
+    assert second["safe_status"] == 429
+    assert second["classification"] != "pending"
+
+
+def test_meta_partial_stop_closes_without_resubmission(tmp_path):
+    import httpx
+
+    from tests.test_three_flow_meta_http import bridge
+    from tools.three_flow_campaign import assignments, run_campaign
+    from tools.three_flow_profiles import META_ROSTER_PROFILE
+
+    slot = assignments("test", META_ROSTER_PROFILE)[0]
+    calls = []
+    constructions = []
+
+    def factory(slot, budget):
+        path = tmp_path / "factory"
+        path.mkdir()
+        old, _, transport, _, _ = bridge(path, slot["model"])
+        old.close()
+        transport.guard.budget = budget
+        transport.guard.cell = slot["trial_id"]
+        inner = transport.wire.inner
+
+        def handle(request):
+            calls.append(request)
+            response = inner.handle_request(request)
+            if len(calls) == 4:
+                transport.wire.meta_pacer.stopped.set()
+            return response
+
+        transport.wire.inner = httpx.MockTransport(handle)
+        constructions.append(transport)
+        return transport
+
+    root = tmp_path / "campaign"
+    kwargs = {
+        "campaign_id": "test",
+        "slots": [slot],
+        "workers": 1,
+        "roster_profile": META_ROSTER_PROFILE,
+        "transport_factory": factory,
+        "evidence_origin": "SDK_MOCK_NOT_LLM",
+    }
+    row = run_campaign(root, **kwargs)[0]
+    assert row["classification"] == "aborted"
+    assert row["fault"] == "partial_trial_needs_correction_no_resubmit"
+    assert row["automatic_resubmission"] is False
+    assert row["current_turn_dispatched"] is False
+    assert len(calls) == 4
+    assert (root / slot["trial_id"]).is_dir()
+    assert (root / (slot["trial_id"] + ".binding.json")).exists()
+    resumed = run_campaign(root, resume=True, **kwargs)[0]
+    assert resumed["fault"] == row["fault"]
+    assert len(calls) == 4 and len(constructions) == 1
+    events = [
+        json.loads(line)
+        for line in (root / "campaign-budget.jsonl").read_text().splitlines()
+    ]
+    assert sum(e["kind"] == "raw_rpc" for e in events) == 4
+    assert not any(e["kind"] == "forfeit" for e in events)
+
+
+def test_meta_offline_without_factory_rejects_before_root_or_dispatch(
+    tmp_path, monkeypatch
+):
+    calls = []
+
+    def forbidden(self, request):
+        calls.append(request)
+        raise AssertionError("provider dispatch forbidden")
+
+    monkeypatch.setattr(SDKMockTransport, "handle", forbidden)
+    roster_profile = "meta-standard-same44-v1"
+    slot = assignments("test", roster_profile)[0]
+    assert slot["provider"] == "meta"
+    root = tmp_path / "campaign"
+    with pytest.raises(
+        ValueError, match=r"Meta offline route requires.*transport_factory"
+    ):
+        run_offline(
+            root,
+            campaign_id="test",
+            roster_profile=roster_profile,
+            providers=("meta",),
+            slots=[slot],
+        )
+    assert not root.exists()
+    assert calls == []

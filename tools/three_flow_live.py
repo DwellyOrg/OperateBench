@@ -276,6 +276,7 @@ def consume(path: Path, sha: str, *, network: Any = None) -> list[dict[str, Any]
                 root,
                 campaign_id=a["campaign_id"],
                 cap=cap,
+                roster_profile=a.get("roster_profile", "legacy-v1"),
                 limit_policy=limit_policy,
                 create=False,
                 expected_journal_sha256=a["journal_sha256"],
@@ -345,6 +346,7 @@ def consume(path: Path, sha: str, *, network: Any = None) -> list[dict[str, Any]
                 root,
                 campaign_id=a["campaign_id"],
                 cap=cap,
+                roster_profile=a.get("roster_profile", "legacy-v1"),
                 limit_policy=limit_policy,
                 create=True,
             )
@@ -371,6 +373,9 @@ def consume(path: Path, sha: str, *, network: Any = None) -> list[dict[str, Any]
             resume=a["operation"] != "initial",
             campaign_budget=budget,
             transport_factory=factory,
+            evidence_origin="PROVIDER_CANDIDATE"
+            if network is None
+            else "SDK_MOCK_NOT_LLM",
             mode=a["mode"],
             attempt_id=a["attempt_id"],
             selected_corrections=corrections,
@@ -391,6 +396,11 @@ def main(argv: list[str] | None = None, *, network: Any = None) -> int:
     parser.add_argument(
         "mode", choices=("preflight", "run"), default="preflight", nargs="?"
     )
+    parser.add_argument(
+        "--roster-profile",
+        default="legacy-v1",
+        choices=("legacy-v1", "latest-http-v1", "meta-standard-same44-v1"),
+    )
     parser.add_argument("--expected-source")
     parser.add_argument("--admission")
     args = parser.parse_args(argv)
@@ -402,7 +412,7 @@ def main(argv: list[str] | None = None, *, network: Any = None) -> int:
         if args.mode == "preflight":
             from tools.three_flow_admission import proposal
 
-            print(json.dumps(proposal(sha), indent=2))
+            print(json.dumps(proposal(sha, args.roster_profile), indent=2))
             return 0
         rows = consume(normal_path(args.admission), sha, network=network)
         print(

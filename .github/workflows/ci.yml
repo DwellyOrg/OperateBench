@@ -55,8 +55,9 @@ jobs:
   test:
     name: test (py${{ matrix.python-version }})
     runs-on: ubuntu-latest
-    # Allow extra time for the Python 3.11 coverage lane only.
-    timeout-minutes: ${{ matrix.python-version == '3.11' && 180 || 90 }}
+    # Python 3.11 branch coverage with 3 x 88 source-bound offline mocks exceeds
+    # 180 minutes; allow extra time for this coverage lane only.
+    timeout-minutes: ${{ matrix.python-version == '3.11' && 300 || 90 }}
     strategy:
       fail-fast: false
       matrix:

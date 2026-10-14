@@ -34,6 +34,7 @@ def minimum_effort(model: str) -> str:
 
 
 ENDPOINTS = {
+    "meta": "https://api.meta.ai/v1/responses",
     "openai": "https://api.openai.com/v1/responses",
     "anthropic": "https://api.anthropic.com/v1/messages",
     "mistral": "https://api.mistral.ai/v1/chat/completions",
@@ -53,11 +54,19 @@ RIVER_MODELS = (
     "nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4",
 )
 ROSTER = tuple(("river", m) for m in RIVER_MODELS) + tuple(MODELS.items())
+META_ROSTER_PROFILE = "meta-standard-same44-v1"
+META_MODELS = ("muse-wonder-1.0", "muse-spark-1.3")
+META_ENVELOPES = {
+    "muse-wonder-1.0": (1048576, "4", "20"),
+    "muse-spark-1.3": (1048576, "1.25", "4.25"),
+}
 LATEST_ROSTER_PROFILE = "latest-http-v1"
 EXCLUDED_FUTURE_MODEL = "Qwen/Qwen3.5-122B-A10B-FP8"
 
 
 def selected_roster(roster_profile: str = "legacy-v1") -> tuple[tuple[str, str], ...]:
+    if roster_profile == META_ROSTER_PROFILE:
+        return tuple(("meta", m) for m in META_MODELS)
     if roster_profile == "legacy-v1":
         return ROSTER
     if roster_profile == LATEST_ROSTER_PROFILE:
@@ -196,6 +205,41 @@ def registry(
         raise ValueError("unknown transport policy")
     if mode_profile not in MODE_PROFILES:
         raise ValueError("unknown reasoning mode profile")
+    if roster_profile == META_ROSTER_PROFILE:
+        if mode_profile != "off-or-minimum-v1":
+            raise ValueError("Meta Standard requires minimal reasoning")
+        return [
+            {
+                "provider": "meta",
+                "model": model,
+                "endpoint": ENDPOINTS["meta"],
+                "mapping": "three-flow-meta-snapshot-minimal-auto-v3",
+                "request_settings": {
+                    "reasoning": {"effort": "minimal"},
+                    "store": False,
+                    "tool_choice": "auto",
+                    "parallel_tool_calls": False,
+                    "comparison": "equal-scaffold independent snapshots",
+                    "native_reasoning_continuation": False,
+                    "pacing_policy": "meta-standard-rolling-60s-headers-v2",
+                    "provider_header_signal": "remaining tokens/requests; 60s",
+                    "requests_per_minute": 3000,
+                    "tokens_per_minute": 4_000_000,
+                    "reservation_basis": (
+                        "complete serialized input bound + requested output"
+                    ),
+                    "automatic_resubmission": False,
+                },
+                "settings_source": "tools/three_flow_http.py",
+                "retries": 0,
+                "output_limit": (
+                    "unknown native maximum; admitted local context/budget bound "
+                    "and optional owner operational output cap"
+                ),
+                "admitted": False,
+            }
+            for model in META_MODELS
+        ]
     rows: list[dict[str, Any]] = [
         {
             "provider": p,

@@ -30,6 +30,7 @@ from operatebench.agents.transport import ProviderFailure, content_digest
 from operatebench.sdk.profile_packs.pack import COMMERCE_COMMANDS, COMPLIANCE_COMMANDS
 from tools.aggregate_budget import SharedGuard, canonical, decimal
 from tools.three_flow_budget import CampaignBudget
+from tools.three_flow_errors import MetaRatePacer
 from tools.three_flow_http import LATEST_HTTP_MODELS, HTTPCampaignTransport
 from tools.three_flow_mock import SDKMockTransport
 from tools.three_flow_profiles import (
@@ -37,6 +38,9 @@ from tools.three_flow_profiles import (
 )
 from tools.three_flow_profiles import (
     LATEST_ROSTER_PROFILE as LATEST_ROSTER_PROFILE,
+)
+from tools.three_flow_profiles import (
+    META_ROSTER_PROFILE,
 )
 from tools.three_flow_profiles import MODELS as MODELS
 from tools.three_flow_profiles import (
@@ -76,7 +80,22 @@ def preflight(roster_profile: str = "legacy-v1") -> dict[str, Any]:
         "admitted": False,
         "source_digest": source_binding(),
         "source_commit": source_commit(),
-        "global_cap_usd": "1000",
+        "global_cap_usd": "990" if roster_profile == META_ROSTER_PROFILE else "1000",
+        **(
+            {
+                "diagnostic_ceiling_usd": "10",
+                "optional_successor": {
+                    "limit_policy": "three-flow-meta-uncapped-v1",
+                    "cap_usd": None,
+                    "admitted": False,
+                    "requires": (
+                        "explicit source-bound owner admission for a distinct series"
+                    ),
+                },
+            }
+            if roster_profile == META_ROSTER_PROFILE
+            else {}
+        ),
         "workers": 4,
         "river_workers": 2,
         "native_construction": "serialized",
@@ -191,14 +210,19 @@ def reports(
     *,
     grouped: bool = True,
     limit_policy: dict[str, Any] | None = None,
+    evidence_origin: str | None = None,
 ) -> None:
     origins = {r.get("evidence_origin") for r in rows}
+    if evidence_origin is not None:
+        origins.add(evidence_origin)
     scope = (
         "MIXED_MOCK_AND_PROVIDER_CANDIDATE"
         if {"SDK_MOCK_NOT_LLM", "PROVIDER_CANDIDATE"} <= origins
         else "PROVIDER_CANDIDATE"
         if "PROVIDER_CANDIDATE" in origins
         else "OFFLINE_SDK_MOCK_NOT_LLM_RESULTS"
+        if origins == {"SDK_MOCK_NOT_LLM"}
+        else "UNKNOWN_PROVENANCE"
     )
     write_private(
         root / "scorecard.json",
@@ -347,6 +371,7 @@ def reconcile_closure(
                 raise ValueError("retained trial differs from slot")
             if (
                 record["trial"] != asdict(trial)
+                or record["evidence_origin"] != row.get("evidence_origin")
                 or record["record_digest"] != row["record_digest"]
                 or record["record_digest"]
                 != content_digest(
@@ -375,6 +400,7 @@ def reconcile_closure(
             row = {
                 **slot,
                 "classification": "aborted",
+                "evidence_origin": original.get("evidence_origin"),
                 "fault": "evidence_reconciliation",
                 "evidence_reason": reason,
                 "evaluation": None,
@@ -463,6 +489,7 @@ def run_campaign(
     transport_factory: Any = None,
     campaign_budget: CampaignBudget | None = None,
     mode: str = "SDK_MOCK_NOT_LLM",
+    evidence_origin: str,
     attempt_id: str | None = None,
     selected_corrections: list[dict[str, Any]] | None = None,
     assignment_prepared: bool = False,
@@ -472,6 +499,10 @@ def run_campaign(
         raise ValueError("corrections require resume and nonempty original slot mapping")
     if type(workers) is not int or not 1 <= workers <= 4:
         raise ValueError("one to four worker threads required")
+    if evidence_origin not in ("SDK_MOCK_NOT_LLM", "PROVIDER_CANDIDATE"):
+        raise ValueError("invalid evidence origin")
+    if transport_factory is None and evidence_origin != "SDK_MOCK_NOT_LLM":
+        raise ValueError("offline transport cannot produce provider evidence")
     roster = assignments(campaign_id, roster_profile)
     selected = (
         [s for s in roster if s["provider"] in providers] if slots is None else slots
@@ -512,6 +543,8 @@ def run_campaign(
         and river_assets is None
     ):
         raise ValueError("River offline route requires explicit pinned assets")
+    if transport_factory is None and any(s["provider"] == "meta" for s in selected):
+        raise ValueError("Meta offline route requires an explicit transport_factory")
     if not resume and campaign_budget is None:
         root.mkdir(mode=0o700)
     budget = campaign_budget or CampaignBudget(
@@ -564,8 +597,21 @@ def run_campaign(
         raise
 
     construction = Lock()
+    meta_pacer = MetaRatePacer(enabled=evidence_origin != "SDK_MOCK_NOT_LLM")
 
-    def worker(slot: dict[str, Any]) -> dict[str, Any]:
+    def pending(slot: dict[str, Any]) -> dict[str, Any]:
+        return {
+            **slot,
+            "classification": "pending",
+            "fault": "meta_dispatch_stopped",
+            "evidence_origin": evidence_origin,
+            "evaluation": None,
+            "completion": None,
+            "estimated_usd": None,
+            "eligible_for_live_results": False,
+        }
+
+    def worker(slot: dict[str, Any], evidence_origin: str) -> dict[str, Any]:
         ident = slot["trial_id"]
         closure_path = root / (ident + ".closure.json")
         assigned_path = root / (ident + ".assigned.json")
@@ -584,6 +630,7 @@ def run_campaign(
             row = {
                 **slot,
                 "classification": "aborted",
+                "evidence_origin": evidence_origin,
                 "fault": "interrupted_no_resubmit",
                 "evaluation": None,
                 "completion": None,
@@ -596,6 +643,8 @@ def run_campaign(
             row = financial_row(row, budget)
             write_private(closure_path, canonical(row))
             return row
+        if slot["provider"] == "meta" and meta_pacer.stopped.is_set():
+            return financial_row(pending(slot), budget)
         write_private(assigned_path, canonical(slot))
         transport: Any = None
         try:
@@ -653,6 +702,11 @@ def run_campaign(
                     guard=guard,
                     max_output_tokens=maximum,
                 )
+            if slot["provider"] == "meta":
+                transport.wire.meta_pacer = meta_pacer
+                transport.settings["pacing_scope"] = (
+                    "campaign-per-model; fleet HTTP429 fail-stop"
+                )
             trial = Trial(
                 campaign_id,
                 ident,
@@ -664,11 +718,14 @@ def run_campaign(
             )
             write_private(root / (ident + ".binding.json"), canonical(asdict(trial)))
             record = run_trial(trial, transport, output=root / ident)
+            if record["evidence_origin"] != evidence_origin:
+                raise ValueError("scored record differs from trusted evidence origin")
             row = score_row(slot, record)
         except Exception as exc:
             liability = budget.cell_accounting(ident)["full_unknown_usd"]
             row = {
                 **slot,
+                "evidence_origin": evidence_origin,
                 "classification": "excluded"
                 if isinstance(exc, ProviderFailure)
                 else "aborted",
@@ -700,6 +757,40 @@ def run_campaign(
         finally:
             if transport is not None:
                 transport.close()
+        if (
+            transport is not None
+            and transport.local_failure == "meta_dispatch_stopped"
+            and not transport.wire.current_turn_dispatched
+            and not transport.wire.captures
+        ):
+            # No wire attempt: resume may start this same stable trial ID.
+            archive = root / (ident + ".undispatched-" + str(uuid4()))
+            archive.mkdir(mode=0o700)
+            assigned_path.rename(archive / "assigned.json")
+            binding = root / (ident + ".binding.json")
+            if binding.exists():
+                binding.rename(archive / "binding.json")
+            runtime = root / ident
+            if runtime.exists():
+                runtime.rename(archive / "runtime")
+            return financial_row(
+                {**pending(slot), "predispatch_evidence": archive.name}, budget
+            )
+        if (
+            transport is not None
+            and transport.local_failure == "meta_dispatch_stopped"
+            and not transport.wire.current_turn_dispatched
+            and transport.wire.captures
+        ):
+            # Partial Core/model state cannot be reconstructed by this runner.
+            # Keep the original binding/runtime and close against resubmission.
+            row.update(
+                classification="aborted",
+                fault="partial_trial_needs_correction_no_resubmit",
+                current_turn_dispatched=False,
+                automatic_resubmission=False,
+                recovery_requires="reconstruction of prior Core/model state",
+            )
         if transport is not None and "pricing_basis" in transport.settings:
             row["pricing_basis"] = transport.settings["pricing_basis"]
         row = financial_row(row, budget)
@@ -716,18 +807,37 @@ def run_campaign(
                 max_workers=workers, thread_name_prefix="http"
             ) as http_pool,
         ):
+            submission = list(selected)
+            meta_slots = [s for s in selected if s["provider"] == "meta"]
+            models = list(dict.fromkeys(s["model"] for s in meta_slots))
+            queues = [[s for s in meta_slots if s["model"] == m] for m in models]
+            interleaved = [
+                queue[i]
+                for i in range(max(map(len, queues), default=0))
+                for queue in queues
+                if i < len(queue)
+            ]
+            iterator = iter(interleaved)
+            submission = [
+                next(iterator) if s["provider"] == "meta" else s for s in submission
+            ]
             futures = [
                 (river_pool if slot["provider"] == "river" else http_pool).submit(
-                    worker, slot
+                    worker, slot, evidence_origin
                 )
-                for slot in selected
+                for slot in submission
             ]
-            rows = [future.result() for future in futures]
+            by_id = {
+                s["trial_id"]: f.result()
+                for s, f in zip(submission, futures, strict=True)
+            }
+            rows = [by_id[s["trial_id"]] for s in selected]
         reports(
             report_root,
             rows,
             {**budget.totals(), **({"cap": None} if budget.cap is None else {})},
             limit_policy=budget.limit_policy,
+            evidence_origin=evidence_origin,
         )
         write_private(
             report_root / "terminal.json",
@@ -741,6 +851,10 @@ def run_campaign(
                     "rows_sha256": content_digest(rows),
                     "source_digest": source_binding(),
                     "mode": mode,
+                    "complete": not any(r["classification"] == "pending" for r in rows),
+                    "pending_trial_ids": [
+                        r["trial_id"] for r in rows if r["classification"] == "pending"
+                    ],
                 }
             ),
         )
@@ -751,6 +865,9 @@ def run_campaign(
 
 def run_offline(root: Path, **kwargs: Any) -> list[dict[str, Any]]:
     """Compatibility facade over the common executor; never supplies live capability."""
+    kwargs.setdefault("evidence_origin", "SDK_MOCK_NOT_LLM")
+    if kwargs["evidence_origin"] != "SDK_MOCK_NOT_LLM":
+        raise ValueError("offline executor requires mock evidence origin")
     return run_campaign(root, **kwargs)
 
 

@@ -188,6 +188,7 @@ def test_latest_factory_campaign_and_grouped_reports(tmp_path):
         slots=slots,
         roster_profile=PROFILE,
         transport_factory=factory,
+        evidence_origin="SDK_MOCK_NOT_LLM",
     )
     assert len(rows) == len(LATEST_HTTP_MODELS)
     assert all(r["classification"] == "scored" for r in rows)
