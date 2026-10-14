@@ -261,6 +261,41 @@ def test_exact_schema_and_no_loss_arguments():
 
 
 @pytest.mark.parametrize(
+    "field,value",
+    [
+        ("thought", "true"),
+        ("thought", 1),
+        ("functionCall.id", None),
+        ("functionCall.id", 7),
+    ],
+)
+def test_native_response_rejects_wrong_thought_and_call_id_types(field, value):
+    from operatebench.providers.faults import AdapterProviderError
+    from tools.three_flow_gemini import parse_response
+
+    body = response_body()
+    part = body["candidates"][0]["content"]["parts"][0]
+    if field == "thought":
+        part["thought"] = value
+    else:
+        part["functionCall"]["id"] = value
+    with pytest.raises(AdapterProviderError, match="Gemini invalid"):
+        parse_response(json.dumps(body), "gemini-4-argon")
+
+
+def test_native_response_preserves_valid_thought_call_id_signature_and_args():
+    from tools.three_flow_gemini import parse_response
+
+    body = response_body()
+    part = body["candidates"][0]["content"]["parts"][0]
+    part["thought"] = False
+    part["functionCall"]["id"] = "call-1"
+    response, _, content = parse_response(json.dumps(body), "gemini-4-argon")
+    assert content["parts"][0] == part
+    assert response.tool_calls[0].arguments == part["functionCall"]["args"]
+
+
+@pytest.mark.parametrize(
     "mutation",
     [
         lambda b: b.pop("usageMetadata"),
@@ -735,7 +770,10 @@ def test_dynamic_cap_actual_wire_and_guard(tmp_path, monkeypatch, remaining):
     import tools.three_flow_gemini as gemini
     from operatebench.agents.model import AGENT_TOOL_NAMES, MODEL_PROTOCOL_VERSION
     from operatebench.agents.transport import ModelRequest, content_digest
-    from operatebench.providers.cost import CostReservationBreachedError
+    from operatebench.providers.cost import (
+        CostCapExceededError,
+        CostReservationBreachedError,
+    )
 
     budget, _mock, transport, trial = fixture(tmp_path, "gemini-4-argon")
     prompt = {"observation": {}}
@@ -759,7 +797,7 @@ def test_dynamic_cap_actual_wire_and_guard(tmp_path, monkeypatch, remaining):
     )
     try:
         if remaining <= 0:
-            with pytest.raises(ValueError, match="before dispatch"):
+            with pytest.raises(CostCapExceededError, match="before dispatch"):
                 transport.send(request)
             assert not transport.wire.captures
             assert transport.guard.ticket is None
@@ -779,6 +817,38 @@ def test_dynamic_cap_actual_wire_and_guard(tmp_path, monkeypatch, remaining):
             assert transport.last_turn["requested_output_bound"] == cap
             assert transport.guard._max_output_tokens == cap
         assert budget.cap is None
+    finally:
+        transport.close()
+        budget.close()
+
+
+@pytest.mark.parametrize("remaining", [0, -1])
+def test_no_output_room_is_excluded_before_provider_rpc(tmp_path, monkeypatch, remaining):
+    import tools.three_flow_gemini as gemini
+    from operatebench.agents.transport import FAULT_BUDGET, ProviderFailure
+
+    budget, mock, transport, trial = fixture(tmp_path, "gemini-4-argon")
+    monkeypatch.setattr(
+        gemini,
+        "request_input_token_bound",
+        lambda *a: transport.profile.context - remaining,
+    )
+    try:
+        with pytest.raises(ProviderFailure) as caught:
+            run_trial(trial, transport, output=tmp_path / "trial")
+        assert caught.value.fault == FAULT_BUDGET
+        rows = [
+            json.loads(line)
+            for line in (tmp_path / "trial" / "partial.ndjson").read_text().splitlines()
+        ]
+        assert rows[-1]["classification"] == "excluded"
+        assert rows[-1]["exclusion_code"] == FAULT_BUDGET
+        assert mock.calls == []
+        assert transport.wire.captures == []
+        assert transport.guard.ticket is None
+        assert budget.records == {}
+        assert budget.cell_accounting("trial")["full_unknown_usd"] == "0"
+        assert not (tmp_path / "trial" / "record.json").exists()
     finally:
         transport.close()
         budget.close()

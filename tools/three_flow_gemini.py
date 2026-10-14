@@ -29,7 +29,7 @@ from operatebench.agents.transport import ModelRequest, ModelResponse, ToolCall
 from operatebench.core.protocol import AgentObservation
 from operatebench.domains.lettings.maintenance.agents import build_agent
 from operatebench.jsonsafe import canonical_json_text
-from operatebench.providers.cost import request_input_token_bound
+from operatebench.providers.cost import CostCapExceededError, request_input_token_bound
 from operatebench.providers.faults import AdapterProviderError, SingleFlight
 from operatebench.providers.usage import MAX_EXACT_TOKEN_COUNT
 from operatebench.providers.wire import wire_invalid, wire_json_object
@@ -200,12 +200,16 @@ def parse_response(
             not isinstance(part["thoughtSignature"], str) or not part["thoughtSignature"]
         ):
             raise wire_invalid("Gemini invalid thought signature")
+        if "thought" in part and type(part["thought"]) is not bool:
+            raise wire_invalid("Gemini invalid thought")
         if "text" in part and not isinstance(part["text"], str):
             raise wire_invalid("Gemini invalid text")
         if "functionCall" in part:
             call = part["functionCall"]
             if not isinstance(call, dict) or set(call) - {"name", "args", "id"}:
                 raise wire_invalid("Gemini invalid function call")
+            if "id" in call and not isinstance(call["id"], str):
+                raise wire_invalid("Gemini invalid function call id")
             if not isinstance(call.get("name"), str) or not isinstance(
                 call.get("args"), dict
             ):
@@ -332,7 +336,7 @@ class GeminiCampaignTransport:
         bound = request_input_token_bound(payload, "complete Gemini native request")
         maximum = min(self.profile.output, self.profile.context - bound)
         if maximum <= 0:
-            raise ValueError("Gemini context exhausted before dispatch")
+            raise CostCapExceededError("Gemini context exhausted before dispatch")
         payload["generationConfig"]["maxOutputTokens"] = maximum
         return payload, bound, maximum
 
