@@ -7,8 +7,8 @@ continuity or full-capability agentic performance. The original evaluator and
 grades are unchanged. Offline implementation verification is distinct from the
 completed source-bound series summarized in the
 [retrospective results table](MODEL_RESULTS.md). That table separates historical
-cohorts and reports the Meta series without claiming official Lifecycle evidence
-or independent validation.
+cohorts and reports the Meta series. No official Lifecycle evidence is available,
+and independent human review has not occurred.
 
 ## Standalone Lifecycle adapter
 

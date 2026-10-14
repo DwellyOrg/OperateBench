@@ -1,4 +1,4 @@
-# Model results — descriptive observations: 44 related synthetic variants per model, one trial per case; differing sources/settings; independent human validation PENDING; not a validated general-capability ranking
+# Model results — descriptive observations: 44 related synthetic cases per model, one trial per case; separate sources/settings; no independent human review yet; not a general-capability ranking
 
 | Model | Series (distinct runs/settings) | Scored / assigned | Unscored (excluded / aborted) | Goal achieved | All quality checks | Estimated cost (USD, not invoice) |
 | --- | --- | --- | --- | --- | --- | --- |
