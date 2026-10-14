@@ -905,4 +905,4 @@ def test_the_openai_sdk_under_test_is_the_pinned_one() -> None:
     from importlib.metadata import version
 
     assert openai.__version__ == "2.53.0"
-    assert version("mistralai") == "3.0.0"
+    assert version("mistralai") == "3.2.0"
