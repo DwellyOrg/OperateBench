@@ -197,6 +197,7 @@ def river_failed(message: Any) -> dict[str, Any]:
 
 
 OPERATIONS = (
+    "generate_content",
     "responses",
     "messages",
     "chat_completions",

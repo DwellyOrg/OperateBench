@@ -55,6 +55,8 @@ RIVER_MODELS = (
 )
 ROSTER = tuple(("river", m) for m in RIVER_MODELS) + tuple(MODELS.items())
 META_ROSTER_PROFILE = "meta-standard-same44-v1"
+GEMINI_ROSTER_PROFILE = "gemini-standard-same44-low-v1"
+GEMINI_UNCAPPED_PROFILE = "three-flow-gemini-uncapped-v1"
 META_MODELS = ("muse-wonder-1.0", "muse-spark-1.3")
 META_ENVELOPES = {
     "muse-wonder-1.0": (1048576, "4", "20"),
@@ -65,6 +67,10 @@ EXCLUDED_FUTURE_MODEL = "Qwen/Qwen3.5-122B-A10B-FP8"
 
 
 def selected_roster(roster_profile: str = "legacy-v1") -> tuple[tuple[str, str], ...]:
+    if roster_profile == GEMINI_ROSTER_PROFILE:
+        from tools.three_flow_gemini import MODELS as gemini_models
+
+        return tuple(("gemini", m) for m in gemini_models)
     if roster_profile == META_ROSTER_PROFILE:
         return tuple(("meta", m) for m in META_MODELS)
     if roster_profile == "legacy-v1":
@@ -201,6 +207,25 @@ def registry(
     transport_policy: str = "legacy-v1",
     roster_profile: str = "legacy-v1",
 ) -> list[dict[str, Any]]:
+    if roster_profile == GEMINI_ROSTER_PROFILE:
+        from tools.three_flow_gemini import MAPPING
+        from tools.three_flow_gemini import MODELS as gemini_models
+
+        if mode_profile != "gemini-low-v1" or transport_policy != "legacy-v1":
+            raise ValueError("Gemini requires its native LOW profile")
+        return [
+            {
+                "provider": "gemini",
+                "model": m,
+                "endpoint": p.endpoint,
+                "mapping": MAPPING,
+                "request_settings": p.settings(p.output),
+                "settings_source": "tools/three_flow_gemini.py",
+                "retries": 0,
+                "admitted": False,
+            }
+            for m, p in gemini_models.items()
+        ]
     if transport_policy not in ("legacy-v1", "paced-safe-errors-v1"):
         raise ValueError("unknown transport policy")
     if mode_profile not in MODE_PROFILES:

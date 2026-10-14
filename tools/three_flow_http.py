@@ -101,9 +101,15 @@ def explicit_sdk_client(cls: Any, **kwargs: Any) -> Any:
 
 class BudgetWire(httpx.BaseTransport):
     def __init__(
-        self, inner: httpx.BaseTransport, guard: SharedGuard, endpoint: str
+        self,
+        inner: httpx.BaseTransport,
+        guard: SharedGuard,
+        endpoint: str,
+        *,
+        operation: str | None = None,
     ) -> None:
         self.inner, self.guard, self.endpoint = inner, guard, endpoint
+        self.operation = operation
         self.captures: list[dict[str, Any]] = []
         self.expected_payload: dict[str, Any] | None = None
         self.local_failure: str | None = None
@@ -169,6 +175,8 @@ class BudgetWire(httpx.BaseTransport):
             "request_utf8": raw.decode(),
             "request_sha256": hashlib.sha256(raw).hexdigest(),
         }
+        if self.operation == "generate_content":
+            row.update(request_url=str(request.url), request_method=request.method)
         self.captures.append(row)
         # Persisted by the trial observer before crossing the actual transport.
         if self.observer is not None:
@@ -200,15 +208,18 @@ class BudgetWire(httpx.BaseTransport):
             # reflect credentials. Publish only this bounded typed projection,
             # BEFORE any observer sees the response. No original-body digest or
             # reversible copy is retained. This is not a provider fault code.
-            operation = {
-                ENDPOINTS[k]: v
-                for k, v in (
-                    ("openai", "responses"),
-                    ("meta", "responses"),
-                    ("anthropic", "messages"),
-                    ("mistral", "chat_completions"),
-                )
-            }[self.endpoint]
+            operation = (
+                self.operation
+                or {
+                    ENDPOINTS[k]: v
+                    for k, v in (
+                        ("openai", "responses"),
+                        ("meta", "responses"),
+                        ("anthropic", "messages"),
+                        ("mistral", "chat_completions"),
+                    )
+                }[self.endpoint]
+            )
             row["response_projection"] = http_error(
                 response.status_code, operation, response.headers.get("Retry-After")
             )

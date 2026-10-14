@@ -25,7 +25,11 @@ from tools.three_flow_campaign import (
     selected_roster,
 )
 from tools.three_flow_meta import validate_meta_profile
-from tools.three_flow_profiles import ENDPOINTS, META_ROSTER_PROFILE
+from tools.three_flow_profiles import (
+    ENDPOINTS,
+    GEMINI_ROSTER_PROFILE,
+    META_ROSTER_PROFILE,
+)
 from tools.three_flow_profiles import minimum_effort as minimum_effort
 from tools.three_flow_profiles import registry as registry
 from tools.three_flow_runtime import ROOT, source_binding
@@ -82,7 +86,9 @@ def proposal(sha: str, roster_profile: str = "legacy-v1") -> dict[str, Any]:
         "runtime": runtime_identity(),
         "registry": registry(
             roster_profile=roster_profile,
-            mode_profile="off-or-minimum-v1"
+            mode_profile="gemini-low-v1"
+            if roster_profile == GEMINI_ROSTER_PROFILE
+            else "off-or-minimum-v1"
             if roster_profile != "legacy-v1"
             else "legacy-v1",
         ),
@@ -103,6 +109,12 @@ def proposal(sha: str, roster_profile: str = "legacy-v1") -> dict[str, Any]:
         ],
     }
 
+    if roster_profile == GEMINI_ROSTER_PROFILE:
+        result["cap_usd"] = None
+        result["budget_scope"] = "fresh Gemini campaign; two distinct 44-case series"
+        result["blockers"].append(
+            "Gemini offline-only; parent owns paid admission and launch"
+        )
     if roster_profile == META_ROSTER_PROFILE:
         result["cap_usd"] = "990"
         result["diagnostic_ceiling_usd"] = "10"
@@ -132,6 +144,11 @@ def validate(admission: Any, sha: str, *, synthetic: bool) -> dict[str, Any]:
 def _validate(
     admission: Any, sha: str, *, synthetic: bool, historical: bool
 ) -> dict[str, Any]:
+    if (
+        isinstance(admission, dict)
+        and admission.get("roster_profile") == GEMINI_ROSTER_PROFILE
+    ):
+        raise ValueError("Gemini offline-only; no paid admission capability")
     fields = {
         "schema",
         "approved",
@@ -640,6 +657,21 @@ def validate_profile(
     model: str | None = None,
     roster_profile: str = "legacy-v1",
 ) -> None:
+    if provider == "gemini":
+        from tools.three_flow_gemini import MODELS as gemini_models
+
+        if (
+            roster_profile != GEMINI_ROSTER_PROFILE
+            or not isinstance(model, str)
+            or model not in gemini_models
+            or not isinstance(p, dict)
+        ):
+            raise ValueError("Gemini native candidate profile required")
+        profile = gemini_models[model]
+        maximum = p.get("max_output_tokens")
+        if type(maximum) is not int or p != profile.settings(maximum):
+            raise ValueError("Gemini exact LOW/model/output/profile binding differs")
+        return
     fields = {
         "endpoint",
         "input_max",
