@@ -399,7 +399,12 @@ def main(argv: list[str] | None = None, *, network: Any = None) -> int:
     parser.add_argument(
         "--roster-profile",
         default="legacy-v1",
-        choices=("legacy-v1", "latest-http-v1", "meta-standard-same44-v1"),
+        choices=(
+            "legacy-v1",
+            "latest-http-v1",
+            "meta-standard-same44-v1",
+            "gemini-standard-same44-low-v1",
+        ),
     )
     parser.add_argument("--expected-source")
     parser.add_argument("--admission")

@@ -117,6 +117,7 @@ class BudgetWire(httpx.BaseTransport):
         self.meta_pacer: MetaRatePacer | None = None
         self.meta_tokens = 0
         self.current_turn_dispatched = False
+        self.sensitive_response: bytes | None = None
 
     def handle_request(self, request: httpx.Request) -> httpx.Response:
         if self.meta_pacer is not None:
@@ -196,6 +197,22 @@ class BudgetWire(httpx.BaseTransport):
             raise
         if self.meta_pacer is not None and response.status_code == 429:
             self.meta_pacer.stopped.set()
+        if response.is_success and self.sensitive_response is not None:
+            # Gemini may reflect its header credential inside an HTTP 200 JSON
+            # error. Strictly decode BEFORE publishing; malformed JSON must not
+            # launder escaped secret bytes into the owner-only raw capture.
+            sensitive = self.sensitive_response
+            try:
+                # Pair lists retain duplicate fields that normal dict decoding
+                # would discard before the reflection scan.
+                normalized = json.dumps(
+                    json.loads(data, object_pairs_hook=lambda pairs: pairs),
+                    ensure_ascii=False,
+                )
+            except (ValueError, UnicodeError):
+                raise wire_invalid("Gemini successful response not capturable") from None
+            if sensitive in data or sensitive.decode() in normalized:
+                raise wire_invalid("Gemini response reflected credential")
         row["status_code"] = response.status_code
         if response.is_success:
             # Successful bodies retain their exact binding and SDK/replay path.

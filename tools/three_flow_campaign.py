@@ -568,12 +568,14 @@ def run_campaign(
         from tools.three_flow_profiles import GEMINI_UNCAPPED_PROFILE
 
         if (
-            evidence_origin != "SDK_MOCK_NOT_LLM"
+            transport_factory is None
             or campaign_budget is None
             or campaign_budget.cap is not None
             or campaign_budget.controller_profile != GEMINI_UNCAPPED_PROFILE
         ):
-            raise ValueError("Gemini requires its fresh offline null-cap journal")
+            raise ValueError(
+                "Gemini requires explicit transport and its null-cap journal"
+            )
     if not resume and campaign_budget is None:
         root.mkdir(mode=0o700)
     budget = campaign_budget or CampaignBudget(

@@ -28,6 +28,7 @@ from tools.three_flow_meta import validate_meta_profile
 from tools.three_flow_profiles import (
     ENDPOINTS,
     GEMINI_ROSTER_PROFILE,
+    GEMINI_UNCAPPED_PROFILE,
     META_ROSTER_PROFILE,
 )
 from tools.three_flow_profiles import minimum_effort as minimum_effort
@@ -35,6 +36,7 @@ from tools.three_flow_profiles import registry as registry
 from tools.three_flow_runtime import ROOT, source_binding
 
 VARIABLES = {
+    "gemini": "GEMINI_API_KEY",
     "meta": "MODEL_API_KEY",
     "openai": "OPENAI_API_KEY",
     "anthropic": "ANTHROPIC_API_KEY",
@@ -113,7 +115,7 @@ def proposal(sha: str, roster_profile: str = "legacy-v1") -> dict[str, Any]:
         result["cap_usd"] = None
         result["budget_scope"] = "fresh Gemini campaign; two distinct 44-case series"
         result["blockers"].append(
-            "Gemini offline-only; parent owns paid admission and launch"
+            "Gemini paid launch requires external source-bound one-shot admission"
         )
     if roster_profile == META_ROSTER_PROFILE:
         result["cap_usd"] = "990"
@@ -148,7 +150,9 @@ def _validate(
         isinstance(admission, dict)
         and admission.get("roster_profile") == GEMINI_ROSTER_PROFILE
     ):
-        raise ValueError("Gemini offline-only; no paid admission capability")
+        if historical:
+            raise ValueError("Gemini historical authority cannot be reused")
+        return _validate_gemini(admission, sha, synthetic=synthetic)
     fields = {
         "schema",
         "approved",
@@ -337,6 +341,94 @@ def _validate(
             raise ValueError("original native asset binding required")
     elif a["assets"] is not None:
         raise ValueError("unselected original native assets")
+    return a
+
+
+def _validate_gemini(a: dict[str, Any], sha: str, *, synthetic: bool) -> dict[str, Any]:
+    """Initial-only, source-bound native Gemini admission; never an approval writer."""
+    from tools.three_flow_gemini import MODELS as gemini_models
+
+    fields = {
+        "schema",
+        "approved",
+        "mode",
+        "source_sha",
+        "runtime",
+        "registry",
+        "campaign_id",
+        "attempt_id",
+        "campaign_root",
+        "custody_root",
+        "credential_file",
+        "cap_usd",
+        "resource_policy",
+        "selected",
+        "profiles",
+        "assets",
+        "operation",
+        "original_claim_sha256",
+        "journal_sha256",
+        "pending",
+        "corrections",
+        "parent_gates",
+        "no_intervening_spend",
+        "roster_profile",
+        "mode_profile",
+        "limit_policy",
+    }
+    if set(a) != fields:
+        raise ValueError("closed Gemini admission schema required")
+    if (
+        a["schema"] != "three-flow-admission-v1"
+        or a["approved"] is not (not synthetic)
+        or a["mode"] != ("synthetic" if synthetic else "paid")
+        or a["source_sha"] != sha
+        or a["mode_profile"] != "gemini-low-v1"
+        or a["cap_usd"] is not None
+        or a["operation"] != "initial"
+        or a["original_claim_sha256"] is not None
+        or a["journal_sha256"] is not None
+        or a["corrections"] != {}
+        or a["assets"] is not None
+        or a["parent_gates"] is not True
+        or a["no_intervening_spend"] is not True
+        or digest(a["runtime"]) != digest(runtime_identity())
+        or digest(a["registry"])
+        != digest(
+            registry(roster_profile=GEMINI_ROSTER_PROFILE, mode_profile="gemini-low-v1")
+        )
+        or digest(a["resource_policy"]) != digest(RESOURCE_POLICY)
+        or not all(identifier(a[k]) for k in ("campaign_id", "attempt_id"))
+    ):
+        raise ValueError("Gemini source/runtime/scope/gates mismatch")
+    validate_limit_policy(a["limit_policy"], mode=GEMINI_UNCAPPED_PROFILE)
+    if a["limit_policy"]["source_sha"] != sha:
+        raise ValueError("Gemini optional limits source binding mismatch")
+    roster = assignments(a["campaign_id"], GEMINI_ROSTER_PROFILE)
+    ids = [s["trial_id"] for s in roster]
+    selected = a["selected"]
+    if (
+        not isinstance(selected, list)
+        or not selected
+        or selected != [i for i in ids if i in selected]
+        or a["pending"] != selected
+    ):
+        raise ValueError("ordered unique Gemini initial subset required")
+    models = {s["model"] for s in roster if s["trial_id"] in selected}
+    if not isinstance(a["profiles"], dict) or set(a["profiles"]) != models:
+        raise ValueError("exact Gemini model profiles required")
+    for model in models:
+        profile = gemini_models[model]
+        expected = (
+            profile.settings(profile.output)
+            if synthetic
+            else profile.live_settings(profile.output)
+        )
+        if digest(a["profiles"][model]) != digest(expected):
+            raise ValueError("Gemini model/output/price/profile binding differs")
+    for key in ("campaign_root", "custody_root", "credential_file"):
+        if type(a[key]) is not str or not Path(a[key]).is_absolute():
+            raise ValueError("Gemini external absolute paths required")
     return a
 
 

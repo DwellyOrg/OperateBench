@@ -1,8 +1,8 @@
-"""Offline-only native Gemini Developer API mapping; no paid capability.
+"""Native Gemini Developer API mapping; live wire requires explicit admission.
 
 REST preserves parametersJsonSchema and exact response JSON without SDK
 coercion. The existing BudgetWire owns dispatch, durable captures and liability.
-No credentials, environment discovery, redirects, retries or real HTTP transport.
+The default constructor is offline-only. No environment credential discovery.
 """
 
 from __future__ import annotations
@@ -107,6 +107,16 @@ class GeminiProfile:
                 "source": "https://ai.google.dev/gemini-api/docs/pricing",
             },
         }
+
+    def live_settings(self, maximum: int) -> dict[str, Any]:
+        """Direct-wire provenance; this is not launch authority."""
+        value = self.settings(maximum)
+        value.update(
+            quota_admission="external launcher required; transport is not authority",
+            evidence_origin="PROVIDER_CANDIDATE",
+            credential_source="explicit header only",
+        )
+        return value
 
 
 MODELS = MappingProxyType(
@@ -241,6 +251,50 @@ class GeminiCampaignTransport:
     api = "generate_content"
     request_mapping = MAPPING
 
+    @classmethod
+    def live(
+        cls,
+        *,
+        model: str,
+        api_key: str,
+        guard: SharedGuard,
+        max_output_tokens: int,
+        admitted: bool = False,
+        inner: httpx.BaseTransport | None = None,
+    ) -> GeminiCampaignTransport:
+        """Launcher-owned admission is required; this is not launch authority."""
+        if admitted is not True:
+            raise ValueError("explicit Gemini live admission required")
+        if (
+            model not in MODELS
+            or getattr(guard.budget, "controller_profile", None) != LIMIT_PROFILE
+            or guard.budget.cap is not None
+        ):
+            raise ValueError("Gemini live guard/profile admission differs")
+        if (
+            type(api_key) is not str
+            or not api_key
+            or not api_key.isascii()
+            or not api_key.isprintable()
+            or api_key != api_key.strip()
+        ):
+            raise ValueError("nonempty explicit Gemini key required")
+        if inner is not None and not isinstance(inner, httpx.MockTransport):
+            raise ValueError("only mock injection or default direct HTTP transport")
+        direct = inner is None
+        instance = cls.__new__(cls)
+        instance._initialize(
+            model=model,
+            inner=inner
+            if inner is not None
+            else httpx.HTTPTransport(trust_env=False, retries=0),
+            guard=guard,
+            max_output_tokens=max_output_tokens,
+            api_key=api_key,
+            direct=direct,
+        )
+        return instance
+
     def __init__(
         self,
         *,
@@ -258,6 +312,24 @@ class GeminiCampaignTransport:
             raise ValueError("offline Gemini accepts no credential or live transport")
         if endpoint is not None and endpoint != self.profile.endpoint:
             raise ValueError("unauthorized Gemini endpoint")
+        self._initialize(
+            model=model,
+            inner=inner,
+            guard=guard,
+            max_output_tokens=max_output_tokens,
+        )
+
+    def _initialize(
+        self,
+        *,
+        model: str,
+        inner: httpx.BaseTransport,
+        guard: SharedGuard,
+        max_output_tokens: int,
+        api_key: str | None = None,
+        direct: bool = False,
+    ) -> None:
+        self.profile = MODELS[model]
         if guard._max_output_tokens != max_output_tokens:
             raise ValueError("Gemini guard/output binding differs")
         if guard.policy.input_usd_per_mtok != Decimal(
@@ -265,17 +337,30 @@ class GeminiCampaignTransport:
         ) or guard.policy.output_usd_per_mtok != Decimal(self.profile.output_rate):
             raise ValueError("Gemini Standard pricing differs")
         self.model, self.guard, self.max_output_tokens = model, guard, max_output_tokens
-        self.settings = self.profile.settings(max_output_tokens)
+        self.settings = (
+            self.profile.live_settings(max_output_tokens)
+            if direct
+            else self.profile.settings(max_output_tokens)
+        )
         self.settings_source = self.settings["settings_source"]
         self.wire = BudgetWire(
             inner, guard, self.profile.endpoint, operation="generate_content"
         )
+        self.wire.sensitive_response = api_key.encode() if api_key is not None else None
         self.http = httpx.Client(
-            transport=self.wire, trust_env=False, timeout=None, follow_redirects=False
+            transport=self.wire,
+            trust_env=False,
+            timeout=(
+                httpx.Timeout(None, connect=10, write=10, pool=10)
+                if api_key is not None
+                else None
+            ),
+            follow_redirects=False,
+            headers=({"x-goog-api-key": api_key} if api_key is not None else None),
         )
         self.history: list[dict[str, Any]] = []
         self.last_turn: dict[str, Any] | None = None
-        self.flight = SingleFlight(adapter="offline Gemini")
+        self.flight = SingleFlight(adapter="Gemini")
         self.stopped = False
 
     @property
@@ -545,12 +630,16 @@ def validate_replay(record: dict[str, Any]) -> None:
         maximum = record["trial"]["max_output_tokens"]
         profile = MODELS[model]
         provider = record["provider"]
-        if provider != {
+        settings = provider["settings"]
+        if settings not in (
+            profile.settings(maximum),
+            profile.live_settings(maximum),
+        ) or provider != {
             "provider": "gemini",
             "api": "generate_content",
             "model": model,
             "request_mapping": MAPPING,
-            "settings": profile.settings(maximum),
+            "settings": settings,
         }:
             raise ValueError("Gemini profile provenance differs")
         history: list[dict[str, Any]] = []

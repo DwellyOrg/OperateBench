@@ -102,6 +102,39 @@ def live_factory(
     admission: dict[str, Any], keys: dict[str, str], *, network: Any = None
 ) -> Any:
     def make(slot: dict[str, Any], budget: Any) -> Any:
+        if slot["provider"] == "gemini":
+            from tools.three_flow_gemini import MODELS as GEMINI_MODELS
+            from tools.three_flow_gemini import GeminiCampaignTransport
+
+            profile = GEMINI_MODELS[slot["model"]]
+            expected = (
+                profile.settings(profile.output)
+                if network is not None
+                else profile.live_settings(profile.output)
+            )
+            if admission["profiles"][slot["model"]] != expected:
+                raise ValueError("Gemini admitted model profile differs")
+            guard = SharedGuard(
+                budget=budget,
+                cell=slot["trial_id"],
+                policy=LifecyclePricingPolicy(
+                    "gemini-standard-estimated-v1",
+                    Decimal(profile.input_rate),
+                    Decimal(profile.output_rate),
+                ),
+                max_output_tokens=profile.output,
+            )
+            gemini_inner = None if network is None else network.http(slot)
+            if network is not None and not isinstance(gemini_inner, httpx.MockTransport):
+                raise ValueError("synthetic Gemini requires MockTransport")
+            return GeminiCampaignTransport.live(
+                model=slot["model"],
+                api_key=keys[VARIABLES["gemini"]],
+                guard=guard,
+                max_output_tokens=profile.output,
+                admitted=True,
+                inner=gemini_inner,
+            )
         p = admission["profiles"][slot["model"]]
         diagnostic = p.get("bounds_policy") is not None
         maximum = min(

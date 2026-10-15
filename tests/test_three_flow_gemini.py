@@ -1,5 +1,6 @@
 """Native Developer API evidence; every HTTP operation is an offline mock."""
 
+import gzip
 import json
 import socket
 from decimal import Decimal
@@ -135,6 +136,279 @@ def response_body(model="gemini-4-argon", args=None):
             "cachedContentTokenCount": 2,
         },
     }
+
+
+def test_live_factory_requires_explicit_admission_without_network(tmp_path):
+    budget, mock, offline, trial = fixture(tmp_path, "gemini-4-argon")
+    try:
+        with pytest.raises(ValueError, match="admission"):
+            GeminiCampaignTransport.live(
+                model=trial.model,
+                api_key="synthetic-key-not-real",
+                guard=offline.guard,
+                max_output_tokens=65536,
+                inner=httpx.MockTransport(mock.handle),
+            )
+        assert not mock.calls
+        assert not offline.wire.captures
+        assert budget.records == {}
+    finally:
+        offline.close()
+        budget.close()
+
+
+def test_live_default_direct_transport_is_explicit_and_unproxied(tmp_path, monkeypatch):
+    from dataclasses import replace
+
+    import tools.three_flow_gemini as gemini
+
+    budget, mock, offline, trial = fixture(tmp_path, "gemini-4-argon")
+    options = []
+
+    def direct(**kwargs):
+        options.append(kwargs)
+        return httpx.MockTransport(mock.handle)
+
+    monkeypatch.setattr(gemini.httpx, "HTTPTransport", direct)
+    try:
+        live = GeminiCampaignTransport.live(
+            model=trial.model,
+            api_key="synthetic-key-not-real",
+            guard=offline.guard,
+            max_output_tokens=65536,
+            admitted=True,
+        )
+        try:
+            assert options == [{"trust_env": False, "retries": 0}]
+            assert live.http.follow_redirects is False
+            assert live.http._trust_env is False
+            assert live.settings["evidence_origin"] == "PROVIDER_CANDIDATE"
+            assert "forbidden" not in live.settings["quota_admission"]
+            assert live.settings["credential_source"] == "explicit header only"
+            assert mock.calls == []
+            direct_trial = replace(trial, provider_binding=provider_identity(live))
+            record = run_trial(direct_trial, live, output=tmp_path / "direct-synthetic")
+            assert record["evidence_origin"] == "PROVIDER_CANDIDATE"
+            assert (
+                replay_trial(
+                    direct_trial, record, expected_record_digest=record["record_digest"]
+                )["provider_calls"]
+                == 0
+            )
+        finally:
+            live.close()
+    finally:
+        offline.close()
+        budget.close()
+
+
+def test_live_mock_gzip_exact_history_usage_and_replay(tmp_path, capsys):
+    key = "synthetic-key-not-real"
+    budget, mock, offline, trial = fixture(tmp_path, "gemini-4-argon")
+    requests = []
+
+    def handle(request):
+        assert str(request.url) == MODELS[trial.model].endpoint
+        assert request.method == "POST"
+        assert request.headers["x-goog-api-key"] == key
+        assert "key" not in str(request.url).lower()
+        assert key not in request.content.decode()
+        assert request.extensions["timeout"] == {
+            "connect": 10,
+            "read": None,
+            "write": 10,
+            "pool": 10,
+        }
+        requests.append(json.loads(request.content))
+        body = mock.handle(request).content
+        return httpx.Response(
+            200, content=gzip.compress(body), headers={"Content-Encoding": "gzip"}
+        )
+
+    live = GeminiCampaignTransport.live(
+        model=trial.model,
+        api_key=key,
+        guard=offline.guard,
+        max_output_tokens=65536,
+        admitted=True,
+        inner=httpx.MockTransport(handle),
+    )
+    try:
+        record = run_trial(trial, live, output=tmp_path / "trial")
+        assert record["evaluation"]["reliable"]
+        assert len(requests) == len(mock.calls) == len(record["provider_turns"])
+        assert len(requests) > 1
+        assert (
+            requests[1]["contents"][1]["parts"][0]["thoughtSignature"]
+            == "offline-signature"
+        )
+        assert "functionResponse" in requests[1]["contents"][2]["parts"][0]
+        for request, turn in zip(requests, record["provider_turns"], strict=True):
+            assert json.loads(turn["wire"]["request_utf8"]) == request
+            assert turn["usage_metadata"] == {
+                **json.loads(turn["wire"]["response_utf8"])["usageMetadata"],
+                "toolUsePromptTokenCount": 0,
+            }
+            assert turn["input_tokens"] == 1
+            assert turn["output_tokens"] == 3
+        assert (
+            replay_trial(trial, record, expected_record_digest=record["record_digest"])[
+                "provider_calls"
+            ]
+            == 0
+        )
+        assert key not in repr(live)
+        assert key not in json.dumps(record)
+        assert key not in json.dumps(live.settings)
+        assert key not in json.dumps(live.wire.captures)
+        assert key not in (tmp_path / "campaign-budget.jsonl").read_text()
+        assert all(
+            key.encode() not in p.read_bytes() for p in tmp_path.rglob("*") if p.is_file()
+        )
+        assert key not in capsys.readouterr().out
+    finally:
+        live.close()
+        offline.close()
+        budget.close()
+
+
+@pytest.mark.parametrize("status", (200, 400, 429, 302))
+@pytest.mark.parametrize("escaped", (False, True))
+def test_live_reflected_key_never_reaches_durable_response(
+    tmp_path, capsys, status, escaped
+):
+    from operatebench.agents.transport import ProviderFailure
+
+    key = "synthetic-key-not-real"
+    budget, _mock, offline, trial = fixture(tmp_path, "gemini-4-argon")
+    calls = []
+
+    def handle(request):
+        calls.append(request)
+        body = json.dumps({"error": {"nested": [key]}})
+        if escaped:
+            body = body.replace("-", "\\u002d")
+        return httpx.Response(
+            status,
+            content=body.encode(),
+            headers={"Retry-After": key, "Location": "https://invalid.example/"},
+        )
+
+    live = GeminiCampaignTransport.live(
+        model=trial.model,
+        api_key=key,
+        guard=offline.guard,
+        max_output_tokens=65536,
+        admitted=True,
+        inner=httpx.MockTransport(handle),
+    )
+    try:
+        with pytest.raises(ProviderFailure) as caught:
+            run_trial(trial, live, output=tmp_path / "trial")
+        assert key not in str(caught.value)
+        assert len(calls) == 1
+        assert live.stopped
+        assert live.last_turn is None
+        assert Decimal(budget.cell_accounting("trial")["full_unknown_usd"]) > 0
+        assert len(live.wire.captures) == 1
+        assert "response_utf8" not in live.wire.captures[0]
+        assert "response_sha256" not in live.wire.captures[0]
+        events = [
+            json.loads(line)
+            for line in (tmp_path / "trial" / "partial.ndjson").read_text().splitlines()
+        ]
+        assert [
+            event["kind"] for event in events if event["kind"].startswith("wire_")
+        ] == (["wire_request"] if status == 200 else ["wire_request", "wire_response"])
+        assert key not in json.dumps(events)
+        assert all(
+            key.encode() not in p.read_bytes() for p in tmp_path.rglob("*") if p.is_file()
+        )
+        assert key not in json.dumps(live.wire.captures)
+        assert key not in capsys.readouterr().out
+    finally:
+        live.close()
+        offline.close()
+        budget.close()
+
+
+def test_live_invalid_context_cannot_reach_wire(tmp_path, monkeypatch):
+    import tools.three_flow_gemini as gemini
+    from operatebench.agents.transport import ProviderFailure
+
+    budget, _mock, offline, trial = fixture(tmp_path, "gemini-4-argon")
+    calls = []
+    live = GeminiCampaignTransport.live(
+        model=trial.model,
+        api_key="synthetic-key-not-real",
+        guard=offline.guard,
+        max_output_tokens=65536,
+        admitted=True,
+        inner=httpx.MockTransport(
+            lambda request: calls.append(request) or httpx.Response(200)
+        ),
+    )
+    monkeypatch.setattr(
+        gemini, "request_input_token_bound", lambda *_: live.profile.context
+    )
+    try:
+        with pytest.raises(ProviderFailure):
+            run_trial(trial, live, output=tmp_path / "trial")
+        assert calls == []
+        assert live.wire.captures == []
+        assert budget.records == {}
+    finally:
+        live.close()
+        offline.close()
+        budget.close()
+
+
+@pytest.mark.parametrize(
+    "malformed",
+    (
+        b'{"error":"synthetic\\u002dkey\\u002dnot\\u002dreal"',
+        b'{"error":"synthetic\\u002dkey\\u002dnot\\u002dreal","error":"ordinary"}',
+    ),
+)
+def test_live_uncapturable_success_never_reaches_observer(tmp_path, malformed):
+    from operatebench.agents.transport import ProviderFailure
+
+    budget, _mock, offline, trial = fixture(tmp_path, "gemini-4-argon")
+    calls = []
+
+    def handle(request):
+        calls.append(request)
+        return httpx.Response(200, content=malformed)
+
+    live = GeminiCampaignTransport.live(
+        model=trial.model,
+        api_key="synthetic-key-not-real",
+        guard=offline.guard,
+        max_output_tokens=65536,
+        admitted=True,
+        inner=httpx.MockTransport(handle),
+    )
+    try:
+        with pytest.raises(ProviderFailure):
+            run_trial(trial, live, output=tmp_path / "trial")
+        assert len(calls) == 1
+        assert live.stopped
+        assert Decimal(budget.cell_accounting("trial")["full_unknown_usd"]) > 0
+        assert "response_utf8" not in live.wire.captures[0]
+        events = [
+            json.loads(line)
+            for line in (tmp_path / "trial" / "partial.ndjson").read_text().splitlines()
+        ]
+        assert [
+            event["kind"] for event in events if event["kind"].startswith("wire_")
+        ] == ["wire_request"]
+        assert all(
+            malformed not in p.read_bytes() for p in tmp_path.rglob("*") if p.is_file()
+        )
+    finally:
+        live.close()
+        offline.close()
+        budget.close()
 
 
 def test_tool_use_prompt_tokens_complete_usage_equation():
@@ -579,7 +853,7 @@ def test_gemini_preflight_and_profile_admission_are_non_authorizing():
         validate_profile(
             bad, "gemini", model="gemini-4-argon", roster_profile=GEMINI_ROSTER_PROFILE
         )
-    with pytest.raises(ValueError, match="offline"):
+    with pytest.raises(ValueError, match="closed Gemini admission schema"):
         validate({"roster_profile": GEMINI_ROSTER_PROFILE}, "a" * 40, synthetic=True)
 
 
