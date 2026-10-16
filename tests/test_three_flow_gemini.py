@@ -578,6 +578,9 @@ def test_native_response_preserves_valid_thought_call_id_signature_and_args():
         lambda b: b["usageMetadata"].update(totalTokenCount=999),
         lambda b: b["usageMetadata"].update(cachedContentTokenCount=11),
         lambda b: b["candidates"][0].update(finishReason="SAFETY"),
+        lambda b: b["candidates"][0].pop("content"),
+        lambda b: b["candidates"][0]["content"].pop("parts"),
+        lambda b: b["candidates"][0]["content"].update(parts=[]),
         lambda b: b["candidates"][0]["content"]["parts"][0].pop("thoughtSignature"),
         lambda b: b["candidates"][0]["content"]["parts"][0]["functionCall"].update(
             args='{"x":1}'
@@ -861,6 +864,8 @@ def test_gemini_preflight_and_profile_admission_are_non_authorizing():
     "mutation",
     [
         lambda b: b.pop("usageMetadata"),
+        lambda b: b["candidates"][0]["content"]["parts"][0].pop("thoughtSignature"),
+        lambda b: b["candidates"][0]["content"]["parts"][0].update(thoughtSignature=7),
         lambda b: b["usageMetadata"].update(toolUsePromptTokenCount=2, totalTokenCount=4),
         lambda b: b.update(modelVersion="gemini-flash-latest"),
         lambda b: b["candidates"][0].update(finishReason="SAFETY"),
@@ -981,19 +986,24 @@ def test_long_frozen_case_preserves_history_without_duplicate_observations(tmp_p
 
 @pytest.mark.parametrize("model", MODELS)
 def test_frozen_sc_reopen_context_blocker(tmp_path, model):
-    """Previously RED for both models; retain the exact frozen regression."""
+    """Pin the frozen v3 regression including model-visible action schema properties."""
+    expected_input_bound = 985445
+    expected_output_cap = 63131
     budget, mock, transport, trial = fixture(
         tmp_path, model, flow="compliance", scenario="SC_reopen"
     )
     try:
         record = run_trial(trial, transport, output=tmp_path / "trial")
         assert record["evaluation"]["reliable"]
-        assert len(mock.calls) >= 40
+        assert len(mock.calls) == 40
         turn = record["provider_turns"][39]
-        assert turn["input_bound"] == 985399
-        assert turn["requested_output_bound"] == 63177
-        assert mock.calls[39]["generationConfig"]["maxOutputTokens"] == 63177
-        assert record["request_output_bounds"][39] == 63177
+        assert turn["input_bound"] == expected_input_bound
+        assert turn["requested_output_bound"] == expected_output_cap
+        assert turn["input_bound"] + turn["requested_output_bound"] == 1048576
+        assert (
+            mock.calls[39]["generationConfig"]["maxOutputTokens"] == expected_output_cap
+        )
+        assert record["request_output_bounds"][39] == expected_output_cap
         replay_trial(trial, record, expected_record_digest=record["record_digest"])
         import copy
         import hashlib
@@ -1004,33 +1014,43 @@ def test_frozen_sc_reopen_context_blocker(tmp_path, model):
             changed = copy.deepcopy(record)
             selected = changed["provider_turns"][39]
             if mutation == "cap":
+                expected_error = "Gemini request identity differs"
                 selected["requested_output_bound"] = 65536
                 changed["request_output_bounds"][39] = 65536
             elif mutation == "policy":
+                expected_error = "Gemini usage/context/cost provenance differs"
                 selected["output_reservation_policy"] = "unversioned"
             else:
+                expected_error = "Gemini usage/context/cost provenance differs"
+                # Keep wire usage, recorded usage and cost consistent above the cap.
+                over_cap_output = expected_output_cap + 1
                 wire = selected["wire"]
                 body = json.loads(wire["response_utf8"])
-                body["usageMetadata"].update(
-                    candidatesTokenCount=63176, totalTokenCount=63179
+                usage = body["usageMetadata"]
+                usage["candidatesTokenCount"] = (
+                    over_cap_output - usage["thoughtsTokenCount"]
                 )
+                input_tokens = usage["promptTokenCount"] + usage.get(
+                    "toolUsePromptTokenCount", 0
+                )
+                usage["totalTokenCount"] = input_tokens + over_cap_output
                 wire["response_utf8"] = json.dumps(body)
                 wire["response_sha256"] = hashlib.sha256(
                     wire["response_utf8"].encode()
                 ).hexdigest()
-                selected["output_tokens"] = 63178
+                selected["output_tokens"] = over_cap_output
                 selected["usage_metadata"] = body["usageMetadata"]
                 selected["measured_usd"] = str(
                     (
-                        Decimal(MODELS[model].input_rate)
-                        + Decimal(63178) * Decimal(MODELS[model].output_rate)
+                        Decimal(input_tokens) * Decimal(MODELS[model].input_rate)
+                        + Decimal(over_cap_output) * Decimal(MODELS[model].output_rate)
                     )
                     / Decimal(1000000)
                 )
             changed["record_digest"] = content_digest(
                 {k: v for k, v in changed.items() if k != "record_digest"}
             )
-            with pytest.raises(ValueError, match="Gemini"):
+            with pytest.raises(ValueError, match=f"^{expected_error}$"):
                 replay_trial(
                     trial, changed, expected_record_digest=changed["record_digest"]
                 )
@@ -1208,7 +1228,7 @@ def test_v3_full_flow_projects_visible_action_fields_and_replays(
     try:
         record = run_trial(trial, transport, output=tmp_path / "trial")
         assert record["evaluation"]["reliable"]
-        assert MAPPING == "three-flow-gemini-developer-native-low-v3"
+        assert MAPPING == "three-flow-gemini-developer-native-low-v4"
         assert len(mock.calls) == len(record["provider_turns"]) > 1
         first_schema = next(
             d["parametersJsonSchema"]
@@ -1408,3 +1428,342 @@ def test_v3_invalid_visible_schemas_refuse_before_any_network(
     finally:
         transport.close()
         budget.close()
+
+
+@pytest.mark.parametrize("model", MODELS)
+@pytest.mark.parametrize(
+    ("behavior", "classification"),
+    [
+        ("text", "MODEL_NO_TOOL_CALL"),
+        ("multiple", "MODEL_MULTIPLE_TOOL_CALLS"),
+        ("truncated", "MODEL_OUTPUT_TRUNCATED"),
+        ("absent_content", "MODEL_OUTPUT_TRUNCATED"),
+        ("absent_parts", "MODEL_OUTPUT_TRUNCATED"),
+        ("empty_parts", "MODEL_OUTPUT_TRUNCATED"),
+    ],
+)
+def test_terminal_model_behavior_settles_and_replays(
+    tmp_path, monkeypatch, model, behavior, classification
+):
+    # A synthetic one-turn plan closes through the real engine and evaluator.
+    from dataclasses import replace
+
+    from operatebench.domains.commerce.return_refund_profiles.operation import (
+        CommerceProfilesDomain,
+    )
+
+    original_plan = CommerceProfilesDomain.build_plan
+    monkeypatch.setattr(
+        CommerceProfilesDomain,
+        "build_plan",
+        lambda self: replace(original_plan(self), max_turns_per_invocation=1),
+    )
+    from operatebench.agents.evidence import normalized_response_digest
+    from tools.three_flow_gemini import parse_response
+
+    body = response_body(model, args={"action_type": "example", "payload": {}})
+    candidate = body["candidates"][0]
+    if behavior == "text":
+        candidate["content"]["parts"] = [{"text": "No structured decision."}]
+    elif behavior == "multiple":
+        import copy
+
+        candidate["content"]["parts"] *= 2
+        candidate["content"]["parts"] = copy.deepcopy(candidate["content"]["parts"])
+    else:
+        candidate["finishReason"] = "MAX_TOKENS"
+        if behavior == "absent_content":
+            del candidate["content"]
+        elif behavior == "absent_parts":
+            del candidate["content"]["parts"]
+        elif behavior == "empty_parts":
+            candidate["content"]["parts"] = []
+    body["usageMetadata"].update(toolUsePromptTokenCount=5, totalTokenCount=25)
+
+    def handler(mock):
+        def handle(request):
+            mock.calls.append(json.loads(request.content))
+            return httpx.Response(200, json=body)
+
+        return handle
+
+    budget, mock, transport, trial = fixture(tmp_path, model, handler)
+    try:
+        record = run_trial(trial, transport, output=tmp_path / "trial")
+        assert not record["evaluation"]["reliable"]
+        assert len(mock.calls) == len(record["provider_turns"]) == 1
+        outcome = record["decisions"][0]["outcome"]
+        assert outcome["kind"] == "MALFORMED"
+        assert outcome == {"kind": "MALFORMED", "code": classification}
+        assert not transport.stopped
+        assert transport.history == []
+        turn = record["provider_turns"][0]
+        assert transport.last_turn == turn
+        assert (turn["input_tokens"], turn["output_tokens"]) == (15, 10)
+        assert (turn["thinking_tokens"], turn["cached_input_tokens"]) == (7, 2)
+        assert turn["usage_metadata"] == body["usageMetadata"]
+        cost = (
+            15 * Decimal(MODELS[model].input_rate)
+            + 10 * Decimal(MODELS[model].output_rate)
+        ) / Decimal(1000000)
+        assert Decimal(turn["measured_usd"]) == cost
+        accounting = budget.cell_accounting("trial")
+        assert Decimal(accounting["full_unknown_usd"]) == 0
+        settlements = list(accounting["records"].values())
+        assert len(settlements) == 1
+        assert settlements[0]["state"] == "settled"
+        from fractions import Fraction
+
+        assert Fraction(settlements[0]["actual"]) == Fraction(cost)
+        assert json.loads(turn["wire"]["response_utf8"]) == body
+        rows = [
+            json.loads(line)
+            for line in (tmp_path / "trial/partial.ndjson").read_text().splitlines()
+        ]
+        response, _, _ = parse_response(turn["wire"]["response_utf8"], model)
+        assert [r["response_digest"] for r in rows if r["kind"] == "response"] == [
+            normalized_response_digest(
+                model=model,
+                stop_classification=response.stop_reason,
+                tool_calls=response.tool_calls,
+            )
+        ]
+        assert len([r for r in rows if r["kind"] == "provider_turn"]) == 1
+        assert (
+            replay_trial(trial, record, expected_record_digest=record["record_digest"])[
+                "provider_calls"
+            ]
+            == 0
+        )
+        assert len(mock.calls) == 1
+        import copy
+
+        from operatebench.agents.transport import content_digest
+        from tools.three_flow_gemini import validate_replay
+
+        changed = copy.deepcopy(record)
+        changed["decisions"][0]["outcome"]["code"] = "MODEL_TOOL_ARGUMENTS_MALFORMED"
+        changed["record_digest"] = content_digest(
+            {k: v for k, v in changed.items() if k != "record_digest"}
+        )
+        with pytest.raises(
+            ValueError, match="Gemini decision differs from native response"
+        ):
+            validate_replay(changed)
+    finally:
+        transport.close()
+        budget.close()
+
+
+@pytest.mark.parametrize(
+    ("behavior", "classification"),
+    [
+        ("text", "MODEL_NO_TOOL_CALL"),
+        ("multiple", "MODEL_MULTIPLE_TOOL_CALLS"),
+        ("truncated", "MODEL_OUTPUT_TRUNCATED"),
+    ],
+)
+def test_model_failure_allows_only_genuine_fresh_requests(
+    tmp_path, behavior, classification
+):
+    body = response_body()
+    candidate = body["candidates"][0]
+    if behavior == "text":
+        candidate["content"]["parts"] = [{"text": "No decision."}]
+    elif behavior == "multiple":
+        candidate["content"]["parts"] *= 2
+    else:
+        candidate["finishReason"] = "MAX_TOKENS"
+
+    def handler(mock):
+        def handle(request):
+            mock.calls.append(json.loads(request.content))
+            return httpx.Response(200, json=body)
+
+        return handle
+
+    budget, mock, transport, trial = fixture(tmp_path, "gemini-4-argon", handler)
+    try:
+        record = run_trial(trial, transport, output=tmp_path / "trial")
+        assert not record["evaluation"]["reliable"]
+        assert len(mock.calls) == len(record["decisions"]) > 1
+        assert len(record["provider_turns"]) == len(mock.calls)
+        assert all(len(call["contents"]) == 1 for call in mock.calls)
+        assert all(
+            d["outcome"] == {"kind": "MALFORMED", "code": classification}
+            for d in record["decisions"]
+        )
+        assert transport.history == []
+        assert Decimal(budget.cell_accounting("trial")["full_unknown_usd"]) == 0
+        replay_trial(trial, record, expected_record_digest=record["record_digest"])
+    finally:
+        transport.close()
+        budget.close()
+
+
+def test_frozen_v3_source_keeps_old_parser_and_mapping_mismatch(monkeypatch):
+    import hashlib
+    import subprocess
+    import sys
+    import types
+    from pathlib import Path
+
+    from operatebench.providers.faults import AdapterProviderError
+    from tools.three_flow_gemini import MAPPING, validate_replay
+
+    original_source = subprocess.check_output(
+        [
+            "git",
+            "show",
+            "0006d783a6bf0b4e" + "f2897e5c166d66dd61c452a1:tools/three_flow_gemini.py",
+        ],
+        cwd=Path(__file__).resolve().parents[1],
+    )
+    assert hashlib.sha256(original_source).hexdigest() == (
+        "f5b24dc74533bb475b9ea0ed1072a8276dd14806a1e2a71caee14d616d4b3429"
+    )
+    old = types.ModuleType("frozen_gemini_v3")
+    monkeypatch.setitem(sys.modules, old.__name__, old)
+    exec(compile(original_source, "frozen_gemini_v3.py", "exec"), old.__dict__)
+    assert old.MAPPING == "three-flow-gemini-developer-native-low-v3"
+    assert MAPPING == "three-flow-gemini-developer-native-low-v4"
+    for behavior in ("text", "multiple", "truncated"):
+        body = response_body()
+        candidate = body["candidates"][0]
+        if behavior == "text":
+            candidate["content"]["parts"] = [{"text": "No decision."}]
+        elif behavior == "multiple":
+            candidate["content"]["parts"] *= 2
+        else:
+            candidate["finishReason"] = "MAX_TOKENS"
+        with pytest.raises(AdapterProviderError):
+            old.parse_response(json.dumps(body), "gemini-4-argon")
+    provider = {
+        "provider": "gemini",
+        "api": "generate_content",
+        "model": "gemini-4-argon",
+        "request_mapping": old.MAPPING,
+        "settings": old.MODELS["gemini-4-argon"].settings(65536),
+    }
+    record = {
+        "trial": {"model": "gemini-4-argon", "max_output_tokens": 65536},
+        "provider": provider,
+    }
+    with pytest.raises(ValueError, match="Gemini profile provenance differs"):
+        validate_replay(record)
+
+
+@pytest.mark.parametrize("model", MODELS)
+@pytest.mark.parametrize(
+    ("behavior", "classification"),
+    [
+        ("unknown", "MODEL_UNKNOWN_TOOL"),
+        ("arguments", "MODEL_MALFORMED_ARGUMENTS"),
+    ],
+)
+def test_single_rejected_call_preserves_native_feedback(
+    tmp_path, monkeypatch, model, behavior, classification
+):
+    from dataclasses import replace
+
+    from operatebench.domains.commerce.return_refund_profiles.operation import (
+        CommerceProfilesDomain,
+    )
+    from tools.three_flow_gemini import validate_replay
+
+    original_plan = CommerceProfilesDomain.build_plan
+    monkeypatch.setattr(
+        CommerceProfilesDomain,
+        "build_plan",
+        lambda self: replace(original_plan(self), max_turns_per_invocation=2),
+    )
+    body = response_body(model, args={"action_type": 123, "payload": {}})
+    content = body["candidates"][0]["content"]
+    native_call = content["parts"][0]["functionCall"]
+    native_call["id"] = "rejected-call"
+    if behavior == "unknown":
+        native_call["name"] = "unknown_tool"
+
+    def handler(mock):
+        def handle(request):
+            mock.calls.append(json.loads(request.content))
+            return httpx.Response(200, json=body)
+
+        return handle
+
+    budget, mock, transport, trial = fixture(tmp_path, model, handler)
+    try:
+        record = run_trial(trial, transport, output=tmp_path / "trial")
+        assert len(mock.calls) == len(record["provider_turns"]) == 2
+        assert record["decisions"][0]["outcome"] == {
+            "kind": "MALFORMED",
+            "code": classification,
+        }
+        second = mock.calls[1]["contents"]
+        assert len(second) == 3
+        assert second[0] == mock.calls[0]["contents"][0]
+        assert second[1] == content
+        feedback = second[2]["parts"][0]["functionResponse"]
+        assert feedback["name"] == native_call["name"]
+        assert feedback["id"] == native_call["id"]
+        requests = [
+            json.loads(line)
+            for line in (tmp_path / "trial/partial.ndjson").read_text().splitlines()
+            if json.loads(line)["kind"] == "request_payload"
+        ]
+        assert feedback["response"] == requests[1]["prompt"]
+        assert feedback["response"]["observation"]["turn_index"] == 1
+        assert Decimal(budget.cell_accounting("trial")["full_unknown_usd"]) == 0
+        validate_replay(record)
+        replay_trial(trial, record, expected_record_digest=record["record_digest"])
+        assert len(mock.calls) == 2
+    finally:
+        transport.close()
+        budget.close()
+
+
+@pytest.mark.parametrize("finish", ["STOP", "MAX_TOKENS"])
+@pytest.mark.parametrize("shape", ["absent_content", "absent_parts", "empty_parts"])
+def test_no_parts_requires_truncated_finish(finish, shape):
+    from operatebench.providers.faults import AdapterProviderError
+    from tools.three_flow_gemini import parse_response
+
+    body = response_body()
+    candidate = body["candidates"][0]
+    candidate["finishReason"] = finish
+    if shape == "absent_content":
+        del candidate["content"]
+    elif shape == "absent_parts":
+        del candidate["content"]["parts"]
+    else:
+        candidate["content"]["parts"] = []
+    if finish == "STOP":
+        with pytest.raises(AdapterProviderError):
+            parse_response(json.dumps(body), "gemini-4-argon")
+    else:
+        response, counts, content = parse_response(json.dumps(body), "gemini-4-argon")
+        assert response.stop_reason == "max_tokens"
+        assert response.tool_calls == ()
+        assert counts == {"toolUsePromptTokenCount": 0, **body["usageMetadata"]}
+        assert content == {"role": "model", "parts": []}
+
+
+@pytest.mark.parametrize(
+    "content",
+    [
+        None,
+        [],
+        {},
+        {"role": "user"},
+        {"role": "model", "parts": None},
+        {"role": "model", "parts": ""},
+    ],
+)
+def test_truncated_candidate_rejects_malformed_content(content):
+    from operatebench.providers.faults import AdapterProviderError
+    from tools.three_flow_gemini import parse_response
+
+    body = response_body()
+    body["candidates"][0].update(finishReason="MAX_TOKENS", content=content)
+    with pytest.raises(AdapterProviderError):
+        parse_response(json.dumps(body), "gemini-4-argon")

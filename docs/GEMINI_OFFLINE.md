@@ -5,7 +5,7 @@ roster: `gemini-4-argon` and `gemini-3.8-flash`. The Core tool contracts,
 synthetic cases, strict evaluators and historical campaign modes are unchanged.
 Mock scores describe plumbing and evaluator execution, never model performance.
 
-The versioned mapping is `three-flow-gemini-developer-native-low-v2`; the roster
+The versioned mapping is `three-flow-gemini-developer-native-low-v4`; the roster
 is `gemini-standard-same44-low-v1`. Native Developer API REST uses the existing
 `BudgetWire` HTTP boundary for exact request bytes, durable dispatch evidence,
 response capture and one-use accounting. This avoids adding an SDK dependency
@@ -103,8 +103,10 @@ Primary documentation:
 The two frozen `SC_reopen` regressions previously failed before request 40:
 985,399 complete input bound plus nominal 65,536 exceeded 1,048,576 by 2,359.
 The parent-selected physical context intersection reserves and submits 63,177
-for that exact request, preserving every history part. Both original regression
-cases remain, with exact wire and replay assertions. Boundary tests exercise
+for that historical v2 request, preserving every history part. The v3 visible
+action-schema projection (also used by v4) gives 985,445 input and 63,131
+output for the frozen request; the sum remains exactly 1,048,576. Both original
+regression cases remain, with exact wire and replay assertions. Boundary tests exercise
 unchanged output, positive room, no-room refusal, reduced-cap usage and tampered
 replay through the native REST mock and budget guard. Missing or over-bound
 usage retains unknown liability; the Gemini USD cap stays null.
@@ -124,3 +126,29 @@ journals for the exact models, each with 44 assignments. Each writes
 reference mock plumbing outcomes and never Gemini model-performance scores.
 The previous interrupted 75 closures remain diagnostic evidence and are never
 resumed or relabeled as acceptance.
+
+## Scored model behavior (v4)
+
+Mapping `three-flow-gemini-developer-native-low-v4` preserves strict native
+envelope, exact model identity, usage categories, part types and function-call
+signatures. Well-formed STOP responses with zero or multiple calls, and
+MAX_TOKENS responses, now retain their actual call cardinality and stop reason.
+Validated input includes prompt plus tool-use prompt tokens; output includes
+candidate plus thinking tokens. Cache tokens remain a prompt subset. Usage
+settles before the shared ModelAgent classifies model behavior. No call or
+Core decision is invented from prose or truncated output. Such responses add
+no native function-response history. If the engine's ordinary turn policy
+asks again, that is a genuine new request using the current observation; it
+does not replay or continue the malformed native output. The one-RPC end-to-end
+regressions use an explicitly synthetic one-turn plan, while a separate test
+retains the real fixture's ordinary turn limit.
+
+The roster and live profile consumers import the adapter mapping constant.
+Replay requires the exact current profile and mapping; v2/v3 evidence must be
+replayed with its original source tree, never relabeled or rescored under v4.
+The frozen v3 regression verifies historical parser behavior and rejection of
+its old mapping by the current validator. It does not prove refusal of a
+coherently rewritten record without an independently pinned source or digest.
+The frozen v2 source regression remains pinned to its original Git object.
+The prior v3 fixture correction changes only stale expected context numbers
+and mutation accounting, and is retained in the tests.

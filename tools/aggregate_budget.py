@@ -232,7 +232,7 @@ class Budget:
     def _reduce(
         self, old: dict[str, dict[str, Any]], e: dict[str, Any]
     ) -> dict[str, dict[str, Any]]:
-        rows = copy.deepcopy(old)
+        rows = dict(old)
         k = e["kind"]
         ident = e["id"]
         if k == "reserve":
@@ -249,7 +249,10 @@ class Budget:
             r["initial_input_bound"] = r["ib"]
             rows[ident] = r
         else:
-            r = rows[ident]
+            # Detach the changed row recursively before validation/mutation;
+            # retained versions remain untouched even if append later fails.
+            r = copy.deepcopy(rows[ident])
+            rows[ident] = r
             if k == "dispatch":
                 if r["state"] != "reserved":
                     raise ValueError("dispatch consumed")

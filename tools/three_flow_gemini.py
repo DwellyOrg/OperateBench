@@ -24,9 +24,21 @@ from operatebench.agents.lifecycle_contract import (
     elide_null_optionals,
     outcome_tools,
 )
-from operatebench.agents.model import MAX_OUTPUT_TOKENS, MODEL_PROTOCOL_VERSION
+from operatebench.agents.model import (
+    MAX_OUTPUT_TOKENS,
+    MODEL_PROTOCOL_VERSION,
+    ModelAgent,
+    ModelOutputTruncated,
+    ModelReturnedMultipleToolCalls,
+    ModelReturnedNoToolCall,
+)
 from operatebench.agents.playback import decision_record
-from operatebench.agents.transport import ModelRequest, ModelResponse, ToolCall
+from operatebench.agents.transport import (
+    ForbiddenTransport,
+    ModelRequest,
+    ModelResponse,
+    ToolCall,
+)
 from operatebench.core.protocol import AgentObservation
 from operatebench.domains.lettings.maintenance.agents import build_agent
 from operatebench.jsonsafe import canonical_json_text
@@ -45,7 +57,7 @@ from tools.three_flow_profiles import (
 )
 
 ROSTER_PROFILE = GEMINI_ROSTER_PROFILE
-MAPPING = "three-flow-gemini-developer-native-low-v3"
+MAPPING = "three-flow-gemini-developer-native-low-v4"
 OUTPUT_POLICY = "gemini-complete-input-context-intersection-v1"
 
 
@@ -239,13 +251,21 @@ def parse_response(
     if not isinstance(candidates, list) or len(candidates) != 1:
         raise wire_invalid("Gemini requires one candidate")
     candidate = candidates[0]
-    if not isinstance(candidate, dict) or candidate.get("finishReason") != "STOP":
+    if not isinstance(candidate, dict) or candidate.get("finishReason") not in (
+        "STOP",
+        "MAX_TOKENS",
+    ):
         raise wire_invalid("Gemini incomplete or refused response")
+    truncated = candidate["finishReason"] == "MAX_TOKENS"
     content = candidate.get("content")
+    if truncated and "content" not in candidate:
+        content = {"role": "model", "parts": []}
     if not isinstance(content, dict) or content.get("role") != "model":
         raise wire_invalid("Gemini model content missing")
+    if truncated and "parts" not in content:
+        content = {**content, "parts": []}
     parts = content.get("parts")
-    if not isinstance(parts, list) or not parts:
+    if not isinstance(parts, list) or (not parts and not truncated):
         raise wire_invalid("Gemini parts missing")
     calls = []
     for part in parts:
@@ -281,13 +301,13 @@ def parse_response(
             calls.append(
                 ToolCall(call["name"], elide_null_optionals(call["name"], call["args"]))
             )
-    if len(calls) != 1:
-        raise wire_invalid("Gemini requires exactly one Core function call")
     output = counts["candidatesTokenCount"] + counts["thoughtsTokenCount"]
     return (
         ModelResponse(
             model=model,
-            stop_reason="completed",
+            stop_reason="max_tokens"
+            if candidate["finishReason"] == "MAX_TOKENS"
+            else "completed",
             tool_calls=tuple(calls),
             output_tokens=output,
         ),
@@ -538,6 +558,20 @@ class GeminiCampaignTransport:
                     "wire": dict(self.wire.captures[-1]),
                     "network_rpcs": 1,
                 }
+                # Classify only after validated usage has been settled and captured.
+                outcome = ModelAgent(
+                    ForbiddenTransport(), model=self.model, max_output_tokens=maximum
+                )._parse(response)
+                if isinstance(
+                    outcome,
+                    (
+                        ModelReturnedNoToolCall,
+                        ModelReturnedMultipleToolCalls,
+                        ModelOutputTruncated,
+                    ),
+                ):
+                    self.history = []
+                    return response
                 # Filled with the next actual Core observation before dispatch.
                 call = next(
                     p["functionCall"] for p in content["parts"] if "functionCall" in p
@@ -672,7 +706,7 @@ def validate_replay(record: dict[str, Any]) -> None:
     """Rebuild native requests/history and rederive usage and decisions, offline."""
     import hashlib
 
-    from operatebench.agents.model import AGENT_TOOL_NAMES, parse_tool_call
+    from operatebench.agents.model import AGENT_TOOL_NAMES
     from operatebench.agents.transport import content_digest
 
     try:
@@ -743,9 +777,6 @@ def validate_replay(record: dict[str, Any]) -> None:
             if payload != expected:
                 raise ValueError("Gemini native request/history differs")
             response, counts, content = parse_response(wire["response_utf8"], model)
-            call = response.tool_calls[0]
-            if decision_record(parse_tool_call(call)) != decision["outcome"]:
-                raise ValueError("Gemini decision differs from native response")
             input_tokens = counts["promptTokenCount"] + counts["toolUsePromptTokenCount"]
             cost = (
                 Decimal(input_tokens) * Decimal(profile.input_rate)
@@ -766,6 +797,21 @@ def validate_replay(record: dict[str, Any]) -> None:
                 or Decimal(turn["measured_usd"]) != cost
             ):
                 raise ValueError("Gemini usage/context/cost provenance differs")
+            outcome = ModelAgent(
+                ForbiddenTransport(), model=model, max_output_tokens=actual_maximum
+            )._parse(response)
+            if decision_record(outcome) != decision["outcome"]:
+                raise ValueError("Gemini decision differs from native response")
+            if isinstance(
+                outcome,
+                (
+                    ModelReturnedNoToolCall,
+                    ModelReturnedMultipleToolCalls,
+                    ModelOutputTruncated,
+                ),
+            ):
+                history = []
+                continue
             native_call = next(
                 p["functionCall"] for p in content["parts"] if "functionCall" in p
             )

@@ -196,8 +196,9 @@ class CampaignBudget(Budget):
     ) -> dict[str, dict[str, Any]]:
         if e["kind"] != "raw_rpc":
             return super()._reduce(old, e)
-        rows = copy.deepcopy(old)
-        row = rows[e["id"]]
+        rows = dict(old)
+        row = copy.deepcopy(rows[e["id"]])
+        rows[e["id"]] = row
         if (
             row["state"] != "sent"
             or type(e["ordinal"]) is not int

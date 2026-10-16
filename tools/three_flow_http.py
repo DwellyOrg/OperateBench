@@ -198,7 +198,7 @@ class BudgetWire(httpx.BaseTransport):
         if self.meta_pacer is not None and response.status_code == 429:
             self.meta_pacer.stopped.set()
         if response.is_success and self.sensitive_response is not None:
-            # Gemini may reflect its header credential inside an HTTP 200 JSON
+            # Providers may reflect a header credential inside an HTTP 200 JSON
             # error. Strictly decode BEFORE publishing; malformed JSON must not
             # launder escaped secret bytes into the owner-only raw capture.
             sensitive = self.sensitive_response
@@ -210,9 +210,9 @@ class BudgetWire(httpx.BaseTransport):
                     ensure_ascii=False,
                 )
             except (ValueError, UnicodeError):
-                raise wire_invalid("Gemini successful response not capturable") from None
+                raise wire_invalid("successful response not capturable") from None
             if sensitive in data or sensitive.decode() in normalized:
-                raise wire_invalid("Gemini response reflected credential")
+                raise wire_invalid("response reflected credential")
         row["status_code"] = response.status_code
         if response.is_success:
             # Successful bodies retain their exact binding and SDK/replay path.
@@ -314,6 +314,8 @@ class HTTPCampaignTransport:
         )
         if selection is None:
             raise ValueError("new models require explicit off-or-minimum profile")
+        if not isinstance(api_key, str) or not api_key:
+            raise ValueError("HTTP provider requires a nonempty string API key")
         self.mode_profile = mode_profile
         self.mode_fields = (
             {"reasoning": {"effort": "minimal"}}
@@ -342,6 +344,7 @@ class HTTPCampaignTransport:
             self.request_mapping = "three-flow-meta-snapshot-minimal-auto-v3"
         self.guard, self.max_output_tokens = guard, max_output_tokens
         self.wire = BudgetWire(inner, guard, ENDPOINTS[provider])
+        self.wire.sensitive_response = api_key.encode()
         if meta:
             self.wire.meta_pacer = (
                 MetaRatePacer(enabled=False)
