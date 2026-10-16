@@ -82,13 +82,25 @@ exact scored/excluded denominators, mock provenance and the null-cap scorecard.
 Replay reconstructs native history and checks request identities, byte digests,
 LOW/output settings, exact response model, usage, estimates and Core decisions.
 
-This slice deliberately accepts only mock HTTP transports and no credentials.
-The descriptive admission proposal and candidate profile validation create no
-paid authority. Paid admission is explicitly refused. Parent-owned remaining
-work includes source versioning, committed same-SHA quality gates, account/key
-availability, account-specific quota/rate admission, and any separately approved
-launch capability. There are no inferred Google account quotas. DCO runs after
-the parent commit.
+The offline constructor and mock tests need no credentials. The live factory
+can admit paid Gemini only through the explicit source-bound, owner-approved
+one-shot admission claim and the Gemini null-cap limit policy. Calling
+`GeminiCampaignTransport.live(admitted=True)` alone grants no launch authority.
+No new spend or account quotas are authorized or inferred here, and no model
+scores or results are published.
+
+For live v4 settings, `source-bound-admission-reference-v1` retains the admission
+digest, the exact admitted profile digest and the limit policy in the trial
+binding and record. Replay checks the exact settings shape, profile digest and
+policy structure, and equality against the independently retained trial binding.
+Offline settings equality and native request bytes remain unchanged. These
+hashes are recorded links, not cryptographic attestations of approval. Without
+the original admission sidecar, replay cannot reconstruct that admission or
+verify that its digest represents a valid owner-approved claim. A coherently
+rewritten binding and record require an independently pinned closure digest or
+source/custody evidence to detect. Source versioning, same-SHA quality gates,
+account/key availability and any separately approved launch remain parent-owned.
+DCO runs after the parent commit.
 
 Primary documentation:
 

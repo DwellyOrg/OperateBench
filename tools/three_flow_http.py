@@ -205,13 +205,27 @@ class BudgetWire(httpx.BaseTransport):
             try:
                 # Pair lists retain duplicate fields that normal dict decoding
                 # would discard before the reflection scan.
-                normalized = json.dumps(
-                    json.loads(data, object_pairs_hook=lambda pairs: pairs),
-                    ensure_ascii=False,
-                )
-            except (ValueError, UnicodeError):
+                decoded = json.loads(data.decode(), object_pairs_hook=list)
+                secret = sensitive.decode()
+                # Bound both work and nesting. Pair tuples retain every
+                # key/value, including overwritten fields.
+                pending = [(decoded, 0)]
+                remaining = 100_000
+                reflected = sensitive in data
+                while pending:
+                    value, depth = pending.pop()
+                    remaining -= 1
+                    if remaining < 0 or depth > 128:
+                        raise ValueError("JSON traversal limit")
+                    if isinstance(value, str):
+                        reflected |= secret in value
+                    elif isinstance(value, (list, tuple)):
+                        if len(value) + len(pending) > remaining:
+                            raise ValueError("JSON traversal limit")
+                        pending.extend((child, depth + 1) for child in value)
+            except (ValueError, UnicodeError, RecursionError):
                 raise wire_invalid("successful response not capturable") from None
-            if sensitive in data or sensitive.decode() in normalized:
+            if reflected:
                 raise wire_invalid("response reflected credential")
         row["status_code"] = response.status_code
         if response.is_success:

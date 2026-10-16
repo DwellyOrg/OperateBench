@@ -1,10 +1,12 @@
 """Network-blocked SDK-wire tests for the successor HTTP transports."""
 
 import copy
+import hashlib
 import json
 import socket
 from dataclasses import replace
 from decimal import Decimal
+from types import SimpleNamespace
 
 import httpx
 import pytest
@@ -14,7 +16,7 @@ from operatebench.agents.pricing import LifecyclePricingPolicy
 from operatebench.agents.transport import ProviderFailure, content_digest
 from tools.aggregate_budget import SharedGuard
 from tools.three_flow_budget import CampaignBudget
-from tools.three_flow_http import MODELS, HTTPCampaignTransport
+from tools.three_flow_http import MODELS, BudgetWire, HTTPCampaignTransport
 from tools.three_flow_mock import SDKMockTransport
 from tools.three_flow_runtime import Trial, provider_identity, replay_trial, run_trial
 
@@ -356,13 +358,21 @@ def test_sdk_cannot_read_provider_environment(tmp_path, provider, monkeypatch):
 
 @pytest.mark.parametrize("provider", [*MODELS, "meta"])
 @pytest.mark.parametrize(
-    "body_kind", ["literal", "escaped", "duplicate", "malformed", "status"]
+    "body_kind", ["literal", "escaped", "duplicate", "json_key", "malformed", "status"]
 )
+@pytest.mark.parametrize("key_kind", ["plain", "quote", "backslash"])
 def test_credential_response_blocked_before_publication(
-    tmp_path, provider, body_kind, capsys
+    tmp_path, provider, body_kind, key_kind, capsys
 ):
     # Assemble a synthetic capability at runtime; never a provider credential.
-    key = "".join(("synthetic", "-reflection-", "capability"))
+    key = "".join(
+        (
+            "synthetic",
+            "-reflection-",
+            {"plain": "", "quote": chr(34), "backslash": chr(92)}[key_kind],
+            "capability",
+        )
+    )
     calls = []
     observed = []
 
@@ -380,11 +390,15 @@ def test_credential_response_blocked_before_publication(
                 escaped = "".join(f"\\u{ord(c):04x}" for c in key)
                 data = ('{"nested":[{"value":"' + escaped + '"}]}').encode()
             elif body_kind == "duplicate":
-                data = ('{"value":"' + key + '","value":"safe"}').encode()
+                data = ('{"value":' + json.dumps(key) + ',"value":"safe"}').encode()
+            elif body_kind == "json_key":
+                data = json.dumps({"nested": [{key: "safe"}]}).encode()
             elif body_kind == "malformed":
                 data = ('{"nested":' + json.dumps(key)).encode()
             else:
                 data = json.dumps({"error": {"message": key}}).encode()
+            if key_kind != "plain" and body_kind != "malformed":
+                assert key.encode() not in data
             return httpx.Response(400 if body_kind == "status" else 200, content=data)
 
         return handle
@@ -417,14 +431,16 @@ def test_credential_response_blocked_before_publication(
         assert budget.totals()["pending"] == 0
         assert not (tmp_path / "trial" / "record.json").exists()
         assert key not in repr(transport)
-        assert key not in json.dumps([transport.settings, observed, transport.last_turn])
+        assert not _contains_decoded_secret(
+            [transport.settings, observed, transport.last_turn, str(caught.value)], key
+        )
         assert key not in str(calls[0].url)
         assert key.encode() not in calls[0].content
         for path in tmp_path.rglob("*"):
             if path.is_file():
-                assert key.encode() not in path.read_bytes()
+                assert not _contains_decoded_secret(path.read_text(), key)
         captured = capsys.readouterr()
-        assert key not in captured.out + captured.err
+        assert not _contains_decoded_secret(captured.out + captured.err, key)
     finally:
         transport.close()
         budget.close()
@@ -466,3 +482,90 @@ def test_meta_model_refusal_precedes_invalid_key():
             guard=None,
             max_output_tokens=128000,
         )
+
+
+def _contains_decoded_secret(value, secret):
+    if isinstance(value, str):
+        if secret in value:
+            return True
+        try:
+            decoded = json.loads(value, object_pairs_hook=list)
+        except ValueError:
+            return (
+                any(_contains_decoded_secret(line, secret) for line in value.splitlines())
+                if len(value.splitlines()) > 1
+                else False
+            )
+        return decoded != value and _contains_decoded_secret(decoded, secret)
+    if isinstance(value, dict):
+        value = list(value.items())
+    if isinstance(value, (list, tuple)):
+        return any(_contains_decoded_secret(item, secret) for item in value)
+    return False
+
+
+@pytest.mark.parametrize("key_kind", ["quote", "backslash"])
+@pytest.mark.parametrize(
+    "shape",
+    ["value", "key", "duplicate", "malformed", "depth", "nodes", "safe", "status"],
+)
+def test_budget_wire_escaped_strings(key_kind, shape):
+    from tools.three_flow_http import ENDPOINTS
+
+    key = "".join(
+        ("synthetic-", chr(34) if key_kind == "quote" else chr(92), "-capability")
+    )
+    encoded = json.dumps(key)
+    data = {
+        "value": '{"nested":[{"value":' + encoded + "}]}",
+        "key": '{"nested":[{' + encoded + ':"safe"}]}',
+        "duplicate": '{"value":' + encoded + ',"value":"safe"}',
+        "malformed": '{"nested":' + encoded,
+        "depth": "[" * 1100 + "0" + "]" * 1100,
+        "nodes": "[" + ",".join(["null"] * 100001) + "]",
+        "safe": ' {"nested": ["ordinary", {"safe": true}]} \n',
+        "status": '{"error":' + encoded + "}",
+    }[shape].encode()
+    assert key.encode() not in data
+    calls, observed = [], []
+
+    def handle(request):
+        calls.append(1)
+        return httpx.Response(400 if shape == "status" else 200, content=data)
+
+    guard = SimpleNamespace(
+        _allows_no_money_cap=False,
+        cell="trial",
+        budget=SimpleNamespace(dispatch=lambda *args: None),
+    )
+    wire = BudgetWire(httpx.MockTransport(handle), guard, ENDPOINTS["openai"])
+    wire.expected_payload = {}
+    wire.sensitive_response = key.encode()
+    wire.observer = observed.append
+    request = httpx.Request("POST", ENDPOINTS["openai"], json={})
+    try:
+        if shape in ("safe", "status"):
+            response = wire.handle_request(request)
+            assert response.content == data
+            if shape == "safe":
+                assert wire.captures[0]["response_utf8"].encode() == data
+                assert (
+                    wire.captures[0]["response_sha256"]
+                    == hashlib.sha256(data).hexdigest()
+                )
+            else:
+                assert wire.captures[0]["response_projection"]["http_status"] == 400
+        else:
+            from operatebench.providers.faults import AdapterProviderError
+
+            with pytest.raises(AdapterProviderError):
+                wire.handle_request(request)
+            assert all(
+                "response_utf8" not in row and "response_sha256" not in row
+                for row in wire.captures
+            )
+            assert not any(row["kind"] == "wire_response" for row in observed)
+        assert calls == [1]
+        assert not _contains_decoded_secret([wire.captures, observed], key)
+    finally:
+        wire.close()

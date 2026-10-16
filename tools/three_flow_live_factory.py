@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import importlib
 from decimal import Decimal
 from pathlib import Path
@@ -127,7 +128,7 @@ def live_factory(
             gemini_inner = None if network is None else network.http(slot)
             if network is not None and not isinstance(gemini_inner, httpx.MockTransport):
                 raise ValueError("synthetic Gemini requires MockTransport")
-            return GeminiCampaignTransport.live(
+            gemini_transport = GeminiCampaignTransport.live(
                 model=slot["model"],
                 api_key=keys[VARIABLES["gemini"]],
                 guard=guard,
@@ -135,6 +136,15 @@ def live_factory(
                 admitted=True,
                 inner=gemini_inner,
             )
+            if network is None:
+                gemini_transport.settings.update(
+                    admission=True,
+                    admission_provenance="source-bound-admission-reference-v1",
+                    admission_sha256=digest(admission),
+                    admission_profile_sha256=digest(admission["profiles"][slot["model"]]),
+                    limit_policy=copy.deepcopy(admission["limit_policy"]),
+                )
+            return gemini_transport
         p = admission["profiles"][slot["model"]]
         diagnostic = p.get("bounds_policy") is not None
         maximum = min(

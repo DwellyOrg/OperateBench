@@ -13,6 +13,7 @@ import pytest
 from tools import three_flow_live as live
 from tools.three_flow_admission import (
     RESOURCE_POLICY,
+    digest,
     registry,
     runtime_identity,
     validate,
@@ -129,6 +130,9 @@ def test_gemini_live_factory_uses_native_mock_and_guard(tmp_path):
         assert transport.provider == "gemini"
         assert transport.model == slot["model"]
         assert transport.settings["evidence_origin"] == "SDK_MOCK_NOT_LLM"
+        assert transport.settings["admission"] is False
+        assert "admission_sha256" not in transport.settings
+        assert "admission_profile_sha256" not in transport.settings
         assert transport.guard.budget is budget
     finally:
         if transport is not None:
@@ -217,6 +221,7 @@ def test_gemini_admitted_mock_campaign_reuses_existing_runner(tmp_path):
 def test_gemini_provider_origin_requires_explicit_factory_and_replays(
     tmp_path, monkeypatch
 ):
+    from operatebench.agents.transport import content_digest
     from tools.three_flow_runtime import Trial, replay_trial
 
     value = admission(tmp_path, synthetic=False)
@@ -264,7 +269,101 @@ def test_gemini_provider_origin_requires_explicit_factory_and_replays(
     assert rows[0]["evidence_origin"] == "PROVIDER_CANDIDATE"
     trial = Trial(**json.loads((root / (slot["trial_id"] + ".binding.json")).read_text()))
     record = json.loads((root / slot["trial_id"] / "record.json").read_text())
+    expected = MODELS[slot["model"]].live_settings(65536)
+    expected.update(
+        admission=True,
+        admission_provenance="source-bound-admission-reference-v1",
+        admission_sha256=digest(value),
+        admission_profile_sha256=digest(value["profiles"][slot["model"]]),
+        limit_policy=value["limit_policy"],
+    )
+    assert trial.provider_binding["settings"] == expected
+    assert record["trial"]["provider_binding"]["settings"] == expected
+    assert record["provider"]["settings"] == expected
+    assert expected["admission"] is True
+    assert "synthetic-key" not in json.dumps(record)
+    assert "synthetic-key" not in json.dumps(trial.provider_binding)
     replay_trial(trial, record, expected_record_digest=record["record_digest"])
+    for field, replacement in (
+        ("admission_sha256", "b" * 64),
+        ("admission_profile_sha256", "b" * 64),
+        ("limit_policy", {**value["limit_policy"], "source_sha": "b" * 40}),
+        ("arbitrary_setting", True),
+    ):
+        changed = copy.deepcopy(record)
+        changed["provider"]["settings"][field] = replacement
+        changed["record_digest"] = content_digest(
+            {k: v for k, v in changed.items() if k != "record_digest"}
+        )
+        with pytest.raises(ValueError, match="provider/settings binding differs"):
+            replay_trial(trial, changed, expected_record_digest=changed["record_digest"])
+    from tools.three_flow_gemini import validate_replay
+
+    for field, replacement in (
+        ("admission_profile_sha256", "b" * 64),
+        ("admission_provenance", "unversioned"),
+        ("arbitrary_setting", True),
+        ("limit_policy", {**value["limit_policy"], "owner_accepted": False}),
+    ):
+        changed = copy.deepcopy(record)
+        changed["provider"]["settings"][field] = replacement
+        with pytest.raises(ValueError):
+            validate_replay(changed)
+
+
+@pytest.mark.parametrize("settings", ["invalid", [], None])
+def test_gemini_replay_rejects_wrong_settings_root(settings):
+    from tools.three_flow_gemini import validate_replay
+
+    with pytest.raises(ValueError, match="Gemini profile provenance differs"):
+        validate_replay(
+            {
+                "trial": {"model": "gemini-4-argon", "max_output_tokens": 65536},
+                "provider": {"settings": settings},
+            }
+        )
+
+
+def test_gemini_paid_factory_detaches_admitted_policy(tmp_path, monkeypatch):
+    value = admission(tmp_path, synthetic=False)
+    root = tmp_path / "campaign"
+    root.mkdir(mode=0o700)
+    slot = next(
+        s
+        for s in assignments(value["campaign_id"], ROSTER_PROFILE)
+        if s["trial_id"] == value["selected"][0]
+    )
+    budget = CampaignBudget(
+        root,
+        campaign_id=value["campaign_id"],
+        cap=None,
+        limit_policy=value["limit_policy"],
+        roster_profile=ROSTER_PROFILE,
+        create=True,
+    )
+
+    def direct(**kwargs):
+        assert kwargs == {"trust_env": False, "retries": 0}
+        return httpx.MockTransport(
+            GeminiMockTransport(slot["model"], slot["flow"]).handle
+        )
+
+    monkeypatch.setattr(httpx, "HTTPTransport", direct)
+    transport = None
+    try:
+        transport = live_factory(value, {"GEMINI_API_KEY": "synthetic-key"})(slot, budget)
+        recorded = copy.deepcopy(transport.settings)
+        assert recorded["admission"] is True
+        assert recorded["admission_sha256"] == digest(value)
+        assert recorded["limit_policy"] == value["limit_policy"]
+        value["limit_policy"]["source_sha"] = "b" * 40
+        assert digest(value) != recorded["admission_sha256"]
+        assert transport.settings == recorded
+        assert transport.settings["limit_policy"] is not value["limit_policy"]
+    finally:
+        if transport is not None:
+            transport.close()
+        budget.close()
 
 
 def test_gemini_cli_preflight_is_non_authorizing(tmp_path, monkeypatch, capsys):

@@ -715,9 +715,33 @@ def validate_replay(record: dict[str, Any]) -> None:
         profile = MODELS[model]
         provider = record["provider"]
         settings = provider["settings"]
+        if not isinstance(settings, dict):
+            raise ValueError("Gemini profile provenance differs")
+        expected = profile.live_settings(maximum)
+        if settings.get("admission") is True:
+            from tools.three_flow_admission import digest as admission_digest
+            from tools.three_flow_budget import validate_limit_policy
+
+            # A retained reference, not an attestation: the original admission
+            # is not present here. Trial binding equality is checked by replay_trial.
+            reference = settings.get("admission_sha256")
+            if (
+                not isinstance(reference, str)
+                or len(reference) != 64
+                or any(c not in "0123456789abcdef" for c in reference)
+            ):
+                raise ValueError("Gemini admission reference invalid")
+            validate_limit_policy(settings.get("limit_policy"), mode=LIMIT_PROFILE)
+            expected.update(
+                admission=True,
+                admission_provenance="source-bound-admission-reference-v1",
+                admission_sha256=reference,
+                admission_profile_sha256=admission_digest(profile.live_settings(maximum)),
+                limit_policy=settings["limit_policy"],
+            )
         if settings not in (
             profile.settings(maximum),
-            profile.live_settings(maximum),
+            expected,
         ) or provider != {
             "provider": "gemini",
             "api": "generate_content",
