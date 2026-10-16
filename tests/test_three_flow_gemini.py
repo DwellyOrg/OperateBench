@@ -1,9 +1,11 @@
 """Native Developer API evidence; every HTTP operation is an offline mock."""
 
 import gzip
+import hashlib
 import json
 import socket
 from decimal import Decimal
+from pathlib import Path
 
 import httpx
 import pytest
@@ -13,6 +15,30 @@ from tools.aggregate_budget import SharedGuard
 from tools.three_flow_budget import CampaignBudget
 from tools.three_flow_gemini import MODELS, GeminiCampaignTransport, GeminiMockTransport
 from tools.three_flow_runtime import Trial, provider_identity, replay_trial, run_trial
+
+
+def frozen_gemini_source(version):
+    # Literal pins were verified against the original public source before copying.
+    # Keep these as text fixtures: they are executed only by the offline tests below.
+    pins = {
+        "v2": (30419, "7b06ef786a1301df382a95921fcf6b15b7d48cd8549b7ad933c191726ad2b945"),
+        "v3": (32654, "f5b24dc74533bb475b9ea0ed1072a8276dd14806a1e2a71caee14d616d4b3429"),
+    }
+    path = Path(__file__).parent / "fixtures" / f"three_flow_gemini_{version}.txt"
+    source = path.read_bytes()
+    size, digest = pins[version]
+    assert len(source) == size
+    assert hashlib.sha256(source).hexdigest() == digest
+    return source
+
+
+@pytest.mark.parametrize("version", ("v2", "v3"))
+def test_frozen_gemini_source_rejects_one_byte_mutation(monkeypatch, version):
+    original = frozen_gemini_source(version)
+    changed = bytes([original[0] ^ 1]) + original[1:]
+    monkeypatch.setattr(Path, "read_bytes", lambda self: changed)
+    with pytest.raises(AssertionError):
+        frozen_gemini_source(version)
 
 
 @pytest.fixture(autouse=True)
@@ -1268,24 +1294,14 @@ def test_v3_full_flow_projects_visible_action_fields_and_replays(
 
 def test_v3_changes_only_mapping_marker_and_act_properties_vs_frozen_v2(tmp_path):
     import copy
-    import subprocess
     import sys
     import types
-    from pathlib import Path
 
     from operatebench.agents.model import AGENT_TOOL_NAMES, MODEL_PROTOCOL_VERSION
     from operatebench.agents.transport import ModelRequest, content_digest
     from tools.three_flow_gemini import native_prompt
 
-    root = Path(__file__).resolve().parents[1]
-    original_source = subprocess.check_output(
-        [
-            "git",
-            "show",
-            "497b491df996ebd1" + "f365a35fe1155bd29318a9a3:tools/three_flow_gemini.py",
-        ],
-        cwd=root,
-    )
+    original_source = frozen_gemini_source("v2")
     old = types.ModuleType("frozen_gemini_v2")
     sys.modules[old.__name__] = old
     exec(compile(original_source, "frozen_gemini_v2.py", "exec"), old.__dict__)
@@ -1602,26 +1618,13 @@ def test_model_failure_allows_only_genuine_fresh_requests(
 
 
 def test_frozen_v3_source_keeps_old_parser_and_mapping_mismatch(monkeypatch):
-    import hashlib
-    import subprocess
     import sys
     import types
-    from pathlib import Path
 
     from operatebench.providers.faults import AdapterProviderError
     from tools.three_flow_gemini import MAPPING, validate_replay
 
-    original_source = subprocess.check_output(
-        [
-            "git",
-            "show",
-            "0006d783a6bf0b4e" + "f2897e5c166d66dd61c452a1:tools/three_flow_gemini.py",
-        ],
-        cwd=Path(__file__).resolve().parents[1],
-    )
-    assert hashlib.sha256(original_source).hexdigest() == (
-        "f5b24dc74533bb475b9ea0ed1072a8276dd14806a1e2a71caee14d616d4b3429"
-    )
+    original_source = frozen_gemini_source("v3")
     old = types.ModuleType("frozen_gemini_v3")
     monkeypatch.setitem(sys.modules, old.__name__, old)
     exec(compile(original_source, "frozen_gemini_v3.py", "exec"), old.__dict__)
