@@ -1172,3 +1172,238 @@ def test_profile_rejects_static_task_ceiling(maximum):
         with pytest.raises(ValueError, match="physical output maximum"):
             profile.settings(maximum)
         assert profile.settings(65536)["physical_output_maximum"] == 65536
+
+
+@pytest.mark.parametrize(
+    "flow,scenario,fields",
+    [
+        ("maintenance", "V1", {"cycle_id": "string", "visit_type": "string"}),
+        (
+            "commerce",
+            "UK_NORMAL",
+            {
+                "case_id": "string",
+                "decision": "string",
+                "profile_digest": "string",
+                "version": "integer",
+            },
+        ),
+        (
+            "compliance",
+            "SC_reopen",
+            {"document_id": "string", "reason": "string", "recipient": "string"},
+        ),
+    ],
+)
+@pytest.mark.parametrize("model", MODELS)
+def test_v3_full_flow_projects_visible_action_fields_and_replays(
+    tmp_path, model, flow, scenario, fields
+):
+    from tools.three_flow_gemini import MAPPING
+
+    budget, mock, transport, trial = fixture(
+        tmp_path, model, flow=flow, scenario=scenario
+    )
+    try:
+        record = run_trial(trial, transport, output=tmp_path / "trial")
+        assert record["evaluation"]["reliable"]
+        assert MAPPING == "three-flow-gemini-developer-native-low-v3"
+        assert len(mock.calls) == len(record["provider_turns"]) > 1
+        first_schema = next(
+            d["parametersJsonSchema"]
+            for d in mock.calls[0]["tools"][0]["functionDeclarations"]
+            if d["name"] == "act"
+        )["properties"]["payload"]
+        assert first_schema["type"] == ["object", "null"]
+        if flow != "compliance":
+            assert "properties" not in first_schema
+        else:
+            assert all(
+                first_schema["properties"].get(k) == {"type": v}
+                for k, v in fields.items()
+            )
+        seen = []
+        for call in mock.calls[1:]:
+            native = next(
+                d["parametersJsonSchema"]
+                for d in call["tools"][0]["functionDeclarations"]
+                if d["name"] == "act"
+            )["properties"]["payload"]
+            assert native["type"] == ["object", "null"]
+            assert "additionalProperties" not in native
+            assert "required" not in native
+            seen.append(native.get("properties", {}))
+        assert any(all(p.get(k) == {"type": v} for k, v in fields.items()) for p in seen)
+        assert (
+            replay_trial(trial, record, expected_record_digest=record["record_digest"])[
+                "provider_calls"
+            ]
+            == 0
+        )
+    finally:
+        transport.close()
+        budget.close()
+
+
+def test_v3_changes_only_mapping_marker_and_act_properties_vs_frozen_v2(tmp_path):
+    import copy
+    import subprocess
+    import sys
+    import types
+    from pathlib import Path
+
+    from operatebench.agents.model import AGENT_TOOL_NAMES, MODEL_PROTOCOL_VERSION
+    from operatebench.agents.transport import ModelRequest, content_digest
+    from tools.three_flow_gemini import native_prompt
+
+    root = Path(__file__).resolve().parents[1]
+    original_source = subprocess.check_output(
+        [
+            "git",
+            "show",
+            "497b491df996ebd1" + "f365a35fe1155bd29318a9a3:tools/three_flow_gemini.py",
+        ],
+        cwd=root,
+    )
+    old = types.ModuleType("frozen_gemini_v2")
+    sys.modules[old.__name__] = old
+    exec(compile(original_source, "frozen_gemini_v2.py", "exec"), old.__dict__)
+    budget, mock, transport, trial = fixture(
+        tmp_path, "gemini-4-argon", flow="maintenance", scenario="V1"
+    )
+    try:
+        record = run_trial(trial, transport, output=tmp_path / "trial")
+        assert old.MAPPING == "three-flow-gemini-developer-native-low-v2"
+        assert transport.settings["mapping"] != old.MAPPING
+        for index in (0, 1):
+            actual = mock.calls[index]
+            prompt = native_prompt(actual)
+            observation = prompt["observation"]
+            request = ModelRequest(
+                model=trial.model,
+                protocol_version=MODEL_PROTOCOL_VERSION,
+                max_output_tokens=actual["generationConfig"]["maxOutputTokens"],
+                tool_names=AGENT_TOOL_NAMES,
+                observation_digest_sha256=content_digest(observation),
+                prompt_digest_sha256=content_digest(prompt),
+                invocation_index=observation["invocation_index"],
+                turn_index=observation["turn_index"],
+                prompt=prompt,
+            )
+            frozen = object.__new__(old.GeminiCampaignTransport)
+            frozen.model = trial.model
+            frozen.max_output_tokens = trial.max_output_tokens
+            frozen.settings = old.MODELS[trial.model].settings(trial.max_output_tokens)
+            frozen.history = (
+                []
+                if index == 0
+                else [
+                    *copy.deepcopy(mock.calls[0]["contents"]),
+                    json.loads(record["provider_turns"][0]["wire"]["response_utf8"])[
+                        "candidates"
+                    ][0]["content"],
+                    {
+                        "role": "user",
+                        "parts": [
+                            {
+                                "functionResponse": {
+                                    "name": json.loads(
+                                        record["provider_turns"][0]["wire"][
+                                            "response_utf8"
+                                        ]
+                                    )["candidates"][0]["content"]["parts"][0][
+                                        "functionCall"
+                                    ]["name"],
+                                    "response": {},
+                                }
+                            }
+                        ],
+                    },
+                ]
+            )
+            v2 = frozen.payload(request)
+            assert actual["contents"] == v2["contents"]
+            assert actual["generationConfig"] == v2["generationConfig"]
+            assert actual["toolConfig"] == v2["toolConfig"]
+            assert (
+                actual["generationConfig"]["maxOutputTokens"]
+                == v2["generationConfig"]["maxOutputTokens"]
+            )
+            v3_normalized = copy.deepcopy(actual)
+            v3_normalized["systemInstruction"]["parts"][0]["text"] = v3_normalized[
+                "systemInstruction"
+            ]["parts"][0]["text"].replace(transport.request_mapping, old.MAPPING)
+            v3_normalized["tools"] = v2["tools"]
+            assert v3_normalized == v2
+    finally:
+        transport.close()
+        budget.close()
+
+
+def test_v3_schema_union_is_sorted_nullable_open_and_uses_only_visible_types():
+    from tools.three_flow_gemini import act_ready_declarations, declarations
+
+    visible = {
+        "z": {"required": {"cycle_id": "string", "count": "integer"}},
+        "a": {
+            "optional": {"scope_digest": "optional_string", "cycle_id": "optional_string"}
+        },
+    }
+    native = act_ready_declarations({"observation": {"action_schemas": visible}})
+    assert [item["name"] for item in native] == [item["name"] for item in declarations()]
+    assert native[1:] == declarations()[1:]
+    payload = native[0]["parametersJsonSchema"]["properties"]["payload"]
+    assert payload == {
+        "type": ["object", "null"],
+        "properties": {
+            "count": {"type": "integer"},
+            "cycle_id": {"type": ["string", "null"]},
+            "scope_digest": {"type": ["string", "null"]},
+        },
+    }
+    assert list(payload["properties"]) == ["count", "cycle_id", "scope_digest"]
+    assert "additionalProperties" not in payload and "required" not in payload
+    assert declarations()[0]["parametersJsonSchema"]["properties"]["payload"] == {
+        "type": ["object", "null"],
+        "description": "The action's arguments, as a JSON object.",
+    }
+
+
+@pytest.mark.parametrize(
+    "schemas",
+    [
+        None,
+        [],
+        {"action": []},
+        {"action": {"required": []}},
+        {"action": {"optional": {"x": "number"}}},
+        {
+            "action": {"required": {"x": "integer"}},
+            "other": {"optional": {"x": "string"}},
+        },
+        {"action": {"required": {"x": "string"}, "optional": {"x": "integer"}}},
+        {1: {"required": {"x": "string"}}},
+        {"action": {"required": {1: "string"}}},
+    ],
+)
+def test_v3_invalid_visible_schemas_refuse_before_any_network(
+    tmp_path, monkeypatch, schemas
+):
+    import tools.three_flow_gemini as gemini
+
+    budget, mock, transport, trial = fixture(tmp_path, "gemini-4-argon")
+    original = gemini.visible_act_payload_properties
+
+    def invalid(_prompt):
+        return original({"observation": {"action_schemas": schemas}})
+
+    monkeypatch.setattr(gemini, "visible_act_payload_properties", invalid)
+    try:
+        with pytest.raises(ValueError, match="Gemini action_schemas"):
+            run_trial(trial, transport, output=tmp_path / "trial")
+        assert mock.calls == []
+        assert transport.wire.captures == []
+        assert budget.records == {}
+    finally:
+        transport.close()
+        budget.close()

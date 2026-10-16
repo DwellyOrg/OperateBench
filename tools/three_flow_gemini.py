@@ -10,6 +10,7 @@ from __future__ import annotations
 import copy
 import json
 import time
+from collections.abc import Mapping
 from dataclasses import dataclass, replace
 from decimal import Decimal
 from types import MappingProxyType
@@ -44,7 +45,7 @@ from tools.three_flow_profiles import (
 )
 
 ROSTER_PROFILE = GEMINI_ROSTER_PROFILE
-MAPPING = "three-flow-gemini-developer-native-low-v2"
+MAPPING = "three-flow-gemini-developer-native-low-v3"
 OUTPUT_POLICY = "gemini-complete-input-context-intersection-v1"
 
 
@@ -138,6 +139,55 @@ def declarations() -> list[dict[str, Any]]:
         }
         for t in outcome_tools()
     ]
+
+
+def visible_act_payload_properties(prompt: Mapping[str, Any]) -> dict[str, Any]:
+    """Project only the current observation's public, typed action fields."""
+    schemas = prompt["observation"]["action_schemas"]
+    if not isinstance(schemas, dict) or any(
+        not isinstance(action, str) or not isinstance(schema, dict)
+        for action, schema in schemas.items()
+    ):
+        raise ValueError("Gemini action_schemas invalid")
+    fields: dict[str, str] = {}
+    for schema in (schemas[name] for name in sorted(schemas)):
+        for section in ("required", "optional"):
+            declarations_by_field = schema.get(section, {})
+            if not isinstance(declarations_by_field, dict) or any(
+                not isinstance(name, str) or not name for name in declarations_by_field
+            ):
+                raise ValueError("Gemini action_schemas invalid")
+            for name, kind in sorted(declarations_by_field.items()):
+                if kind not in ("string", "optional_string", "integer"):
+                    raise ValueError("Gemini action_schemas invalid")
+                previous = fields.get(name)
+                if previous is not None and previous != kind:
+                    if {previous, kind} == {"string", "optional_string"}:
+                        kind = "optional_string"
+                    else:
+                        raise ValueError("Gemini action_schemas type collision")
+                fields[name] = kind
+    return {
+        name: {
+            "type": ["string", "null"]
+            if fields[name] == "optional_string"
+            else fields[name]
+        }
+        for name in sorted(fields)
+    }
+
+
+def act_ready_declarations(prompt: Mapping[str, Any]) -> list[dict[str, Any]]:
+    projected = declarations()
+    properties = visible_act_payload_properties(prompt)
+    if properties:
+        act = next(item for item in projected if item["name"] == "act")
+        act["parametersJsonSchema"] = copy.deepcopy(act["parametersJsonSchema"])
+        act["parametersJsonSchema"]["properties"]["payload"] = {
+            "type": ["object", "null"],
+            "properties": properties,
+        }
+    return projected
 
 
 def native_prompt(payload: dict[str, Any]) -> dict[str, Any]:
@@ -400,7 +450,7 @@ class GeminiCampaignTransport:
                 ]
             },
             "contents": history,
-            "tools": [{"functionDeclarations": declarations()}],
+            "tools": [{"functionDeclarations": act_ready_declarations(request.prompt)}],
             "toolConfig": {
                 "functionCallingConfig": {
                     "mode": "ANY",
