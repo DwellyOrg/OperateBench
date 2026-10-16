@@ -1050,13 +1050,14 @@ def test_dynamic_cap_actual_wire_and_guard(tmp_path, monkeypatch, remaining):
     )
 
     budget, _mock, transport, trial = fixture(tmp_path, "gemini-4-argon")
-    prompt = {"observation": {}}
+    observation = {"action_schemas": {}}
+    prompt = {"observation": observation}
     request = ModelRequest(
         model=trial.model,
         protocol_version=MODEL_PROTOCOL_VERSION,
         max_output_tokens=65536,
         tool_names=AGENT_TOOL_NAMES,
-        observation_digest_sha256=content_digest({}),
+        observation_digest_sha256=content_digest(observation),
         prompt_digest_sha256=content_digest(prompt),
         invocation_index=0,
         turn_index=0,
