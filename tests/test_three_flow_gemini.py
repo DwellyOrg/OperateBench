@@ -32,6 +32,119 @@ def frozen_gemini_source(version):
     return source
 
 
+def frozen_shared_surface():
+    # Captured from the byte-identical historical v2/v3 lifecycle contract.
+    # This literal JSON is test data, never regenerated from current at test time.
+    raw = (
+        Path(__file__).parent / "fixtures" / "three_flow_gemini_shared_surface.json"
+    ).read_bytes()
+    assert len(raw) == 8721
+    assert hashlib.sha256(raw).hexdigest() == (
+        "4e38a10da24313156b71a1be63aab22a68df0f6dfbb41f063e2bf19d5f8318ed"
+    )
+    surface = json.loads(raw)
+    assert (
+        raw
+        == (
+            json.dumps(surface, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
+            + "\n"
+        ).encode()
+    )
+    return surface
+
+
+def detach_historical_shared_surface(old):
+    import copy
+
+    surface = frozen_shared_surface()
+    old.INSTRUCTIONS_CONTRACT = surface["instructions_contract"]
+    old.outcome_tools = lambda: copy.deepcopy(surface["outcome_tools"])
+
+
+def assert_current_shared_surface():
+    import tools.three_flow_gemini as gemini
+
+    # Pin before normalizing away tools in the full request comparison below.
+    current = {
+        "instructions_contract": gemini.INSTRUCTIONS_CONTRACT,
+        "outcome_tools": gemini.outcome_tools(),
+    }
+    current_bytes, frozen_bytes = (
+        (
+            json.dumps(surface, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
+            + "\n"
+        ).encode("utf-8")
+        for surface in (current, frozen_shared_surface())
+    )
+    assert current_bytes == frozen_bytes, "historical shared surface differs"
+
+
+def test_current_shared_surface_accepts_unchanged():
+    assert_current_shared_surface()
+
+
+@pytest.mark.parametrize(
+    ("original", "replacement"),
+    ((False, 0), (1, True)),
+    ids=("false-to-zero", "one-to-true"),
+)
+def test_current_shared_surface_rejects_scalar_type_alias(
+    monkeypatch, original, replacement
+):
+    import tools.three_flow_gemini as gemini
+
+    tools = frozen_shared_surface()["outcome_tools"]
+
+    def mutate(value):
+        if isinstance(value, dict):
+            for key, item in value.items():
+                if type(item) is type(original) and item == original:
+                    value[key] = replacement
+                    return True
+                if mutate(item):
+                    return True
+        elif isinstance(value, list):
+            return any(mutate(item) for item in value)
+        return False
+
+    assert mutate(tools)
+    monkeypatch.setattr(gemini, "outcome_tools", lambda: tools)
+    with pytest.raises(AssertionError, match="historical shared surface differs"):
+        assert_current_shared_surface()
+
+
+def test_frozen_shared_surface_rejects_one_byte_mutation(monkeypatch):
+    frozen_shared_surface()
+    path = Path(__file__).parent / "fixtures" / "three_flow_gemini_shared_surface.json"
+    original = path.read_bytes()
+    monkeypatch.setattr(
+        Path, "read_bytes", lambda self: bytes([original[0] ^ 1]) + original[1:]
+    )
+    with pytest.raises(AssertionError):
+        frozen_shared_surface()
+
+
+@pytest.mark.parametrize("version", ("v2", "v3"))
+def test_historical_shared_surface_is_detached(monkeypatch, version):
+    import sys
+    import types
+
+    import operatebench.agents.lifecycle_contract as contract
+
+    expected = frozen_shared_surface()
+    monkeypatch.setattr(contract, "outcome_tools", lambda: [])
+    monkeypatch.setattr(contract, "INSTRUCTIONS_CONTRACT", "mutation sentinel")
+    old = types.ModuleType(f"frozen_gemini_{version}_detached")
+    monkeypatch.setitem(sys.modules, old.__name__, old)
+    exec(compile(frozen_gemini_source(version), old.__name__, "exec"), old.__dict__)
+    detach_historical_shared_surface(old)
+    assert expected["instructions_contract"] == old.INSTRUCTIONS_CONTRACT
+    assert old.outcome_tools() == expected["outcome_tools"]
+    changed = old.outcome_tools()
+    changed[0]["description"] += " mutation sentinel"
+    assert old.outcome_tools() == expected["outcome_tools"]
+
+
 @pytest.mark.parametrize("version", ("v2", "v3"))
 def test_frozen_gemini_source_rejects_one_byte_mutation(monkeypatch, version):
     original = frozen_gemini_source(version)
@@ -39,6 +152,32 @@ def test_frozen_gemini_source_rejects_one_byte_mutation(monkeypatch, version):
     monkeypatch.setattr(Path, "read_bytes", lambda self: changed)
     with pytest.raises(AssertionError):
         frozen_gemini_source(version)
+
+
+@pytest.mark.parametrize("change", ("description", "name", "schema", "instructions"))
+def test_historical_comparison_rejects_shared_surface_mutation(
+    tmp_path, monkeypatch, change
+):
+    import copy
+
+    import operatebench.agents.lifecycle_contract as contract
+    import tools.three_flow_gemini as gemini
+
+    tools = copy.deepcopy(contract.outcome_tools())
+    instructions = contract.INSTRUCTIONS_CONTRACT
+    if change == "instructions":
+        instructions += " historical mutation sentinel"
+    elif change == "schema":
+        tools[0]["parameters"]["properties"]["historical_sentinel"] = {"type": "string"}
+    else:
+        tools[0][change] += "_historical_sentinel"
+    # Patch both aliases: this module already imported Gemini, while exec of the
+    # historical source below imports lifecycle_contract anew.
+    for module in (contract, gemini):
+        monkeypatch.setattr(module, "outcome_tools", lambda: copy.deepcopy(tools))
+        monkeypatch.setattr(module, "INSTRUCTIONS_CONTRACT", instructions)
+    with pytest.raises(AssertionError, match="historical shared surface differs"):
+        test_v3_changes_only_mapping_marker_and_act_properties_vs_frozen_v2(tmp_path)
 
 
 @pytest.fixture(autouse=True)
@@ -1305,6 +1444,8 @@ def test_v3_changes_only_mapping_marker_and_act_properties_vs_frozen_v2(tmp_path
     old = types.ModuleType("frozen_gemini_v2")
     sys.modules[old.__name__] = old
     exec(compile(original_source, "frozen_gemini_v2.py", "exec"), old.__dict__)
+    detach_historical_shared_surface(old)
+    assert_current_shared_surface()
     budget, mock, transport, trial = fixture(
         tmp_path, "gemini-4-argon", flow="maintenance", scenario="V1"
     )
@@ -1628,6 +1769,8 @@ def test_frozen_v3_source_keeps_old_parser_and_mapping_mismatch(monkeypatch):
     old = types.ModuleType("frozen_gemini_v3")
     monkeypatch.setitem(sys.modules, old.__name__, old)
     exec(compile(original_source, "frozen_gemini_v3.py", "exec"), old.__dict__)
+    detach_historical_shared_surface(old)
+    assert_current_shared_surface()
     assert old.MAPPING == "three-flow-gemini-developer-native-low-v3"
     assert MAPPING == "three-flow-gemini-developer-native-low-v4"
     for behavior in ("text", "multiple", "truncated"):
