@@ -492,6 +492,8 @@ alone is not proof of benchmark validity.
   roster and mode profile selection, pricing safeguards and compatibility boundaries.
 - [Meta Muse Standard snapshot method](docs/META_MUSE_SNAPSHOT.md) — provider
   settings, integration boundaries and pricing.
+- [Gemini native offline campaign](docs/GEMINI_OFFLINE.md) — two 44-case
+  provider-free HTTP mock series; no live provider scores or launch approval.
 - [Model results — descriptive full44 comparison](docs/MODEL_RESULTS.md) —
   19 exact model IDs, with separately completed successors and evidence limits.
 - [Three-flow River](docs/THREE_FLOW_RIVER.md) — optional SDK, pinned tokenizer

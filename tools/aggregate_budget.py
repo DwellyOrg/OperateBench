@@ -232,7 +232,7 @@ class Budget:
     def _reduce(
         self, old: dict[str, dict[str, Any]], e: dict[str, Any]
     ) -> dict[str, dict[str, Any]]:
-        rows = copy.deepcopy(old)
+        rows = dict(old)
         k = e["kind"]
         ident = e["id"]
         if k == "reserve":
@@ -249,7 +249,10 @@ class Budget:
             r["initial_input_bound"] = r["ib"]
             rows[ident] = r
         else:
-            r = rows[ident]
+            # Detach the changed row recursively before validation/mutation;
+            # retained versions remain untouched even if append later fails.
+            r = copy.deepcopy(rows[ident])
+            rows[ident] = r
             if k == "dispatch":
                 if r["state"] != "reserved":
                     raise ValueError("dispatch consumed")
@@ -356,11 +359,10 @@ class Budget:
             if len(candidates) != 1:
                 raise ValueError("no one-use admission")
             ident, r = candidates[0]
-            if (
-                type(payload.get("max_output_tokens", payload.get("max_tokens")))
-                is not int
-                or payload.get("max_output_tokens", payload.get("max_tokens")) != r["ob"]
-            ):
+            output = payload.get("max_output_tokens", payload.get("max_tokens"))
+            if output is None and isinstance(payload.get("generationConfig"), dict):
+                output = payload["generationConfig"].get("maxOutputTokens")
+            if type(output) is not int or output != r["ob"]:
                 raise ValueError("wire output changed")
             ib = max(
                 r["ib"], request_input_token_bound(payload, "offline successor wire")
@@ -467,9 +469,9 @@ class SharedGuard(LifecycleCostGuard):
 
     @property
     def _allows_no_money_cap(self) -> bool:
-        return (
-            getattr(self.budget, "controller_profile", None)
-            == "three-flow-optional-limits-v1"
+        return getattr(self.budget, "controller_profile", None) in (
+            "three-flow-optional-limits-v1",
+            "three-flow-gemini-uncapped-v1",
         )
 
     def authorize(self, *, input_tokens_upper_bound: int) -> Decimal:

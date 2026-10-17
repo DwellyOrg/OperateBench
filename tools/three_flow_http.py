@@ -101,9 +101,15 @@ def explicit_sdk_client(cls: Any, **kwargs: Any) -> Any:
 
 class BudgetWire(httpx.BaseTransport):
     def __init__(
-        self, inner: httpx.BaseTransport, guard: SharedGuard, endpoint: str
+        self,
+        inner: httpx.BaseTransport,
+        guard: SharedGuard,
+        endpoint: str,
+        *,
+        operation: str | None = None,
     ) -> None:
         self.inner, self.guard, self.endpoint = inner, guard, endpoint
+        self.operation = operation
         self.captures: list[dict[str, Any]] = []
         self.expected_payload: dict[str, Any] | None = None
         self.local_failure: str | None = None
@@ -111,6 +117,7 @@ class BudgetWire(httpx.BaseTransport):
         self.meta_pacer: MetaRatePacer | None = None
         self.meta_tokens = 0
         self.current_turn_dispatched = False
+        self.sensitive_response: bytes | None = None
 
     def handle_request(self, request: httpx.Request) -> httpx.Response:
         if self.meta_pacer is not None:
@@ -169,6 +176,8 @@ class BudgetWire(httpx.BaseTransport):
             "request_utf8": raw.decode(),
             "request_sha256": hashlib.sha256(raw).hexdigest(),
         }
+        if self.operation == "generate_content":
+            row.update(request_url=str(request.url), request_method=request.method)
         self.captures.append(row)
         # Persisted by the trial observer before crossing the actual transport.
         if self.observer is not None:
@@ -188,6 +197,36 @@ class BudgetWire(httpx.BaseTransport):
             raise
         if self.meta_pacer is not None and response.status_code == 429:
             self.meta_pacer.stopped.set()
+        if response.is_success and self.sensitive_response is not None:
+            # Providers may reflect a header credential inside an HTTP 200 JSON
+            # error. Strictly decode BEFORE publishing; malformed JSON must not
+            # launder escaped secret bytes into the owner-only raw capture.
+            sensitive = self.sensitive_response
+            try:
+                # Pair lists retain duplicate fields that normal dict decoding
+                # would discard before the reflection scan.
+                decoded = json.loads(data.decode(), object_pairs_hook=list)
+                secret = sensitive.decode()
+                # Bound both work and nesting. Pair tuples retain every
+                # key/value, including overwritten fields.
+                pending = [(decoded, 0)]
+                remaining = 100_000
+                reflected = sensitive in data
+                while pending:
+                    value, depth = pending.pop()
+                    remaining -= 1
+                    if remaining < 0 or depth > 128:
+                        raise ValueError("JSON traversal limit")
+                    if isinstance(value, str):
+                        reflected |= secret in value
+                    elif isinstance(value, (list, tuple)):
+                        if len(value) + len(pending) > remaining:
+                            raise ValueError("JSON traversal limit")
+                        pending.extend((child, depth + 1) for child in value)
+            except (ValueError, UnicodeError, RecursionError):
+                raise wire_invalid("successful response not capturable") from None
+            if reflected:
+                raise wire_invalid("response reflected credential")
         row["status_code"] = response.status_code
         if response.is_success:
             # Successful bodies retain their exact binding and SDK/replay path.
@@ -200,15 +239,18 @@ class BudgetWire(httpx.BaseTransport):
             # reflect credentials. Publish only this bounded typed projection,
             # BEFORE any observer sees the response. No original-body digest or
             # reversible copy is retained. This is not a provider fault code.
-            operation = {
-                ENDPOINTS[k]: v
-                for k, v in (
-                    ("openai", "responses"),
-                    ("meta", "responses"),
-                    ("anthropic", "messages"),
-                    ("mistral", "chat_completions"),
-                )
-            }[self.endpoint]
+            operation = (
+                self.operation
+                or {
+                    ENDPOINTS[k]: v
+                    for k, v in (
+                        ("openai", "responses"),
+                        ("meta", "responses"),
+                        ("anthropic", "messages"),
+                        ("mistral", "chat_completions"),
+                    )
+                }[self.endpoint]
+            )
             row["response_projection"] = http_error(
                 response.status_code, operation, response.headers.get("Retry-After")
             )
@@ -286,6 +328,8 @@ class HTTPCampaignTransport:
         )
         if selection is None:
             raise ValueError("new models require explicit off-or-minimum profile")
+        if not isinstance(api_key, str) or not api_key:
+            raise ValueError("HTTP provider requires a nonempty string API key")
         self.mode_profile = mode_profile
         self.mode_fields = (
             {"reasoning": {"effort": "minimal"}}
@@ -314,6 +358,7 @@ class HTTPCampaignTransport:
             self.request_mapping = "three-flow-meta-snapshot-minimal-auto-v3"
         self.guard, self.max_output_tokens = guard, max_output_tokens
         self.wire = BudgetWire(inner, guard, ENDPOINTS[provider])
+        self.wire.sensitive_response = api_key.encode()
         if meta:
             self.wire.meta_pacer = (
                 MetaRatePacer(enabled=False)

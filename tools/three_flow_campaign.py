@@ -37,10 +37,11 @@ from tools.three_flow_profiles import (
     EXCLUDED_FUTURE_MODEL as EXCLUDED_FUTURE_MODEL,
 )
 from tools.three_flow_profiles import (
-    LATEST_ROSTER_PROFILE as LATEST_ROSTER_PROFILE,
+    GEMINI_ROSTER_PROFILE,
+    META_ROSTER_PROFILE,
 )
 from tools.three_flow_profiles import (
-    META_ROSTER_PROFILE,
+    LATEST_ROSTER_PROFILE as LATEST_ROSTER_PROFILE,
 )
 from tools.three_flow_profiles import MODELS as MODELS
 from tools.three_flow_profiles import (
@@ -80,7 +81,11 @@ def preflight(roster_profile: str = "legacy-v1") -> dict[str, Any]:
         "admitted": False,
         "source_digest": source_binding(),
         "source_commit": source_commit(),
-        "global_cap_usd": "990" if roster_profile == META_ROSTER_PROFILE else "1000",
+        "global_cap_usd": None
+        if roster_profile == GEMINI_ROSTER_PROFILE
+        else "990"
+        if roster_profile == META_ROSTER_PROFILE
+        else "1000",
         **(
             {
                 "diagnostic_ceiling_usd": "10",
@@ -131,6 +136,11 @@ def assignments(
     return [
         {
             "campaign_id": campaign_id,
+            **(
+                {"series_id": f"{campaign_id}-{m}"}
+                if roster_profile == GEMINI_ROSTER_PROFILE
+                else {}
+            ),
             "trial_id": f"initial-{i:03d}-{j:02d}",
             "provider": p,
             "model": m,
@@ -311,8 +321,15 @@ def reports(
         )
     write_private(root / "scorecard.md", ("\n".join(lines) + "\n").encode())
     if grouped:
+        gemini_pairs = tuple(
+            dict.fromkeys(
+                (r["provider"], r["model"]) for r in rows if r["provider"] == "gemini"
+            )
+        )
         for index, (provider, model) in enumerate(
-            ROSTER + tuple(pair for pair in LATEST_HTTP_MODELS if pair not in ROSTER)
+            ROSTER
+            + tuple(pair for pair in LATEST_HTTP_MODELS if pair not in ROSTER)
+            + gemini_pairs
         ):
             for flow in ("maintenance", "commerce", "compliance"):
                 subset = [r for r in rows if r["model"] == model and r["flow"] == flow]
@@ -545,6 +562,20 @@ def run_campaign(
         raise ValueError("River offline route requires explicit pinned assets")
     if transport_factory is None and any(s["provider"] == "meta" for s in selected):
         raise ValueError("Meta offline route requires an explicit transport_factory")
+    if transport_factory is None and any(s["provider"] == "gemini" for s in selected):
+        raise ValueError("Gemini offline route requires an explicit transport_factory")
+    if roster_profile == GEMINI_ROSTER_PROFILE:
+        from tools.three_flow_profiles import GEMINI_UNCAPPED_PROFILE
+
+        if (
+            transport_factory is None
+            or campaign_budget is None
+            or campaign_budget.cap is not None
+            or campaign_budget.controller_profile != GEMINI_UNCAPPED_PROFILE
+        ):
+            raise ValueError(
+                "Gemini requires explicit transport and its null-cap journal"
+            )
     if not resume and campaign_budget is None:
         root.mkdir(mode=0o700)
     budget = campaign_budget or CampaignBudget(

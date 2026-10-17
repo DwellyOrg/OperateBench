@@ -23,7 +23,11 @@ from pathlib import Path
 from typing import Any
 
 from tools.aggregate_budget import Budget, canonical, money
-from tools.three_flow_profiles import META_ROSTER_PROFILE
+from tools.three_flow_profiles import (
+    GEMINI_ROSTER_PROFILE,
+    GEMINI_UNCAPPED_PROFILE,
+    META_ROSTER_PROFILE,
+)
 
 PROFILE = "three-flow-global-usd-v1"
 OPTIONAL_PROFILE = "three-flow-optional-limits-v1"
@@ -46,7 +50,7 @@ def validate_limit_policy(value: Any, *, mode: str = OPTIONAL_PROFILE) -> None:
         raise ValueError(
             "explicit optional limits and historical liability record required"
         )
-    if mode not in (OPTIONAL_PROFILE, META_UNCAPPED_PROFILE):
+    if mode not in (OPTIONAL_PROFILE, META_UNCAPPED_PROFILE, GEMINI_UNCAPPED_PROFILE):
         raise ValueError("unknown optional monetary policy")
     if value["mode"] != mode or value["owner_accepted"] is not True:
         raise ValueError("explicit owner optional limits consent required")
@@ -84,20 +88,24 @@ class CampaignBudget(Budget):
         if type(campaign_id) is not str or not campaign_id or len(campaign_id) > 200:
             raise ValueError("nonempty bounded campaign ID required")
         meta = roster_profile == META_ROSTER_PROFILE
+        gemini = roster_profile == GEMINI_ROSTER_PROFILE
+        optional_mode = (
+            GEMINI_UNCAPPED_PROFILE
+            if gemini
+            else META_UNCAPPED_PROFILE
+            if meta
+            else OPTIONAL_PROFILE
+        )
+        if gemini and cap is not None:
+            raise ValueError("Gemini campaign requires a fresh null monetary cap")
         if meta and cap is not None and cap != Decimal("990"):
             raise ValueError("Meta requires one shared hard USD 990 cap")
         if cap is None:
-            validate_limit_policy(
-                limit_policy, mode=META_UNCAPPED_PROFILE if meta else OPTIONAL_PROFILE
-            )
+            validate_limit_policy(limit_policy, mode=optional_mode)
         elif limit_policy is not None:
             raise ValueError("historical capped policy cannot opt into optional limits")
         self.limit_policy = copy.deepcopy(limit_policy)
-        self.controller_profile = (
-            (META_UNCAPPED_PROFILE if meta else OPTIONAL_PROFILE)
-            if cap is None
-            else PROFILE
-        )
+        self.controller_profile = optional_mode if cap is None else PROFILE
         self.cap = None if cap is None else money(cap)
         if self.cap is not None and self.cap != (990 if meta else 1000):
             raise ValueError("this successor requires the global USD 1000 cap")
@@ -188,8 +196,9 @@ class CampaignBudget(Budget):
     ) -> dict[str, dict[str, Any]]:
         if e["kind"] != "raw_rpc":
             return super()._reduce(old, e)
-        rows = copy.deepcopy(old)
-        row = rows[e["id"]]
+        rows = dict(old)
+        row = copy.deepcopy(rows[e["id"]])
+        rows[e["id"]] = row
         if (
             row["state"] != "sent"
             or type(e["ordinal"]) is not int

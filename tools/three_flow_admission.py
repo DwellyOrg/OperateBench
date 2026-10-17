@@ -25,12 +25,18 @@ from tools.three_flow_campaign import (
     selected_roster,
 )
 from tools.three_flow_meta import validate_meta_profile
-from tools.three_flow_profiles import ENDPOINTS, META_ROSTER_PROFILE
+from tools.three_flow_profiles import (
+    ENDPOINTS,
+    GEMINI_ROSTER_PROFILE,
+    GEMINI_UNCAPPED_PROFILE,
+    META_ROSTER_PROFILE,
+)
 from tools.three_flow_profiles import minimum_effort as minimum_effort
 from tools.three_flow_profiles import registry as registry
 from tools.three_flow_runtime import ROOT, source_binding
 
 VARIABLES = {
+    "gemini": "GEMINI_API_KEY",
     "meta": "MODEL_API_KEY",
     "openai": "OPENAI_API_KEY",
     "anthropic": "ANTHROPIC_API_KEY",
@@ -82,7 +88,9 @@ def proposal(sha: str, roster_profile: str = "legacy-v1") -> dict[str, Any]:
         "runtime": runtime_identity(),
         "registry": registry(
             roster_profile=roster_profile,
-            mode_profile="off-or-minimum-v1"
+            mode_profile="gemini-low-v1"
+            if roster_profile == GEMINI_ROSTER_PROFILE
+            else "off-or-minimum-v1"
             if roster_profile != "legacy-v1"
             else "legacy-v1",
         ),
@@ -103,6 +111,12 @@ def proposal(sha: str, roster_profile: str = "legacy-v1") -> dict[str, Any]:
         ],
     }
 
+    if roster_profile == GEMINI_ROSTER_PROFILE:
+        result["cap_usd"] = None
+        result["budget_scope"] = "fresh Gemini campaign; two distinct 44-case series"
+        result["blockers"].append(
+            "Gemini paid launch requires external source-bound one-shot admission"
+        )
     if roster_profile == META_ROSTER_PROFILE:
         result["cap_usd"] = "990"
         result["diagnostic_ceiling_usd"] = "10"
@@ -132,6 +146,13 @@ def validate(admission: Any, sha: str, *, synthetic: bool) -> dict[str, Any]:
 def _validate(
     admission: Any, sha: str, *, synthetic: bool, historical: bool
 ) -> dict[str, Any]:
+    if (
+        isinstance(admission, dict)
+        and admission.get("roster_profile") == GEMINI_ROSTER_PROFILE
+    ):
+        if historical:
+            raise ValueError("Gemini historical authority cannot be reused")
+        return _validate_gemini(admission, sha, synthetic=synthetic)
     fields = {
         "schema",
         "approved",
@@ -320,6 +341,94 @@ def _validate(
             raise ValueError("original native asset binding required")
     elif a["assets"] is not None:
         raise ValueError("unselected original native assets")
+    return a
+
+
+def _validate_gemini(a: dict[str, Any], sha: str, *, synthetic: bool) -> dict[str, Any]:
+    """Initial-only, source-bound native Gemini admission; never an approval writer."""
+    from tools.three_flow_gemini import MODELS as gemini_models
+
+    fields = {
+        "schema",
+        "approved",
+        "mode",
+        "source_sha",
+        "runtime",
+        "registry",
+        "campaign_id",
+        "attempt_id",
+        "campaign_root",
+        "custody_root",
+        "credential_file",
+        "cap_usd",
+        "resource_policy",
+        "selected",
+        "profiles",
+        "assets",
+        "operation",
+        "original_claim_sha256",
+        "journal_sha256",
+        "pending",
+        "corrections",
+        "parent_gates",
+        "no_intervening_spend",
+        "roster_profile",
+        "mode_profile",
+        "limit_policy",
+    }
+    if set(a) != fields:
+        raise ValueError("closed Gemini admission schema required")
+    if (
+        a["schema"] != "three-flow-admission-v1"
+        or a["approved"] is not (not synthetic)
+        or a["mode"] != ("synthetic" if synthetic else "paid")
+        or a["source_sha"] != sha
+        or a["mode_profile"] != "gemini-low-v1"
+        or a["cap_usd"] is not None
+        or a["operation"] != "initial"
+        or a["original_claim_sha256"] is not None
+        or a["journal_sha256"] is not None
+        or a["corrections"] != {}
+        or a["assets"] is not None
+        or a["parent_gates"] is not True
+        or a["no_intervening_spend"] is not True
+        or digest(a["runtime"]) != digest(runtime_identity())
+        or digest(a["registry"])
+        != digest(
+            registry(roster_profile=GEMINI_ROSTER_PROFILE, mode_profile="gemini-low-v1")
+        )
+        or digest(a["resource_policy"]) != digest(RESOURCE_POLICY)
+        or not all(identifier(a[k]) for k in ("campaign_id", "attempt_id"))
+    ):
+        raise ValueError("Gemini source/runtime/scope/gates mismatch")
+    validate_limit_policy(a["limit_policy"], mode=GEMINI_UNCAPPED_PROFILE)
+    if a["limit_policy"]["source_sha"] != sha:
+        raise ValueError("Gemini optional limits source binding mismatch")
+    roster = assignments(a["campaign_id"], GEMINI_ROSTER_PROFILE)
+    ids = [s["trial_id"] for s in roster]
+    selected = a["selected"]
+    if (
+        not isinstance(selected, list)
+        or not selected
+        or selected != [i for i in ids if i in selected]
+        or a["pending"] != selected
+    ):
+        raise ValueError("ordered unique Gemini initial subset required")
+    models = {s["model"] for s in roster if s["trial_id"] in selected}
+    if not isinstance(a["profiles"], dict) or set(a["profiles"]) != models:
+        raise ValueError("exact Gemini model profiles required")
+    for model in models:
+        profile = gemini_models[model]
+        expected = (
+            profile.settings(profile.output)
+            if synthetic
+            else profile.live_settings(profile.output)
+        )
+        if digest(a["profiles"][model]) != digest(expected):
+            raise ValueError("Gemini model/output/price/profile binding differs")
+    for key in ("campaign_root", "custody_root", "credential_file"):
+        if type(a[key]) is not str or not Path(a[key]).is_absolute():
+            raise ValueError("Gemini external absolute paths required")
     return a
 
 
@@ -640,6 +749,21 @@ def validate_profile(
     model: str | None = None,
     roster_profile: str = "legacy-v1",
 ) -> None:
+    if provider == "gemini":
+        from tools.three_flow_gemini import MODELS as gemini_models
+
+        if (
+            roster_profile != GEMINI_ROSTER_PROFILE
+            or not isinstance(model, str)
+            or model not in gemini_models
+            or not isinstance(p, dict)
+        ):
+            raise ValueError("Gemini native candidate profile required")
+        profile = gemini_models[model]
+        maximum = p.get("max_output_tokens")
+        if type(maximum) is not int or p != profile.settings(maximum):
+            raise ValueError("Gemini exact LOW/model/output/profile binding differs")
+        return
     fields = {
         "endpoint",
         "input_max",
