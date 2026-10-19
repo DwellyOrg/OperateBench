@@ -1,5 +1,38 @@
 # Repository corrections
 
+## OB-CORR-2026-10-19-COMMERCE-EMPTY-PAYMENT-HISTORY
+
+- **Date / scope / identity:** 2026-10-19; evaluator-only correction in development
+  pack `commerce.return_refund.profiles.v1`, evaluator 0.3.1 → 0.3.2. All refund
+  branches (UK_NORMAL, UK_LABEL_UNKNOWN, UK_PAYMENT_FAILED, DE_NORMAL,
+  DE_WITHHOLDING, CA_POLICY, AU_MAJOR) can expose the defect before submission.
+  Operation/pack 0.2.0, engine/runtime 0.13.0, distribution 0.1.0, profiles and
+  fixtures are unchanged. The evaluator implementation digest follows source
+  content automatically; operation and runtime inputs do not change.
+- **Defect / correction:** an empty accepted processor history folds to the
+  internal `None` sentinel, but canonical initial payment status is `"none"`.
+  Only the final status comparison normalizes that sentinel. First-result
+  validation still requires `processor_1`; amount and settlement timestamp
+  comparisons, causal submission checks and all other grading remain intact.
+- **Evidence / impact:** focused synthetic Engine regressions reproduce the false
+  `PROCESSOR_HISTORY_STATE_MISMATCH`, preserve genuine state mismatches with and
+  without accepted updates, reject query-first history, and retain reliable
+  no-submit non-refund branches. The sanitized 2026-10-19 audit reports 70
+  historical cases across 12 models with initial payment state and no accepted
+  update. Removing this finding would leave their settlement dimension failing
+  (`REFUND_NOT_SUBMITTED`, `NO_CAUSAL_PROCESSOR_RESULT`), goal=false and
+  reliable=false; published success/reliability fractions would not change.
+  This is an impact inference from the sanitized report, not a historical regrade.
+- **Comparability / preservation / action:** finding lists across 0.3.1 and 0.3.2
+  are not equivalent and must retain their evaluator identities. No published
+  result is superseded or rewritten. No historical regrade or rerun is performed
+  or authorized here; current comparable results require fresh runs under the
+  preview boundary in [VERSIONING.md](VERSIONING.md#evaluator-only-change).
+  Pre-fix source is preserved in repository history as evaluator 0.3.1.
+  Historical records and grades remain unchanged. The policy's pre-correction
+  tag and publication requirement remains pending; this correction creates no
+  tag and publishes no evidence.
+
 ## OB-CORR-2026-10-01-COMMERCE-FAILED-ATTEMPT-HISTORY
 
 - **Scope / identity:** finite failed-attempt clock followup in development pack
