@@ -101,7 +101,7 @@ def test_sdk_bytes_and_settings_golden(tmp_path, monkeypatch, key, expected):
         if provider == "mistral":
             # Preserve the frozen capture; this build uses the reviewed SDK update.
             assert settings["sdk_version"] == "2.9.2"
-            settings["sdk_version"] = "2.10.1"
+            settings["sdk_version"] = version("mistralai")
         assert transport.settings == settings
         assert transport.request_mapping == expected["mapping"]
         assert [

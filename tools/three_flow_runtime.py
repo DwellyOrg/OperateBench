@@ -406,6 +406,10 @@ def replay_trial(
         raise ValueError("provider/settings binding differs")
     if record["evidence_origin"] != record["provider"]["settings"]["evidence_origin"]:
         raise ValueError("evidence origin differs")
+    if record["provider"]["provider"] == "gemini":
+        from tools.three_flow_gemini import validate_replay
+
+        validate_replay(record)
     factories, spec, binding = _load(trial)
     if record["binding"] != binding:
         raise ValueError("source/spec/profile/evaluator binding differs")
@@ -438,7 +442,10 @@ def replay_trial(
                 import json
 
                 payload = json.loads(wire["request_utf8"])
-                if payload.get("max_output_tokens", payload.get("max_tokens")) != output:
+                wire_output = payload.get("max_output_tokens", payload.get("max_tokens"))
+                if record["provider"]["provider"] == "gemini":
+                    wire_output = payload["generationConfig"]["maxOutputTokens"]
+                if wire_output != output:
                     raise ValueError("wire output differs from request identity")
             elif isinstance(wire, list):
                 import base64

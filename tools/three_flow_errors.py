@@ -45,6 +45,117 @@ class ProviderPacer:
             return response
 
 
+class MetaDispatchStopped(RuntimeError):
+    """Local fail-stop; the blocked request was never dispatched."""
+
+
+class MetaRatePacer:
+    """Standard quotas, independent serialized model lanes, shared stop tripwire.
+
+    Reservations use complete serialized input plus requested output. They are
+    retained for fallback; fresh provider remaining quota can authorize dispatch.
+    No retry or generation deadline is added.
+    """
+
+    def __init__(
+        self,
+        *,
+        clock: Callable[[], float] = time.monotonic,
+        sleep: Callable[[float], None] = time.sleep,
+        enabled: bool = True,
+    ) -> None:
+        self.clock, self.sleep, self.enabled = clock, sleep, enabled
+        self._interruptible_wait = sleep is time.sleep
+        self.lock = threading.Lock()
+        self.windows: dict[str, list[tuple[float, int]]] = {}
+        self.model_locks: dict[str, Any] = {}
+        self.stopped = threading.Event()
+        self.remaining: dict[str, tuple[float, int, int]] = {}
+
+    def call(
+        self, model: str, tokens: int, send: Callable[[], httpx.Response]
+    ) -> httpx.Response:
+        if tokens > 4_000_000 or tokens <= 0:
+            raise ValueError("request reservation cannot fit Meta Standard TPM window")
+        with self.lock:
+            model_lock = self.model_locks.setdefault(model, threading.Lock())
+        while True:
+            with model_lock:
+                if self.stopped.is_set():
+                    raise MetaDispatchStopped("Meta fleet stopped after provider failure")
+                now = self.clock()
+                window = self.windows.setdefault(model, [])
+                window[:] = [(t, n) for t, n in window if t + 60 > now]
+                observed = self.remaining.get(model)
+                if observed is not None and observed[0] + 60 <= now:
+                    self.remaining.pop(model)
+                    observed = None
+                local_ready = (
+                    len(window) < 3000 and sum(n for _, n in window) + tokens <= 4_000_000
+                )
+                provider_ready = (
+                    observed is not None and observed[1] >= tokens and observed[2] > 0
+                )
+                if (
+                    not self.enabled
+                    or provider_ready
+                    or (observed is None and local_ready)
+                ):
+                    # Preparation precedes commit; observation and dispatch stay
+                    # under the same model lock, so quota is never reused in flight.
+                    response = send()
+                    if response.is_success:
+                        self.observe(model, response.headers)
+                    else:
+                        self.remaining.pop(model, None)
+                    return response
+                delay = (
+                    observed[0] + 60 - now
+                    if observed is not None
+                    else window[0][0] + 60 - now
+                )
+                if not local_ready:
+                    delay = min(delay, window[0][0] + 60 - now)
+            # Release both locks; production waits wake promptly on fleet stop.
+            if self._interruptible_wait:
+                self.stopped.wait(delay)
+            else:
+                self.sleep(delay)
+
+    def observe(self, model: str, headers: httpx.Headers) -> None:
+        """Replace quota under the model lock; incomplete signals clear authority."""
+        self.remaining.pop(model, None)
+        values = []
+        for name, maximum in (
+            ("limit-tokens", 4_000_000),
+            ("remaining-tokens", 4_000_000),
+            ("limit-requests", 3000),
+            ("remaining-requests", 3000),
+        ):
+            value = headers.get("x-ratelimit-" + name)
+            if (
+                value is None
+                or not value.isascii()
+                or not value.isdecimal()
+                or len(value) > 7
+            ):
+                return
+            number = int(value)
+            if number > maximum:
+                return
+            values.append(number)
+        token_limit, tokens, request_limit, requests = values
+        if token_limit == 0 or request_limit == 0:
+            return
+        if tokens > token_limit or requests > request_limit:
+            return
+        self.remaining[model] = (self.clock(), tokens, requests)
+
+    def commit(self, model: str, tokens: int) -> None:
+        """Called under the model lock immediately before actual dispatch."""
+        self.windows[model].append((self.clock(), tokens))
+
+
 def grpc_error(exception: BaseException, operation: str) -> dict[str, Any]:
     grpc = importlib.import_module("grpc")
     code_method = getattr(exception, "code", None)
@@ -86,6 +197,7 @@ def river_failed(message: Any) -> dict[str, Any]:
 
 
 OPERATIONS = (
+    "generate_content",
     "responses",
     "messages",
     "chat_completions",

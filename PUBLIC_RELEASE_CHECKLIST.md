@@ -139,8 +139,8 @@ and confirm none of the following appears in any form:
       / first long-horizon benchmark), "broadest", "most realistic",
       "industry standard", "state of the art".
 - [ ] Production-representative or official-policy claims for any fixture.
-- [ ] Any leaderboard, ranking, composite capability score, or comparison of
-      named models.
+- [ ] Any unsupported official leaderboard, composite capability score, universal
+      ranking, production capability claim or general comparison of named models.
 - [ ] Any claim that reference or negative agent results say something about
       model capability.
 - [ ] Any claim of validated construct, proven incremental signal, or
@@ -149,6 +149,20 @@ and confirm none of the following appears in any form:
       distinguishes our meaning from the established one.
 - [ ] Any suggestion that OperateBench is a rename of BoundaryBench, or that a
       BoundaryBench run is Lifecycle evidence.
+
+**Current-scope exception (manifest revision 0.3.0).** The original blanket ban
+remains historical in Git. Only the independently labelled, owner-directed
+retrospective [descriptive table](docs/MODEL_RESULTS.md) is excepted: one English
+table of 19 exact IDs, comprising the 16-model, 704-assignment historical campaign
+and three separately executed successors. Cohorts remain distinct, with no
+ranking across cohorts; each model has one trial per 44 related synthetic cases.
+Assigned/scored denominators and technical exclusions must be disclosed honestly;
+raw provider traces remain private. Independent human semantic validation is
+pending. The owner directed this report after warning about the old claims gate
+and pending validation; that decision is separately recorded outside public Git
+and is not independent approval. This exception does not close G8, G11 or G12,
+permit official/general claims, or bypass exact-commit review, privacy, secrets,
+licensing or other official-release blockers.
 
 Positively present:
 
@@ -224,6 +238,7 @@ Positively present:
       priority (see `SECURITY.md`).
 - [ ] Publish a correction note for any defect found post-release, per
       `docs/VERSIONING.md`.
-- [ ] Do not add scenarios or claims to the public repository until the matched
+- [ ] Apart from the specific descriptive-table exception in section 6, do not
+      add scenarios or claims to the public repository until the matched
       controls and independently authored scenarios in
       `docs/METHODOLOGY.md` are actually done.

@@ -1,11 +1,12 @@
 {
-  "manifest_schema_version": "0.2.0",
+  "manifest_schema_version": "0.3.0",
   "manifest_type": "operatebench.publication_manifest",
   "status": "CANDIDATE",
   "notes": [
     "Technical-preview source; technical acceptance does not authorize publication.",
     "Verified-base evidence is scoped to the accepted clean source tree. Changed candidates require an exact-source controlled acceptance record and successful hosted CI.",
-    "Project name, licence split and author/copyright attribution are owner-confirmed; know-how/rights review and public visibility authorization remain separate human decisions."
+    "Project name, licence split and author/copyright attribution are owner-confirmed; know-how/rights review and public visibility authorization remain separate human decisions.",
+    "Scope revision 0.3.0: the original prepublication blanket results ban is preserved in Git history. The owner directed the bounded retrospective descriptive table after being informed that independent human validation and the old claims gate remained pending. This explicit exception does not authorize official release or establish independent approval; the owner decision is separately recorded in controlled records outside public Git."
   ],
   "release": {
     "project": "OperateBench",
@@ -55,7 +56,7 @@
   "target": {
     "repository": "https://github.com/DwellyOrg/OperateBench",
     "visibility": "private-prepublication",
-    "visibility_note": "Private staging is not publication. Final public visibility requires separate controlled authorization; source documentation does not enact that decision.",
+    "visibility_note": "The visibility field records the historical private-prepublication target, not current repository visibility. Public source availability does not close the pending official-release gates or enact a new visibility decision.",
     "package_index": "none",
     "package_name": "operatebench",
     "package_publication": "deferred",
@@ -138,12 +139,12 @@
     {
       "class": "provider_run_artifacts",
       "description": "Real private provider-run artifacts, execution accounting, planning allocations, approval ceilings and spend records are excluded. Grok 4.6 public tooling is offline-only with separately identified fictional fleet metadata, not historical authority. Public vendor rates and invented deterministic test ledgers are not private execution records.",
-      "reason": "This release makes no model claim; publishing partial provider artifacts would invite one."
+      "reason": "Raw provider traces and private execution records remain excluded; the descriptive table exception publishes aggregate observations only, not release-grade provider evidence."
     },
     {
       "class": "unvalidated_results",
-      "description": "Scores, rankings, leaderboards or comparative model claims.",
-      "reason": "Not supported by one authored scenario and matched controls that have not been run."
+      "description": "Unsupported official leaderboards, composite capability scores, universal rankings, production capability claims and general named-model comparisons; unvalidated results outside the explicit descriptive-table exception.",
+      "reason": "Independent human semantic validation and official-release claims review remain pending. Only docs/MODEL_RESULTS.md is excepted under the bounded owner-directed descriptive scope; this is not a validation PASS."
     },
     {
       "class": "source_history",
@@ -166,7 +167,7 @@
     },
     "no_leaderboard_or_ranking": {
       "value": true,
-      "statement": "No leaderboard, composite score, model ranking or comparative capability claim is published."
+      "statement": "No official Lifecycle Track leaderboard, composite capability score, universal ranking, production capability claim or general named-model comparison is published. The descriptive table is an explicit exception to the original blanket comparison ban, not official benchmark evidence."
     },
     "no_novelty_claim": {
       "value": true,
@@ -190,7 +191,16 @@
     },
     "no_published_benchmark_model_results": {
       "value": true,
-      "statement": "No published benchmark model results, capability claim, task-versus-operation claim, ranking, or leaderboard are included."
+      "statement": "No official Lifecycle Track benchmark model results or validated capability or task-versus-operation claims are published. Historical descriptive model observations are published only under the explicit table exception.",
+      "scope": "official_benchmark_results"
+    },
+    "descriptive_model_results": {
+      "value": true,
+      "path": "docs/MODEL_RESULTS.md",
+      "scope": "owner_directed_retrospective_descriptive_only",
+      "statement": "One English table reports all 19 exact IDs: a 16-model, 704-assignment historical campaign and three separately executed successors, with distinct cohorts and no ranking across cohorts. One trial per model on each of 44 related synthetic cases; assigned and scored denominators are disclosed, with technical exclusions excluded from scored denominators rather than counted as failures. Costs are estimates, not invoices. Raw traces remain private. Independent human semantic validation is pending; the owner decision is separately recorded, not independent approval. No official Lifecycle Track leaderboard, universal ranking or production capability claim is authorized.",
+      "human_semantic_validation": "pending",
+      "official_release_authorized": false
     }
   },
   "gates": [

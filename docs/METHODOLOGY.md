@@ -2,7 +2,10 @@
 
 How OperateBench models an operation, advances the world, decides what is true,
 and grades what the agent did. This document describes the technical preview:
-one synthetic operation, deterministic agents, and no published benchmark model results.
+one official synthetic operation, deterministic agents, and no official Lifecycle
+model results. A separate [descriptive full44 comparison](MODEL_RESULTS.md)
+reports 19 exact IDs with separately completed successors, without validating
+the Lifecycle construct.
 
 Terms used throughout: **OperationSpec** (the versioned definition),
 **OperationEpisode** (one replayable case instance), **Semantic Scenario** (the
@@ -345,8 +348,9 @@ Reliable Operation Rate and the rate-shaped metrics beside it — Critical
 Violation Rate, Operation Completion Rate, Correct Wait/Follow-up Rate,
 Unnecessary Human Touches, Missed Escalations, Duplicate/Invalid Action Rate,
 SLA Violations, Recovery Rate, Stability@k — are defined over a *population* of
-episodes. This preview runs single episodes and publishes no aggregate. What an
-episode emits is the per-episode vector those rates would be computed from:
+episodes. The official Lifecycle preview runs single episodes and publishes no
+official aggregate. What an episode emits is the per-episode vector those rates
+would be computed from:
 eleven boolean dimensions, each carrying its own measured counts.
 
 | Dimension | Counts it reports |
@@ -369,12 +373,15 @@ this table and the evaluator's own `DIMENSIONS` tuple stay the same list.
 
 Two things named in the RFC are deliberately absent. **Provider cost is not part
 of the benchmark result vector.** The documented public/offline benchmark
-commands make no provider calls. Private operator-only diagnostics are excluded
-from published benchmark evidence, including their cost. **Stability@k** needs
+commands make no provider calls. Historical full44 observations in the results page
+remain exploratory observations, including their cost, rather than release-grade
+benchmark evidence. **Stability@k** needs
 repeated trials, which single-episode commands do not produce.
 
-No composite score and no leaderboard is published, because neither would be
-justified before construct validation.
+No composite score or official Lifecycle leaderboard is published, because
+neither would be justified before construct validation. The descriptive full44
+comparison orders the original 16 IDs by strict fraction and goal and keeps
+the three separately completed successors separate.
 
 ### Provider execution evidence (draft, bound to the artefact, and not yet live)
 
@@ -529,7 +536,8 @@ Closing that needs evidence the provider signs, which neither document holds.
 under their own exact historical semantics; this build reproduces contract 8
 only.
 
-**No model rankings or release-grade provider results are published.**
+**No general model rankings or release-grade provider results are published.**
+The descriptive full44 comparison reports bounded historical observations.
 This preview exposes executable mechanisms and synthetic controls. Historical
 interfaces and execution records cannot establish current capability. Private
 execution records and accounting are not part of this publication candidate.

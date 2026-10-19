@@ -401,3 +401,59 @@ Original historical launchers and outstanding historical authorities are unchang
 and are outside this series. The operator's no-intervening-spend obligation is
 an operational prerequisite, not mechanically enforced fleet-wide exclusion.
 Offline qualification and the authority boundary above apply before any paid launch.
+
+Campaign provenance is supplied by the executing transport path, independently
+of admission mode. Real provider transport produces `PROVIDER_CANDIDATE`;
+injected mock transport produces `SDK_MOCK_NOT_LLM`, including under paid
+admission. Every new excluded or aborted closure retains that origin, including
+failures before transport construction. Reports retain provider scope when no
+rows score; mixed mock/provider rows retain mixed scope. Scored records must
+agree with the trusted execution origin before they are eligible for results.
+
+Meta Standard dispatch uses `meta-standard-rolling-60s-headers-v2`: independent rolling
+60-second windows per model, 3000 requests and 4,000,000 reserved tokens.
+Each actual dispatch reserves the conservative complete serialized input bound
+plus its dynamically requested output maximum for fallback; fresh provider
+headers can authorize the next dispatch as described below. This pacing imposes no generation, call-count, money, or wall-time
+ceiling. Connect/pool timeouts remain finite; read/write deadlines remain absent.
+Mock transports disable waits, retaining the fail-stop gate.
+
+An HTTP429 or transport exception trips the campaign's shared Meta gate. An
+already dispatched attempt retains its original accounting and no-resubmission
+contract. Trials with no prior wire dispatch are reported as `pending`, with no active
+assignment or closure marker; unsent binding/runtime evidence is archived. A stopped
+current turn cancels only its still-reserved ticket, even after prior paid turns.
+Partially progressed trials retain their binding/runtime and close as `aborted`
+with `partial_trial_needs_correction_no_resubmit`: this runner cannot reconstruct
+prior Core/model state safely, so resume must not replay their paid decisions.
+For wholly unsent trials, `terminal.json` declares `complete: false` and lists
+their trial IDs.
+Explicit resume starts those cells under a fresh rate window and stop gate.
+Already dispatched cells are reconciled rather than resubmitted. Independent
+model lanes may already have requests in flight when the gate trips.
+Submission interleaves models while assignment manifests, trial IDs and returned
+row order retain their canonical order.
+
+Meta pacing uses all four successful-response `x-ratelimit-*` token/request
+limit and remaining headers documented in [Meta rate limits](https://dev.meta.ai/docs/pricing-rate-limits).
+Exact nonnegative ASCII integers must fit the published 4,000,000 TPM / 3000 RPM
+ranges and remaining values must not exceed their positive reported limits.
+Under each model's network lock, a fresh observation authorizes the next request
+when remaining tokens cover its complete serialized input bound plus requested
+output and at least one request remains, even if local maximum reservations exceed
+TPM. Each success replaces that observation; missing or invalid headers restore
+conservative rolling reservations. Insufficient quota blocks until the observation
+expires after 60 seconds, then conservative pacing resumes. Mock transports do
+not wait. This does not establish a native output maximum or add owner ceilings.
+Team traffic outside this process can consume quota after observation; HTTP429
+still stops dispatch without retries. Provider headers are not persisted as raw
+response evidence; the policy and signal are bound in settings and registry.
+
+Meta profiles may optionally bind `owner_output_cap_tokens: 16384` only under
+`execution_policy: three-flow-meta-uncapped-v1`. This owner-selected operational
+ceiling is not a native/provider maximum: `output_max` remains null and context
+remains 1,048,576 tokens. Admission digests, provider settings and replay identity
+bind the cap. Each SDK request uses the lesser of the cap and remaining context,
+with `tool_choice: auto` and minimal reasoning. An absent cap preserves the old
+profile. This adds no monetary, call-count or generation-time ceiling and does
+not authorize retrying any sealed series.

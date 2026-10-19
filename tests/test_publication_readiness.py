@@ -154,7 +154,7 @@ def test_ci_extends_only_the_python311_coverage_timeout() -> None:
     job = document["jobs"]["test"]
     assert job["strategy"]["matrix"] == {"python-version": ["3.11", "3.14"]}
     assert job["timeout-minutes"] == (
-        "${{ matrix.python-version == '3.11' && 180 || 90 }}"
+        "${{ matrix.python-version == '3.11' && 300 || 90 }}"
     )
 
 

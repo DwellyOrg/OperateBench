@@ -21,6 +21,7 @@ import httpx
 import openai
 from anthropic.types import Message
 from mistralai.client import Mistral
+from mistralai.client.httpclient import HttpClient
 
 from operatebench.agents import anthropic_messages as aa
 from operatebench.agents import mistral_chat as ma
@@ -30,13 +31,23 @@ from operatebench.agents.model import MAX_OUTPUT_TOKENS, MODEL_PROTOCOL_VERSION
 from operatebench.agents.transport import ModelRequest, ModelResponse
 from operatebench.jsonsafe import canonical_json_text
 from operatebench.providers import anthropic_messages as ap
+from operatebench.providers import meta_responses as metap
 from operatebench.providers import mistral_chat as mp
 from operatebench.providers import openai_responses as op
-from operatebench.providers.cost import request_input_token_bound
+from operatebench.providers.cost import (
+    conservative_input_token_bound,
+    request_input_token_bound,
+)
 from operatebench.providers.faults import AdapterProviderError, SingleFlight
 from operatebench.providers.wire import WireResponse, wire_invalid
 from tools.aggregate_budget import SharedGuard
-from tools.three_flow_errors import ProviderPacer, http_error
+from tools.three_flow_errors import (
+    MetaDispatchStopped,
+    MetaRatePacer,
+    ProviderPacer,
+    http_error,
+)
+from tools.three_flow_meta import validate_meta_profile
 from tools.three_flow_profiles import (
     ENDPOINTS as ENDPOINTS,
 )
@@ -45,6 +56,7 @@ from tools.three_flow_profiles import (
 )
 from tools.three_flow_profiles import (
     MODE_PROFILES,
+    CampaignSelection,
     http_mode_fields,
     http_reasoning_mode,
     selection_for,
@@ -57,6 +69,7 @@ from tools.three_flow_profiles import (
 )
 
 MISTRAL_PACER = ProviderPacer()
+META_PACER = MetaRatePacer()
 
 
 def explicit_sdk_client(cls: Any, **kwargs: Any) -> Any:
@@ -88,15 +101,41 @@ def explicit_sdk_client(cls: Any, **kwargs: Any) -> Any:
 
 class BudgetWire(httpx.BaseTransport):
     def __init__(
-        self, inner: httpx.BaseTransport, guard: SharedGuard, endpoint: str
+        self,
+        inner: httpx.BaseTransport,
+        guard: SharedGuard,
+        endpoint: str,
+        *,
+        operation: str | None = None,
     ) -> None:
         self.inner, self.guard, self.endpoint = inner, guard, endpoint
+        self.operation = operation
         self.captures: list[dict[str, Any]] = []
         self.expected_payload: dict[str, Any] | None = None
         self.local_failure: str | None = None
         self.pacer: ProviderPacer | None = None
+        self.meta_pacer: MetaRatePacer | None = None
+        self.meta_tokens = 0
+        self.current_turn_dispatched = False
+        self.sensitive_response: bytes | None = None
 
     def handle_request(self, request: httpx.Request) -> httpx.Response:
+        if self.meta_pacer is not None:
+            raw = request.read()
+            body = json.loads(raw)
+            self.meta_tokens = max(
+                conservative_input_token_bound(len(raw)),
+                request_input_token_bound(body, "complete Meta serialized input"),
+            ) + int(body["max_output_tokens"])
+            try:
+                return self.meta_pacer.call(
+                    body["model"],
+                    self.meta_tokens,
+                    lambda: self._handle_request(request),
+                )
+            except MetaDispatchStopped:
+                self.local_failure = "meta_dispatch_stopped"
+                raise
         if self.pacer is not None:
             return self.pacer.call(lambda: self._handle_request(request))
         return self._handle_request(request)
@@ -104,7 +143,7 @@ class BudgetWire(httpx.BaseTransport):
     def _handle_request(self, request: httpx.Request) -> httpx.Response:
         if str(request.url) != self.endpoint or request.method != "POST":
             raise ValueError("noncanonical provider endpoint")
-        if self.guard._allows_no_money_cap:
+        if self.guard._allows_no_money_cap and self.endpoint == ENDPOINTS["mistral"]:
             # Mistral 2.x substitutes 300000ms for timeout_ms=None. Override at
             # the real HTTP transport boundary, not with a large deadline.
             # Only the explicit successor policy reaches this branch; old capped
@@ -132,10 +171,13 @@ class BudgetWire(httpx.BaseTransport):
             if self.guard.budget.broken:
                 self.local_failure = "dispatch_journal_error"
             raise
+        self.current_turn_dispatched = True
         row: dict[str, Any] = {
             "request_utf8": raw.decode(),
             "request_sha256": hashlib.sha256(raw).hexdigest(),
         }
+        if self.operation == "generate_content":
+            row.update(request_url=str(request.url), request_method=request.method)
         self.captures.append(row)
         # Persisted by the trial observer before crossing the actual transport.
         if self.observer is not None:
@@ -144,8 +186,47 @@ class BudgetWire(httpx.BaseTransport):
             self.guard.budget.raw_rpc(
                 self.guard.cell, self.endpoint, row["request_sha256"]
             )
-        response = self.inner.handle_request(request)
-        data = response.read()
+        if self.meta_pacer is not None:
+            self.meta_pacer.commit(body["model"], self.meta_tokens)
+        try:
+            response = self.inner.handle_request(request)
+            data = response.read()
+        except BaseException:
+            if self.meta_pacer is not None:
+                self.meta_pacer.stopped.set()
+            raise
+        if self.meta_pacer is not None and response.status_code == 429:
+            self.meta_pacer.stopped.set()
+        if response.is_success and self.sensitive_response is not None:
+            # Providers may reflect a header credential inside an HTTP 200 JSON
+            # error. Strictly decode BEFORE publishing; malformed JSON must not
+            # launder escaped secret bytes into the owner-only raw capture.
+            sensitive = self.sensitive_response
+            try:
+                # Pair lists retain duplicate fields that normal dict decoding
+                # would discard before the reflection scan.
+                decoded = json.loads(data.decode(), object_pairs_hook=list)
+                secret = sensitive.decode()
+                # Bound both work and nesting. Pair tuples retain every
+                # key/value, including overwritten fields.
+                pending = [(decoded, 0)]
+                remaining = 100_000
+                reflected = sensitive in data
+                while pending:
+                    value, depth = pending.pop()
+                    remaining -= 1
+                    if remaining < 0 or depth > 128:
+                        raise ValueError("JSON traversal limit")
+                    if isinstance(value, str):
+                        reflected |= secret in value
+                    elif isinstance(value, (list, tuple)):
+                        if len(value) + len(pending) > remaining:
+                            raise ValueError("JSON traversal limit")
+                        pending.extend((child, depth + 1) for child in value)
+            except (ValueError, UnicodeError, RecursionError):
+                raise wire_invalid("successful response not capturable") from None
+            if reflected:
+                raise wire_invalid("response reflected credential")
         row["status_code"] = response.status_code
         if response.is_success:
             # Successful bodies retain their exact binding and SDK/replay path.
@@ -158,14 +239,18 @@ class BudgetWire(httpx.BaseTransport):
             # reflect credentials. Publish only this bounded typed projection,
             # BEFORE any observer sees the response. No original-body digest or
             # reversible copy is retained. This is not a provider fault code.
-            operation = {
-                ENDPOINTS[k]: v
-                for k, v in (
-                    ("openai", "responses"),
-                    ("anthropic", "messages"),
-                    ("mistral", "chat_completions"),
-                )
-            }[self.endpoint]
+            operation = (
+                self.operation
+                or {
+                    ENDPOINTS[k]: v
+                    for k, v in (
+                        ("openai", "responses"),
+                        ("meta", "responses"),
+                        ("anthropic", "messages"),
+                        ("mistral", "chat_completions"),
+                    )
+                }[self.endpoint]
+            )
             row["response_projection"] = http_error(
                 response.status_code, operation, response.headers.get("Retry-After")
             )
@@ -208,23 +293,54 @@ class HTTPCampaignTransport:
             raise ValueError("pacing policy is Mistral-only")
         if mode_profile not in MODE_PROFILES:
             raise ValueError("unknown reasoning mode profile")
+        meta = provider == "meta"
+        if meta:
+            metap.check_model(cast(str, model))
+            metap.check_key(api_key)
+            validate_meta_profile(cast(Any, guard).profile, provider, cast(str, model))
+            profile = cast(Any, guard).profile
+            if max_output_tokens != min(
+                context_tokens, profile.get("owner_output_cap_tokens", context_tokens)
+            ):
+                raise ValueError("Meta initial envelope must equal admitted output bound")
+            if (
+                mode_profile != "off-or-minimum-v1"
+                or network_timeout is not None
+                or not getattr(guard, "diagnostic", False)
+                or context_tokens != 1048576
+            ):
+                raise ValueError(
+                    "Meta requires diagnostic context and no generation deadline"
+                )
         model = MODELS.get(provider) if model is None else model
         if (
             not isinstance(model, str)
-            or provider not in MODELS
-            or selection_for(provider, model, "off-or-minimum-v1") is None
+            or (provider not in MODELS and not meta)
+            or (not meta and selection_for(provider, model, "off-or-minimum-v1") is None)
         ):
             raise ValueError("unsupported HTTP provider/model pair")
-        selection = selection_for(provider, model, mode_profile)
+        selection = (
+            CampaignSelection(
+                "meta", model, "responses", mode_profile, "tools/three_flow_http.py"
+            )
+            if meta
+            else selection_for(provider, model, mode_profile)
+        )
         if selection is None:
             raise ValueError("new models require explicit off-or-minimum profile")
+        if not isinstance(api_key, str) or not api_key:
+            raise ValueError("HTTP provider requires a nonempty string API key")
         self.mode_profile = mode_profile
-        self.mode_fields = http_mode_fields(provider, model, mode_profile)
-        if provider not in MODELS:
+        self.mode_fields = (
+            {"reasoning": {"effort": "minimal"}}
+            if meta
+            else http_mode_fields(provider, model, mode_profile)
+        )
+        if provider not in MODELS and not meta:
             raise ValueError("unsupported HTTP provider")
         if type(max_output_tokens) is not int or max_output_tokens <= 0:
             raise ValueError("explicit output profile required")
-        if provider != "mistral" and max_output_tokens != 128000:
+        if provider not in ("mistral", "meta") and max_output_tokens != 128000:
             raise ValueError("successor flagship output profile is 128000")
         if guard._max_output_tokens != max_output_tokens:
             raise ValueError("guard and request output differ")
@@ -238,8 +354,17 @@ class HTTPCampaignTransport:
         self.request_mapping = "three-flow-" + provider + "-v1"
         if mode_profile != "legacy-v1":
             self.request_mapping += "-" + mode_profile
+        if meta:
+            self.request_mapping = "three-flow-meta-snapshot-minimal-auto-v3"
         self.guard, self.max_output_tokens = guard, max_output_tokens
         self.wire = BudgetWire(inner, guard, ENDPOINTS[provider])
+        self.wire.sensitive_response = api_key.encode()
+        if meta:
+            self.wire.meta_pacer = (
+                MetaRatePacer(enabled=False)
+                if isinstance(inner, httpx.MockTransport)
+                else META_PACER
+            )
         if transport_policy == "paced-safe-errors-v1":
             self.wire.pacer = MISTRAL_PACER
             self.request_mapping += "-" + transport_policy
@@ -249,18 +374,22 @@ class HTTPCampaignTransport:
             else httpx.Client(
                 transport=self.wire,
                 trust_env=False,
-                timeout=network_timeout,
+                timeout=httpx.Timeout(None, connect=10, pool=10)
+                if meta
+                else network_timeout,
                 follow_redirects=False,
             )
         )
         self.client: Any
-        if provider == "openai":
+        if provider in ("openai", "meta"):
             self.client = explicit_sdk_client(
                 openai.OpenAI,
                 api_key=api_key,
-                base_url="https://api.openai.com/v1",
+                base_url=metap.BASE_URL if meta else "https://api.openai.com/v1",
+                organization=None,
+                project=None,
                 max_retries=0,
-                timeout=network_timeout,
+                timeout=self.http.timeout if meta else network_timeout,
                 http_client=self.http,
             )
         elif provider == "anthropic":
@@ -279,15 +408,19 @@ class HTTPCampaignTransport:
             self.client = Mistral(
                 api_key=api_key,
                 server_url=mp.MISTRAL_BASE_URL,
-                client=self.http,
+                client=cast("HttpClient", self.http),
                 retry_config=mp._no_sdk_retries(),
                 debug_logger=quiet,
             )
         if provider == "mistral":
             self.client.sdk_configuration.__dict__["telemetry"] = False
+        if meta:
+            metap.check_client(self.client)
         self.settings = {
             "sdk": provider,
-            "sdk_version": version("mistralai" if provider == "mistral" else provider),
+            "sdk_version": version(
+                "openai" if meta else "mistralai" if provider == "mistral" else provider
+            ),
             "endpoint": ENDPOINTS[provider],
             "protocol_version": MODEL_PROTOCOL_VERSION,
             "max_output_tokens": max_output_tokens,
@@ -295,7 +428,11 @@ class HTTPCampaignTransport:
             "max_retries": 0,
             "credential_source": "explicit capability; constructor environment disabled",
             "timeout": network_timeout,
-            "tool_choice": {"type": "auto"} if provider == "anthropic" else "required",
+            "tool_choice": {"type": "auto"}
+            if provider == "anthropic"
+            else "auto"
+            if meta
+            else "required",
             "model_contract_verified": False,
             "admission": False,
             "evidence_origin": "SDK_MOCK_NOT_LLM"
@@ -306,7 +443,7 @@ class HTTPCampaignTransport:
             self.settings.update(
                 thinking={"type": "adaptive"}, output_config={"effort": "high"}
             )
-        elif provider == "openai":
+        elif provider in ("openai", "meta"):
             self.settings.update(
                 reasoning_items_contract=op.OPENAI_REASONING_ITEMS_CONTRACT,
                 store=False,
@@ -326,9 +463,9 @@ class HTTPCampaignTransport:
             self.settings.update(self.mode_fields)
             self.settings.update(
                 mode_profile=mode_profile,
-                reasoning_mode=http_reasoning_mode(model),
+                reasoning_mode="MINIMUM" if meta else http_reasoning_mode(model),
             )
-            if provider == "openai":
+            if provider in ("openai", "meta"):
                 self.settings["omitted"] = ["temperature", "top_p", "seed"]
         if transport_policy != "legacy-v1":
             self.settings.update(
@@ -339,6 +476,38 @@ class HTTPCampaignTransport:
                 retry_eligibility="none-proven",
                 automatic_resubmission=False,
             )
+        if meta:
+            self.settings.pop("reasoning_items_contract", None)
+            self.settings.update(
+                pacing_policy="meta-standard-rolling-60s-headers-v2",
+                provider_header_signal="remaining tokens/requests; 60s",
+                pacing_scope="process-wide-per-model; fleet HTTP429 fail-stop",
+                requests_per_minute=3000,
+                tokens_per_minute=4_000_000,
+                reservation_basis="complete serialized input bound + requested output",
+                pacing_enabled=not isinstance(inner, httpx.MockTransport),
+                automatic_resubmission=False,
+                sdk="openai",
+                provider="meta",
+                comparison="equal-scaffold independent snapshots",
+                native_reasoning_continuation=False,
+                tool_strict_mode=False,
+                bounds_policy=cast(Any, guard).profile["bounds_policy"],
+                context_request_bound=context_tokens,
+                dedicated_output_max=None,
+                connection_timeout_seconds=10,
+                pool_timeout_seconds=10,
+                billing_assurance="estimated usage exposure; not invoice guarantee",
+                omitted=[
+                    "temperature",
+                    "top_p",
+                    "seed",
+                    "include",
+                    "previous_response_id",
+                ],
+            )
+        if meta and "owner_output_cap_tokens" in profile:
+            self.settings["owner_output_cap_tokens"] = profile["owner_output_cap_tokens"]
         self.last_turn: dict[str, Any] | None = None
         self.flight = SingleFlight(adapter="three-flow HTTP")
 
@@ -370,13 +539,19 @@ class HTTPCampaignTransport:
         ):
             raise ValueError("request output differs from bound settings")
         text = canonical_json_text(request.prompt, "campaign prompt")
-        if self.provider == "openai":
+        if self.provider in ("openai", "meta"):
             return {
                 "model": self.model,
                 "max_output_tokens": request.max_output_tokens,
-                "instructions": oa.request_instructions(request),
+                "instructions": (
+                    oa.request_instructions(request).replace(
+                        oa.LIFECYCLE_OPENAI_REQUEST_MAPPING_VERSION, self.request_mapping
+                    )
+                    if self.provider == "meta"
+                    else oa.request_instructions(request)
+                ),
                 "tools": outcome_tools(),
-                "tool_choice": "required",
+                "tool_choice": "auto" if self.provider == "meta" else "required",
                 "parallel_tool_calls": False,
                 "store": False,
                 "input": text,
@@ -419,13 +594,22 @@ class HTTPCampaignTransport:
         return payload
 
     def _dispatch(self, payload: dict[str, Any]) -> tuple[Any, ModelResponse]:
-        if self.provider == "openai":
+        if self.provider in ("openai", "meta"):
+            if self.provider == "meta":
+                metap.check_client(self.client)
             raw = self.client.responses.with_raw_response.create(
-                **payload, timeout=self.network_timeout
+                **payload,
+                timeout=self.http.timeout
+                if self.provider == "meta"
+                else self.network_timeout,
             )
-            wire = WireResponse(raw.text, raw.parse, kind="OpenAI campaign")
-            op.check_response_admissible(wire, model=self.model)
-            return op.response_usage(wire), oa.model_response_from(wire)
+            wire = WireResponse(raw.text, raw.parse, kind=self.provider + " campaign")
+            if self.provider == "meta":
+                meta_projection = metap.check_response(wire, model=self.model)
+            else:
+                op.check_response_admissible(wire, model=self.model)
+                meta_projection = wire
+            return op.response_usage(wire), oa.model_response_from(meta_projection)
         if self.provider == "anthropic":
             raw = self.client.messages.with_raw_response.create(
                 **ap.anthropic_sdk_kwargs(payload), timeout=self.network_timeout
@@ -516,11 +700,13 @@ class HTTPCampaignTransport:
     def send(self, request: ModelRequest) -> ModelResponse:
         with self.flight:
             self.last_turn = None
+            capture_start = len(self.wire.captures)
+            self.wire.current_turn_dispatched = False
             payload = self.payload(request)
             self.wire.expected_payload = payload
             self.guard._max_output_tokens = int(
                 payload["max_output_tokens"]
-                if self.provider == "openai"
+                if self.provider in ("openai", "meta")
                 else payload["max_tokens"]
             )
             reservation = self.guard.authorize(
@@ -528,6 +714,7 @@ class HTTPCampaignTransport:
                     self.wire_payload(payload), "campaign request"
                 )
             )
+            self.wire.local_failure = None
             started = time.monotonic()
             try:
                 usage, response = self._dispatch(payload)
@@ -547,15 +734,28 @@ class HTTPCampaignTransport:
                     "latency_seconds": time.monotonic() - started,
                     "wire": dict(self.wire.captures[-1]),
                 }
-                return response
             except BaseException as exc:
                 if self.guard.ticket is not None and not self.guard.budget.broken:
-                    self.guard.forfeit(reservation)
+                    ticket = self.guard.ticket
+                    if (
+                        self.wire.local_failure == "meta_dispatch_stopped"
+                        and not self.wire.current_turn_dispatched
+                        and len(self.wire.captures) == capture_start
+                        and self.guard.budget.records[ticket[0]]["state"] == "reserved"
+                    ):
+                        self.guard.cancel(reservation, input_tokens_upper_bound=ticket[2])
+                    else:
+                        self.guard.forfeit(reservation)
                 fault = None
                 if isinstance(exc, AdapterProviderError):
                     fault = exc.fault
                 elif isinstance(exc, Exception):
-                    module = {"openai": op, "anthropic": ap, "mistral": mp}[self.provider]
+                    module = {
+                        "openai": op,
+                        "meta": metap,
+                        "anthropic": ap,
+                        "mistral": mp,
+                    }[self.provider]
                     classified = module.classify_exception(exc)
                     fault = None if classified is None else classified.fault
                 self.last_turn = {
@@ -565,9 +765,12 @@ class HTTPCampaignTransport:
                     "measured_usd": None,
                     "latency_seconds": time.monotonic() - started,
                 }
-                if getattr(self.guard, "diagnostic", False) and self.wire.captures:
+                if (
+                    getattr(self.guard, "diagnostic", False)
+                    and len(self.wire.captures) > capture_start
+                ):
                     status = self.wire.captures[-1].get("status_code")
-                    if status in (400, 422):
+                    if status in (400, 422, 429):
                         self.last_turn.update(
                             diagnostic_category="provider_request_refusal",
                             safe_status=status,
@@ -580,6 +783,9 @@ class HTTPCampaignTransport:
                 raise
             finally:
                 self.http.cookies.clear()
+            if self.provider == "meta" and not response.tool_calls:
+                raise wire_invalid("Meta auto response has no Core function call")
+            return response
 
     def close(self) -> None:
         self.http.close()

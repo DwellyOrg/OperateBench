@@ -316,10 +316,14 @@ def test_owner_failed_usage_retains_conditional_pricing_label(tmp_path, usage_sh
     )
     for key in ("evidence_origin", "eligible_for_live_results", "pricing_basis"):
         assert details[key] == row.get(key)
-    assert details["evidence_origin"] is None  # Exclusion retained no model record.
+    # Origin describes the attempted mock request, even without a scored record.
+    assert details["evidence_origin"] == "SDK_MOCK_NOT_LLM"
     assert details["eligible_for_live_results"] is False
     assert row["classification"] == "excluded"
     assert row["fault"] == "provider_response_invalid"
+    assert row["eligible_for_live_results"] is False
+    assert row["evaluation"] is None
+    assert not list(root.rglob("record.json"))
     assert row["raw_rpc_attempts"] == 1
     assert Decimal(row["unknown_liability_usd"]) > 0
     assert row["pricing_basis"]["actual_invoice_guaranteed"] is False

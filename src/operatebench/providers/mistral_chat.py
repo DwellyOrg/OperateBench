@@ -19,6 +19,7 @@ from types import FunctionType, MappingProxyType, WrapperDescriptorType
 from typing import Any, Protocol, cast
 
 import httpx
+import httpx2
 from mistralai.client import Mistral
 from mistralai.client._hooks.custom_user_agent import CustomUserAgentHook
 from mistralai.client._hooks.deprecation_warning import DeprecationWarningHook
@@ -305,9 +306,11 @@ def response_usage(response: WireResponse[ChatCompletionResponse]) -> TokenUsage
 
 
 def classify_exception(exception: Exception) -> Fault | None:
-    if isinstance(exception, httpx.TimeoutException):
+    if isinstance(exception, (httpx.TimeoutException, httpx2.TimeoutException)):
         return Fault(PROVIDER_FAULT_TIMEOUT, True, None)
-    if isinstance(exception, (httpx.TransportError, NoResponseError)):
+    if isinstance(
+        exception, (httpx.TransportError, httpx2.TransportError, NoResponseError)
+    ):
         return Fault(PROVIDER_FAULT_NETWORK_ERROR, True, None)
     if isinstance(exception, ResponseValidationError):
         return Fault(PROVIDER_FAULT_RESPONSE_INVALID, False, None, response_received=True)
@@ -328,11 +331,15 @@ def _no_sdk_retries() -> RetryConfig:
     return RetryConfig("none", BackoffStrategy(1, 1, 1, 1), False)
 
 
-def build_client(*, api_key: str, http_client: httpx.Client | None = None) -> Mistral:
+def build_client(
+    *, api_key: str, http_client: httpx.Client | httpx2.Client | None = None
+) -> Mistral:
+    # The SDK builds through the supplied client's structural protocol. Retain
+    # explicit httpx transports while SDK 3 defaults to native httpx2 clients.
     return Mistral(
         api_key=api_key,
         server_url=MISTRAL_BASE_URL,
-        client=http_client,
+        client=cast("HttpClient | None", http_client),
         retry_config=_no_sdk_retries(),
     )
 
@@ -340,9 +347,9 @@ def build_client(*, api_key: str, http_client: httpx.Client | None = None) -> Mi
 class CapturedHttpClient:
     """SDK HttpClient delegate retaining exactly one in-flight raw response."""
 
-    def __init__(self, inner: HttpClient) -> None:
+    def __init__(self, inner: httpx.Client | httpx2.Client) -> None:
         self.inner = inner
-        self._captured: list[httpx.Response] = []
+        self._captured: list[httpx.Response | httpx2.Response] = []
         self._owner: object | None = None
         self._claim_lock = threading.Lock()
 
@@ -357,12 +364,16 @@ class CapturedHttpClient:
             "separate exchanges require separate SDK clients"
         )
 
-    def send(self, request: httpx.Request, **kwargs: Any) -> httpx.Response:
-        response = self.inner.send(request, **kwargs)
+    def send(
+        self, request: httpx.Request | httpx2.Request, **kwargs: Any
+    ) -> httpx.Response | httpx2.Response:
+        response = cast("HttpClient", self.inner).send(cast("Any", request), **kwargs)
         self._captured.append(response)
         return response
 
-    def build_request(self, method: str, url: Any, **kwargs: Any) -> httpx.Request:
+    def build_request(
+        self, method: str, url: Any, **kwargs: Any
+    ) -> httpx.Request | httpx2.Request:
         return self.inner.build_request(method, url, **kwargs)
 
     def close(self) -> None:
@@ -371,7 +382,7 @@ class CapturedHttpClient:
     def clear(self) -> None:
         self._captured.clear()
 
-    def take(self) -> httpx.Response:
+    def take(self) -> httpx.Response | httpx2.Response:
         if len(self._captured) != 1:
             raise wire_invalid(
                 "the Mistral SDK call did not capture exactly one HTTP response"
@@ -379,9 +390,19 @@ class CapturedHttpClient:
         return self._captured[0]
 
 
+# SDK 3 adds a stateless authentication hook before the existing hooks. Keep
+# the reviewed SDK 2 contract as well as sealing the new execution surface.
+_SERVICE_ACCOUNT_HOOK_TYPES: tuple[type[Any], ...] = ()
+if int(distribution_version("mistralai").split(".")[0]) >= 3:
+    from mistralai.client._hooks.service_account_auth import ServiceAccountAuthHook
+
+    _SERVICE_ACCOUNT_HOOK_TYPES = (ServiceAccountAuthHook,)
+
+
 _EXPECTED_SDK_HOOK_TYPES: Mapping[str, tuple[type[Any], ...]] = {
     "sdk_init_hooks": (),
     "before_request_hooks": (
+        *_SERVICE_ACCOUNT_HOOK_TYPES,
         CustomUserAgentHook,
         TraceparentInjectionHook,
         TracingHook,
@@ -403,8 +424,8 @@ class _ClientIdentitySeal:
     configuration: SDKConfiguration
     chat: Chat
     capture: CapturedHttpClient
-    inner: HttpClient
-    cookies: httpx.Cookies
+    inner: httpx.Client | httpx2.Client
+    cookies: httpx.Cookies | httpx2.Cookies
     hooks: SDKHooks
     hook_groups: tuple[tuple[str, list[Any], tuple[Any, ...]], ...]
     class_mros: tuple[_RawClassMroSeal, ...]
@@ -857,8 +878,8 @@ def _execution_surfaces(
     configuration: SDKConfiguration,
     chat: Chat,
     capture: CapturedHttpClient | None,
-    inner: httpx.Client,
-    cookies: httpx.Cookies,
+    inner: httpx.Client | httpx2.Client,
+    cookies: httpx.Cookies | httpx2.Cookies,
     hooks: SDKHooks,
     hook_groups: Mapping[str, list[Any]],
 ) -> tuple[_ExecutionSurfaceSeal, ...]:
@@ -869,8 +890,8 @@ def _execution_surfaces(
         _execution_surface(
             hooks, SDKHooks, ("before_request", "after_success", "after_error")
         ),
-        _execution_surface(inner, httpx.Client, _HTTPX_EXECUTION_METHODS),
-        _execution_surface(cookies, httpx.Cookies, _COOKIE_EXECUTION_METHODS),
+        _execution_surface(inner, type(inner), _HTTPX_EXECUTION_METHODS),
+        _execution_surface(cookies, type(cookies), _COOKIE_EXECUTION_METHODS),
     ]
     if capture is not None:
         surfaces.append(
@@ -882,7 +903,7 @@ def _execution_surfaces(
     return tuple(surfaces)
 
 
-def _http_client(client: Mistral) -> httpx.Client:
+def _http_client(client: Mistral) -> httpx.Client | httpx2.Client:
     if type(client) is not Mistral:
         raise MistralConfigurationError(
             "the Mistral client has no auditable synchronous httpx client"
@@ -895,11 +916,11 @@ def _http_client(client: Mistral) -> httpx.Client:
     configured = _state_value(configuration, "client")
     if type(configured) is CapturedHttpClient:
         configured = _state_value(configured, "inner")
-    if type(configured) is not httpx.Client:
+    if type(configured) not in (httpx.Client, httpx2.Client):
         raise MistralConfigurationError(
             "the Mistral client has no auditable synchronous httpx client"
         )
-    return configured
+    return cast("httpx.Client | httpx2.Client", configured)
 
 
 def _client_class_seals(
@@ -927,6 +948,8 @@ def _client_class_seals(
             CapturedHttpClient,
             httpx.Client,
             httpx.Cookies,
+            httpx2.Client,
+            httpx2.Cookies,
             RetryConfig,
             BackoffStrategy,
             *hook_types,
@@ -973,7 +996,7 @@ def check_client_state(
         or configuration is not seal.configuration
         or chat is not seal.chat
         or type(seal.capture) is not CapturedHttpClient
-        or type(seal.inner) is not httpx.Client
+        or type(seal.inner) not in (httpx.Client, httpx2.Client)
         or capture is not seal.capture
         or _state_value(seal.capture, "inner") is not seal.inner
         or hooks is not seal.hooks
@@ -1043,11 +1066,10 @@ def check_client_state(
     before = hook_groups["before_request_hooks"]
     after_success = hook_groups["after_success_hooks"]
     after_error = hook_groups["after_error_hooks"]
-    tracing = before[2]
+    tracing = before[-2]
     empty_state_hooks = (
-        before[0],
-        before[1],
-        before[3],
+        *before[:-2],
+        before[-1],
         after_success[0],
         after_success[3],
     )
@@ -1055,7 +1077,7 @@ def check_client_state(
     if (
         after_success[1] is not tracing
         or after_error[0] is not tracing
-        or after_success[2] is not before[3]
+        or after_success[2] is not before[-1]
         or any(_instance_state(hook) for hook in empty_state_hooks)
         or set(tracing_state)
         != {
@@ -1081,7 +1103,10 @@ def check_client_state(
         )
     http_client = _http_client(client)
     cookies = _state_value(http_client, "_cookies")
-    if type(cookies) is not httpx.Cookies or (
+    expected_cookies = (
+        httpx.Cookies if type(http_client) is httpx.Client else httpx2.Cookies
+    )
+    if type(cookies) is not expected_cookies or (
         seal is not None and cookies is not seal.cookies
     ):
         raise MistralConfigurationError(
@@ -1097,7 +1122,7 @@ def check_client_state(
         hooks=hooks,
         hook_groups=hook_groups,
     )
-    with httpx.Client(trust_env=False) as pristine:
+    with type(http_client)(trust_env=False) as pristine:
         if _state_value(http_client, "_headers") != _state_value(pristine, "_headers"):
             raise MistralConfigurationError(
                 "the Mistral HTTP client carries non-default headers"
@@ -1109,7 +1134,7 @@ def check_client_state(
                 "the Mistral HTTP client carries non-default event hooks"
             )
     if (
-        _state_value(http_client, "_params") != httpx.QueryParams()
+        _state_value(http_client, "_params") != type(pristine.params)()
         or _state_value(http_client, "_auth") is not None
         or (cookies and not allow_response_cookies)
     ):
@@ -1135,13 +1160,13 @@ def ensure_capturing_client(client: Mistral, *, owner: object) -> CapturedHttpCl
             )
         current = _state_value(configuration, "client")
         if type(current) is CapturedHttpClient:
-            if type(_state_value(current, "inner")) is not httpx.Client:
+            if type(_state_value(current, "inner")) not in (httpx.Client, httpx2.Client):
                 raise MistralConfigurationError(
                     "the Mistral client has no capturable HTTP client"
                 )
             current.claim(owner)
             return current
-        if type(current) is not httpx.Client:
+        if type(current) not in (httpx.Client, httpx2.Client):
             raise MistralConfigurationError(
                 "the Mistral client has no capturable HTTP client"
             )
@@ -1159,12 +1184,13 @@ def _seal_client_identity(
             "the Mistral SDK execution surface cannot be verified"
         )
     inner = _state_value(capture, "inner")
-    if type(inner) is not httpx.Client:
+    if type(inner) not in (httpx.Client, httpx2.Client):
         raise MistralConfigurationError(
             "the Mistral SDK execution surface cannot be verified"
         )
     cookies = _state_value(inner, "_cookies")
-    if type(cookies) is not httpx.Cookies:
+    expected_cookies = httpx.Cookies if type(inner) is httpx.Client else httpx2.Cookies
+    if type(cookies) is not expected_cookies:
         raise MistralConfigurationError(
             "the Mistral SDK execution surface cannot be verified"
         )

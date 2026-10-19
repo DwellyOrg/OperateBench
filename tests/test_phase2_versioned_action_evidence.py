@@ -132,6 +132,9 @@ def test_publication_truth_records_private_diagnostic_without_capability_claim()
     assert "no_live_provider_calls" not in declarations
     assert declarations["no_published_live_provider_evidence"]["value"] is True
     assert declarations["no_published_benchmark_model_results"]["value"] is True
+    assert declarations["no_published_benchmark_model_results"]["scope"] == (
+        "official_benchmark_results"
+    )
     assert "private_lifecycle_diagnostics" not in declarations
     assert manifest["published_artifacts"] == []
     assert "approvals" not in manifest

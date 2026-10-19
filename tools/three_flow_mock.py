@@ -67,6 +67,17 @@ class SDKMockTransport(httpx.MockTransport):
                 ],
                 "usage": {"input_tokens": 1, "output_tokens": 1, "total_tokens": 2},
             }
+            if model in ("muse-wonder-1.0", "muse-spark-1.3"):
+                result.update(
+                    store=False, parallel_tool_calls=False, tool_choice="auto", tools=[]
+                )
+                result["usage"] = {
+                    "input_tokens": 1,
+                    "output_tokens": 1,
+                    "total_tokens": 2,
+                    "input_tokens_details": {"cached_tokens": 0},
+                    "output_tokens_details": {"reasoning_tokens": 0},
+                }
         elif self.provider == "anthropic":
             result = {
                 "id": "msg_offline",
