@@ -403,7 +403,7 @@ def test_new_metadata_round_trip_and_legacy_envelope():
     assert (
         record["evaluation"]["evaluator_version"]
         == evaluator.EVALUATOR_VERSION
-        == "0.3.1"
+        == "0.3.2"
     )
     assert (
         runtime.replay(factories, FIXTURE, record)["evaluation"] == record["evaluation"]
