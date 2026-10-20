@@ -1,0 +1,9 @@
+{
+  "scope": "Maintainer-authored synthetic expectations; no independent review claimed",
+  "controls": [
+    {"agent": "premature_publish", "scenario": "match", "code": "UNVERIFIED_SOURCES", "failed": "sources"},
+    {"agent": "failed_zero", "scenario": "failed_zero", "code": "IMPORT_NOT_LEDGER", "failed": "sources"},
+    {"agent": "skip_approval", "scenario": "match", "code": "APPROVAL_REQUIRED", "failed": "approval"},
+    {"agent": "reuse_report", "scenario": "reopen", "code": "REPORT_VERSION", "failed": "versioning"}
+  ]
+}
