@@ -141,7 +141,7 @@ def test_wrong_act_refs_repair_on_next_real_engine_invocation(wrong_refs):
     assert repaired == [True]
 
 
-def test_real_redundant_intervention_still_exceeds_published_budget():
+def test_real_redundant_intervention_is_refused_within_published_budget():
     spec = load_spec(FIXTURE)
 
     class Agent(RetrievingReferenceAgent):
@@ -150,6 +150,9 @@ def test_real_redundant_intervention_still_exceeds_published_budget():
 
         def decide(self, observation):
             if self.approval is not None:
+                if self.stage == 2:
+                    assert observation.last_rejection["code"] == "DUPLICATE_CHECKPOINT"
+                    raise StopProbe
                 assert observation.last_rejection is None
                 self.stage += 1
                 if self.stage == 1:
@@ -175,9 +178,30 @@ def test_real_redundant_intervention_still_exceeds_published_budget():
     engine = Engine(operation, Agent(), identity={"operation_id": spec.operation_id})
     with pytest.raises(StopProbe):
         engine.run()
-    evaluated = _human(engine.ledger.as_list(), spec.scenario("V1"))
-    assert evaluated.counts["human_touches"] == 2
+    rows = engine.ledger.as_list()
+    assert len([row for row in rows if row["record_type"] == "checkpoint_opened"]) == 1
+    effects = [
+        row
+        for row in rows
+        if row["record_type"] == "effect_accepted"
+        and row["action_type"] == "request_approval"
+    ]
+    assert len(effects) == 1
+    refusals = [row for row in rows if row["record_type"] == "action_rejected"]
+    assert [row["code"] for row in refusals] == ["DUPLICATE_CHECKPOINT"]
+    assert refusals[0]["action_type"] == "request_approval"
+    fresh_tools = {
+        row["tool"]
+        for row in rows
+        if row["record_type"] == "retrieval_served"
+        and effects[0]["index"] < row["index"] < refusals[0]["index"]
+        and row["ok"] is True
+    }
+    assert {"get_case_record", "list_quotes", "list_checkpoints"} <= fresh_tools
+    evaluated = _human(rows, spec.scenario("V1"))
+    assert evaluated.counts["human_touches"] == 1
     assert (
         evaluated.counts["budget"] == operation.policy_view()["human_checkpoint_budget"]
     )
-    assert [finding.code for finding in evaluated.findings] == ["HUMAN_BUDGET_EXCEEDED"]
+    assert evaluated.ok
+    assert evaluated.findings == ()
