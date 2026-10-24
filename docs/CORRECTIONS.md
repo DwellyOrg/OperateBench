@@ -1,5 +1,34 @@
 # Repository corrections
 
+## OB-CORR-2026-10-24-COMPLIANCE-TERMINAL-READ-GUARD
+
+- **Date / scope / identity:** 2026-10-24; evaluator-only correction in
+  development pack `lettings.property_compliance.profiles.v1`, applicable to all
+  25 authored scenarios (the EN/SC/AU/NZ normal, remediation, access, reopen and
+  qualification families, plus SC_checklist, AU_gas_expired, NZ_assessor_only,
+  EN_wrong_property and EN_no_response). The evaluator previously shipped with
+  pack 0.2.0 without a separate emitted version; it now emits
+  `evaluator_version=0.3.0` and `diagnostics=[]`. Operation/pack 0.2.0, fixtures,
+  profiles, engine 0.13.0 and distribution 0.1.0 are unchanged. Implementation
+  digests change with source; the shared envelope reader also changes the
+  content-bound development runtime digest, without changing Core execution.
+- **Defect / correction:** Core rejects stale or absent required reads before
+  domain terminal execution. The evaluator omitted these `terminal_rejected`
+  rows, allowing subsequent recovery to hide the attempt. Only
+  `ACTION_WITHOUT_RETRIEVAL` and `STALE_RETRIEVED_RECORD` now use the existing
+  retrieval mapping and finding deduplication. Action rejections, other terminal
+  codes, the unmapped `ACTED_ON_CLAIM_WITHOUT_RECORD`, and WAIT retain their
+  existing treatment. Core still prevents the unsafe proposal.
+- **Evidence / comparability / action:** genuine Engine regressions cover
+  stale and absent reads, recovery, action parity/deduplication, independent
+  failures and clean/unrelated-code/WAIT controls. This establishes synthetic
+  grading behavior, not model performance. Historical grades remain preserved;
+  no published results are superseded here. Current comparable results require
+  fresh runs. Saved outcomes remain untrusted without process-local attestation;
+  private diagnostic reanalysis is not an official regrade. Pre-fix source is
+  retained in git history. Publication and the corrections policy's
+  pre-correction tag remain pending authorized publication.
+
 ## OB-CORR-2026-10-19-COMMERCE-EMPTY-PAYMENT-HISTORY
 
 - **Date / scope / identity:** 2026-10-19; evaluator-only correction in development
