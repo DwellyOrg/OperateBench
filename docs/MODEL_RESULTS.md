@@ -1,5 +1,7 @@
 # Model results — descriptive observations: 44 related synthetic cases per model, one trial per case; separate sources/settings; no independent human review yet; not a general-capability ranking
 
+See the [21-model, two-series October observation study](studies/2026-10-observations.md) for outcome versus strict checks, changed cases and a separate Compliance correction diagnostic. This historical 19-model source table and its scores are preserved.
+
 | Model | Series (distinct runs/settings) | Scored / assigned | Unscored (excluded / aborted) | Goal achieved | All quality checks | Estimated cost (USD, not invoice) |
 | --- | --- | --- | --- | --- | --- | --- |
 | `gpt-6-astra` | [Baseline original campaign](https://github.com/DwellyOrg/OperateBench/commit/58b36826894c4306aa3ab) | 44/44 | — | 44/44 (100.0%) | 42/44 (95.5%) | $239 |
