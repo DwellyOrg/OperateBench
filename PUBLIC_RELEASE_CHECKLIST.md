@@ -176,7 +176,7 @@ charts and safe semantic summaries, limited to these six companions:
 - `docs/studies/2026-10-models.csv`
 
 This extension authorizes no future results, raw traces or billing disclosure.
-Independent human validation remains pending; the same G8, G11, G12 and
+Independent human semantic validation remains pending; the same G8, G11, G12 and
 official-release boundaries above apply.
 
 Positively present:
