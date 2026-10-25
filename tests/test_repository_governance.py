@@ -270,10 +270,38 @@ def test_descriptive_exception_does_not_authorize_official_or_human_pass() -> No
     )
     assert "Raw provider traces" in excluded["provider_run_artifacts"]["reason"]
     checklist = _flowed("PUBLIC_RELEASE_CHECKLIST.md")
-    assert "Only the independently labelled, owner-directed retrospective" in checklist
+    assert "The independently labelled, owner-directed retrospective" in checklist
     assert "This exception does not close G8, G11 or G12" in checklist
     assert "Apart from the specific descriptive-table exception in section 6" in checklist
     assert (
         "Any leaderboard, ranking, composite capability score, or comparison"
         not in checklist
+    )
+
+
+def test_observation_study_exception_has_exact_bounded_artifacts() -> None:
+    manifest = json.loads((ROOT / "PUBLICATION_MANIFEST.json").read_text())
+    report = manifest["declarations"]["descriptive_model_results"]
+    statement = report["statement"]
+    expected = {
+        "docs/studies/2026-10-observations.md",
+        "docs/studies/2026-10-aggregates.json",
+        "docs/studies/2026-10-case-churn.svg",
+        "docs/studies/2026-10-goal-strict.svg",
+        "docs/studies/2026-10-models.csv",
+        "docs/studies/2026-10-model-flows.csv",
+        "docs/studies/2026-10-compliance-diagnostic.csv",
+    }
+    import re
+
+    assert (
+        set(re.findall(r"docs/studies/[\w-]+\.(?:md|csv|json|svg)", statement))
+        == expected
+    )
+    assert all((ROOT / path).is_file() for path in expected)
+    assert report["path"] == "docs/MODEL_RESULTS.md"
+    assert report["human_semantic_validation"] == "pending"
+    assert report["official_release_authorized"] is False
+    assert (
+        "does not authorize future results, raw traces or billing disclosure" in statement
     )

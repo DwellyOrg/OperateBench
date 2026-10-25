@@ -151,7 +151,7 @@ and confirm none of the following appears in any form:
       BoundaryBench run is Lifecycle evidence.
 
 **Current-scope exception (manifest revision 0.3.0).** The original blanket ban
-remains historical in Git. Only the independently labelled, owner-directed
+remains historical in Git. The independently labelled, owner-directed
 retrospective [descriptive table](docs/MODEL_RESULTS.md) is excepted: one English
 table of 19 exact IDs, comprising the 16-model, 704-assignment historical campaign
 and three separately executed successors. Cohorts remain distinct, with no
@@ -163,6 +163,21 @@ and pending validation; that decision is separately recorded outside public Git
 and is not independent approval. This exception does not close G8, G11 or G12,
 permit official/general claims, or bypass exact-commit review, privacy, secrets,
 licensing or other official-release blockers.
+
+The bounded exception also covers the owner-authorized 21-model, two-series
+[descriptive study](docs/studies/2026-10-observations.md), approved aggregates,
+charts and safe semantic summaries, limited to these six companions:
+
+- `docs/studies/2026-10-aggregates.json`
+- `docs/studies/2026-10-case-churn.svg`
+- `docs/studies/2026-10-compliance-diagnostic.csv`
+- `docs/studies/2026-10-goal-strict.svg`
+- `docs/studies/2026-10-model-flows.csv`
+- `docs/studies/2026-10-models.csv`
+
+This extension authorizes no future results, raw traces or billing disclosure.
+Independent human validation remains pending; the same G8, G11, G12 and
+official-release boundaries above apply.
 
 Positively present:
 

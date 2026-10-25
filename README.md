@@ -12,6 +12,8 @@ external events change independently of the agent.
 > has one Semantic Scenario with three frozen scenario variants of synthetic
 > Maintenance. Commerce and Property Compliance are separate SDK incubators,
 > not additional official benchmark evidence. Boundary is a separate track.
+> Read the [21-model, two-series October observation study](docs/studies/2026-10-observations.md) for goal versus strict checks, case churn and a separate Compliance correction diagnostic. The historical 19-model table below is preserved.
+>
 > The [model results page](docs/MODEL_RESULTS.md)
 > reports a descriptive full44 comparison of 19 exact IDs.
 > No official Lifecycle model results or leaderboard are published. No proven incremental lifecycle
