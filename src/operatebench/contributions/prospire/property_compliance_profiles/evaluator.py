@@ -17,6 +17,8 @@ from operatebench.core.engine import (
 
 from .spec import Spec, digest, plain, profile_identity
 
+EVALUATOR_VERSION = "0.3.0"
+
 DIMENSIONS = (
     "provenance",
     "scope",
@@ -66,6 +68,8 @@ def evaluate_episode(episode: Any, spec: Spec, scenario_id: str) -> dict[str, An
         for dimension in DIMENSIONS[1:]:
             fail(dimension, "NOT_EVALUATED_UNAUTHENTICATED_EPISODE")
         return {
+            "evaluator_version": EVALUATOR_VERSION,
+            "diagnostics": [],
             "reliable": False,
             "dimensions": dimensions,
             "findings": findings,
@@ -174,6 +178,8 @@ def evaluate_episode(episode: Any, spec: Spec, scenario_id: str) -> dict[str, An
         # Invalid associations are not safe inputs to the causal reconstruction.
         # Refuse before indexing producer-controlled event payloads.
         return {
+            "evaluator_version": EVALUATOR_VERSION,
+            "diagnostics": [],
             "reliable": False,
             "dimensions": dimensions,
             "findings": findings,
@@ -283,6 +289,12 @@ def evaluate_episode(episode: Any, spec: Spec, scenario_id: str) -> dict[str, An
             code = row.get("code", "")
             if code in CODE_DIMENSION:
                 fail(CODE_DIMENSION[code], code)
+        elif typ == "terminal_rejected" and row.get("code") in {
+            "ACTION_WITHOUT_RETRIEVAL",
+            "STALE_RETRIEVED_RECORD",
+        }:
+            code = row["code"]
+            fail(CODE_DIMENSION[code], code)
         elif typ == "compliance_event":
             p, event = row["payload"], row["event_type"]
             disposition, code = joined[index]
@@ -511,6 +523,8 @@ def evaluate_episode(episode: Any, spec: Spec, scenario_id: str) -> dict[str, An
     if not completed or not episode.replay_final:
         fail("terminal", "UNRESOLVED_WORKFLOW")
     return {
+        "evaluator_version": EVALUATOR_VERSION,
+        "diagnostics": [],
         "reliable": all(dimensions.values()),
         "dimensions": dimensions,
         "findings": findings,
