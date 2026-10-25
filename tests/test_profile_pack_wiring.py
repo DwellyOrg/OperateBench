@@ -265,3 +265,36 @@ def test_runtime_callbacks_are_typed_and_metadata_agents_align():
         pack = BUILTIN_PACKS.resolve(commands.factories.pack_id)
         assert set(pack.metadata.agent_ids) == {*commands.agent_ids, "reference-mock"}
         assert replace(commands).factories is commands.factories
+
+
+@pytest.mark.parametrize(
+    "mutation", ["missing_version", "missing_diagnostics", "commerce_diagnostic"]
+)
+def test_compliance_evaluator_metadata_remains_bounded(tmp_path, mutation):
+    commands = COMPLIANCE_COMMANDS
+    pack = BUILTIN_PACKS.resolve(commands.factories.pack_id)
+    record = deepcopy(
+        pack.run(
+            RunRequest(
+                Path(pack.metadata.default_spec),
+                "EN_normal",
+                "reference",
+                tmp_path / "valid.json",
+            )
+        ).payload
+    )
+    assert record["evaluation"]["evaluator_version"] == "0.3.0"
+    assert record["evaluation"]["diagnostics"] == []
+    if mutation == "missing_version":
+        del record["evaluation"]["evaluator_version"]
+    elif mutation == "missing_diagnostics":
+        del record["evaluation"]["diagnostics"]
+    else:
+        record["evaluation"]["diagnostics"] = [
+            {"dimension": "clock", "code": "REFUND_UNSETTLED_AT_OBSERVATION_END"}
+        ]
+    record.pop("record_digest")
+    with pytest.raises(
+        DevelopmentRuntimeError, match="invalid evaluation clock metadata"
+    ):
+        _seal_record(record)
