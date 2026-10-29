@@ -581,9 +581,13 @@ class HTTPCampaignTransport:
                         oa.LIFECYCLE_OPENAI_REQUEST_MAPPING_VERSION, self.request_mapping
                     )
                     if self.provider == "meta"
+                    else xa.request_instructions(request)
+                    if self.provider == "xai"
                     else oa.request_instructions(request)
                 ),
-                "tools": outcome_tools(),
+                "tools": xa._xai_outcome_tools()
+                if self.provider == "xai"
+                else outcome_tools(),
                 "tool_choice": "auto" if self.provider == "meta" else "required",
                 "parallel_tool_calls": False,
                 "store": False,

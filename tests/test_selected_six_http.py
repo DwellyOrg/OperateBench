@@ -229,6 +229,21 @@ def test_actual_sdk_multiturn(tmp_path, provider, model):
         if provider in ("openai", "xai"):
             assert all(x["strict"] is False for x in calls[0]["tools"])
             assert all(isinstance(c["input"], str) for c in calls)
+            if provider == "xai":
+
+                def patterns(value):
+                    if isinstance(value, dict):
+                        if "pattern" in value:
+                            yield value["pattern"]
+                        for child in value.values():
+                            yield from patterns(child)
+                    elif isinstance(value, list):
+                        for child in value:
+                            yield from patterns(child)
+
+                actual_patterns = list(patterns(calls[0]["tools"]))
+                assert r"[\s\S]" not in actual_patterns
+                assert r"^[\s\S]+$" in actual_patterns
             assert (
                 "synthetic-encrypted"
                 in record["provider_turns"][0]["wire"]["response_utf8"]

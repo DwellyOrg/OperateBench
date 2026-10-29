@@ -4,17 +4,19 @@ Public context bounds are diagnostic, never verified endpoint guarantees.
 Raw reasoning and all usage categories remain in the existing wire capture.
 """
 
+from collections.abc import Iterable
 from types import SimpleNamespace
+from typing import Any
 
 from operatebench.agents.transport import ModelResponse, ToolCall
-from operatebench.providers.wire import wire_invalid
+from operatebench.providers.wire import WireResponse, wire_invalid
 from tools.three_flow_profiles import ENDPOINTS, SELECTED_SIX
 
 
-def mode_fields(provider, model):
+def mode_fields(provider: str, model: str) -> dict[str, Any]:
     if (provider, model) not in SELECTED_SIX:
         raise ValueError("outside selected-six scope")
-    return {
+    controls: dict[str, dict[str, Any]] = {
         "openai": {"reasoning": {"effort": "none"}},
         "anthropic": {
             "thinking": {"type": "adaptive"},
@@ -23,10 +25,11 @@ def mode_fields(provider, model):
         "mistral": {"reasoning_effort": "none"},
         "xai": {"reasoning": {"effort": "low"}},
         "river_http": {"reasoning_effort": "low" if model == "GLM-5.3" else "none"},
-    }[provider]
+    }
+    return controls[provider]
 
 
-def selected_registry(transport_policy):
+def selected_registry(transport_policy: str) -> list[dict[str, Any]]:
     if transport_policy not in ("legacy-v1", "paced-safe-errors-v1"):
         raise ValueError("unknown transport policy")
     return [
@@ -55,7 +58,9 @@ def selected_registry(transport_policy):
     ]
 
 
-def validate_selected_profile(p, provider, model):
+def validate_selected_profile(
+    p: dict[str, Any], provider: str, model: str | None
+) -> None:
     if (provider, model) not in SELECTED_SIX:
         raise ValueError("selected-six exact provider/model required")
     if p.get("execution_policy") != "three-flow-optional-limits-v1":
@@ -64,7 +69,9 @@ def validate_selected_profile(p, provider, model):
         raise ValueError("River HTTP owner output cap must be 30000")
 
 
-def river_response(wire, model):
+def river_response(
+    wire: WireResponse[Any], model: str
+) -> tuple[SimpleNamespace, ModelResponse]:
     """Use native SDK parsing and raw JSON so string arguments are never coerced."""
     from operatebench.agents.lifecycle_contract import (
         ToolArgumentsUndecodable,
@@ -116,6 +123,7 @@ def river_response(wire, model):
         f = call["function"]
         if not isinstance(f.get("name"), str) or not isinstance(f.get("arguments"), str):
             raise wire_invalid("invalid River HTTP function")
+        arguments: Any
         try:
             arguments = decode_tool_arguments(
                 f["arguments"],
@@ -137,7 +145,9 @@ def river_response(wire, model):
     )
 
 
-def _object(value, allowed, required=()):
+def _object(
+    value: Any, allowed: Iterable[str], required: Iterable[str] = ()
+) -> dict[str, Any]:
     if (
         not isinstance(value, dict)
         or set(value) - set(allowed)
@@ -147,17 +157,17 @@ def _object(value, allowed, required=()):
     return value
 
 
-def _string(value, nullable=False):
+def _string(value: Any, nullable: bool = False) -> None:
     if not (isinstance(value, str) or (nullable and value is None)):
         raise wire_invalid("River HTTP string type differs")
 
 
-def _count(value):
+def _count(value: Any) -> None:
     if type(value) is not int or not 0 <= value <= 2**53 - 1:
         raise wire_invalid("River HTTP token/count type differs")
 
 
-def _agree(raw, typed):
+def _agree(raw: Any, typed: Any) -> None:
     if type(raw) is not type(typed):
         raise wire_invalid("River HTTP raw and typed types differ")
     if isinstance(raw, dict):
@@ -174,7 +184,7 @@ def _agree(raw, typed):
         raise wire_invalid("River HTTP raw and typed values differ")
 
 
-def check_river_wire(body):
+def check_river_wire(body: Any) -> None:
     _object(
         body,
         {
@@ -261,7 +271,7 @@ def check_river_wire(body):
 # Published category maxima for the selected endpoint/tier envelope, USD/MTok.
 # Unknown fees are never assigned an invented token rate or called zero.
 TARIFFS = {
-    "gpt-6.1-terra": ("11", "0.22", "11", "16.5"),
+    "gpt-6.1-terra": ("4.4", "0.22", "11", "16.5"),
     "claude-haiku-5-5": ("0.50", "0.05", "1", "2.50"),
     "mistral-large-4": ("1.36", "0.14", None, "4.18"),
     "grok-4.7": ("4", "1", None, "12"),
@@ -290,7 +300,7 @@ ACCOUNTING_POLICY = {
 }
 
 
-def validate_published_profile(p, provider, model):
+def validate_published_profile(p: Any, provider: str, model: str | None) -> None:
     import re
     from decimal import Decimal
 
@@ -328,6 +338,7 @@ def validate_published_profile(p, provider, model):
     ):
         raise ValueError("selected-six estimate cannot assert billing guarantees")
     validate_selected_profile(p, provider, model)
+    assert model is not None
     context, input_max, output = BOUNDS[model]
     if (
         (p["context_max"], p["input_max"], p["output_max"])
