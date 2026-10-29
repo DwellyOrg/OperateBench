@@ -39,16 +39,34 @@ def selected_registry(transport_policy: str) -> list[dict[str, Any]]:
             "endpoint": ENDPOINTS[p],
             "mapping": "three-flow-"
             + p
-            + "-selected-six-snapshot-v1"
+            + (
+                "-selected-six-single-decision-v2"
+                if p == "anthropic"
+                else "-selected-six-snapshot-v1"
+            )
             + (
                 "-paced-safe-errors-v1"
-                if p == "mistral" and transport_policy != "legacy-v1"
+                if p in ("mistral", "river_http") and transport_policy != "legacy-v1"
                 else ""
             ),
             "request_settings": {
                 **mode_fields(p, m),
+                **(
+                    {
+                        "pacing_scope": "process-wide-river-http",
+                        "minimum_spacing_seconds": 1,
+                        "retry_after_max_seconds": 86400,
+                        "automatic_resubmission": False,
+                    }
+                    if p == "river_http" and transport_policy != "legacy-v1"
+                    else {}
+                ),
                 "no_native_continuation": True,
-                "tool_choice": {"type": "any"} if p == "anthropic" else "required",
+                "tool_choice": (
+                    {"type": "any", "disable_parallel_tool_use": True}
+                    if p == "anthropic"
+                    else "required"
+                ),
             },
             "settings_source": "tools/three_flow_http.py",
             "retries": 0,
