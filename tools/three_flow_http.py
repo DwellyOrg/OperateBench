@@ -156,6 +156,11 @@ class BudgetWire(httpx.BaseTransport):
             )
             if (self.expected_payload or {}).get("model") == "mistral-large-4":
                 request.extensions["timeout"].update(connect=10, pool=10)
+        if (
+            self.endpoint == ENDPOINTS["anthropic"]
+            and (self.expected_payload or {}).get("model") == "claude-haiku-5-5"
+        ):
+            request.extensions["timeout"].update(connect=10, pool=10)
         raw = request.read()
         body = json.loads(raw)
         expected = dict(self.expected_payload or {})

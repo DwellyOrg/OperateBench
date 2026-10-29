@@ -22,11 +22,13 @@ class SelectedMock(httpx.MockTransport):
             model=model,
         )
         self.calls = []
+        self.timeouts = []
         super().__init__(self.handle)
 
     def handle(self, request):
         body = json.loads(request.content)
         self.calls.append(body)
+        self.timeouts.append(dict(request.extensions["timeout"]))
         normalized = dict(body)
         if self.provider in ("openai", "xai") and isinstance(body["input"], list):
             last = body["input"][-1]
@@ -226,6 +228,10 @@ def test_actual_sdk_multiturn(tmp_path, provider, model):
             == 0
         )
         calls = network.transports[0].calls
+        assert all(
+            timeout == {"connect": 10, "pool": 10, "read": None, "write": None}
+            for timeout in network.transports[0].timeouts
+        )
         if provider in ("openai", "xai"):
             assert all(x["strict"] is False for x in calls[0]["tools"])
             assert all(isinstance(c["input"], str) for c in calls)
