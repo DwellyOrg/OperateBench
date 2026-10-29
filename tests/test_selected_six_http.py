@@ -265,7 +265,7 @@ def test_actual_sdk_multiturn(tmp_path, provider, model):
                 {"thinking": {"type": "adaptive"}, "output_config": {"effort": "low"}},
                 "MINIMUM",
             ),
-            "mistral-large-4": ({"reasoning_effort": "none"}, "OFF"),
+            "mistral-large-4": ({"reasoning_effort": "none"}, "MINIMUM"),
             "grok-4.7": ({"reasoning": {"effort": "low"}}, "MINIMUM"),
             "GLM-5.3": ({"reasoning_effort": "low"}, "MINIMUM"),
             "moonshotai/Kimi-K3": ({"reasoning_effort": "none"}, "OFF"),

@@ -2641,3 +2641,60 @@ class TestPublicAggregateSourcePins:
         assert any("absolute local path" in problem for problem in problems)
         assert any("Anthropic-style" in problem for problem in problems)
         assert any(_label("non-public", "audit", "claim") in p for p in problems)
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "docs/studies/2026-10-selected-six.json",
+        "docs/studies/2026-10-model-averages.json",
+    ],
+)
+def test_recovery_v2_source_exceptions_remain_byte_pinned(monkeypatch, path):
+    original, correction = "a" * 40, "b" * 40
+    value = {
+        "schema_version": 2,
+        "source_revision": correction,
+        "provenance": {
+            "original_source_revision": original,
+            "correction_source_revision": correction,
+            "models": [
+                {
+                    "attempt_groups": [
+                        {"phase": "original", "source_revision": original},
+                        {"phase": "correction", "source_revision": original},
+                        {"phase": "correction", "source_revision": correction},
+                    ]
+                }
+            ],
+        },
+    }
+
+    def spans(text, pin=True):
+        monkeypatch.setitem(
+            checks.PUBLIC_AGGREGATE_SHA256,
+            path,
+            hashlib.sha256(text.encode()).hexdigest() if pin else "0" * 64,
+        )
+        return checks._public_aggregate_source_spans(text, path)
+
+    text = json.dumps({"selected_six_provenance": value} if "averages" in path else value)
+    assert len(spans(text)) == 6
+    assert not spans(text, pin=False)
+    adversaries = [
+        text[:-1] + ', "note": "' + original + '"}',
+        text[:-1] + ', "note": "source_revision"}',
+        text.replace('"source_revision"', '"source\\u005frevision"', 1),
+        text.replace(original, "\\u0061" + original[1:], 1),
+        text.replace('"source_revision"', '"source\\u005frevision"', 1)[:-1]
+        + ', "note": {"source_revision": "'
+        + correction
+        + '"}}',
+        text[:-1] + ', "source_revision": "' + correction + '"}',
+        text[:-1] + ', "note": {"source_revision": "' + correction + '"}}',
+        text.replace('"phase": "original"', '"phase": "other"'),
+        text.replace(original, "c" * 40, 1),
+    ]
+    for bad in adversaries:
+        assert not spans(bad)
+    assert checks.scan_bare_commit_identifiers(text + " ", where=path, workflow_path=path)

@@ -1003,6 +1003,83 @@ def _public_aggregate_source_spans(
         data = data.get("selected_six_provenance")
     if not isinstance(data, dict):
         return []
+    if data.get("schema_version") == 2:
+        provenance = data.get("provenance")
+        if not isinstance(provenance, dict):
+            return []
+        original = provenance.get("original_source_revision")
+        correction = provenance.get("correction_source_revision")
+        if (
+            any(
+                not isinstance(source, str)
+                or re.fullmatch(r"[0-9a-f]{40}", source) is None
+                for source in (original, correction)
+            )
+            or original == correction
+        ):
+            return []
+        if (
+            data.get("source_revision") != correction
+            or provenance.get("original_source_revision") != original
+            or provenance.get("correction_source_revision") != correction
+        ):
+            return []
+        if set(provenance) != {
+            "original_source_revision",
+            "correction_source_revision",
+            "models",
+        } or not isinstance(provenance["models"], list):
+            return []
+        expected_sources = [correction, original, correction]
+        for model in provenance["models"]:
+            if not isinstance(model, dict) or not isinstance(
+                model.get("attempt_groups"), list
+            ):
+                return []
+            for group in model["attempt_groups"]:
+                if (
+                    not isinstance(group, dict)
+                    or group.get("phase") not in ("original", "correction")
+                    or group.get("source_revision")
+                    not in (
+                        (original,)
+                        if group["phase"] == "original"
+                        else (original, correction)
+                    )
+                ):
+                    return []
+                expected_sources.append(group["source_revision"])
+        # Numerical/schema validation belongs to the site intake validator;
+        # this consumer copies approved bytes and only scopes source exceptions.
+        # Whole-artifact approval remains mandatory. Only these exact JSON source
+        # scalars receive an exception, never arbitrary strings or source paths.
+        pattern = (
+            r'"(source_revision|original_source_revision|correction_source_revision)"'
+            r'\s*:\s*"([0-9a-f]{40})"'
+        )
+        matches = list(re.finditer(pattern, text))
+        if sorted(m.group(2) for m in matches) != sorted(expected_sources):
+            return []
+        # Every decoded source key/value must be one of these readable scalars.
+        # This rejects escaped aliases and same-valued notes even under a new pin.
+        tokens = list(re.finditer(r'"(?:[^"\\]|\\.)*"', text))
+        source_keys = {
+            "source_revision",
+            "original_source_revision",
+            "correction_source_revision",
+        }
+        permitted_keys = {m.start(1) - 1 for m in matches}
+        permitted_values = {m.start(2) - 1 for m in matches}
+        for token in tokens:
+            decoded = json.loads(token.group())
+            if decoded in source_keys and token.start() not in permitted_keys:
+                return []
+            if (
+                decoded in (original, correction)
+                and token.start() not in permitted_values
+            ):
+                return []
+        return [(m.start(2), m.end(2)) for m in matches]
     source = data.get("source_revision")
     if not isinstance(source, str) or re.fullmatch(r"[0-9a-f]{40}", source) is None:
         return []

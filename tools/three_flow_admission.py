@@ -755,7 +755,6 @@ def validate_profile(
     if roster_profile == SELECTED_SIX_PROFILE:
         from tools.three_flow_selected import validate_published_profile
 
-        # Owns full selected validation, including validate_selected_profile.
         validate_published_profile(p, provider, model)
         return
     if provider == "gemini":
@@ -889,6 +888,10 @@ def validate_profile(
         p[f] is not None and p[f] > p["context_max"] for f in ("input_max", "output_max")
     ):
         raise ValueError("inconsistent context bounds")
+    if roster_profile == SELECTED_SIX_PROFILE:
+        from tools.three_flow_selected import validate_selected_profile
+
+        validate_selected_profile(p, provider, model)
     if provider in ("openai", "anthropic") and p["output_max"] != 128000:
         raise ValueError("fixed flagship profile mismatch")
     for field in ("input_usd_per_million", "output_usd_per_million"):
