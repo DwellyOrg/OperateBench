@@ -61,7 +61,12 @@ class SelectedMock(httpx.MockTransport):
                     "encrypted_content": "synthetic-encrypted",
                 },
             )
+            if self.provider == "openai":
+                result["access_programs"] = {"cyber": "standard"}
+                result["usage"]["input_tokens_details"]["cache_write_tokens"] = 4
         elif self.provider == "anthropic":
+            result["usage"]["speed"] = "standard"
+            result["usage"]["output_tokens_details"] = {"thinking_tokens": 2}
             result["usage"].update(
                 input_tokens=11,
                 output_tokens=7,
@@ -76,6 +81,8 @@ class SelectedMock(httpx.MockTransport):
                 "prompt_tokens_details": {"cached_tokens": 3},
                 "completion_tokens_details": {"reasoning_tokens": 2},
             }
+            result["choices"][0]["matched_stop"] = None
+            result["choices"][0]["message"]["tool_calls"][0]["index"] = 0
             result["choices"][0]["message"]["reasoning_content"] = "synthetic reasoning"
         if self.fault in ("args", "badargs"):
             args = (

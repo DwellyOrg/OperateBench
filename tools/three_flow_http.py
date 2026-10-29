@@ -661,6 +661,10 @@ class HTTPCampaignTransport:
                 (xp if self.provider == "xai" else op).check_response_admissible(
                     wire, model=self.model
                 )
+                if self.selected_six and self.provider == "openai":
+                    from tools.three_flow_selected import check_openai_usage_reading
+
+                    check_openai_usage_reading(wire)
                 meta_projection = wire
             return (xp if self.provider == "xai" else op).response_usage(wire), (
                 xa if self.provider == "xai" else oa
@@ -673,7 +677,14 @@ class HTTPCampaignTransport:
             wire = WireResponse(raw.text(), raw.parse, kind="Fable campaign")
             # Validate hidden reasoning blocks, then use the unchanged legacy
             # validator on the semantic text/tool projection. Full raw retained.
+            if self.selected_six:
+                from tools.three_flow_selected import check_anthropic_reading
+
+                check_anthropic_reading(wire)
             body = dict(wire.wire)
+            if self.selected_six:
+                body["usage"] = dict(body["usage"])
+                body["usage"].pop("speed", None)
             content = body.get("content")
             if not isinstance(content, list):
                 raise wire_invalid("Fable content is not a list")

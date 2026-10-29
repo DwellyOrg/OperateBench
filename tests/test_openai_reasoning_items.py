@@ -54,6 +54,7 @@ def dispatch(body):
     recording, client = scripted_client(body)
     transport = object.__new__(HTTPCampaignTransport)
     transport.provider = "openai"
+    transport.selected_six = False
     transport.model = MODEL
     transport.client = client
     transport.network_timeout = None

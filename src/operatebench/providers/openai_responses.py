@@ -502,12 +502,12 @@ def check_reasoning_items_agree(raw: Mapping[str, Any], parsed: Response) -> Non
 
 #: The name of that contract, as adapter settings record it.
 #:
-#: ``_v3`` adds only optional null ``access_programs`` metadata to ``_v2``.
+#: ``_v4`` accepts null or the observed closed cyber/standard access metadata.
 #: The ``_v2`` rule requiring every present object to be whole is unchanged.
-#: This is observed compatibility, not a vendor-declared non-null contract.
-OPENAI_RESPONSE_SERVER_EXTENSIONS = "openai_response_server_extensions_v3"
+#: This is observed compatibility, not a general vendor metadata contract.
+OPENAI_RESPONSE_SERVER_EXTENSIONS = "openai_response_server_extensions_v4"
 
-#: The scalar vocabulary the contract fixes. Five kinds, and each one is a
+#: The scalar vocabulary the contract fixes. Each kind is a
 #: closed-set label this build chose, so it may appear in a durable failure
 #: detail where a field name or a value may not.
 EXTENSION_COUNT = "non_negative_integer"
@@ -515,6 +515,7 @@ EXTENSION_PENALTY = "penalty_number"
 EXTENSION_FLAG = "boolean"
 EXTENSION_TEXT = "bounded_text"
 EXTENSION_NULL = "null"
+EXTENSION_ACCESS = "null_or_cyber_access"
 
 #: The inclusive range the vendor publishes for these two parameters on its
 #: request surface, and the range this contract holds their echoes to. A number
@@ -548,8 +549,8 @@ MAX_EXTENSION_TEXT_CHARACTERS = 128
 SERVER_EXTENSION_SCHEMA: Mapping[str, Any] = _frozen(
     {
         # Observed optional metadata, absent from openai 2.53.0 Response.
-        # No non-null contract is established; do not infer one.
-        "access_programs": EXTENSION_NULL,
+        # Accept only the established null or closed cyber/standard shape.
+        "access_programs": EXTENSION_ACCESS,
         "billing": {"payer": EXTENSION_TEXT},
         "frequency_penalty": EXTENSION_PENALTY,
         "presence_penalty": EXTENSION_PENALTY,
@@ -634,6 +635,12 @@ def _extension_scalar_valid(value: Any, kind: str) -> bool:
         # same function: two independently written definitions of "an exact
         # non-negative integer on the wire" would drift.
         return is_wire_token_count(value)
+    if kind == EXTENSION_ACCESS:
+        return value is None or (
+            isinstance(value, Mapping)
+            and set(value) == {"cyber"}
+            and value["cyber"] == "standard"
+        )
     if kind == EXTENSION_PENALTY:
         return (
             type(value) in (int, float)

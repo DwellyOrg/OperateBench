@@ -171,6 +171,8 @@ def _agree(raw: Any, typed: Any) -> None:
     if type(raw) is not type(typed):
         raise wire_invalid("River HTTP raw and typed types differ")
     if isinstance(raw, dict):
+        if set(raw) != set(typed):
+            raise wire_invalid("River HTTP raw and typed field sets differ")
         for key, value in raw.items():
             if key not in typed:
                 raise wire_invalid("River HTTP typed field missing")
@@ -212,7 +214,7 @@ def check_river_wire(body: Any) -> None:
         raise wire_invalid("River HTTP choices container differs")
     choice = _object(
         choices[0],
-        {"index", "finish_reason", "message", "logprobs"},
+        {"index", "finish_reason", "message", "logprobs", "matched_stop"},
         {"index", "finish_reason", "message"},
     )
     if (
@@ -221,6 +223,8 @@ def check_river_wire(body: Any) -> None:
         or choice.get("logprobs") is not None
     ):
         raise wire_invalid("River HTTP choice contract differs")
+    if choice.get("matched_stop") is not None:
+        raise wire_invalid("River HTTP matched stop must be absent or null")
     _string(choice["finish_reason"])
     message = _object(
         choice["message"],
@@ -237,8 +241,12 @@ def check_river_wire(body: Any) -> None:
         if not isinstance(calls, list):
             raise wire_invalid("River HTTP tool calls container differs")
         ids = set()
-        for call in calls:
-            _object(call, {"id", "type", "function"}, {"id", "type", "function"})
+        for position, call in enumerate(calls):
+            _object(call, {"id", "type", "function", "index"}, {"id", "type", "function"})
+            if "index" in call:
+                _count(call["index"])
+                if call["index"] != position:
+                    raise wire_invalid("River HTTP tool index differs")
             _string(call["id"])
             if not call["id"] or call["id"] in ids or call["type"] != "function":
                 raise wire_invalid("River HTTP tool identity differs")
@@ -386,3 +394,82 @@ def validate_published_profile(p: Any, provider: str, model: str | None) -> None
         or not b["source"].startswith("https://")
     ):
         raise ValueError("selected-six diagnostic bounds required")
+
+
+def check_anthropic_reading(wire: WireResponse[Any]) -> None:
+    """Check the original SDK reading before any accounting/semantic projection.
+
+    Speed is observed metadata outside the pinned Usage model. Only its exact
+    standard value is established. It remains in the original wire evidence.
+    """
+    body = wire.wire
+    _agree(body, wire.parsed.model_dump(mode="json", exclude_unset=True))
+    usage = body.get("usage")
+    if not isinstance(usage, dict):
+        raise wire_invalid("Anthropic usage container differs")
+    if "speed" in usage and usage["speed"] != "standard":
+        raise wire_invalid("Anthropic speed contract differs")
+    for key in (
+        "input_tokens",
+        "output_tokens",
+        "cache_creation_input_tokens",
+        "cache_read_input_tokens",
+    ):
+        if key in usage:
+            _count(usage[key])
+    cache = usage.get("cache_creation")
+    if cache is not None:
+        _object(cache, {"ephemeral_5m_input_tokens", "ephemeral_1h_input_tokens"})
+        for value in cache.values():
+            _count(value)
+        if sum(cache.values()) != usage.get("cache_creation_input_tokens"):
+            raise wire_invalid("Anthropic cache category totals differ")
+    details = usage.get("output_tokens_details")
+    if details is not None:
+        _object(details, {"thinking_tokens"})
+        if "thinking_tokens" in details:
+            _count(details["thinking_tokens"])
+            _count(usage.get("output_tokens"))
+            if details["thinking_tokens"] > usage["output_tokens"]:
+                raise wire_invalid("Anthropic thinking subset differs")
+
+
+def check_openai_usage_reading(wire: WireResponse[Any]) -> None:
+    """Preserve cache/reasoning subsets and prove original typed/raw agreement."""
+    body = wire.wire
+    typed = wire.parsed.model_dump(mode="json", exclude_unset=True)
+    # The SDK declares these timestamps as floats; JSON integer timestamps are
+    # valid numbers. Permit only this documented numeric widening, not coercion
+    # of token counts, tool inputs or other JSON values.
+    raw = dict(body)
+    for key in ("created_at", "completed_at"):
+        if key in raw and raw[key] is not None:
+            import math
+
+            value = raw[key]
+            other = typed.get(key)
+            if (
+                type(value) not in (int, float)
+                or type(other) not in (int, float)
+                or not math.isfinite(value)
+                or not math.isfinite(other)
+                or value != other
+            ):
+                raise wire_invalid("OpenAI timestamp readings differ")
+            raw[key] = other
+    _agree(raw, typed)
+    usage = body["usage"]
+    for key in ("input_tokens", "output_tokens", "total_tokens"):
+        _count(usage.get(key))
+    if usage["total_tokens"] != usage["input_tokens"] + usage["output_tokens"]:
+        raise wire_invalid("OpenAI total usage differs")
+    for key, names, total in (
+        ("input_tokens_details", {"cached_tokens", "cache_write_tokens"}, "input_tokens"),
+        ("output_tokens_details", {"reasoning_tokens"}, "output_tokens"),
+    ):
+        if usage.get(key) is not None:
+            details = _object(usage[key], names)
+            for value in details.values():
+                _count(value)
+            if sum(details.values()) > usage[total]:
+                raise wire_invalid("OpenAI usage subset differs")
