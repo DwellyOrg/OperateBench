@@ -274,6 +274,13 @@ def live_factory(
                         "actual_invoice_guaranteed": False,
                     },
                 )
+            if "tariff_evidence" in p:
+                transport.settings["pricing_basis"] = {
+                    "policy": p["pricing_policy"],
+                    "tariff_evidence": p["tariff_evidence"],
+                    "profile_sha256": digest(p),
+                    "actual_invoice_guaranteed": False,
+                }
             if "accounting_policy" in p:
                 transport.settings.update(
                     accounting="estimated-usage-not-invoice",
@@ -292,7 +299,9 @@ def live_factory(
                 transport.settings["pricing_basis"].update(
                     accounting_policy=p["accounting_policy"],
                     ceiling_basis="estimated-usage-not-invoice",
-                    source_sha=p["owner_pricing"]["source_sha"],
+                    source_sha=p.get("owner_pricing", {}).get(
+                        "source_sha", admission.get("source_sha")
+                    ),
                     provider_guarantees=p["guarantees"],
                     additional_fees="verified-absent"
                     if p["guarantees"]["no_other_fees"]

@@ -30,6 +30,7 @@ from tools.three_flow_profiles import (
     GEMINI_ROSTER_PROFILE,
     GEMINI_UNCAPPED_PROFILE,
     META_ROSTER_PROFILE,
+    SELECTED_SIX_PROFILE,
 )
 from tools.three_flow_profiles import minimum_effort as minimum_effort
 from tools.three_flow_profiles import registry as registry
@@ -42,6 +43,8 @@ VARIABLES = {
     "anthropic": "ANTHROPIC_API_KEY",
     "mistral": "MISTRAL_API_KEY",
     "river": "RIVER_API_KEY",
+    "river_http": "RIVER_API_KEY",
+    "xai": "XAI_API_KEY",
 }
 RESOURCE_POLICY = {
     "river_active": 2,
@@ -111,6 +114,8 @@ def proposal(sha: str, roster_profile: str = "legacy-v1") -> dict[str, Any]:
         ],
     }
 
+    if roster_profile == SELECTED_SIX_PROFILE:
+        result["cap_usd"] = None
     if roster_profile == GEMINI_ROSTER_PROFILE:
         result["cap_usd"] = None
         result["budget_scope"] = "fresh Gemini campaign; two distinct 44-case series"
@@ -182,7 +187,7 @@ def _validate(
         fields.add("roster_profile")
         if (
             admission["roster_profile"]
-            not in (LATEST_ROSTER_PROFILE, META_ROSTER_PROFILE)
+            not in (LATEST_ROSTER_PROFILE, META_ROSTER_PROFILE, SELECTED_SIX_PROFILE)
             or admission.get("mode_profile") != "off-or-minimum-v1"
         ):
             raise ValueError("explicit latest roster requires off-or-minimum profile")
@@ -749,6 +754,11 @@ def validate_profile(
     model: str | None = None,
     roster_profile: str = "legacy-v1",
 ) -> None:
+    if roster_profile == SELECTED_SIX_PROFILE:
+        from tools.three_flow_selected import validate_published_profile
+
+        validate_published_profile(p, provider, model)
+        return
     if provider == "gemini":
         from tools.three_flow_gemini import MODELS as gemini_models
 
@@ -780,7 +790,7 @@ def validate_profile(
     if isinstance(p, dict) and "owner_output_cap_tokens" in p:
         fields.add("owner_output_cap_tokens")
         if (
-            provider not in ("river", "meta")
+            provider not in ("river", "river_http", "meta")
             or (
                 provider == "meta"
                 and (
@@ -880,6 +890,10 @@ def validate_profile(
         p[f] is not None and p[f] > p["context_max"] for f in ("input_max", "output_max")
     ):
         raise ValueError("inconsistent context bounds")
+    if roster_profile == SELECTED_SIX_PROFILE:
+        from tools.three_flow_selected import validate_selected_profile
+
+        validate_selected_profile(p, provider, model)
     if provider in ("openai", "anthropic") and p["output_max"] != 128000:
         raise ValueError("fixed flagship profile mismatch")
     for field in ("input_usd_per_million", "output_usd_per_million"):
