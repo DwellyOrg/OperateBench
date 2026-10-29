@@ -182,13 +182,25 @@ def check_request_profile(
 
 EXTENSION_COUNT = "non_negative_bounded_integer"
 RESPONSE_EXTENSION_SCHEMA: Mapping[str, Any] = MappingProxyType(
-    {"prompt_tokens_details": MappingProxyType({"cached_tokens": EXTENSION_COUNT})}
+    {
+        "prompt_tokens_details": MappingProxyType({"cached_tokens": EXTENSION_COUNT}),
+        "completion_tokens_details": MappingProxyType(
+            {"reasoning_tokens": EXTENSION_COUNT}
+        ),
+    }
 )
 RESPONSE_EXTENSION_CONTRACT = {
     "contract": MISTRAL_RESPONSE_EXTENSIONS,
     "extension_values_read": False,
     "max_count": MAX_EXACT_TOKEN_COUNT,
-    "members": {"prompt_tokens_details": {"cached_tokens": EXTENSION_COUNT}},
+    "members": {
+        "prompt_tokens_details": {"cached_tokens": EXTENSION_COUNT},
+        "completion_tokens_details": {"reasoning_tokens": EXTENSION_COUNT},
+    },
+    "subsets": {
+        "prompt_tokens_details.cached_tokens": "prompt_tokens",
+        "completion_tokens_details.reasoning_tokens": "completion_tokens",
+    },
     "object_members_required": True,
     "top_level_members_required": False,
 }
@@ -202,20 +214,29 @@ TYPED_EXTENSION_EXTRAS: Mapping[type, frozenset[str]] = MappingProxyType(
 
 
 def check_response_extensions(node: Mapping[str, Any]) -> None:
-    if "prompt_tokens_details" not in node:
-        return
-    details = checked_wire_mapping(
-        node["prompt_tokens_details"], kind="named response extension"
-    )
-    if set(details) != {"cached_tokens"}:
-        raise wire_invalid(
-            "the Mistral response extension does not state its exact closed member set"
-        )
-    count = details["cached_tokens"]
-    if not is_wire_token_count(count) or count > MAX_EXACT_TOKEN_COUNT:
-        raise wire_invalid(
-            "the Mistral response extension count is not an exact bounded integer"
-        )
+    for name, schema in RESPONSE_EXTENSION_SCHEMA.items():
+        if name not in node:
+            continue
+        details = checked_wire_mapping(node[name], kind="named response extension")
+        if set(details) != set(schema):
+            raise wire_invalid(
+                "the Mistral response extension does not state its exact "
+                "closed member set"
+            )
+        for count in details.values():
+            if not is_wire_token_count(count) or count > MAX_EXACT_TOKEN_COUNT:
+                raise wire_invalid(
+                    "the Mistral response extension count is not an exact bounded integer"
+                )
+
+
+def check_usage_subsets(usage: Mapping[str, Any]) -> None:
+    for block, member, total in (
+        ("prompt_tokens_details", "cached_tokens", "prompt_tokens"),
+        ("completion_tokens_details", "reasoning_tokens", "completion_tokens"),
+    ):
+        if block in usage and usage[block][member] > usage[total]:
+            raise wire_invalid("the Mistral token subset exceeds its containing count")
 
 
 def check_response_extensions_agree(
@@ -276,6 +297,7 @@ def check_wire_completion(raw: Mapping[str, Any]) -> None:
     usage = checked_wire_object(body["usage"], USAGE_WIRE_SHAPE)
     check_response_extensions(usage)
     wire_token_usage(usage, fields=USAGE_FIELDS)
+    check_usage_subsets(usage)
 
 
 def check_response_model(response: ChatCompletionResponse, *, model: str) -> None:

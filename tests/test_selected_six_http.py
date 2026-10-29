@@ -73,6 +73,13 @@ class SelectedMock(httpx.MockTransport):
                 cache_creation_input_tokens=3,
                 cache_read_input_tokens=2,
             )
+        elif self.provider == "mistral":
+            result["usage"].update(
+                prompt_tokens_details={"cached_tokens": 0},
+                completion_tokens_details={"reasoning_tokens": 0},
+                service_tier="standard",
+            )
+            result["choices"][0].update(logprobs=None, prompt_logprobs=None)
         elif self.provider == "river_http":
             result["usage"] = {
                 "prompt_tokens": 11,
