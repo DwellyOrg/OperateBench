@@ -14,7 +14,10 @@ from tools.three_flow_selected import ACCOUNTING_POLICY, BOUNDS, PRICING_POLICY
 def mistral_profile() -> dict[str, Any]:
     evidence = {
         "category_rates": {
-            "input": "1.36", "cache_read": "0.14", "cache_write": None, "output": "4.18"
+            "input": "1.36",
+            "cache_read": "0.14",
+            "cache_write": None,
+            "output": "4.18",
         },
         "source": "https://mistral.ai/pricing",
         "sha256": "a" * 64,
