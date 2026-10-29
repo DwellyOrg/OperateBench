@@ -374,6 +374,10 @@ class HTTPCampaignTransport:
             self.request_mapping = "three-flow-meta-snapshot-minimal-auto-v3"
         if selected:
             self.request_mapping = "three-flow-" + provider + "-selected-six-snapshot-v1"
+            if provider == "anthropic":
+                self.request_mapping = (
+                    "three-flow-anthropic-selected-six-single-decision-v2"
+                )
         self.guard, self.max_output_tokens = guard, max_output_tokens
         self.wire = BudgetWire(inner, guard, ENDPOINTS[provider], operation=selection.api)
         self.wire.sensitive_response = api_key.encode()
@@ -534,7 +538,10 @@ class HTTPCampaignTransport:
             self.settings["owner_output_cap_tokens"] = profile["owner_output_cap_tokens"]
         if selected:
             if provider == "anthropic":
-                self.settings["tool_choice"] = {"type": "any"}
+                self.settings["tool_choice"] = {
+                    "type": "any",
+                    "disable_parallel_tool_use": True,
+                }
             self.settings["native_continuation"] = False
             self.settings["no_native_continuation"] = True
             self.settings["connection_timeout_seconds"] = 10
@@ -605,7 +612,11 @@ class HTTPCampaignTransport:
                 "max_tokens": request.max_output_tokens,
                 "system": aa.request_instructions(request),
                 "tools": aa.anthropic_outcome_tools(),
-                "tool_choice": {"type": "any" if self.selected_six else "auto"},
+                "tool_choice": (
+                    {"type": "any", "disable_parallel_tool_use": True}
+                    if self.selected_six
+                    else {"type": "auto"}
+                ),
                 "thinking": {"type": "adaptive"},
                 "output_config": {"effort": "high"},
                 "messages": [{"role": "user", "content": text}],

@@ -123,6 +123,18 @@ class SelectedMock(httpx.MockTransport):
             result["choices"][0]["message"]["reasoning_content"] = 123
         if self.provider == "river_http" and self.fault == "unknown_usage":
             result["usage"]["extra_billable_tokens"] = 99
+        if self.provider == "anthropic":
+            if self.fault == "multiple":
+                result["content"].append(dict(result["content"][-1], id="second"))
+            elif self.fault == "invalid_payload":
+                result["content"][-1].update(
+                    name="act", input={"action_type": "send_message", "payload": {}}
+                )
+            elif self.fault in ("refusal", "no_action"):
+                result["content"] = [{"type": "text", "text": "Synthetic no action"}]
+                result["stop_reason"] = (
+                    "refusal" if self.fault == "refusal" else "end_turn"
+                )
         if self.fault == "usage":
             result.pop("usage")
         if self.fault == "model":
@@ -274,7 +286,24 @@ def test_actual_sdk_multiturn(tmp_path, provider, model):
             )
         assert t.settings["no_native_continuation"] is True
         if provider == "anthropic":
-            assert all(c["tool_choice"] == {"type": "any"} for c in calls)
+            from tools.three_flow_selected import selected_registry
+
+            choice = {"type": "any", "disable_parallel_tool_use": True}
+            assert all(c["tool_choice"] == choice for c in calls)
+            row = next(
+                r for r in selected_registry("legacy-v1") if r["provider"] == provider
+            )
+            assert row["mapping"] == t.request_mapping
+            assert "single-decision-v2" in t.request_mapping
+            for key, value in row["request_settings"].items():
+                assert t.settings[key] == value
+            for call in calls:
+                assert call["thinking"] == {"type": "adaptive"}
+                assert call["output_config"] == {"effort": "low"}
+                assert not {"temperature", "top_p", "previous_response_id"} & call.keys()
+                assert all("strict" not in tool for tool in call["tools"])
+                assert len(call["messages"]) == 1
+                assert call["messages"][0]["role"] == "user"
         if provider == "river_http":
             assert all(x["max_tokens"] <= 30000 for x in calls)
             assert (
@@ -468,4 +497,36 @@ def test_parent_witness_actual_send_retains_partial_unknown(tmp_path, fault):
         assert list((tmp_path / "trial").iterdir())
     finally:
         transport.close()
+        budget.close()
+
+
+@pytest.mark.parametrize("fault", ["args", "invalid_payload", "refusal", "no_action"])
+def test_haiku_invalid_decision_is_quality_failure(tmp_path, fault):
+    from tools.three_flow_runtime import run_trial
+
+    budget, t, trial, network = fixture(tmp_path, "anthropic", "claude-haiku-5-5", fault)
+    try:
+        record = run_trial(trial, t, output=tmp_path / "trial")
+        assert not record["evaluation"]["reliable"]
+        assert budget.totals()["unknown"] == 0
+        assert network.transports[0].calls
+        assert all("response_sha256" in turn["wire"] for turn in record["provider_turns"])
+    finally:
+        t.close()
+        budget.close()
+
+
+@pytest.mark.parametrize("fault", ["multiple", "json"])
+def test_haiku_invalid_transport_stays_excluded(tmp_path, fault):
+    from operatebench.agents.transport import ProviderFailure
+    from tools.three_flow_runtime import run_trial
+
+    budget, t, trial, network = fixture(tmp_path, "anthropic", "claude-haiku-5-5", fault)
+    try:
+        with pytest.raises(ProviderFailure):
+            run_trial(trial, t, output=tmp_path / "trial")
+        assert len(network.transports[0].calls) == 1
+        assert all(r["state"] == "unknown" for r in budget.records.values())
+    finally:
+        t.close()
         budget.close()
