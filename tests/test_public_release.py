@@ -2496,6 +2496,7 @@ class TestPublicAggregateSourcePins:
         self, path: str, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         text = self.blob(path)
+        monkeypatch.setitem(checks.PUBLIC_AGGREGATE_SHA256, path, None)
         assert checks.PUBLIC_AGGREGATE_SHA256[path] is None
         assert self.scan(text, path)
         monkeypatch.delitem(checks.PUBLIC_AGGREGATE_SHA256, path)

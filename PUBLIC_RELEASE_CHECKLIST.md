@@ -153,9 +153,11 @@ and confirm none of the following appears in any form:
 **Current-scope exception (manifest revision 0.3.0).** The original blanket ban
 remains historical in Git. The independently labelled, owner-directed
 retrospective [descriptive table](docs/MODEL_RESULTS.md) is excepted: one English
-table of 19 exact IDs, comprising the 16-model, 704-assignment historical campaign
-and three separately executed successors. Cohorts remain distinct, with no
-ranking across cohorts; each model has one trial per 44 related synthetic cases.
+common list of 27 exact IDs including Gemini. The original 21 models means retain two
+original scored-case rates; six additional models each have one rate. Runtime/evaluator
+versions and provider settings are heterogeneous; this is descriptive, not a
+controlled ranking. Each observation has one trial per 44 related synthetic cases.
+The original 19 observations remain linked through the pinned public revision.
 Assigned/scored denominators and technical exclusions must be disclosed honestly;
 raw provider traces remain private. Independent human semantic validation is
 pending. The owner directed this report after warning about the old claims gate
@@ -175,6 +177,16 @@ charts and safe semantic summaries, limited to these six companions:
 - `docs/studies/2026-10-model-flows.csv`
 - `docs/studies/2026-10-models.csv`
 
+The bounded selected-six aggregate extension adds exactly two artifacts:
+
+- `docs/studies/2026-10-selected-six.json`
+- `docs/studies/2026-10-model-averages.json`
+
+The common list uses the same exact site-generated means/order, costs and visible
+scored coverage. Rates are conditional on scored denominators; technical exclusions
+and interrupted aborts are not quality failures. The six new costs stay Unknown/null.
+The seven historical study artifact identities and bytes remain unchanged. Owner
+approval covers only this bounded descriptive aggregate extension.
 This extension authorizes no future results, raw traces or billing disclosure.
 Independent human semantic validation remains pending; the same G8, G11, G12 and
 official-release boundaries above apply.

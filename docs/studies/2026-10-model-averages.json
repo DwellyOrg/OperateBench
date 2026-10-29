@@ -1,0 +1,548 @@
+{
+  "schema_version": 1,
+  "method": "Unweighted mean of one or two original per-observation rates; exact rational arithmetic.",
+  "cost_assumptions": "River uses owner-selected $0.12/$0.01/$0.50 per million input/cached-input/output tokens; ranges compare hypothetical all-cached versus no-cache usage. Other estimates retain campaign tariffs.",
+  "models": [
+    {
+      "model": "gpt-6-astra",
+      "average_quality_percent": "96.6%",
+      "average_goal_achieved_percent": "100.0%",
+      "quality_rate": {
+        "numerator": 1827,
+        "denominator": 1892
+      },
+      "goal_rate": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "average_full_run_estimate": {
+        "model": "gpt-6-astra",
+        "mean_cost_low_usd": "238.130875",
+        "mean_cost_high_usd": "238.130875",
+        "incomplete_usage": true,
+        "pricing_basis": "retained_tariff_estimate"
+      },
+      "observation_count": 2
+    },
+    {
+      "model": "gemini-4-argon",
+      "average_quality_percent": "95.5%",
+      "average_goal_achieved_percent": "100.0%",
+      "quality_rate": {
+        "numerator": 21,
+        "denominator": 22
+      },
+      "goal_rate": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "average_full_run_estimate": {
+        "model": "gemini-4-argon",
+        "mean_cost_low_usd": "94.566744",
+        "mean_cost_high_usd": "94.566744",
+        "incomplete_usage": false,
+        "pricing_basis": "retained_tariff_estimate"
+      },
+      "observation_count": 2
+    },
+    {
+      "model": "gpt-6.1-sol",
+      "average_quality_percent": "95.5%",
+      "average_goal_achieved_percent": "100.0%",
+      "quality_rate": {
+        "numerator": 21,
+        "denominator": 22
+      },
+      "goal_rate": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "average_full_run_estimate": {
+        "model": "gpt-6.1-sol",
+        "mean_cost_low_usd": "52.671586",
+        "mean_cost_high_usd": "52.671586",
+        "incomplete_usage": false,
+        "pricing_basis": "retained_tariff_estimate"
+      },
+      "observation_count": 2
+    },
+    {
+      "model": "gpt-6.1-terra",
+      "average_quality_percent": "86.4%",
+      "average_goal_achieved_percent": "100.0%",
+      "quality_rate": {
+        "numerator": 19,
+        "denominator": 22
+      },
+      "goal_rate": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "average_full_run_estimate": null,
+      "observation_count": 1
+    },
+    {
+      "model": "claude-fable-5-1",
+      "average_quality_percent": "80.5%",
+      "average_goal_achieved_percent": "100.0%",
+      "quality_rate": {
+        "numerator": 3045,
+        "denominator": 3784
+      },
+      "goal_rate": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "average_full_run_estimate": {
+        "model": "claude-fable-5-1",
+        "mean_cost_low_usd": "192.630185",
+        "mean_cost_high_usd": "192.630185",
+        "incomplete_usage": true,
+        "pricing_basis": "retained_tariff_estimate"
+      },
+      "observation_count": 2
+    },
+    {
+      "model": "claude-opus-5-5",
+      "average_quality_percent": "54.5%",
+      "average_goal_achieved_percent": "98.9%",
+      "quality_rate": {
+        "numerator": 6,
+        "denominator": 11
+      },
+      "goal_rate": {
+        "numerator": 87,
+        "denominator": 88
+      },
+      "average_full_run_estimate": {
+        "model": "claude-opus-5-5",
+        "mean_cost_low_usd": "153.684212",
+        "mean_cost_high_usd": "153.684212",
+        "incomplete_usage": false,
+        "pricing_basis": "retained_tariff_estimate"
+      },
+      "observation_count": 2
+    },
+    {
+      "model": "gemini-3.8-flash",
+      "average_quality_percent": "45.3%",
+      "average_goal_achieved_percent": "100.0%",
+      "quality_rate": {
+        "numerator": 39,
+        "denominator": 86
+      },
+      "goal_rate": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "average_full_run_estimate": {
+        "model": "gemini-3.8-flash",
+        "mean_cost_low_usd": "29.0916735",
+        "mean_cost_high_usd": "29.0916735",
+        "incomplete_usage": true,
+        "pricing_basis": "retained_tariff_estimate"
+      },
+      "observation_count": 2
+    },
+    {
+      "model": "gpt-6-sol",
+      "average_quality_percent": "44.3%",
+      "average_goal_achieved_percent": "89.8%",
+      "quality_rate": {
+        "numerator": 39,
+        "denominator": 88
+      },
+      "goal_rate": {
+        "numerator": 79,
+        "denominator": 88
+      },
+      "average_full_run_estimate": {
+        "model": "gpt-6-sol",
+        "mean_cost_low_usd": "74.553171",
+        "mean_cost_high_usd": "74.553171",
+        "incomplete_usage": false,
+        "pricing_basis": "retained_tariff_estimate"
+      },
+      "observation_count": 2
+    },
+    {
+      "model": "grok-4.7",
+      "average_quality_percent": "33.3%",
+      "average_goal_achieved_percent": "100.0%",
+      "quality_rate": {
+        "numerator": 1,
+        "denominator": 3
+      },
+      "goal_rate": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "average_full_run_estimate": null,
+      "observation_count": 1
+    },
+    {
+      "model": "muse-wonder-1.0",
+      "average_quality_percent": "26.5%",
+      "average_goal_achieved_percent": "56.4%",
+      "quality_rate": {
+        "numerator": 91,
+        "denominator": 344
+      },
+      "goal_rate": {
+        "numerator": 97,
+        "denominator": 172
+      },
+      "average_full_run_estimate": {
+        "model": "muse-wonder-1.0",
+        "mean_cost_low_usd": "52.067637",
+        "mean_cost_high_usd": "52.067637",
+        "incomplete_usage": true,
+        "pricing_basis": "retained_tariff_estimate"
+      },
+      "observation_count": 2
+    },
+    {
+      "model": "GLM-5.3",
+      "average_quality_percent": "17.9%",
+      "average_goal_achieved_percent": "89.3%",
+      "quality_rate": {
+        "numerator": 5,
+        "denominator": 28
+      },
+      "goal_rate": {
+        "numerator": 25,
+        "denominator": 28
+      },
+      "average_full_run_estimate": null,
+      "observation_count": 1
+    },
+    {
+      "model": "zai-org/GLM-5.3-Flash",
+      "average_quality_percent": "14.8%",
+      "average_goal_achieved_percent": "77.3%",
+      "quality_rate": {
+        "numerator": 13,
+        "denominator": 88
+      },
+      "goal_rate": {
+        "numerator": 17,
+        "denominator": 22
+      },
+      "average_full_run_estimate": {
+        "model": "zai-org/GLM-5.3-Flash",
+        "mean_cost_low_usd": "0.18880107",
+        "mean_cost_high_usd": "1.20868609",
+        "incomplete_usage": false,
+        "pricing_basis": "river_owner_cache_scenarios"
+      },
+      "observation_count": 2
+    },
+    {
+      "model": "nvidia/GLM-5.2-NVFP4-262K",
+      "average_quality_percent": "13.6%",
+      "average_goal_achieved_percent": "71.6%",
+      "quality_rate": {
+        "numerator": 3,
+        "denominator": 22
+      },
+      "goal_rate": {
+        "numerator": 63,
+        "denominator": 88
+      },
+      "average_full_run_estimate": {
+        "model": "nvidia/GLM-5.2-NVFP4-262K",
+        "mean_cost_low_usd": "0.3451353",
+        "mean_cost_high_usd": "1.7250116",
+        "incomplete_usage": false,
+        "pricing_basis": "river_owner_cache_scenarios"
+      },
+      "observation_count": 2
+    },
+    {
+      "model": "muse-spark-1.3",
+      "average_quality_percent": "10.2%",
+      "average_goal_achieved_percent": "42.0%",
+      "quality_rate": {
+        "numerator": 9,
+        "denominator": 88
+      },
+      "goal_rate": {
+        "numerator": 37,
+        "denominator": 88
+      },
+      "average_full_run_estimate": {
+        "model": "muse-spark-1.3",
+        "mean_cost_low_usd": "46.821199625",
+        "mean_cost_high_usd": "46.821199625",
+        "incomplete_usage": false,
+        "pricing_basis": "retained_tariff_estimate"
+      },
+      "observation_count": 2
+    },
+    {
+      "model": "Qwen/Qwen3.8-27B-FP8",
+      "average_quality_percent": "3.4%",
+      "average_goal_achieved_percent": "3.4%",
+      "quality_rate": {
+        "numerator": 3,
+        "denominator": 88
+      },
+      "goal_rate": {
+        "numerator": 3,
+        "denominator": 88
+      },
+      "average_full_run_estimate": {
+        "model": "Qwen/Qwen3.8-27B-FP8",
+        "mean_cost_low_usd": "0.29128106",
+        "mean_cost_high_usd": "2.52077547",
+        "incomplete_usage": true,
+        "pricing_basis": "river_owner_cache_scenarios"
+      },
+      "observation_count": 2
+    },
+    {
+      "model": "deepseek-ai/DeepSeek-V4.1-Flash",
+      "average_quality_percent": "2.3%",
+      "average_goal_achieved_percent": "18.4%",
+      "quality_rate": {
+        "numerator": 1,
+        "denominator": 43
+      },
+      "goal_rate": {
+        "numerator": 695,
+        "denominator": 3784
+      },
+      "average_full_run_estimate": {
+        "model": "deepseek-ai/DeepSeek-V4.1-Flash",
+        "mean_cost_low_usd": "0.437959705",
+        "mean_cost_high_usd": "2.90048796",
+        "incomplete_usage": true,
+        "pricing_basis": "river_owner_cache_scenarios"
+      },
+      "observation_count": 2
+    },
+    {
+      "model": "deepseek-ai/DeepSeek-V4-Flash-0731",
+      "average_quality_percent": "2.3%",
+      "average_goal_achieved_percent": "5.7%",
+      "quality_rate": {
+        "numerator": 1,
+        "denominator": 44
+      },
+      "goal_rate": {
+        "numerator": 5,
+        "denominator": 88
+      },
+      "average_full_run_estimate": {
+        "model": "deepseek-ai/DeepSeek-V4-Flash-0731",
+        "mean_cost_low_usd": "0.3338015",
+        "mean_cost_high_usd": "2.54243925",
+        "incomplete_usage": true,
+        "pricing_basis": "river_owner_cache_scenarios"
+      },
+      "observation_count": 2
+    },
+    {
+      "model": "moonshotai/Kimi-K3",
+      "average_quality_percent": "0.0%",
+      "average_goal_achieved_percent": "42.1%",
+      "quality_rate": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "goal_rate": {
+        "numerator": 8,
+        "denominator": 19
+      },
+      "average_full_run_estimate": null,
+      "observation_count": 1
+    },
+    {
+      "model": "gpt-6-luna",
+      "average_quality_percent": "0.0%",
+      "average_goal_achieved_percent": "21.5%",
+      "quality_rate": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "goal_rate": {
+        "numerator": 189,
+        "denominator": 880
+      },
+      "average_full_run_estimate": {
+        "model": "gpt-6-luna",
+        "mean_cost_low_usd": "1.42",
+        "mean_cost_high_usd": "1.42",
+        "incomplete_usage": true,
+        "pricing_basis": "retained_tariff_estimate"
+      },
+      "observation_count": 2
+    },
+    {
+      "model": "Qwen/Qwen3.6-35B-A3B-FP8",
+      "average_quality_percent": "0.0%",
+      "average_goal_achieved_percent": "17.0%",
+      "quality_rate": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "goal_rate": {
+        "numerator": 15,
+        "denominator": 88
+      },
+      "average_full_run_estimate": {
+        "model": "Qwen/Qwen3.6-35B-A3B-FP8",
+        "mean_cost_low_usd": "0.419280145",
+        "mean_cost_high_usd": "1.95993624",
+        "incomplete_usage": false,
+        "pricing_basis": "river_owner_cache_scenarios"
+      },
+      "observation_count": 2
+    },
+    {
+      "model": "nvidia/Kimi-K2.6-NVFP4",
+      "average_quality_percent": "0.0%",
+      "average_goal_achieved_percent": "16.1%",
+      "quality_rate": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "goal_rate": {
+        "numerator": 609,
+        "denominator": 3784
+      },
+      "average_full_run_estimate": {
+        "model": "nvidia/Kimi-K2.6-NVFP4",
+        "mean_cost_low_usd": "0.157862835",
+        "mean_cost_high_usd": "1.00285627",
+        "incomplete_usage": true,
+        "pricing_basis": "river_owner_cache_scenarios"
+      },
+      "observation_count": 2
+    },
+    {
+      "model": "Qwen/Qwen3.5-397B-A17B-FP8",
+      "average_quality_percent": "0.0%",
+      "average_goal_achieved_percent": "6.8%",
+      "quality_rate": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "goal_rate": {
+        "numerator": 3,
+        "denominator": 44
+      },
+      "average_full_run_estimate": {
+        "model": "Qwen/Qwen3.5-397B-A17B-FP8",
+        "mean_cost_low_usd": "0.19456902",
+        "mean_cost_high_usd": "1.35832249",
+        "incomplete_usage": false,
+        "pricing_basis": "river_owner_cache_scenarios"
+      },
+      "observation_count": 2
+    },
+    {
+      "model": "claude-haiku-5-5",
+      "average_quality_percent": "0.0%",
+      "average_goal_achieved_percent": "0.0%",
+      "quality_rate": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "goal_rate": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "average_full_run_estimate": null,
+      "observation_count": 1
+    },
+    {
+      "model": "mistral-large-4",
+      "average_quality_percent": "0.0%",
+      "average_goal_achieved_percent": "0.0%",
+      "quality_rate": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "goal_rate": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "average_full_run_estimate": null,
+      "observation_count": 1
+    },
+    {
+      "model": "mistral-medium-3-5",
+      "average_quality_percent": "0.0%",
+      "average_goal_achieved_percent": "0.0%",
+      "quality_rate": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "goal_rate": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "average_full_run_estimate": {
+        "model": "mistral-medium-3-5",
+        "mean_cost_low_usd": "25.77",
+        "mean_cost_high_usd": "25.77",
+        "incomplete_usage": true,
+        "pricing_basis": "retained_tariff_estimate"
+      },
+      "observation_count": 2
+    },
+    {
+      "model": "nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4",
+      "average_quality_percent": "0.0%",
+      "average_goal_achieved_percent": "0.0%",
+      "quality_rate": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "goal_rate": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "average_full_run_estimate": {
+        "model": "nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4",
+        "mean_cost_low_usd": "0.2283602",
+        "mean_cost_high_usd": "2.2550519",
+        "incomplete_usage": false,
+        "pricing_basis": "river_owner_cache_scenarios"
+      },
+      "observation_count": 2
+    },
+    {
+      "model": "Qwen/Qwen3.5-9B",
+      "average_quality_percent": "0.0%",
+      "average_goal_achieved_percent": "0.0%",
+      "quality_rate": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "goal_rate": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "average_full_run_estimate": {
+        "model": "Qwen/Qwen3.5-9B",
+        "mean_cost_low_usd": "0.25020603",
+        "mean_cost_high_usd": "1.26602886",
+        "incomplete_usage": false,
+        "pricing_basis": "river_owner_cache_scenarios"
+      },
+      "observation_count": 2
+    }
+  ],
+  "selected_six_provenance": {
+    "packet": "SELECTED_SIX_20261029.json",
+    "sha256": "271070a082cbf3b868d61e0501203295d7cbaa364e0ac15f8fc98a268e97ca5e",
+    "conditions": "Heterogeneous runtime and evaluator versions and provider settings; historical grades unchanged. Technical and protocol exclusions are not quality failures. River recovery used serial pending cases. Descriptive comparison, not a controlled ranking.",
+    "date": "2026-10-29",
+    "evaluator": "Compliance-0.3.0",
+    "schema_version": 1,
+    "series": "2026-10-29 owner-run selected six",
+    "source_revision": "f3bd45fb0d219929c9415b734dfeb9ef0cb6a5b8"
+  }
+}
