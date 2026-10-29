@@ -15,6 +15,7 @@ from tools.aggregate_budget import SharedGuard
 from tools.three_flow_admission import VARIABLES, digest
 from tools.three_flow_budget import META_UNCAPPED_PROFILE
 from tools.three_flow_http import HTTPCampaignTransport
+from tools.three_flow_profiles import SELECTED_SIX
 
 
 class AdmittedGuard(SharedGuard):
@@ -224,6 +225,10 @@ def live_factory(
                     transport_policy=(
                         admission.get("transport_policy", "legacy-v1")
                         if slot["provider"] == "mistral"
+                        or (
+                            slot["provider"] == "river_http"
+                            and (slot["provider"], slot["model"]) in SELECTED_SIX
+                        )
                         else "legacy-v1"
                     ),
                     context_tokens=p["context_max"],

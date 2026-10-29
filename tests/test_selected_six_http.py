@@ -165,7 +165,7 @@ class Network:
         return mock
 
 
-def fixture(tmp_path, provider, model, fault=None):
+def fixture(tmp_path, provider, model, fault=None, *, river_pacer=None):
     from tools.three_flow_admission import VARIABLES
     from tools.three_flow_budget import CampaignBudget
     from tools.three_flow_campaign import assignments
@@ -217,6 +217,10 @@ def fixture(tmp_path, provider, model, fault=None):
     from tools.three_flow_errors import ProviderPacer
 
     original_pacer = http_module.MISTRAL_PACER
+    original_river_pacer = http_module.RIVER_HTTP_PACER
+    http_module.RIVER_HTTP_PACER = river_pacer or ProviderPacer(
+        clock=lambda: 0.0, sleep=lambda _delay: None
+    )
     http_module.MISTRAL_PACER = ProviderPacer(
         clock=lambda: 0.0, sleep=lambda _delay: None
     )
@@ -225,6 +229,7 @@ def fixture(tmp_path, provider, model, fault=None):
         admission, {VARIABLES[provider]: "synthetic-key-not-secret"}, network=network
     )(slot, budget)
     http_module.MISTRAL_PACER = original_pacer
+    http_module.RIVER_HTTP_PACER = original_river_pacer
     trial = Trial(
         "selected-test",
         slot["trial_id"],

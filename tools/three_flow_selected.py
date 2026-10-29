@@ -46,11 +46,21 @@ def selected_registry(transport_policy: str) -> list[dict[str, Any]]:
             )
             + (
                 "-paced-safe-errors-v1"
-                if p == "mistral" and transport_policy != "legacy-v1"
+                if p in ("mistral", "river_http") and transport_policy != "legacy-v1"
                 else ""
             ),
             "request_settings": {
                 **mode_fields(p, m),
+                **(
+                    {
+                        "pacing_scope": "process-wide-river-http",
+                        "minimum_spacing_seconds": 1,
+                        "retry_after_max_seconds": 86400,
+                        "automatic_resubmission": False,
+                    }
+                    if p == "river_http" and transport_policy != "legacy-v1"
+                    else {}
+                ),
                 "no_native_continuation": True,
                 "tool_choice": (
                     {"type": "any", "disable_parallel_tool_use": True}

@@ -72,6 +72,7 @@ from tools.three_flow_profiles import (
 )
 
 MISTRAL_PACER = ProviderPacer()
+RIVER_HTTP_PACER = ProviderPacer()
 META_PACER = MetaRatePacer()
 
 
@@ -247,8 +248,8 @@ class BudgetWire(httpx.BaseTransport):
         else:
             # Provider text (even nested/escaped error fields or headers) can
             # reflect credentials. Publish only this bounded typed projection,
-            # BEFORE any observer sees the response. No original-body digest or
-            # reversible copy is retained. This is not a provider fault code.
+            # BEFORE any observer sees the response. Only a body digest and closed
+            # typed facts may survive; no reversible body copy is retained.
             operation = (
                 self.operation
                 or {
@@ -262,7 +263,10 @@ class BudgetWire(httpx.BaseTransport):
                 }[self.endpoint]
             )
             row["response_projection"] = http_error(
-                response.status_code, operation, response.headers.get("Retry-After")
+                response.status_code,
+                operation,
+                response.headers.get("Retry-After"),
+                body=data if self.endpoint == ENDPOINTS["mistral"] else None,
             )
         # The untouched response remains available to the actual SDK in memory.
         if self.observer is not None:
@@ -299,8 +303,11 @@ class HTTPCampaignTransport:
     ) -> None:
         if transport_policy not in ("legacy-v1", "paced-safe-errors-v1"):
             raise ValueError("unknown transport policy")
-        if transport_policy != "legacy-v1" and provider != "mistral":
-            raise ValueError("pacing policy is Mistral-only")
+        if transport_policy != "legacy-v1" and not (
+            provider == "mistral"
+            or ((provider, model) in SELECTED_SIX and provider == "river_http")
+        ):
+            raise ValueError("pacing policy requires Mistral or selected River HTTP")
         if mode_profile not in MODE_PROFILES:
             raise ValueError("unknown reasoning mode profile")
         selected = (provider, model) in SELECTED_SIX
@@ -388,7 +395,9 @@ class HTTPCampaignTransport:
                 else META_PACER
             )
         if transport_policy == "paced-safe-errors-v1":
-            self.wire.pacer = MISTRAL_PACER
+            self.wire.pacer = (
+                RIVER_HTTP_PACER if provider == "river_http" else MISTRAL_PACER
+            )
             self.request_mapping += "-" + transport_policy
         self.http = (
             ap.anthropic_http_client(transport=self.wire, timeout=network_timeout)
@@ -498,7 +507,9 @@ class HTTPCampaignTransport:
         if transport_policy != "legacy-v1":
             self.settings.update(
                 transport_policy=transport_policy,
-                pacing_scope="process-wide-mistral",
+                pacing_scope="process-wide-river-http"
+                if provider == "river_http"
+                else "process-wide-mistral",
                 minimum_spacing_seconds=1,
                 retry_after_max_seconds=86400,
                 retry_eligibility="none-proven",
