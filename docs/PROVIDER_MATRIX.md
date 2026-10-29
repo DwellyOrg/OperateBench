@@ -447,7 +447,11 @@ reasons and that it calls functions, and publishes **no control that disables
 reasoning** — so this build sends none and invents none. Describing what comes
 back is the whole of the change.
 
-### Mistral: one object on the usage block
+### Historical BoundaryBench Mistral: one object on the usage block
+
+This historical subsection describes `boundarybench` / `mistral-small-2603`,
+implemented in `src/boundarybench/providers/mistral_chat.py`. It does not
+describe the Lifecycle/selected-six implementation below.
 
 `mistral-small-2603` returns, on an otherwise ordinary HTTP 200, a
 **`prompt_tokens_details` object on the usage block** that the pinned SDK's
@@ -461,27 +465,23 @@ So the Mistral lane names **one exact response-extension contract** —
 
 | Object | Field | Kind |
 |---|---|---|
-| `usage` | `prompt_tokens_details` | closed object with required `cached_tokens` |
-| `usage` | `completion_tokens_details` | closed object with required `reasoning_tokens` |
+| `usage` | `prompt_tokens_details` | object, closed to exactly the row below |
 | `usage.prompt_tokens_details` | `cached_tokens` | non-negative bounded integer, **required** |
-| `usage.completion_tokens_details` | `reasoning_tokens` | non-negative bounded integer, **required** |
 
 What the contract guarantees:
 
-- **Closed, at both levels.** Two optional extension names on the usage block, each
-  with exactly one required member in its closed object. The same object arriving
-  at the root or on a message is
+- **Closed, at both levels.** One name on the usage block and one name inside the
+  object it carries. The same object arriving at the root or on a message is
   still `provider_response_invalid`, an unknown key inside the object is refused
   at that depth, and nothing else about the response contract is relaxed.
-- **Optional as a whole, complete when present.** Either object may be absent,
-  but each object that arrives states its one member. A vacuous `{}`, or one stating some other name instead, was never
+- **Optional as a whole, complete when present.** The object may be absent — this
+  build reads nothing out of it — but an object that arrives states its one
+  member. A vacuous `{}`, or one stating some other name instead, was never
   observed and is refused rather than read as an empty statement.
-- **Typed and bounded on the wire, not after coercion.** `cached_tokens` and
-  `reasoning_tokens` are exact non-negative integers within the same exact-integer bound the token counts
+- **Typed and bounded on the wire, not after coercion.** `cached_tokens` is an
+  exact non-negative integer within the same exact-integer bound the token counts
   are read under, and never a boolean, a string, a fractional number, a null or a
   negative.
-  They must also be subsets of `prompt_tokens` and `completion_tokens`,
-  respectively; values exceeding their parent totals are refused.
 - **Checked on both readings.** `UsageInfo` is the one model in this SDK
   configured to keep undeclared fields, so the object is stated twice — in the
   exact JSON the provider sent, and in `model_extra` on the typed reading of the
@@ -490,25 +490,22 @@ What the contract guarantees:
   never cleared. The typed allowance is as narrow as the wire's: it is granted on
   the usage block's SDK model alone, and every other object at every other depth
   still accepts exactly zero undeclared fields.
-- **Validated as subsets, never charged again.** Cached prompt and reasoning
-  completion tokens are already included in their parent totals. Neither subset
-  is added again for pricing. **This build does not model a cache discount.**
-  The pinned Mistral price applies the uncached input rate to every
-  provider-reported `prompt_token`. The resulting reported-token estimate is
-  reproducible from the run's pinned policy and the two reported counts, with no
-  cache discount or subset double charge. It is not an invoice or a guarantee of
-  actual billed charges; additional or unreported fees remain unknown.
+- **Read for nothing, and priced into nothing.** The extension is opaque after
+  shape validation (`extension_values_read: false`). This historical validator
+  does not check `cached_tokens <= prompt_tokens` and rejects
+  `completion_tokens_details` entirely. **This build does not model a cache
+  discount.** The pinned Mistral policy applies the uncached input rate to every
+  provider-reported prompt token. The reported-token estimate is reproducible
+  from the pinned policy and the two standard counts. It is not an invoice or a
+  guarantee of actual billed charges; additional or unreported fees remain unknown.
   Moving `cached_tokens` across its whole accepted domain changes neither the
   accepted action, nor the standard usage, nor the cost.
 
-**Provenance, stated honestly.** This contract is **provider-observed**:
-the original cached-token extension transcribes the name and type shape seen in
-two bounded historical schema-only diagnostics whose raw bodies were not kept.
-The added reasoning-token extension was qualified using actual retained native
-responses and offline pinned-SDK replay in this selected-six task. These are
-provider observations, *not* official vendor declarations; the extensions are
-not read off the SDK, which does not declare these fields. So the contract is
-named **and hashed** in adapter
+**Provenance, stated honestly.** This contract is **provider-observed**: it
+transcribes the name and type shape this repository saw the service return,
+established by two bounded schema-only diagnostics whose raw bodies were not
+kept. It is *not* an official vendor declaration and it is not read off the SDK,
+which does not declare the field. So it is named **and hashed** in adapter
 settings (`response_extensions`, `response_extensions_digest`), the digest covers
 the rules and the bound as well as the transcribed name, and both are inside
 `configuration_id`. The Mistral adapter version is `0.3.0`.
@@ -518,6 +515,45 @@ pinned to zero, the same pinned output ceiling and tool choice,
 `model_contract_verified` still `false`, and pricing untouched. No parameter that
 would turn the object off is invented here. Describing what comes back is the
 whole of the change.
+
+### Lifecycle/operatebench selected-six Mistral metadata
+
+The separate Lifecycle/selected-six implementation uses
+`src/operatebench/agents/mistral_chat.py` (`MistralChatCompletionsTransport`),
+which calls `MistralChatExchange` in `src/operatebench/providers/mistral_chat.py`.
+Its current request mapping is `lifecycle_mistral_chat_completions_model_request_v3`;
+the pinned SDK in `uv.lock` is `mistralai` 3.2.0. Its response-extension contract
+is also named `mistral_response_extensions_v1`, but its members and rules differ
+from the historical BoundaryBench contract; the name alone does not identify
+an equivalent acceptance scope.
+
+| Object | Optional field | Required member of the closed object |
+|---|---|---|
+| `usage` | `prompt_tokens_details` | `cached_tokens` |
+| `usage` | `completion_tokens_details` | `reasoning_tokens` |
+
+Both objects are independently optional. Each present object must contain exactly
+its required member, an exact non-negative bounded integer under
+`MAX_EXACT_TOKEN_COUNT`; empty objects, unknown members, booleans, strings,
+fractions, nulls and negatives are refused. `check_usage_subsets` requires
+`cached_tokens <= prompt_tokens` and `reasoning_tokens <= completion_tokens`.
+The wire validation and typed SDK extras must agree through
+`check_response_extensions_agree`; neither reading is edited to match the other.
+
+These subsets are not added again to their parent totals for pricing: there is
+no subset double charge and no cache discount. Pricing uses the two standard
+reported token counts and the pinned policy. This reported-token estimate is
+not an invoice or a guarantee of actual billed charges; additional or unreported
+fees remain unknown.
+
+The original cached extension's two bounded schema-only diagnostics and
+raw-bodies-not-kept provenance above apply to that original extension only.
+The added reasoning extension was qualified using actual retained native
+responses and offline pinned-SDK replay for selected-six. Those responses are
+not public traces. This is provider-observed qualification, not an official
+vendor declaration. The Lifecycle contract records both subset rules and is
+named and hashed in adapter settings. This documentation correction changes no
+request controls or frozen run metadata.
 
 ## Pricing provenance
 
