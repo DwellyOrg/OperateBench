@@ -481,27 +481,25 @@ def validate_historical_identity(a: dict[str, Any]) -> None:
     roster = selected_roster(a.get("roster_profile", "legacy-v1"))
     if not isinstance(rows, list) or len(rows) != len(roster):
         raise ValueError("original registry roster required")
+    # selected_registry has always omitted output_limit. Select the recorded
+    # schema by the original roster; keep every other historical schema closed.
+    string_fields = {"endpoint", "mapping", "settings_source"}
+    if a.get("roster_profile") != SELECTED_SIX_PROFILE:
+        string_fields.add("output_limit")
+    fields = string_fields | {
+        "provider",
+        "model",
+        "request_settings",
+        "retries",
+        "admitted",
+    }
     for row, (provider, model) in zip(rows, roster, strict=True):
         if (
             not isinstance(row, dict)
-            or set(row)
-            != {
-                "provider",
-                "model",
-                "endpoint",
-                "mapping",
-                "request_settings",
-                "settings_source",
-                "retries",
-                "output_limit",
-                "admitted",
-            }
+            or set(row) != fields
             or row["provider"] != provider
             or row["model"] != model
-            or any(
-                not isinstance(row[k], str) or not row[k]
-                for k in ("endpoint", "mapping", "settings_source", "output_limit")
-            )
+            or any(not isinstance(row[k], str) or not row[k] for k in string_fields)
             or not isinstance(row["request_settings"], dict)
             or type(row["retries"]) is not int
             or row["retries"] != 0
