@@ -461,23 +461,27 @@ So the Mistral lane names **one exact response-extension contract** —
 
 | Object | Field | Kind |
 |---|---|---|
-| `usage` | `prompt_tokens_details` | object, closed to exactly the row below |
+| `usage` | `prompt_tokens_details` | closed object with required `cached_tokens` |
+| `usage` | `completion_tokens_details` | closed object with required `reasoning_tokens` |
 | `usage.prompt_tokens_details` | `cached_tokens` | non-negative bounded integer, **required** |
+| `usage.completion_tokens_details` | `reasoning_tokens` | non-negative bounded integer, **required** |
 
 What the contract guarantees:
 
-- **Closed, at both levels.** One name on the usage block and one name inside the
-  object it carries. The same object arriving at the root or on a message is
+- **Closed, at both levels.** Two optional extension names on the usage block, each
+  with exactly one required member in its closed object. The same object arriving
+  at the root or on a message is
   still `provider_response_invalid`, an unknown key inside the object is refused
   at that depth, and nothing else about the response contract is relaxed.
-- **Optional as a whole, complete when present.** The object may be absent — this
-  build reads nothing out of it — but an object that arrives states its one
-  member. A vacuous `{}`, or one stating some other name instead, was never
+- **Optional as a whole, complete when present.** Either object may be absent,
+  but each object that arrives states its one member. A vacuous `{}`, or one stating some other name instead, was never
   observed and is refused rather than read as an empty statement.
-- **Typed and bounded on the wire, not after coercion.** `cached_tokens` is an
-  exact non-negative integer within the same exact-integer bound the token counts
+- **Typed and bounded on the wire, not after coercion.** `cached_tokens` and
+  `reasoning_tokens` are exact non-negative integers within the same exact-integer bound the token counts
   are read under, and never a boolean, a string, a fractional number, a null or a
   negative.
+  They must also be subsets of `prompt_tokens` and `completion_tokens`,
+  respectively; values exceeding their parent totals are refused.
 - **Checked on both readings.** `UsageInfo` is the one model in this SDK
   configured to keep undeclared fields, so the object is stated twice — in the
   exact JSON the provider sent, and in `model_extra` on the typed reading of the
@@ -486,21 +490,25 @@ What the contract guarantees:
   never cleared. The typed allowance is as narrow as the wire's: it is granted on
   the usage block's SDK model alone, and every other object at every other depth
   still accepts exactly zero undeclared fields.
-- **Read for nothing, and priced into nothing.** `cached_tokens` says the
-  provider served part of the prompt from a cache and charged less for it. **This
-  build does not model that discount.** The pinned Mistral price charges every
-  provider-reported `prompt_token` at the uncached input rate, which is
-  conservative in the only direction that matters: a run never under-reports what
-  it spent, and a measured cost stays re-derivable from the run's own pinned
-  policy times the two counts rather than from a number the provider supplied.
+- **Validated as subsets, never charged again.** Cached prompt and reasoning
+  completion tokens are already included in their parent totals. Neither subset
+  is added again for pricing. **This build does not model a cache discount.**
+  The pinned Mistral price applies the uncached input rate to every
+  provider-reported `prompt_token`. The resulting reported-token estimate is
+  reproducible from the run's pinned policy and the two reported counts, with no
+  cache discount or subset double charge. It is not an invoice or a guarantee of
+  actual billed charges; additional or unreported fees remain unknown.
   Moving `cached_tokens` across its whole accepted domain changes neither the
   accepted action, nor the standard usage, nor the cost.
 
-**Provenance, stated honestly.** This contract is **provider-observed**: it
-transcribes the name and type shape this repository saw the service return,
-established by two bounded schema-only diagnostics whose raw bodies were not
-kept. It is *not* an official vendor declaration and it is not read off the SDK,
-which does not declare the field. So it is named **and hashed** in adapter
+**Provenance, stated honestly.** This contract is **provider-observed**:
+the original cached-token extension transcribes the name and type shape seen in
+two bounded historical schema-only diagnostics whose raw bodies were not kept.
+The added reasoning-token extension was qualified using actual retained native
+responses and offline pinned-SDK replay in this selected-six task. These are
+provider observations, *not* official vendor declarations; the extensions are
+not read off the SDK, which does not declare these fields. So the contract is
+named **and hashed** in adapter
 settings (`response_extensions`, `response_extensions_digest`), the digest covers
 the rules and the bound as well as the transcribed name, and both are inside
 `configuration_id`. The Mistral adapter version is `0.3.0`.

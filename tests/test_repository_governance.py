@@ -332,6 +332,11 @@ def test_actual_aggregate_matches_original_rates_and_common_list() -> None:
         )
     packet = json.loads(packet_bytes)
     means = json.loads((ROOT / means_path).read_bytes())
+    assert means["cost_assumptions"].startswith(
+        "Known estimates and the historical River scenario below apply only to "
+        "the original 21. Costs for the six additional models remain Unknown; "
+        "no provider charges or invoices are inferred. "
+    )
     provenance = means["selected_six_provenance"]
     assert provenance["source_revision"] == packet["source_revision"]
     assert provenance["evaluator"] == packet["evaluator"] == "Compliance-0.3.0"

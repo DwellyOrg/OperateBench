@@ -533,6 +533,13 @@ class HTTPCampaignTransport:
         if meta and "owner_output_cap_tokens" in profile:
             self.settings["owner_output_cap_tokens"] = profile["owner_output_cap_tokens"]
         if selected:
+            effort = self.mode_fields.get(
+                "reasoning_effort",
+                self.mode_fields.get("reasoning", {}).get(
+                    "effort", self.mode_fields.get("output_config", {}).get("effort")
+                ),
+            )
+            self.settings["reasoning_mode"] = "OFF" if effort == "none" else "MINIMUM"
             if provider == "anthropic":
                 self.settings["tool_choice"] = {"type": "any"}
             self.settings["native_continuation"] = False
@@ -543,9 +550,6 @@ class HTTPCampaignTransport:
                 self.settings.pop("reasoning_items_contract", None)
                 self.settings.pop("store", None)
                 self.settings["owner_output_cap_tokens"] = 30000
-                self.settings["reasoning_mode"] = (
-                    "MINIMUM" if model == "GLM-5.3" else "OFF"
-                )
         self.last_turn: dict[str, Any] | None = None
         self.flight = SingleFlight(adapter="three-flow HTTP")
 

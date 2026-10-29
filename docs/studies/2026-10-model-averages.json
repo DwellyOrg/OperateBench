@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "method": "Unweighted mean of one or two original per-observation rates; exact rational arithmetic.",
-  "cost_assumptions": "River uses owner-selected $0.12/$0.01/$0.50 per million input/cached-input/output tokens; ranges compare hypothetical all-cached versus no-cache usage. Other estimates retain campaign tariffs.",
+  "cost_assumptions": "Known estimates and the historical River scenario below apply only to the original 21. Costs for the six additional models remain Unknown; no provider charges or invoices are inferred. River uses owner-selected $0.12/$0.01/$0.50 per million input/cached-input/output tokens; ranges compare hypothetical all-cached versus no-cache usage. Other estimates retain campaign tariffs.",
   "models": [
     {
       "model": "gpt-6-astra",

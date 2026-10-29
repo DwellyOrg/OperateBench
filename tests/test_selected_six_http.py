@@ -242,6 +242,23 @@ def test_actual_sdk_multiturn(tmp_path, provider, model):
             == 0
         )
         calls = network.transports[0].calls
+        expected_controls, expected_mode = {
+            "gpt-6.1-terra": ({"reasoning": {"effort": "none"}}, "OFF"),
+            "claude-haiku-5-5": (
+                {"thinking": {"type": "adaptive"}, "output_config": {"effort": "low"}},
+                "MINIMUM",
+            ),
+            "mistral-large-4": ({"reasoning_effort": "none"}, "OFF"),
+            "grok-4.7": ({"reasoning": {"effort": "low"}}, "MINIMUM"),
+            "GLM-5.3": ({"reasoning_effort": "low"}, "MINIMUM"),
+            "moonshotai/Kimi-K3": ({"reasoning_effort": "none"}, "OFF"),
+        }[model]
+        assert t.settings["reasoning_mode"] == expected_mode
+        assert t.mode_fields == expected_controls
+        assert all(
+            all(call[key] == value for key, value in expected_controls.items())
+            for call in calls
+        )
         assert all(
             timeout == {"connect": 10, "pool": 10, "read": None, "write": None}
             for timeout in network.transports[0].timeouts
