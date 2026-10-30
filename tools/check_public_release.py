@@ -1010,11 +1010,10 @@ def _public_aggregate_source_spans(
         original = provenance.get("original_source_revision")
         correction = provenance.get("correction_source_revision")
         if (
-            any(
-                not isinstance(source, str)
-                or re.fullmatch(r"[0-9a-f]{40}", source) is None
-                for source in (original, correction)
-            )
+            not isinstance(original, str)
+            or not isinstance(correction, str)
+            or re.fullmatch(r"[0-9a-f]{40}", original) is None
+            or re.fullmatch(r"[0-9a-f]{40}", correction) is None
             or original == correction
         ):
             return []

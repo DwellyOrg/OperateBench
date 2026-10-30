@@ -232,8 +232,8 @@ def typed_http_facts(body: bytes) -> dict[str, Any]:
     if len(body) > 16384:
         return {}
 
-    def unique(pairs):
-        result = {}
+    def unique(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+        result: dict[str, Any] = {}
         for key, value in pairs:
             if key in result:
                 raise ValueError("duplicate field")
