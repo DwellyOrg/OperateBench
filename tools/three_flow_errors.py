@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
 import importlib
 import json
 import re
@@ -293,7 +292,6 @@ def http_error(
     }
 
     if body is not None:
-        projection["response_body_sha256"] = hashlib.sha256(body).hexdigest()
         facts = typed_http_facts(body)
         if facts:
             projection.update(facts)

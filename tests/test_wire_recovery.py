@@ -25,20 +25,39 @@ from tools.three_flow_runtime import run_trial
     ],
 )
 def test_unrecognized_or_adversarial(body):
-    from tools.three_flow_errors import typed_http_facts
+    from tools.three_flow_errors import http_error, typed_http_facts
 
     assert typed_http_facts(body) == {}
+    projection = http_error(400, "chat_completions", None, body=body)
+    assert projection == {
+        "representation": "sanitized_http_error_v2",
+        "diagnostic": "http_non_success",
+        "body_retained": False,
+        "operation": "chat_completions",
+        "http_status": 400,
+        "reason": "unknown",
+        "retry_after_seconds": None,
+        "automatic_resubmission": False,
+    }
 
 
 @pytest.mark.parametrize("parameter", ["max_tokens", "context_limit"])
 def test_numeric_grammar(parameter):
-    from tools.three_flow_errors import typed_http_facts
+    from tools.three_flow_errors import http_error, typed_http_facts
 
-    assert typed_http_facts(
-        json.dumps({"message": f"{parameter} must be <= 12345"}).encode()
-    ) == {
-        "limit_parameter": parameter,
-        "reported_limit": 12345,
+    body = json.dumps({"message": f"{parameter} must be <= 12345"}).encode()
+    facts = {"limit_parameter": parameter, "reported_limit": 12345}
+    assert typed_http_facts(body) == facts
+    assert http_error(400, "chat_completions", None, body=body) == {
+        "representation": "sanitized_http_error_v2",
+        "diagnostic": "http_non_success",
+        "body_retained": False,
+        "operation": "chat_completions",
+        "http_status": 400,
+        "reason": "recognized_typed_error",
+        "retry_after_seconds": None,
+        "automatic_resubmission": False,
+        **facts,
     }
 
 
@@ -70,7 +89,8 @@ def test_real_mistral_sdk_400_one_dispatch_private_unknown_liability(
         assert caught.value.fault == "provider_request_rejected"
         assert len(transport.wire.captures) == 1
         projection = transport.wire.captures[0]["response_projection"]
-        assert projection["response_body_sha256"] == hashlib.sha256(body).hexdigest()
+        assert "response_body_sha256" not in projection
+        assert hashlib.sha256(body).hexdigest() not in json.dumps(transport.wire.captures)
         assert projection["automatic_resubmission"] is False
         assert projection["body_retained"] is False
         assert projection["reason"] == (

@@ -248,8 +248,8 @@ class BudgetWire(httpx.BaseTransport):
         else:
             # Provider text (even nested/escaped error fields or headers) can
             # reflect credentials. Publish only this bounded typed projection,
-            # BEFORE any observer sees the response. Only a body digest and closed
-            # typed facts may survive; no reversible body copy is retained.
+            # BEFORE any observer sees the response. Only closed, bounded
+            # diagnostics and typed facts survive; no body copy or fingerprint remains.
             operation = (
                 self.operation
                 or {
