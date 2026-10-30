@@ -30,7 +30,7 @@ LATEST_HTTP_MODELS = (
 
 
 def minimum_effort(model: str) -> str:
-    return "none" if model in ("gpt-6-luna", "gpt-6-sol") else "low"
+    return "none" if model in ("gpt-6-luna", "gpt-6-sol", "gpt-6.1-terra") else "low"
 
 
 ENDPOINTS = {
@@ -66,7 +66,24 @@ LATEST_ROSTER_PROFILE = "latest-http-v1"
 EXCLUDED_FUTURE_MODEL = "Qwen/Qwen3.5-122B-A10B-FP8"
 
 
+SELECTED_SIX_PROFILE = "selected-six-http-v1"
+SELECTED_SIX = (
+    ("openai", "gpt-6.1-terra"),
+    ("anthropic", "claude-haiku-5-5"),
+    ("mistral", "mistral-large-4"),
+    ("xai", "grok-4.7"),
+    ("river_http", "GLM-5.3"),
+    ("river_http", "moonshotai/Kimi-K3"),
+)
+ENDPOINTS.update(
+    xai="https://api.x.ai/v1/responses",
+    river_http="https://api.river.ai/v1/chat/completions",
+)
+
+
 def selected_roster(roster_profile: str = "legacy-v1") -> tuple[tuple[str, str], ...]:
+    if roster_profile == SELECTED_SIX_PROFILE:
+        return SELECTED_SIX
     if roster_profile == GEMINI_ROSTER_PROFILE:
         from tools.three_flow_gemini import MODELS as gemini_models
 
@@ -117,6 +134,18 @@ def selection_for(
     provider: str, model: str, mode_profile: str
 ) -> CampaignSelection | None:
     """Resolve only existing valid cells; callers retain their validation order."""
+    if (provider, model) in SELECTED_SIX and mode_profile == "off-or-minimum-v1":
+        return CampaignSelection(
+            provider,
+            model,
+            "responses"
+            if provider in ("openai", "xai")
+            else "messages"
+            if provider == "anthropic"
+            else "chat_completions",
+            mode_profile,
+            "tools/three_flow_http.py",
+        )
     return next(
         (
             s
@@ -144,6 +173,10 @@ def http_reasoning_mode(model: str) -> str:
 
 
 def http_mode_fields(provider: str, model: str, mode_profile: str) -> dict[str, Any]:
+    if (provider, model) in SELECTED_SIX:
+        from tools.three_flow_selected import mode_fields
+
+        return mode_fields(provider, model)
     controls: dict[str, dict[str, Any]] = {
         "openai": {"reasoning": {"effort": minimum_effort(model)}},
         "anthropic": {
@@ -207,6 +240,12 @@ def registry(
     transport_policy: str = "legacy-v1",
     roster_profile: str = "legacy-v1",
 ) -> list[dict[str, Any]]:
+    if roster_profile == SELECTED_SIX_PROFILE:
+        if mode_profile != "off-or-minimum-v1":
+            raise ValueError("selected six requires qualified minimum mode")
+        from tools.three_flow_selected import selected_registry
+
+        return selected_registry(transport_policy)
     if roster_profile == GEMINI_ROSTER_PROFILE:
         from tools.three_flow_gemini import MAPPING
         from tools.three_flow_gemini import MODELS as gemini_models

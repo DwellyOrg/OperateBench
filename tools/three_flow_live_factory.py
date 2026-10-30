@@ -15,6 +15,7 @@ from tools.aggregate_budget import SharedGuard
 from tools.three_flow_admission import VARIABLES, digest
 from tools.three_flow_budget import META_UNCAPPED_PROFILE
 from tools.three_flow_http import HTTPCampaignTransport
+from tools.three_flow_profiles import SELECTED_SIX
 
 
 class AdmittedGuard(SharedGuard):
@@ -224,6 +225,10 @@ def live_factory(
                     transport_policy=(
                         admission.get("transport_policy", "legacy-v1")
                         if slot["provider"] == "mistral"
+                        or (
+                            slot["provider"] == "river_http"
+                            and (slot["provider"], slot["model"]) in SELECTED_SIX
+                        )
                         else "legacy-v1"
                     ),
                     context_tokens=p["context_max"],
@@ -274,6 +279,13 @@ def live_factory(
                         "actual_invoice_guaranteed": False,
                     },
                 )
+            if "tariff_evidence" in p:
+                transport.settings["pricing_basis"] = {
+                    "policy": p["pricing_policy"],
+                    "tariff_evidence": p["tariff_evidence"],
+                    "profile_sha256": digest(p),
+                    "actual_invoice_guaranteed": False,
+                }
             if "accounting_policy" in p:
                 transport.settings.update(
                     accounting="estimated-usage-not-invoice",
@@ -292,7 +304,9 @@ def live_factory(
                 transport.settings["pricing_basis"].update(
                     accounting_policy=p["accounting_policy"],
                     ceiling_basis="estimated-usage-not-invoice",
-                    source_sha=p["owner_pricing"]["source_sha"],
+                    source_sha=p.get("owner_pricing", {}).get(
+                        "source_sha", admission.get("source_sha")
+                    ),
                     provider_guarantees=p["guarantees"],
                     additional_fees="verified-absent"
                     if p["guarantees"]["no_other_fees"]

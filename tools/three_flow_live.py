@@ -402,6 +402,7 @@ def main(argv: list[str] | None = None, *, network: Any = None) -> int:
         choices=(
             "legacy-v1",
             "latest-http-v1",
+            "selected-six-http-v1",
             "meta-standard-same44-v1",
             "gemini-standard-same44-low-v1",
         ),

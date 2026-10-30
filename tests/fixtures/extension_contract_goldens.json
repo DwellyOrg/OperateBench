@@ -47,20 +47,27 @@
       "extension_values_read": false,
       "max_count": 9007199254740991,
       "members": {
+        "completion_tokens_details": {
+          "reasoning_tokens": "non_negative_bounded_integer"
+        },
         "prompt_tokens_details": {
           "cached_tokens": "non_negative_bounded_integer"
         }
       },
       "object_members_required": true,
+      "subsets": {
+        "completion_tokens_details.reasoning_tokens": "completion_tokens",
+        "prompt_tokens_details.cached_tokens": "prompt_tokens"
+      },
       "top_level_members_required": false
     },
-    "RESPONSE_EXTENSION_DIGEST": "d16b8582b25861b986ce8bcababe2d61bbe31d5f0a88bcc05bf0ea13009d70ee"
+    "RESPONSE_EXTENSION_DIGEST": "c7af4de43ae98c475c8b04e250fa127e090b25338afc032125e0bda7ee3ce66d"
   },
   "operatebench.providers.openai_responses": {
     "SERVER_EXTENSION_CONTRACT": {
-      "contract": "openai_response_server_extensions_v3",
+      "contract": "openai_response_server_extensions_v4",
       "members": {
-        "access_programs": "null",
+        "access_programs": "null_or_cyber_access",
         "billing": {
           "payer": "bounded_text"
         },
@@ -89,7 +96,7 @@
       "object_members_required": true,
       "top_level_members_required": false
     },
-    "SERVER_EXTENSION_DIGEST": "71b4891dd1010171eba5c779e1bec8f51a86c4d85f2fbfdf245f3f79d4e43d44"
+    "SERVER_EXTENSION_DIGEST": "4b28372d561c7299afdcf7f6d6d3bce8462eb75ae8315faac4ee6895217fb84d"
   },
   "operatebench.providers.xai_openai_compat": {
     "RESPONSE_EXTENSION_CONTRACT": {

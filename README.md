@@ -12,10 +12,13 @@ external events change independently of the agent.
 > has one Semantic Scenario with three frozen scenario variants of synthetic
 > Maintenance. Commerce and Property Compliance are separate SDK incubators,
 > not additional official benchmark evidence. Boundary is a separate track.
-> Read the [21-model, two-series October observation study](docs/studies/2026-10-observations.md) for goal versus strict checks, case churn and a separate Compliance correction diagnostic. The historical 19-model table below is preserved.
+> Read the [21-model, two-series October observation study](docs/studies/2026-10-observations.md) for goal versus strict checks, case churn and a separate Compliance correction diagnostic. The original historical observations remain linked from the common results list.
 >
 > The [model results page](docs/MODEL_RESULTS.md)
-> reports a descriptive full44 comparison of 19 exact IDs.
+> reports a descriptive full44 aggregate comparison of 27 exact IDs including Gemini.
+> The original 21 models retain means of two scored-case rates; six additional models have one observation
+> each, with Unknown costs. Runtime/evaluator versions and settings differ; rates
+> are conditional on scored coverage, with technical exclusions excluded.
 > No official Lifecycle model results or leaderboard are published. No proven incremental lifecycle
 > signal is claimed.
 
@@ -312,8 +315,8 @@ Wait/Follow-up Rate, Duplicate/Invalid Action Rate, SLA Violations, Recovery
 Rate, Stability@k — are defined over a *population* of episodes. This preview
 runs single episodes and publishes no official Lifecycle aggregate, so what a
 run emits is the per-episode vector above. The separate
-[model results page](docs/MODEL_RESULTS.md) reports 19 exact IDs descriptively,
-with separately completed successors;
+[model results page](docs/MODEL_RESULTS.md) reports 27 exact IDs descriptively,
+with the original 21 two-rate means and six additional single rates;
 these results do not establish the Lifecycle construct. Provider cost
 is not part of the benchmark result vector. The documented public/offline
 benchmark commands make no provider calls.
@@ -400,8 +403,8 @@ release is retroactively an OperateBench version.
   published benchmark evidence or validation of current model capability.
 - **No official Lifecycle leaderboard, composite score or general model ranking.**
   None would be valid from one authored scenario. The descriptive full44
-  comparison orders the original campaign by strict fraction and goal, with
-  successors separate, without ranking across cohorts.
+  aggregate comparison sorts exact quality and goal rates across heterogeneous
+  runtime/evaluator versions and settings; this is not a controlled ranking.
 - **No novelty claim.** Dynamic user simulation, stateful tool worlds,
   enterprise task suites, long-horizon professional workflows, cross-task
   longitudinal streams and controlled recovery evaluation are all prior art and
@@ -487,6 +490,8 @@ alone is not proof of benchmark validity.
 
 - [Commerce profile details](docs/commerce-return-refund-profiles.md) — domain scope and sources.
 - [Compliance profile details](docs/contributions/prospire/property_compliance_profiles.md) — contribution scope and sources.
+- [Response contract test oracles](docs/RESPONSE_CONTRACT_TEST_ORACLES.md) —
+  frozen offline response expectations and fixture boundaries.
 - [Three-flow campaign](docs/THREE_FLOW_CAMPAIGN.md) — reference-driven offline
   SDK mock execution, shared accounting and replay; not paid-launch approval or
   model-performance evidence.
@@ -497,7 +502,7 @@ alone is not proof of benchmark validity.
 - [Gemini native offline campaign](docs/GEMINI_OFFLINE.md) — two 44-case
   provider-free HTTP mock series; no live provider scores or launch approval.
 - [Model results — descriptive full44 comparison](docs/MODEL_RESULTS.md) —
-  19 exact model IDs, with separately completed successors and evidence limits.
+  27 exact model IDs, the original 21 two-rate means and six additional single rates, with evidence limits.
 - [Three-flow River](docs/THREE_FLOW_RIVER.md) — optional SDK, pinned tokenizer
   assets and native protobuf mock transport; full-matrix qualification remains
   pending.

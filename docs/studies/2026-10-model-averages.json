@@ -1,0 +1,735 @@
+{
+  "schema_version": 1,
+  "method": "Unweighted mean of one or two per-observation rates; technical corrections replace original technical cells; exact rational arithmetic.",
+  "cost_assumptions": "Known estimates and the historical River scenario below apply only to the original 21. Costs for the six additional models remain Unknown; no provider charges or invoices are inferred. River uses owner-selected $0.12/$0.01/$0.50 per million input/cached-input/output tokens; ranges compare hypothetical all-cached versus no-cache usage. Other estimates retain campaign tariffs.",
+  "models": [
+    {
+      "model": "gpt-6-astra",
+      "average_quality_percent": "96.6%",
+      "average_goal_achieved_percent": "100.0%",
+      "quality_rate": {
+        "numerator": 1827,
+        "denominator": 1892
+      },
+      "goal_rate": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "average_full_run_estimate": {
+        "model": "gpt-6-astra",
+        "mean_cost_low_usd": "238.130875",
+        "mean_cost_high_usd": "238.130875",
+        "incomplete_usage": true,
+        "pricing_basis": "retained_tariff_estimate"
+      },
+      "observation_count": 2
+    },
+    {
+      "model": "gemini-4-argon",
+      "average_quality_percent": "95.5%",
+      "average_goal_achieved_percent": "100.0%",
+      "quality_rate": {
+        "numerator": 21,
+        "denominator": 22
+      },
+      "goal_rate": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "average_full_run_estimate": {
+        "model": "gemini-4-argon",
+        "mean_cost_low_usd": "94.566744",
+        "mean_cost_high_usd": "94.566744",
+        "incomplete_usage": false,
+        "pricing_basis": "retained_tariff_estimate"
+      },
+      "observation_count": 2
+    },
+    {
+      "model": "gpt-6.1-sol",
+      "average_quality_percent": "95.5%",
+      "average_goal_achieved_percent": "100.0%",
+      "quality_rate": {
+        "numerator": 21,
+        "denominator": 22
+      },
+      "goal_rate": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "average_full_run_estimate": {
+        "model": "gpt-6.1-sol",
+        "mean_cost_low_usd": "52.671586",
+        "mean_cost_high_usd": "52.671586",
+        "incomplete_usage": false,
+        "pricing_basis": "retained_tariff_estimate"
+      },
+      "observation_count": 2
+    },
+    {
+      "model": "gpt-6.1-terra",
+      "average_quality_percent": "86.4%",
+      "average_goal_achieved_percent": "100.0%",
+      "quality_rate": {
+        "numerator": 19,
+        "denominator": 22
+      },
+      "goal_rate": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "average_full_run_estimate": null,
+      "observation_count": 1
+    },
+    {
+      "model": "claude-fable-5-1",
+      "average_quality_percent": "80.5%",
+      "average_goal_achieved_percent": "100.0%",
+      "quality_rate": {
+        "numerator": 3045,
+        "denominator": 3784
+      },
+      "goal_rate": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "average_full_run_estimate": {
+        "model": "claude-fable-5-1",
+        "mean_cost_low_usd": "192.630185",
+        "mean_cost_high_usd": "192.630185",
+        "incomplete_usage": true,
+        "pricing_basis": "retained_tariff_estimate"
+      },
+      "observation_count": 2
+    },
+    {
+      "model": "claude-opus-5-5",
+      "average_quality_percent": "54.5%",
+      "average_goal_achieved_percent": "98.9%",
+      "quality_rate": {
+        "numerator": 6,
+        "denominator": 11
+      },
+      "goal_rate": {
+        "numerator": 87,
+        "denominator": 88
+      },
+      "average_full_run_estimate": {
+        "model": "claude-opus-5-5",
+        "mean_cost_low_usd": "153.684212",
+        "mean_cost_high_usd": "153.684212",
+        "incomplete_usage": false,
+        "pricing_basis": "retained_tariff_estimate"
+      },
+      "observation_count": 2
+    },
+    {
+      "model": "gemini-3.8-flash",
+      "average_quality_percent": "45.3%",
+      "average_goal_achieved_percent": "100.0%",
+      "quality_rate": {
+        "numerator": 39,
+        "denominator": 86
+      },
+      "goal_rate": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "average_full_run_estimate": {
+        "model": "gemini-3.8-flash",
+        "mean_cost_low_usd": "29.0916735",
+        "mean_cost_high_usd": "29.0916735",
+        "incomplete_usage": true,
+        "pricing_basis": "retained_tariff_estimate"
+      },
+      "observation_count": 2
+    },
+    {
+      "model": "gpt-6-sol",
+      "average_quality_percent": "44.3%",
+      "average_goal_achieved_percent": "89.8%",
+      "quality_rate": {
+        "numerator": 39,
+        "denominator": 88
+      },
+      "goal_rate": {
+        "numerator": 79,
+        "denominator": 88
+      },
+      "average_full_run_estimate": {
+        "model": "gpt-6-sol",
+        "mean_cost_low_usd": "74.553171",
+        "mean_cost_high_usd": "74.553171",
+        "incomplete_usage": false,
+        "pricing_basis": "retained_tariff_estimate"
+      },
+      "observation_count": 2
+    },
+    {
+      "model": "grok-4.7",
+      "average_quality_percent": "33.3%",
+      "average_goal_achieved_percent": "100.0%",
+      "quality_rate": {
+        "numerator": 1,
+        "denominator": 3
+      },
+      "goal_rate": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "average_full_run_estimate": null,
+      "observation_count": 1
+    },
+    {
+      "model": "muse-wonder-1.0",
+      "average_quality_percent": "26.5%",
+      "average_goal_achieved_percent": "56.4%",
+      "quality_rate": {
+        "numerator": 91,
+        "denominator": 344
+      },
+      "goal_rate": {
+        "numerator": 97,
+        "denominator": 172
+      },
+      "average_full_run_estimate": {
+        "model": "muse-wonder-1.0",
+        "mean_cost_low_usd": "52.067637",
+        "mean_cost_high_usd": "52.067637",
+        "incomplete_usage": true,
+        "pricing_basis": "retained_tariff_estimate"
+      },
+      "observation_count": 2
+    },
+    {
+      "model": "GLM-5.3",
+      "average_quality_percent": "16.7%",
+      "average_goal_achieved_percent": "88.9%",
+      "quality_rate": {
+        "numerator": 1,
+        "denominator": 6
+      },
+      "goal_rate": {
+        "numerator": 8,
+        "denominator": 9
+      },
+      "average_full_run_estimate": null,
+      "observation_count": 1
+    },
+    {
+      "model": "zai-org/GLM-5.3-Flash",
+      "average_quality_percent": "14.8%",
+      "average_goal_achieved_percent": "77.3%",
+      "quality_rate": {
+        "numerator": 13,
+        "denominator": 88
+      },
+      "goal_rate": {
+        "numerator": 17,
+        "denominator": 22
+      },
+      "average_full_run_estimate": {
+        "model": "zai-org/GLM-5.3-Flash",
+        "mean_cost_low_usd": "0.18880107",
+        "mean_cost_high_usd": "1.20868609",
+        "incomplete_usage": false,
+        "pricing_basis": "river_owner_cache_scenarios"
+      },
+      "observation_count": 2
+    },
+    {
+      "model": "nvidia/GLM-5.2-NVFP4-262K",
+      "average_quality_percent": "13.6%",
+      "average_goal_achieved_percent": "71.6%",
+      "quality_rate": {
+        "numerator": 3,
+        "denominator": 22
+      },
+      "goal_rate": {
+        "numerator": 63,
+        "denominator": 88
+      },
+      "average_full_run_estimate": {
+        "model": "nvidia/GLM-5.2-NVFP4-262K",
+        "mean_cost_low_usd": "0.3451353",
+        "mean_cost_high_usd": "1.7250116",
+        "incomplete_usage": false,
+        "pricing_basis": "river_owner_cache_scenarios"
+      },
+      "observation_count": 2
+    },
+    {
+      "model": "muse-spark-1.3",
+      "average_quality_percent": "10.2%",
+      "average_goal_achieved_percent": "42.0%",
+      "quality_rate": {
+        "numerator": 9,
+        "denominator": 88
+      },
+      "goal_rate": {
+        "numerator": 37,
+        "denominator": 88
+      },
+      "average_full_run_estimate": {
+        "model": "muse-spark-1.3",
+        "mean_cost_low_usd": "46.821199625",
+        "mean_cost_high_usd": "46.821199625",
+        "incomplete_usage": false,
+        "pricing_basis": "retained_tariff_estimate"
+      },
+      "observation_count": 2
+    },
+    {
+      "model": "Qwen/Qwen3.8-27B-FP8",
+      "average_quality_percent": "3.4%",
+      "average_goal_achieved_percent": "3.4%",
+      "quality_rate": {
+        "numerator": 3,
+        "denominator": 88
+      },
+      "goal_rate": {
+        "numerator": 3,
+        "denominator": 88
+      },
+      "average_full_run_estimate": {
+        "model": "Qwen/Qwen3.8-27B-FP8",
+        "mean_cost_low_usd": "0.29128106",
+        "mean_cost_high_usd": "2.52077547",
+        "incomplete_usage": true,
+        "pricing_basis": "river_owner_cache_scenarios"
+      },
+      "observation_count": 2
+    },
+    {
+      "model": "deepseek-ai/DeepSeek-V4.1-Flash",
+      "average_quality_percent": "2.3%",
+      "average_goal_achieved_percent": "18.4%",
+      "quality_rate": {
+        "numerator": 1,
+        "denominator": 43
+      },
+      "goal_rate": {
+        "numerator": 695,
+        "denominator": 3784
+      },
+      "average_full_run_estimate": {
+        "model": "deepseek-ai/DeepSeek-V4.1-Flash",
+        "mean_cost_low_usd": "0.437959705",
+        "mean_cost_high_usd": "2.90048796",
+        "incomplete_usage": true,
+        "pricing_basis": "river_owner_cache_scenarios"
+      },
+      "observation_count": 2
+    },
+    {
+      "model": "deepseek-ai/DeepSeek-V4-Flash-0731",
+      "average_quality_percent": "2.3%",
+      "average_goal_achieved_percent": "5.7%",
+      "quality_rate": {
+        "numerator": 1,
+        "denominator": 44
+      },
+      "goal_rate": {
+        "numerator": 5,
+        "denominator": 88
+      },
+      "average_full_run_estimate": {
+        "model": "deepseek-ai/DeepSeek-V4-Flash-0731",
+        "mean_cost_low_usd": "0.3338015",
+        "mean_cost_high_usd": "2.54243925",
+        "incomplete_usage": true,
+        "pricing_basis": "river_owner_cache_scenarios"
+      },
+      "observation_count": 2
+    },
+    {
+      "model": "moonshotai/Kimi-K3",
+      "average_quality_percent": "0.0%",
+      "average_goal_achieved_percent": "43.2%",
+      "quality_rate": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "goal_rate": {
+        "numerator": 19,
+        "denominator": 44
+      },
+      "average_full_run_estimate": null,
+      "observation_count": 1
+    },
+    {
+      "model": "gpt-6-luna",
+      "average_quality_percent": "0.0%",
+      "average_goal_achieved_percent": "21.5%",
+      "quality_rate": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "goal_rate": {
+        "numerator": 189,
+        "denominator": 880
+      },
+      "average_full_run_estimate": {
+        "model": "gpt-6-luna",
+        "mean_cost_low_usd": "1.42",
+        "mean_cost_high_usd": "1.42",
+        "incomplete_usage": true,
+        "pricing_basis": "retained_tariff_estimate"
+      },
+      "observation_count": 2
+    },
+    {
+      "model": "Qwen/Qwen3.6-35B-A3B-FP8",
+      "average_quality_percent": "0.0%",
+      "average_goal_achieved_percent": "17.0%",
+      "quality_rate": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "goal_rate": {
+        "numerator": 15,
+        "denominator": 88
+      },
+      "average_full_run_estimate": {
+        "model": "Qwen/Qwen3.6-35B-A3B-FP8",
+        "mean_cost_low_usd": "0.419280145",
+        "mean_cost_high_usd": "1.95993624",
+        "incomplete_usage": false,
+        "pricing_basis": "river_owner_cache_scenarios"
+      },
+      "observation_count": 2
+    },
+    {
+      "model": "nvidia/Kimi-K2.6-NVFP4",
+      "average_quality_percent": "0.0%",
+      "average_goal_achieved_percent": "16.1%",
+      "quality_rate": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "goal_rate": {
+        "numerator": 609,
+        "denominator": 3784
+      },
+      "average_full_run_estimate": {
+        "model": "nvidia/Kimi-K2.6-NVFP4",
+        "mean_cost_low_usd": "0.157862835",
+        "mean_cost_high_usd": "1.00285627",
+        "incomplete_usage": true,
+        "pricing_basis": "river_owner_cache_scenarios"
+      },
+      "observation_count": 2
+    },
+    {
+      "model": "Qwen/Qwen3.5-397B-A17B-FP8",
+      "average_quality_percent": "0.0%",
+      "average_goal_achieved_percent": "6.8%",
+      "quality_rate": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "goal_rate": {
+        "numerator": 3,
+        "denominator": 44
+      },
+      "average_full_run_estimate": {
+        "model": "Qwen/Qwen3.5-397B-A17B-FP8",
+        "mean_cost_low_usd": "0.19456902",
+        "mean_cost_high_usd": "1.35832249",
+        "incomplete_usage": false,
+        "pricing_basis": "river_owner_cache_scenarios"
+      },
+      "observation_count": 2
+    },
+    {
+      "model": "claude-haiku-5-5",
+      "average_quality_percent": "0.0%",
+      "average_goal_achieved_percent": "0.0%",
+      "quality_rate": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "goal_rate": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "average_full_run_estimate": null,
+      "observation_count": 1
+    },
+    {
+      "model": "mistral-large-4",
+      "average_quality_percent": "0.0%",
+      "average_goal_achieved_percent": "0.0%",
+      "quality_rate": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "goal_rate": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "average_full_run_estimate": null,
+      "observation_count": 1
+    },
+    {
+      "model": "mistral-medium-3-5",
+      "average_quality_percent": "0.0%",
+      "average_goal_achieved_percent": "0.0%",
+      "quality_rate": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "goal_rate": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "average_full_run_estimate": {
+        "model": "mistral-medium-3-5",
+        "mean_cost_low_usd": "25.77",
+        "mean_cost_high_usd": "25.77",
+        "incomplete_usage": true,
+        "pricing_basis": "retained_tariff_estimate"
+      },
+      "observation_count": 2
+    },
+    {
+      "model": "nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4",
+      "average_quality_percent": "0.0%",
+      "average_goal_achieved_percent": "0.0%",
+      "quality_rate": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "goal_rate": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "average_full_run_estimate": {
+        "model": "nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4",
+        "mean_cost_low_usd": "0.2283602",
+        "mean_cost_high_usd": "2.2550519",
+        "incomplete_usage": false,
+        "pricing_basis": "river_owner_cache_scenarios"
+      },
+      "observation_count": 2
+    },
+    {
+      "model": "Qwen/Qwen3.5-9B",
+      "average_quality_percent": "0.0%",
+      "average_goal_achieved_percent": "0.0%",
+      "quality_rate": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "goal_rate": {
+        "numerator": 0,
+        "denominator": 1
+      },
+      "average_full_run_estimate": {
+        "model": "Qwen/Qwen3.5-9B",
+        "mean_cost_low_usd": "0.25020603",
+        "mean_cost_high_usd": "1.26602886",
+        "incomplete_usage": false,
+        "pricing_basis": "river_owner_cache_scenarios"
+      },
+      "observation_count": 2
+    }
+  ],
+  "selected_six_provenance": {
+    "packet": "SELECTED_SIX_20261029.json",
+    "sha256": "a5032145578776f88e32d6235849dfb2243afefc4992827c4344bcc34817e432",
+    "conditions": "Heterogeneous runtime and evaluator versions and provider settings; historical grades unchanged. Technical and protocol exclusions are not quality failures. River recovery used serial pending cases. Descriptive comparison, not a controlled ranking.",
+    "date": "2026-10-29",
+    "evaluator": "Compliance-0.3.0",
+    "provenance": {
+      "correction_source_revision": "989c22d9c8342df26eb78eb77f798c9b245abf6e",
+      "models": [
+        {
+          "attempt_groups": [
+            {
+              "basis": "admitted-attempt-contract",
+              "count": 44,
+              "phase": "original",
+              "registry_mapping_sha256": "f6b4984dade59dec48fc5dbbeab500b235443a71cc1d1130d4efb37b07e74292",
+              "source_revision": "f3bd45fb0d219929c9415b734dfeb9ef0cb6a5b8"
+            }
+          ],
+          "distinct_attempted": 0,
+          "effective_corrected": 0,
+          "effective_original": 44,
+          "effective_unresolved": 0,
+          "model": "gpt-6.1-terra",
+          "original_aborted": 0,
+          "original_excluded": 0,
+          "original_scored": 44,
+          "technical_selected": 0,
+          "terminal_attempts": 0,
+          "total_attempts": 0
+        },
+        {
+          "attempt_groups": [
+            {
+              "basis": "admitted-attempt-contract",
+              "count": 35,
+              "phase": "correction",
+              "registry_mapping_sha256": "17c29ef901b74570bbd7ffb21225e38ed3f3310dcbd1a5cca2896c3b08d38492",
+              "source_revision": "989c22d9c8342df26eb78eb77f798c9b245abf6e"
+            },
+            {
+              "basis": "admitted-attempt-contract",
+              "count": 44,
+              "phase": "original",
+              "registry_mapping_sha256": "de93ace0f2632cc1019f523a63bced3ec265a2e028b0c4d620c38d21681f9d95",
+              "source_revision": "f3bd45fb0d219929c9415b734dfeb9ef0cb6a5b8"
+            }
+          ],
+          "distinct_attempted": 31,
+          "effective_corrected": 31,
+          "effective_original": 13,
+          "effective_unresolved": 0,
+          "model": "claude-haiku-5-5",
+          "original_aborted": 0,
+          "original_excluded": 31,
+          "original_scored": 13,
+          "technical_selected": 31,
+          "terminal_attempts": 35,
+          "total_attempts": 35
+        },
+        {
+          "attempt_groups": [
+            {
+              "basis": "admitted-attempt-contract",
+              "count": 18,
+              "phase": "correction",
+              "registry_mapping_sha256": "1202bb6c39099ba0920e740b97f87058ac85b686001e62eead6af646b699e7cf",
+              "source_revision": "989c22d9c8342df26eb78eb77f798c9b245abf6e"
+            },
+            {
+              "basis": "admitted-attempt-contract",
+              "count": 2,
+              "phase": "correction",
+              "registry_mapping_sha256": "1202bb6c39099ba0920e740b97f87058ac85b686001e62eead6af646b699e7cf",
+              "source_revision": "f3bd45fb0d219929c9415b734dfeb9ef0cb6a5b8"
+            },
+            {
+              "basis": "admitted-attempt-contract",
+              "count": 44,
+              "phase": "original",
+              "registry_mapping_sha256": "1202bb6c39099ba0920e740b97f87058ac85b686001e62eead6af646b699e7cf",
+              "source_revision": "f3bd45fb0d219929c9415b734dfeb9ef0cb6a5b8"
+            }
+          ],
+          "distinct_attempted": 20,
+          "effective_corrected": 0,
+          "effective_original": 24,
+          "effective_unresolved": 20,
+          "model": "mistral-large-4",
+          "original_aborted": 0,
+          "original_excluded": 20,
+          "original_scored": 24,
+          "technical_selected": 20,
+          "terminal_attempts": 20,
+          "total_attempts": 20
+        },
+        {
+          "attempt_groups": [
+            {
+              "basis": "admitted-attempt-contract",
+              "count": 29,
+              "phase": "correction",
+              "registry_mapping_sha256": "db856d6a0550702c7b9874f03e6ba1c2d4b0959dc7cc0e818d3a869f63adef67",
+              "source_revision": "f3bd45fb0d219929c9415b734dfeb9ef0cb6a5b8"
+            },
+            {
+              "basis": "admitted-attempt-contract",
+              "count": 44,
+              "phase": "original",
+              "registry_mapping_sha256": "db856d6a0550702c7b9874f03e6ba1c2d4b0959dc7cc0e818d3a869f63adef67",
+              "source_revision": "f3bd45fb0d219929c9415b734dfeb9ef0cb6a5b8"
+            }
+          ],
+          "distinct_attempted": 29,
+          "effective_corrected": 0,
+          "effective_original": 15,
+          "effective_unresolved": 29,
+          "model": "grok-4.7",
+          "original_aborted": 0,
+          "original_excluded": 29,
+          "original_scored": 15,
+          "technical_selected": 29,
+          "terminal_attempts": 29,
+          "total_attempts": 29
+        },
+        {
+          "attempt_groups": [
+            {
+              "basis": "admitted-attempt-contract",
+              "count": 15,
+              "phase": "correction",
+              "registry_mapping_sha256": "710024a6798780eff7c7e2c5f9551043067e319cac00f6dcb6fd13ff39415255",
+              "source_revision": "989c22d9c8342df26eb78eb77f798c9b245abf6e"
+            },
+            {
+              "basis": "admitted-attempt-contract",
+              "count": 1,
+              "phase": "correction",
+              "registry_mapping_sha256": "131b62f069ee766e4c7f720f2136055aaea2cc31de2824a64287031c7ec5ed9c",
+              "source_revision": "f3bd45fb0d219929c9415b734dfeb9ef0cb6a5b8"
+            },
+            {
+              "basis": "admitted-attempt-contract",
+              "count": 44,
+              "phase": "original",
+              "registry_mapping_sha256": "131b62f069ee766e4c7f720f2136055aaea2cc31de2824a64287031c7ec5ed9c",
+              "source_revision": "f3bd45fb0d219929c9415b734dfeb9ef0cb6a5b8"
+            }
+          ],
+          "distinct_attempted": 16,
+          "effective_corrected": 8,
+          "effective_original": 28,
+          "effective_unresolved": 8,
+          "model": "GLM-5.3",
+          "original_aborted": 4,
+          "original_excluded": 12,
+          "original_scored": 28,
+          "technical_selected": 16,
+          "terminal_attempts": 16,
+          "total_attempts": 16
+        },
+        {
+          "attempt_groups": [
+            {
+              "basis": "admitted-attempt-contract",
+              "count": 6,
+              "phase": "correction",
+              "registry_mapping_sha256": "1e14f12022400705096ab295b66433f7f7c856faa723c0c386ffb89a04333697",
+              "source_revision": "989c22d9c8342df26eb78eb77f798c9b245abf6e"
+            },
+            {
+              "basis": "admitted-attempt-contract",
+              "count": 44,
+              "phase": "original",
+              "registry_mapping_sha256": "d6dbbfa4f96504b27bcfe74be1d8001343802b827e9d312a3821e4dc5ae1613c",
+              "source_revision": "f3bd45fb0d219929c9415b734dfeb9ef0cb6a5b8"
+            }
+          ],
+          "distinct_attempted": 6,
+          "effective_corrected": 6,
+          "effective_original": 38,
+          "effective_unresolved": 0,
+          "model": "moonshotai/Kimi-K3",
+          "original_aborted": 0,
+          "original_excluded": 6,
+          "original_scored": 38,
+          "technical_selected": 6,
+          "terminal_attempts": 6,
+          "total_attempts": 6
+        }
+      ],
+      "original_source_revision": "f3bd45fb0d219929c9415b734dfeb9ef0cb6a5b8"
+    },
+    "schema_version": 2,
+    "series": "2026-10-29 owner-run selected six",
+    "source_revision": "989c22d9c8342df26eb78eb77f798c9b245abf6e"
+  }
+}

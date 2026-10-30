@@ -91,7 +91,7 @@ from tests.openai_transport import (
 #: The contract's own name, written out rather than imported: it is inside
 #: ``configuration_id``, so an identifier asserted against itself would follow
 #: any rename and prove nothing about the run identity a reader compares.
-EXTENSIONS_CONTRACT = "openai_response_server_extensions_v3"
+EXTENSIONS_CONTRACT = "openai_response_server_extensions_v4"
 
 #: The name the superseded reading of the same field set carried. ``v1``
 #: transcribed these names and types and then made every one of them optional
@@ -107,7 +107,7 @@ SUPERSEDED_EXTENSIONS_CONTRACT = "openai_response_server_extensions_v1"
 #: settings is asserted against a SHA-256 over its canonical bytes, so a silent
 #: widening of the accepted contract fails here rather than in production.
 EXPECTED_SCHEMA: dict[str, Any] = {
-    "access_programs": "null",
+    "access_programs": "null_or_cyber_access",
     "billing": {"payer": "bounded_text"},
     "frequency_penalty": "penalty_number",
     "presence_penalty": "penalty_number",
