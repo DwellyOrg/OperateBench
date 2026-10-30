@@ -323,7 +323,7 @@ def test_actual_aggregate_matches_original_rates_and_common_list() -> None:
     means_path = "docs/studies/2026-10-model-averages.json"
     packet_bytes = (ROOT / packet_path).read_bytes()
     assert sha256(packet_bytes).hexdigest() == (
-        "271070a082cbf3b868d61e0501203295d7cbaa364e0ac15f8fc98a268e97ca5e"
+        "a5032145578776f88e32d6235849dfb2243afefc4992827c4344bcc34817e432"
     )
     for path in (packet_path, means_path):
         assert (
@@ -344,11 +344,11 @@ def test_actual_aggregate_matches_original_rates_and_common_list() -> None:
     assert provenance["sha256"] == sha256(packet_bytes).hexdigest()
     expected = {
         "gpt-6.1-terra": (44, 44, 38, 0, 0, "none", "responses"),
-        "claude-haiku-5-5": (13, 0, 0, 31, 0, "adaptive-low", "messages"),
+        "claude-haiku-5-5": (44, 0, 0, 0, 0, "adaptive-low", "messages"),
         "mistral-large-4": (24, 0, 0, 20, 0, "none", "native-chat"),
         "grok-4.7": (15, 15, 5, 29, 0, "low", "responses"),
-        "GLM-5.3": (28, 25, 5, 12, 4, "low", "http"),
-        "moonshotai/Kimi-K3": (38, 16, 0, 6, 0, "none", "http"),
+        "GLM-5.3": (36, 32, 6, 8, 0, "low", "http"),
+        "moonshotai/Kimi-K3": (44, 19, 0, 0, 0, "none", "http"),
     }
     with (ROOT / "docs/studies/2026-10-models.csv").open() as stream:
         original = list(csv.DictReader(stream))
@@ -440,9 +440,9 @@ def test_actual_aggregate_matches_original_rates_and_common_list() -> None:
             )
             amount = high.quantize(Decimal(".01"), rounding=rounding)
             assert cells[3] == f"${amount:.2f}"
-    assert sum(m["scored"] for m in packet["models"]) == 162
-    assert sum(m["excluded"] for m in packet["models"]) == 98
-    assert sum(m["aborted"] for m in packet["models"]) == 4
+    assert sum(m["scored"] for m in packet["models"]) == 207
+    assert sum(m["excluded"] for m in packet["models"]) == 57
+    assert sum(m["aborted"] for m in packet["models"]) == 0
 
 
 def test_seven_historical_study_artifacts_remain_byte_exact() -> None:

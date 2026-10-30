@@ -961,10 +961,10 @@ def _hf_provenance_spans(text: str, relative: str | None) -> list[tuple[int, int
 # Parent approval must pin the complete final UTF-8 artifacts before activation.
 PUBLIC_AGGREGATE_SHA256: dict[str, str | None] = {
     "docs/studies/2026-10-selected-six.json": (
-        "271070a082cbf3b868d61e0501203295d7cbaa364e0ac15f8fc98a268e97ca5e"
+        "a5032145578776f88e32d6235849dfb2243afefc4992827c4344bcc34817e432"
     ),
     "docs/studies/2026-10-model-averages.json": (
-        "a128d07faa6bbb7591d0bea0a0cc257e1f11e5a66a3764b814b81bff5613f50b"
+        "af31cc190eac3adee1aea88ea74f360d255604624f2c98728318943b5212cc0a"
     ),
 }
 

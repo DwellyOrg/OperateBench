@@ -23,14 +23,14 @@
       "assigned": 44,
       "cost_usd": null,
       "endpoint": "messages",
-      "excluded": 31,
+      "excluded": 0,
       "goal_completed": 0,
       "model": "claude-haiku-5-5",
       "observation_count": 1,
       "provider": "anthropic",
       "reasoning": "adaptive-low",
       "reliable": 0,
-      "scored": 13,
+      "scored": 44,
       "wire_model": "claude-haiku-5-5"
     },
     {
@@ -64,18 +64,18 @@
       "wire_model": "grok-4.7"
     },
     {
-      "aborted": 4,
+      "aborted": 0,
       "assigned": 44,
       "cost_usd": null,
       "endpoint": "http",
-      "excluded": 12,
-      "goal_completed": 25,
+      "excluded": 8,
+      "goal_completed": 32,
       "model": "GLM-5.3",
       "observation_count": 1,
       "provider": "river",
       "reasoning": "low",
-      "reliable": 5,
-      "scored": 28,
+      "reliable": 6,
+      "scored": 36,
       "wire_model": "GLM-5.3"
     },
     {
@@ -83,18 +83,205 @@
       "assigned": 44,
       "cost_usd": null,
       "endpoint": "http",
-      "excluded": 6,
-      "goal_completed": 16,
+      "excluded": 0,
+      "goal_completed": 19,
       "model": "moonshotai/Kimi-K3",
       "observation_count": 1,
       "provider": "river",
       "reasoning": "none",
       "reliable": 0,
-      "scored": 38,
+      "scored": 44,
       "wire_model": "moonshotai/Kimi-K3"
     }
   ],
-  "schema_version": 1,
+  "provenance": {
+    "correction_source_revision": "989c22d9c8342df26eb78eb77f798c9b245abf6e",
+    "models": [
+      {
+        "attempt_groups": [
+          {
+            "basis": "admitted-attempt-contract",
+            "count": 44,
+            "phase": "original",
+            "registry_mapping_sha256": "f6b4984dade59dec48fc5dbbeab500b235443a71cc1d1130d4efb37b07e74292",
+            "source_revision": "f3bd45fb0d219929c9415b734dfeb9ef0cb6a5b8"
+          }
+        ],
+        "distinct_attempted": 0,
+        "effective_corrected": 0,
+        "effective_original": 44,
+        "effective_unresolved": 0,
+        "model": "gpt-6.1-terra",
+        "original_aborted": 0,
+        "original_excluded": 0,
+        "original_scored": 44,
+        "technical_selected": 0,
+        "terminal_attempts": 0,
+        "total_attempts": 0
+      },
+      {
+        "attempt_groups": [
+          {
+            "basis": "admitted-attempt-contract",
+            "count": 35,
+            "phase": "correction",
+            "registry_mapping_sha256": "17c29ef901b74570bbd7ffb21225e38ed3f3310dcbd1a5cca2896c3b08d38492",
+            "source_revision": "989c22d9c8342df26eb78eb77f798c9b245abf6e"
+          },
+          {
+            "basis": "admitted-attempt-contract",
+            "count": 44,
+            "phase": "original",
+            "registry_mapping_sha256": "de93ace0f2632cc1019f523a63bced3ec265a2e028b0c4d620c38d21681f9d95",
+            "source_revision": "f3bd45fb0d219929c9415b734dfeb9ef0cb6a5b8"
+          }
+        ],
+        "distinct_attempted": 31,
+        "effective_corrected": 31,
+        "effective_original": 13,
+        "effective_unresolved": 0,
+        "model": "claude-haiku-5-5",
+        "original_aborted": 0,
+        "original_excluded": 31,
+        "original_scored": 13,
+        "technical_selected": 31,
+        "terminal_attempts": 35,
+        "total_attempts": 35
+      },
+      {
+        "attempt_groups": [
+          {
+            "basis": "admitted-attempt-contract",
+            "count": 18,
+            "phase": "correction",
+            "registry_mapping_sha256": "1202bb6c39099ba0920e740b97f87058ac85b686001e62eead6af646b699e7cf",
+            "source_revision": "989c22d9c8342df26eb78eb77f798c9b245abf6e"
+          },
+          {
+            "basis": "admitted-attempt-contract",
+            "count": 2,
+            "phase": "correction",
+            "registry_mapping_sha256": "1202bb6c39099ba0920e740b97f87058ac85b686001e62eead6af646b699e7cf",
+            "source_revision": "f3bd45fb0d219929c9415b734dfeb9ef0cb6a5b8"
+          },
+          {
+            "basis": "admitted-attempt-contract",
+            "count": 44,
+            "phase": "original",
+            "registry_mapping_sha256": "1202bb6c39099ba0920e740b97f87058ac85b686001e62eead6af646b699e7cf",
+            "source_revision": "f3bd45fb0d219929c9415b734dfeb9ef0cb6a5b8"
+          }
+        ],
+        "distinct_attempted": 20,
+        "effective_corrected": 0,
+        "effective_original": 24,
+        "effective_unresolved": 20,
+        "model": "mistral-large-4",
+        "original_aborted": 0,
+        "original_excluded": 20,
+        "original_scored": 24,
+        "technical_selected": 20,
+        "terminal_attempts": 20,
+        "total_attempts": 20
+      },
+      {
+        "attempt_groups": [
+          {
+            "basis": "admitted-attempt-contract",
+            "count": 29,
+            "phase": "correction",
+            "registry_mapping_sha256": "db856d6a0550702c7b9874f03e6ba1c2d4b0959dc7cc0e818d3a869f63adef67",
+            "source_revision": "f3bd45fb0d219929c9415b734dfeb9ef0cb6a5b8"
+          },
+          {
+            "basis": "admitted-attempt-contract",
+            "count": 44,
+            "phase": "original",
+            "registry_mapping_sha256": "db856d6a0550702c7b9874f03e6ba1c2d4b0959dc7cc0e818d3a869f63adef67",
+            "source_revision": "f3bd45fb0d219929c9415b734dfeb9ef0cb6a5b8"
+          }
+        ],
+        "distinct_attempted": 29,
+        "effective_corrected": 0,
+        "effective_original": 15,
+        "effective_unresolved": 29,
+        "model": "grok-4.7",
+        "original_aborted": 0,
+        "original_excluded": 29,
+        "original_scored": 15,
+        "technical_selected": 29,
+        "terminal_attempts": 29,
+        "total_attempts": 29
+      },
+      {
+        "attempt_groups": [
+          {
+            "basis": "admitted-attempt-contract",
+            "count": 15,
+            "phase": "correction",
+            "registry_mapping_sha256": "710024a6798780eff7c7e2c5f9551043067e319cac00f6dcb6fd13ff39415255",
+            "source_revision": "989c22d9c8342df26eb78eb77f798c9b245abf6e"
+          },
+          {
+            "basis": "admitted-attempt-contract",
+            "count": 1,
+            "phase": "correction",
+            "registry_mapping_sha256": "131b62f069ee766e4c7f720f2136055aaea2cc31de2824a64287031c7ec5ed9c",
+            "source_revision": "f3bd45fb0d219929c9415b734dfeb9ef0cb6a5b8"
+          },
+          {
+            "basis": "admitted-attempt-contract",
+            "count": 44,
+            "phase": "original",
+            "registry_mapping_sha256": "131b62f069ee766e4c7f720f2136055aaea2cc31de2824a64287031c7ec5ed9c",
+            "source_revision": "f3bd45fb0d219929c9415b734dfeb9ef0cb6a5b8"
+          }
+        ],
+        "distinct_attempted": 16,
+        "effective_corrected": 8,
+        "effective_original": 28,
+        "effective_unresolved": 8,
+        "model": "GLM-5.3",
+        "original_aborted": 4,
+        "original_excluded": 12,
+        "original_scored": 28,
+        "technical_selected": 16,
+        "terminal_attempts": 16,
+        "total_attempts": 16
+      },
+      {
+        "attempt_groups": [
+          {
+            "basis": "admitted-attempt-contract",
+            "count": 6,
+            "phase": "correction",
+            "registry_mapping_sha256": "1e14f12022400705096ab295b66433f7f7c856faa723c0c386ffb89a04333697",
+            "source_revision": "989c22d9c8342df26eb78eb77f798c9b245abf6e"
+          },
+          {
+            "basis": "admitted-attempt-contract",
+            "count": 44,
+            "phase": "original",
+            "registry_mapping_sha256": "d6dbbfa4f96504b27bcfe74be1d8001343802b827e9d312a3821e4dc5ae1613c",
+            "source_revision": "f3bd45fb0d219929c9415b734dfeb9ef0cb6a5b8"
+          }
+        ],
+        "distinct_attempted": 6,
+        "effective_corrected": 6,
+        "effective_original": 38,
+        "effective_unresolved": 0,
+        "model": "moonshotai/Kimi-K3",
+        "original_aborted": 0,
+        "original_excluded": 6,
+        "original_scored": 38,
+        "technical_selected": 6,
+        "terminal_attempts": 6,
+        "total_attempts": 6
+      }
+    ],
+    "original_source_revision": "f3bd45fb0d219929c9415b734dfeb9ef0cb6a5b8"
+  },
+  "schema_version": 2,
   "series": "2026-10-29 owner-run selected six",
-  "source_revision": "f3bd45fb0d219929c9415b734dfeb9ef0cb6a5b8"
+  "source_revision": "989c22d9c8342df26eb78eb77f798c9b245abf6e"
 }
