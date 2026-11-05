@@ -81,6 +81,12 @@ def test_sonnet_sdk_transcript_and_accounting(tmp_path, monkeypatch):
 
     monkeypatch.setattr(t, "send", capture)
     try:
+        assert network.transports[0].calls == []
+        assert t.http.timeout.connect == t.settings["connection_timeout_seconds"] == 10
+        assert t.http.timeout.pool == t.settings["pool_timeout_seconds"] == 10
+        assert (
+            t.http.timeout.read is t.http.timeout.write is t.settings["timeout"] is None
+        )
         record = run_trial(trial, t, output=tmp_path / "trial")
         assert record["evaluation"]["reliable"]
         assert t.settings["native_continuation"] is False

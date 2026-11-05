@@ -416,6 +416,8 @@ class HTTPCampaignTransport:
             )
         )
         self.client: Any
+        if self.november:
+            self.http.timeout = (10, None, None, 10)
         if provider in ("openai", "meta", "xai", "river_http"):
             self.client = explicit_sdk_client(
                 openai.OpenAI,
