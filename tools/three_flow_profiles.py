@@ -252,8 +252,8 @@ def registry(
     if roster_profile == NOVEMBER_PROFILE:
         if mode_profile != "off-or-minimum-v1":
             raise ValueError("November requires qualified minimum mode")
-        if transport_policy not in ("legacy-v1", "paced-safe-errors-v1"):
-            raise ValueError("unknown transport policy")
+        if transport_policy != "legacy-v1":
+            raise ValueError("November requires legacy-v1 transport policy")
         return [
             {
                 "provider": p,

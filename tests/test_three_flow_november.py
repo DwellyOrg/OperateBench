@@ -29,6 +29,27 @@ def test_november_finite_roster_and_mapping():
     assert preflight(PROFILE)["global_cap_usd"] is None
 
 
+@pytest.mark.parametrize("transport_policy", [None, "legacy-v1"])
+def test_november_accepts_legacy_transport_policy(transport_policy):
+    kwargs = {} if transport_policy is None else {"transport_policy": transport_policy}
+    assert registry(
+        roster_profile=PROFILE, mode_profile="off-or-minimum-v1", **kwargs
+    ) == registry(
+        roster_profile=PROFILE,
+        mode_profile="off-or-minimum-v1",
+        transport_policy="legacy-v1",
+    )
+
+
+def test_november_rejects_paced_transport_policy():
+    with pytest.raises(ValueError, match="November requires legacy-v1 transport policy"):
+        registry(
+            roster_profile=PROFILE,
+            mode_profile="off-or-minimum-v1",
+            transport_policy="paced-safe-errors-v1",
+        )
+
+
 def assert_projection(call, request):
     from operatebench.agents import anthropic_messages as aa
 
@@ -213,7 +234,10 @@ def test_november_published_profile_closed():
         )
 
 
-def test_november_fresh_source_bound_admission_and_one_shot(tmp_path, monkeypatch):
+@pytest.mark.parametrize("transport_policy", [None, "paced-safe-errors-v1"])
+def test_november_fresh_source_bound_admission_and_one_shot(
+    tmp_path, monkeypatch, transport_policy
+):
     from tests.test_selected_six_bounds import mistral_profile
     from tests.test_selected_six_http import Network
     from tests.test_three_flow_live import cli, write
@@ -255,6 +279,17 @@ def test_november_fresh_source_bound_admission_and_one_shot(tmp_path, monkeypatc
         cap_usd=None,
         limit_policy={**consent(), "source_sha": sha},
     )
+    if transport_policy is not None:
+        a["transport_policy"] = transport_policy
+        with pytest.raises(
+            ValueError, match="November requires legacy-v1 transport policy"
+        ):
+            validate(a, sha, synthetic=True)
+        write(path, a)
+        network = Network()
+        assert cli(path, a, network) == 2
+        assert network.transports == []
+        return
     assert validate(a, sha, synthetic=True) == a
     with pytest.raises(ValueError):
         validate(a, "e" * 40, synthetic=True)
