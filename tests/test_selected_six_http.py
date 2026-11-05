@@ -165,7 +165,15 @@ class Network:
         return mock
 
 
-def fixture(tmp_path, provider, model, fault=None, *, river_pacer=None):
+def fixture(
+    tmp_path,
+    provider,
+    model,
+    fault=None,
+    *,
+    river_pacer=None,
+    roster_profile=SELECTED_SIX_PROFILE,
+):
     from tools.three_flow_admission import VARIABLES
     from tools.three_flow_budget import CampaignBudget
     from tools.three_flow_campaign import assignments
@@ -186,12 +194,12 @@ def fixture(tmp_path, provider, model, fault=None, *, river_pacer=None):
         campaign_id="selected-test",
         cap=None,
         limit_policy=policy,
-        roster_profile=SELECTED_SIX_PROFILE,
+        roster_profile=roster_profile,
         create=True,
     )
     slot = next(
         s
-        for s in assignments("selected-test", SELECTED_SIX_PROFILE)
+        for s in assignments("selected-test", roster_profile)
         if s["model"] == model and s["flow"] == "commerce"
     )
     p = {
