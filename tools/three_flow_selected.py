@@ -10,7 +10,12 @@ from typing import Any
 
 from operatebench.agents.transport import ModelResponse, ToolCall
 from operatebench.providers.wire import WireResponse, wire_invalid
-from tools.three_flow_profiles import ENDPOINTS, SELECTED_SIX
+from tools.three_flow_profiles import (
+    ENDPOINTS,
+    NOVEMBER_MODELS,
+    NOVEMBER_PROFILE,
+    SELECTED_SIX,
+)
 
 
 def mode_fields(provider: str, model: str) -> dict[str, Any]:
@@ -326,12 +331,20 @@ ACCOUNTING_POLICY = {
 }
 
 
-def validate_published_profile(p: Any, provider: str, model: str | None) -> None:
+def validate_published_profile(
+    p: Any,
+    provider: str,
+    model: str | None,
+    *,
+    roster_profile: str = "selected-six-http-v1",
+) -> None:
     import re
     from decimal import Decimal
 
     from tools.three_flow_admission import GUARANTEES, digest
 
+    november = roster_profile == NOVEMBER_PROFILE
+    roster = NOVEMBER_MODELS if november else SELECTED_SIX
     fields = {
         "endpoint",
         "input_max",
@@ -351,21 +364,22 @@ def validate_published_profile(p: Any, provider: str, model: str | None) -> None
     }
     if provider == "river_http":
         fields.add("owner_output_cap_tokens")
-    if (
-        not isinstance(p, dict)
-        or set(p) != fields
-        or (provider, model) not in SELECTED_SIX
-    ):
+    if not isinstance(p, dict) or set(p) != fields or (provider, model) not in roster:
         raise ValueError("closed selected-six published profile required")
     if (
-        p["pricing_policy"] != PRICING_POLICY
+        p["pricing_policy"]
+        != ("november-published-token-envelope-v1" if november else PRICING_POLICY)
         or p["accounting_policy"] != ACCOUNTING_POLICY
         or p["guarantees"] != dict.fromkeys(GUARANTEES, False)
     ):
         raise ValueError("selected-six estimate cannot assert billing guarantees")
-    validate_selected_profile(p, provider, model)
+    if november:
+        if p.get("execution_policy") != "three-flow-optional-limits-v1":
+            raise ValueError("November requires null monetary policy")
+    else:
+        validate_selected_profile(p, provider, model)
     assert model is not None
-    context, input_max, output = BOUNDS[model]
+    context, input_max, output = (1000000, None, 128000) if november else BOUNDS[model]
     if (
         (p["context_max"], p["input_max"], p["output_max"])
         != (context, input_max, output)
@@ -373,7 +387,7 @@ def validate_published_profile(p: Any, provider: str, model: str | None) -> None
         or p["endpoint"] != ENDPOINTS[provider]
     ):
         raise ValueError("selected-six published route/bounds differ")
-    rates = TARIFFS[model]
+    rates = ("2", "0.10", "4", "10") if november else TARIFFS[model]
     if (
         p["input_usd_per_million"]
         != str(max(Decimal(v) for v in rates[:3] if v is not None))

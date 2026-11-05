@@ -39,6 +39,7 @@ from tools.three_flow_profiles import (
 from tools.three_flow_profiles import (
     GEMINI_ROSTER_PROFILE,
     META_ROSTER_PROFILE,
+    NOVEMBER_PROFILE,
     SELECTED_SIX_PROFILE,
 )
 from tools.three_flow_profiles import (
@@ -83,7 +84,8 @@ def preflight(roster_profile: str = "legacy-v1") -> dict[str, Any]:
         "source_digest": source_binding(),
         "source_commit": source_commit(),
         "global_cap_usd": None
-        if roster_profile in (GEMINI_ROSTER_PROFILE, SELECTED_SIX_PROFILE)
+        if roster_profile
+        in (GEMINI_ROSTER_PROFILE, SELECTED_SIX_PROFILE, NOVEMBER_PROFILE)
         else "990"
         if roster_profile == META_ROSTER_PROFILE
         else "1000",

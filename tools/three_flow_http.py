@@ -58,6 +58,7 @@ from tools.three_flow_profiles import (
 )
 from tools.three_flow_profiles import (
     MODE_PROFILES,
+    NOVEMBER_MODELS,
     SELECTED_SIX,
     CampaignSelection,
     http_mode_fields,
@@ -348,6 +349,7 @@ class HTTPCampaignTransport:
             raise ValueError("new models require explicit off-or-minimum profile")
         if not isinstance(api_key, str) or not api_key:
             raise ValueError("HTTP provider requires a nonempty string API key")
+        self.november = (provider, model) in NOVEMBER_MODELS
         self.selected_six = selected
         self.mode_profile = mode_profile
         self.mode_fields = (
@@ -385,6 +387,8 @@ class HTTPCampaignTransport:
                 self.request_mapping = (
                     "three-flow-anthropic-selected-six-single-decision-v2"
                 )
+        if self.november:
+            self.request_mapping = "three-flow-anthropic-november-stateless-v1"
         self.guard, self.max_output_tokens = guard, max_output_tokens
         self.wire = BudgetWire(inner, guard, ENDPOINTS[provider], operation=selection.api)
         self.wire.sensitive_response = api_key.encode()
@@ -412,6 +416,8 @@ class HTTPCampaignTransport:
             )
         )
         self.client: Any
+        if self.november:
+            self.http.timeout = (10, None, None, 10)
         if provider in ("openai", "meta", "xai", "river_http"):
             self.client = explicit_sdk_client(
                 openai.OpenAI,
@@ -564,6 +570,14 @@ class HTTPCampaignTransport:
                 self.settings["reasoning_mode"] = (
                     "MINIMUM" if model == "GLM-5.3" else "OFF"
                 )
+        if self.november:
+            self.settings.update(
+                tool_choice={"type": "auto", "disable_parallel_tool_use": True},
+                native_continuation=False,
+                no_native_continuation=True,
+                connection_timeout_seconds=10,
+                pool_timeout_seconds=10,
+            )
         self.last_turn: dict[str, Any] | None = None
         self.flight = SingleFlight(adapter="three-flow HTTP")
 
@@ -618,19 +632,23 @@ class HTTPCampaignTransport:
                 **self.mode_fields,
             }
         if self.provider == "anthropic":
+            messages: list[dict[str, Any]] = [{"role": "user", "content": text}]
+            system = aa.request_instructions(request)
             return {
                 "model": self.model,
                 "max_tokens": request.max_output_tokens,
-                "system": aa.request_instructions(request),
+                "system": system,
                 "tools": aa.anthropic_outcome_tools(),
                 "tool_choice": (
                     {"type": "any", "disable_parallel_tool_use": True}
                     if self.selected_six
+                    else {"type": "auto", "disable_parallel_tool_use": True}
+                    if self.november
                     else {"type": "auto"}
                 ),
                 "thinking": {"type": "adaptive"},
                 "output_config": {"effort": "high"},
-                "messages": [{"role": "user", "content": text}],
+                "messages": messages,
                 **self.mode_fields,
             }
         payload = {
@@ -694,17 +712,19 @@ class HTTPCampaignTransport:
         if self.provider == "anthropic":
             raw = self.client.messages.with_raw_response.create(
                 **ap.anthropic_sdk_kwargs(payload),
-                timeout=self.http.timeout if self.selected_six else self.network_timeout,
+                timeout=self.http.timeout
+                if self.selected_six or self.november
+                else self.network_timeout,
             )
             wire = WireResponse(raw.text(), raw.parse, kind="Fable campaign")
             # Validate hidden reasoning blocks, then use the unchanged legacy
             # validator on the semantic text/tool projection. Full raw retained.
-            if self.selected_six:
+            if self.selected_six or self.november:
                 from tools.three_flow_selected import check_anthropic_reading
 
                 check_anthropic_reading(wire)
             body = dict(wire.wire)
-            if self.selected_six:
+            if self.selected_six or self.november:
                 body["usage"] = dict(body["usage"])
                 body["usage"].pop("speed", None)
             content = body.get("content")

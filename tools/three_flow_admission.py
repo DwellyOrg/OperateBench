@@ -30,6 +30,7 @@ from tools.three_flow_profiles import (
     GEMINI_ROSTER_PROFILE,
     GEMINI_UNCAPPED_PROFILE,
     META_ROSTER_PROFILE,
+    NOVEMBER_PROFILE,
     SELECTED_SIX_PROFILE,
 )
 from tools.three_flow_profiles import minimum_effort as minimum_effort
@@ -114,7 +115,7 @@ def proposal(sha: str, roster_profile: str = "legacy-v1") -> dict[str, Any]:
         ],
     }
 
-    if roster_profile == SELECTED_SIX_PROFILE:
+    if roster_profile in (SELECTED_SIX_PROFILE, NOVEMBER_PROFILE):
         result["cap_usd"] = None
     if roster_profile == GEMINI_ROSTER_PROFILE:
         result["cap_usd"] = None
@@ -187,7 +188,12 @@ def _validate(
         fields.add("roster_profile")
         if (
             admission["roster_profile"]
-            not in (LATEST_ROSTER_PROFILE, META_ROSTER_PROFILE, SELECTED_SIX_PROFILE)
+            not in (
+                LATEST_ROSTER_PROFILE,
+                META_ROSTER_PROFILE,
+                SELECTED_SIX_PROFILE,
+                NOVEMBER_PROFILE,
+            )
             or admission.get("mode_profile") != "off-or-minimum-v1"
         ):
             raise ValueError("explicit latest roster requires off-or-minimum profile")
@@ -484,7 +490,7 @@ def validate_historical_identity(a: dict[str, Any]) -> None:
     # selected_registry has always omitted output_limit. Select the recorded
     # schema by the original roster; keep every other historical schema closed.
     string_fields = {"endpoint", "mapping", "settings_source"}
-    if a.get("roster_profile") != SELECTED_SIX_PROFILE:
+    if a.get("roster_profile") not in (SELECTED_SIX_PROFILE, NOVEMBER_PROFILE):
         string_fields.add("output_limit")
     fields = string_fields | {
         "provider",
@@ -752,10 +758,10 @@ def validate_profile(
     model: str | None = None,
     roster_profile: str = "legacy-v1",
 ) -> None:
-    if roster_profile == SELECTED_SIX_PROFILE:
+    if roster_profile in (SELECTED_SIX_PROFILE, NOVEMBER_PROFILE):
         from tools.three_flow_selected import validate_published_profile
 
-        validate_published_profile(p, provider, model)
+        validate_published_profile(p, provider, model, roster_profile=roster_profile)
         return
     if provider == "gemini":
         from tools.three_flow_gemini import MODELS as gemini_models

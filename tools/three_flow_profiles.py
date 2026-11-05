@@ -66,6 +66,9 @@ LATEST_ROSTER_PROFILE = "latest-http-v1"
 EXCLUDED_FUTURE_MODEL = "Qwen/Qwen3.5-122B-A10B-FP8"
 
 
+NOVEMBER_PROFILE = "november-model-expansion-v1"
+NOVEMBER_MODELS = (("anthropic", "claude-sonnet-5-5"),)
+
 SELECTED_SIX_PROFILE = "selected-six-http-v1"
 SELECTED_SIX = (
     ("openai", "gpt-6.1-terra"),
@@ -82,6 +85,8 @@ ENDPOINTS.update(
 
 
 def selected_roster(roster_profile: str = "legacy-v1") -> tuple[tuple[str, str], ...]:
+    if roster_profile == NOVEMBER_PROFILE:
+        return NOVEMBER_MODELS
     if roster_profile == SELECTED_SIX_PROFILE:
         return SELECTED_SIX
     if roster_profile == GEMINI_ROSTER_PROFILE:
@@ -134,7 +139,9 @@ def selection_for(
     provider: str, model: str, mode_profile: str
 ) -> CampaignSelection | None:
     """Resolve only existing valid cells; callers retain their validation order."""
-    if (provider, model) in SELECTED_SIX and mode_profile == "off-or-minimum-v1":
+    if mode_profile == "off-or-minimum-v1" and (
+        (provider, model) in SELECTED_SIX + NOVEMBER_MODELS
+    ):
         return CampaignSelection(
             provider,
             model,
@@ -173,6 +180,8 @@ def http_reasoning_mode(model: str) -> str:
 
 
 def http_mode_fields(provider: str, model: str, mode_profile: str) -> dict[str, Any]:
+    if (provider, model) in NOVEMBER_MODELS:
+        return {"thinking": {"type": "between_tools"}, "output_config": {"effort": "low"}}
     if (provider, model) in SELECTED_SIX:
         from tools.three_flow_selected import mode_fields
 
@@ -240,6 +249,28 @@ def registry(
     transport_policy: str = "legacy-v1",
     roster_profile: str = "legacy-v1",
 ) -> list[dict[str, Any]]:
+    if roster_profile == NOVEMBER_PROFILE:
+        if mode_profile != "off-or-minimum-v1":
+            raise ValueError("November requires qualified minimum mode")
+        if transport_policy != "legacy-v1":
+            raise ValueError("November requires legacy-v1 transport policy")
+        return [
+            {
+                "provider": p,
+                "model": m,
+                "endpoint": ENDPOINTS[p],
+                "mapping": "three-flow-anthropic-november-stateless-v1",
+                "request_settings": {
+                    **http_mode_fields(p, m, mode_profile),
+                    "tool_choice": {"type": "auto", "disable_parallel_tool_use": True},
+                    "no_native_continuation": True,
+                },
+                "settings_source": "tools/three_flow_http.py",
+                "retries": 0,
+                "admitted": False,
+            }
+            for p, m in NOVEMBER_MODELS
+        ]
     if roster_profile == SELECTED_SIX_PROFILE:
         if mode_profile != "off-or-minimum-v1":
             raise ValueError("selected six requires qualified minimum mode")
