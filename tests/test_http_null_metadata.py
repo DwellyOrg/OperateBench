@@ -109,6 +109,7 @@ def dispatch(provider, body):
         )
         transport = object.__new__(HTTPCampaignTransport)
         transport.selected_six = False
+        transport.november = False
         transport.provider = provider
         transport.model = MODELS[provider]
         transport.client = client
