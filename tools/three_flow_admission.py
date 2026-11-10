@@ -27,6 +27,7 @@ from tools.three_flow_campaign import (
 from tools.three_flow_meta import validate_meta_profile
 from tools.three_flow_profiles import (
     ENDPOINTS,
+    FABLE52_PROFILE,
     GEMINI_ROSTER_PROFILE,
     GEMINI_UNCAPPED_PROFILE,
     META_ROSTER_PROFILE,
@@ -115,7 +116,7 @@ def proposal(sha: str, roster_profile: str = "legacy-v1") -> dict[str, Any]:
         ],
     }
 
-    if roster_profile in (SELECTED_SIX_PROFILE, NOVEMBER_PROFILE):
+    if roster_profile in (SELECTED_SIX_PROFILE, NOVEMBER_PROFILE, FABLE52_PROFILE):
         result["cap_usd"] = None
     if roster_profile == GEMINI_ROSTER_PROFILE:
         result["cap_usd"] = None
@@ -193,6 +194,7 @@ def _validate(
                 META_ROSTER_PROFILE,
                 SELECTED_SIX_PROFILE,
                 NOVEMBER_PROFILE,
+                FABLE52_PROFILE,
             )
             or admission.get("mode_profile") != "off-or-minimum-v1"
         ):
@@ -490,7 +492,11 @@ def validate_historical_identity(a: dict[str, Any]) -> None:
     # selected_registry has always omitted output_limit. Select the recorded
     # schema by the original roster; keep every other historical schema closed.
     string_fields = {"endpoint", "mapping", "settings_source"}
-    if a.get("roster_profile") not in (SELECTED_SIX_PROFILE, NOVEMBER_PROFILE):
+    if a.get("roster_profile") not in (
+        SELECTED_SIX_PROFILE,
+        NOVEMBER_PROFILE,
+        FABLE52_PROFILE,
+    ):
         string_fields.add("output_limit")
     fields = string_fields | {
         "provider",
@@ -758,7 +764,7 @@ def validate_profile(
     model: str | None = None,
     roster_profile: str = "legacy-v1",
 ) -> None:
-    if roster_profile in (SELECTED_SIX_PROFILE, NOVEMBER_PROFILE):
+    if roster_profile in (SELECTED_SIX_PROFILE, NOVEMBER_PROFILE, FABLE52_PROFILE):
         from tools.three_flow_selected import validate_published_profile
 
         validate_published_profile(p, provider, model, roster_profile=roster_profile)

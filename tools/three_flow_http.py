@@ -54,9 +54,7 @@ from tools.three_flow_profiles import (
     ENDPOINTS as ENDPOINTS,
 )
 from tools.three_flow_profiles import (
-    LATEST_HTTP_MODELS as LATEST_HTTP_MODELS,
-)
-from tools.three_flow_profiles import (
+    FABLE52_MODELS,
     MODE_PROFILES,
     NOVEMBER_MODELS,
     SELECTED_SIX,
@@ -64,6 +62,9 @@ from tools.three_flow_profiles import (
     http_mode_fields,
     http_reasoning_mode,
     selection_for,
+)
+from tools.three_flow_profiles import (
+    LATEST_HTTP_MODELS as LATEST_HTTP_MODELS,
 )
 from tools.three_flow_profiles import (
     MODELS as MODELS,
@@ -387,8 +388,12 @@ class HTTPCampaignTransport:
                 self.request_mapping = (
                     "three-flow-anthropic-selected-six-single-decision-v2"
                 )
-        if self.november:
-            self.request_mapping = "three-flow-anthropic-november-stateless-v1"
+        if self.anthropic_stateless:
+            self.request_mapping = (
+                "three-flow-anthropic-fable52-stateless-v1"
+                if (provider, model) in FABLE52_MODELS
+                else "three-flow-anthropic-november-stateless-v1"
+            )
         self.guard, self.max_output_tokens = guard, max_output_tokens
         self.wire = BudgetWire(inner, guard, ENDPOINTS[provider], operation=selection.api)
         self.wire.sensitive_response = api_key.encode()
@@ -416,7 +421,7 @@ class HTTPCampaignTransport:
             )
         )
         self.client: Any
-        if self.november:
+        if self.anthropic_stateless:
             self.http.timeout = (10, None, None, 10)
         if provider in ("openai", "meta", "xai", "river_http"):
             self.client = explicit_sdk_client(
@@ -570,7 +575,7 @@ class HTTPCampaignTransport:
                 self.settings["reasoning_mode"] = (
                     "MINIMUM" if model == "GLM-5.3" else "OFF"
                 )
-        if self.november:
+        if self.anthropic_stateless:
             self.settings.update(
                 tool_choice={"type": "auto", "disable_parallel_tool_use": True},
                 native_continuation=False,
@@ -580,6 +585,10 @@ class HTTPCampaignTransport:
             )
         self.last_turn: dict[str, Any] | None = None
         self.flight = SingleFlight(adapter="three-flow HTTP")
+
+    @property
+    def anthropic_stateless(self) -> bool:
+        return self.november or (self.provider, self.model) in FABLE52_MODELS
 
     def prepare_request(self, request: ModelRequest) -> ModelRequest:
         if not getattr(self.guard, "diagnostic", False):
@@ -643,7 +652,7 @@ class HTTPCampaignTransport:
                     {"type": "any", "disable_parallel_tool_use": True}
                     if self.selected_six
                     else {"type": "auto", "disable_parallel_tool_use": True}
-                    if self.november
+                    if self.anthropic_stateless
                     else {"type": "auto"}
                 ),
                 "thinking": {"type": "adaptive"},
@@ -713,18 +722,18 @@ class HTTPCampaignTransport:
             raw = self.client.messages.with_raw_response.create(
                 **ap.anthropic_sdk_kwargs(payload),
                 timeout=self.http.timeout
-                if self.selected_six or self.november
+                if self.selected_six or self.anthropic_stateless
                 else self.network_timeout,
             )
             wire = WireResponse(raw.text(), raw.parse, kind="Fable campaign")
             # Validate hidden reasoning blocks, then use the unchanged legacy
             # validator on the semantic text/tool projection. Full raw retained.
-            if self.selected_six or self.november:
+            if self.selected_six or self.anthropic_stateless:
                 from tools.three_flow_selected import check_anthropic_reading
 
                 check_anthropic_reading(wire)
             body = dict(wire.wire)
-            if self.selected_six or self.november:
+            if self.selected_six or self.anthropic_stateless:
                 body["usage"] = dict(body["usage"])
                 body["usage"].pop("speed", None)
             content = body.get("content")
