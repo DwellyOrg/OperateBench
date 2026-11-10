@@ -68,6 +68,8 @@ EXCLUDED_FUTURE_MODEL = "Qwen/Qwen3.5-122B-A10B-FP8"
 
 NOVEMBER_PROFILE = "november-model-expansion-v1"
 NOVEMBER_MODELS = (("anthropic", "claude-sonnet-5-5"),)
+FABLE52_PROFILE = "anthropic-fable52-same44-v1"
+FABLE52_MODELS = (("anthropic", "claude-fable-5-2"),)
 
 SELECTED_SIX_PROFILE = "selected-six-http-v1"
 SELECTED_SIX = (
@@ -85,6 +87,8 @@ ENDPOINTS.update(
 
 
 def selected_roster(roster_profile: str = "legacy-v1") -> tuple[tuple[str, str], ...]:
+    if roster_profile == FABLE52_PROFILE:
+        return FABLE52_MODELS
     if roster_profile == NOVEMBER_PROFILE:
         return NOVEMBER_MODELS
     if roster_profile == SELECTED_SIX_PROFILE:
@@ -140,7 +144,7 @@ def selection_for(
 ) -> CampaignSelection | None:
     """Resolve only existing valid cells; callers retain their validation order."""
     if mode_profile == "off-or-minimum-v1" and (
-        (provider, model) in SELECTED_SIX + NOVEMBER_MODELS
+        (provider, model) in SELECTED_SIX + NOVEMBER_MODELS + FABLE52_MODELS
     ):
         return CampaignSelection(
             provider,
@@ -249,7 +253,8 @@ def registry(
     transport_policy: str = "legacy-v1",
     roster_profile: str = "legacy-v1",
 ) -> list[dict[str, Any]]:
-    if roster_profile == NOVEMBER_PROFILE:
+    if roster_profile in (NOVEMBER_PROFILE, FABLE52_PROFILE):
+        fable = roster_profile == FABLE52_PROFILE
         if mode_profile != "off-or-minimum-v1":
             raise ValueError("November requires qualified minimum mode")
         if transport_policy != "legacy-v1":
@@ -259,7 +264,11 @@ def registry(
                 "provider": p,
                 "model": m,
                 "endpoint": ENDPOINTS[p],
-                "mapping": "three-flow-anthropic-november-stateless-v1",
+                "mapping": (
+                    "three-flow-anthropic-fable52-stateless-v1"
+                    if fable
+                    else "three-flow-anthropic-november-stateless-v1"
+                ),
                 "request_settings": {
                     **http_mode_fields(p, m, mode_profile),
                     "tool_choice": {"type": "auto", "disable_parallel_tool_use": True},
@@ -269,7 +278,7 @@ def registry(
                 "retries": 0,
                 "admitted": False,
             }
-            for p, m in NOVEMBER_MODELS
+            for p, m in (FABLE52_MODELS if fable else NOVEMBER_MODELS)
         ]
     if roster_profile == SELECTED_SIX_PROFILE:
         if mode_profile != "off-or-minimum-v1":

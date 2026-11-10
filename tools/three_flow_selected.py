@@ -12,6 +12,8 @@ from operatebench.agents.transport import ModelResponse, ToolCall
 from operatebench.providers.wire import WireResponse, wire_invalid
 from tools.three_flow_profiles import (
     ENDPOINTS,
+    FABLE52_MODELS,
+    FABLE52_PROFILE,
     NOVEMBER_MODELS,
     NOVEMBER_PROFILE,
     SELECTED_SIX,
@@ -343,8 +345,9 @@ def validate_published_profile(
 
     from tools.three_flow_admission import GUARANTEES, digest
 
+    fable = roster_profile == FABLE52_PROFILE
     november = roster_profile == NOVEMBER_PROFILE
-    roster = NOVEMBER_MODELS if november else SELECTED_SIX
+    roster = FABLE52_MODELS if fable else NOVEMBER_MODELS if november else SELECTED_SIX
     fields = {
         "endpoint",
         "input_max",
@@ -368,18 +371,32 @@ def validate_published_profile(
         raise ValueError("closed selected-six published profile required")
     if (
         p["pricing_policy"]
-        != ("november-published-token-envelope-v1" if november else PRICING_POLICY)
+        != (
+            "fable52-standard-global-token-envelope-v1"
+            if fable
+            else "november-published-token-envelope-v1"
+            if november
+            else PRICING_POLICY
+        )
         or p["accounting_policy"] != ACCOUNTING_POLICY
         or p["guarantees"] != dict.fromkeys(GUARANTEES, False)
     ):
         raise ValueError("selected-six estimate cannot assert billing guarantees")
-    if november:
+    if fable:
+        if p.get("execution_policy") not in (
+            "legacy-v1",
+            "three-flow-optional-limits-v1",
+        ):
+            raise ValueError("Fable52 requires an existing monetary execution policy")
+    elif november:
         if p.get("execution_policy") != "three-flow-optional-limits-v1":
             raise ValueError("November requires null monetary policy")
     else:
         validate_selected_profile(p, provider, model)
     assert model is not None
-    context, input_max, output = (1000000, None, 128000) if november else BOUNDS[model]
+    context, input_max, output = (
+        (1000000, None, 128000) if november or fable else BOUNDS[model]
+    )
     if (
         (p["context_max"], p["input_max"], p["output_max"])
         != (context, input_max, output)
@@ -387,7 +404,13 @@ def validate_published_profile(
         or p["endpoint"] != ENDPOINTS[provider]
     ):
         raise ValueError("selected-six published route/bounds differ")
-    rates = ("2", "0.10", "4", "10") if november else TARIFFS[model]
+    rates = (
+        ("8", "0.20", "16", "40")
+        if fable
+        else ("2", "0.10", "4", "10")
+        if november
+        else TARIFFS[model]
+    )
     if (
         p["input_usd_per_million"]
         != str(max(Decimal(v) for v in rates[:3] if v is not None))
