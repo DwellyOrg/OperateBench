@@ -105,7 +105,7 @@ def live_factory(
 ) -> Any:
     def make(slot: dict[str, Any], budget: Any) -> Any:
         if slot["provider"] == "gemini":
-            from tools.three_flow_gemini import MODELS as GEMINI_MODELS
+            from tools.three_flow_gemini import ALL_MODELS as GEMINI_MODELS
             from tools.three_flow_gemini import GeminiCampaignTransport
 
             profile = GEMINI_MODELS[slot["model"]]

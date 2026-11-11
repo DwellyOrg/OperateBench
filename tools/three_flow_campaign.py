@@ -34,14 +34,16 @@ from tools.three_flow_errors import MetaRatePacer
 from tools.three_flow_http import LATEST_HTTP_MODELS, HTTPCampaignTransport
 from tools.three_flow_mock import SDKMockTransport
 from tools.three_flow_profiles import (
-    EXCLUDED_FUTURE_MODEL as EXCLUDED_FUTURE_MODEL,
-)
-from tools.three_flow_profiles import (
+    CARBON_ROSTER_PROFILE,
+    CARBON_UNCAPPED_PROFILE,
     FABLE52_PROFILE,
     GEMINI_ROSTER_PROFILE,
     META_ROSTER_PROFILE,
     NOVEMBER_PROFILE,
     SELECTED_SIX_PROFILE,
+)
+from tools.three_flow_profiles import (
+    EXCLUDED_FUTURE_MODEL as EXCLUDED_FUTURE_MODEL,
 )
 from tools.three_flow_profiles import (
     LATEST_ROSTER_PROFILE as LATEST_ROSTER_PROFILE,
@@ -87,6 +89,7 @@ def preflight(roster_profile: str = "legacy-v1") -> dict[str, Any]:
         "global_cap_usd": None
         if roster_profile
         in (
+            CARBON_ROSTER_PROFILE,
             GEMINI_ROSTER_PROFILE,
             SELECTED_SIX_PROFILE,
             NOVEMBER_PROFILE,
@@ -147,7 +150,7 @@ def assignments(
             "campaign_id": campaign_id,
             **(
                 {"series_id": f"{campaign_id}-{m}"}
-                if roster_profile == GEMINI_ROSTER_PROFILE
+                if roster_profile in (GEMINI_ROSTER_PROFILE, CARBON_ROSTER_PROFILE)
                 else {}
             ),
             "trial_id": f"initial-{i:03d}-{j:02d}",
@@ -573,14 +576,19 @@ def run_campaign(
         raise ValueError("Meta offline route requires an explicit transport_factory")
     if transport_factory is None and any(s["provider"] == "gemini" for s in selected):
         raise ValueError("Gemini offline route requires an explicit transport_factory")
-    if roster_profile == GEMINI_ROSTER_PROFILE:
+    if roster_profile in (GEMINI_ROSTER_PROFILE, CARBON_ROSTER_PROFILE):
         from tools.three_flow_profiles import GEMINI_UNCAPPED_PROFILE
 
         if (
             transport_factory is None
             or campaign_budget is None
             or campaign_budget.cap is not None
-            or campaign_budget.controller_profile != GEMINI_UNCAPPED_PROFILE
+            or campaign_budget.controller_profile
+            != (
+                CARBON_UNCAPPED_PROFILE
+                if roster_profile == CARBON_ROSTER_PROFILE
+                else GEMINI_UNCAPPED_PROFILE
+            )
         ):
             raise ValueError(
                 "Gemini requires explicit transport and its null-cap journal"

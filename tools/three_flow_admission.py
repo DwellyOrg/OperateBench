@@ -26,6 +26,8 @@ from tools.three_flow_campaign import (
 )
 from tools.three_flow_meta import validate_meta_profile
 from tools.three_flow_profiles import (
+    CARBON_ROSTER_PROFILE,
+    CARBON_UNCAPPED_PROFILE,
     ENDPOINTS,
     FABLE52_PROFILE,
     GEMINI_ROSTER_PROFILE,
@@ -94,7 +96,7 @@ def proposal(sha: str, roster_profile: str = "legacy-v1") -> dict[str, Any]:
         "registry": registry(
             roster_profile=roster_profile,
             mode_profile="gemini-low-v1"
-            if roster_profile == GEMINI_ROSTER_PROFILE
+            if roster_profile in (GEMINI_ROSTER_PROFILE, CARBON_ROSTER_PROFILE)
             else "off-or-minimum-v1"
             if roster_profile != "legacy-v1"
             else "legacy-v1",
@@ -118,9 +120,13 @@ def proposal(sha: str, roster_profile: str = "legacy-v1") -> dict[str, Any]:
 
     if roster_profile in (SELECTED_SIX_PROFILE, NOVEMBER_PROFILE, FABLE52_PROFILE):
         result["cap_usd"] = None
-    if roster_profile == GEMINI_ROSTER_PROFILE:
+    if roster_profile in (GEMINI_ROSTER_PROFILE, CARBON_ROSTER_PROFILE):
         result["cap_usd"] = None
-        result["budget_scope"] = "fresh Gemini campaign; two distinct 44-case series"
+        result["budget_scope"] = (
+            "fresh Carbon campaign; one 44-case series"
+            if roster_profile == CARBON_ROSTER_PROFILE
+            else "fresh Gemini campaign; two distinct 44-case series"
+        )
         result["blockers"].append(
             "Gemini paid launch requires external source-bound one-shot admission"
         )
@@ -153,9 +159,9 @@ def validate(admission: Any, sha: str, *, synthetic: bool) -> dict[str, Any]:
 def _validate(
     admission: Any, sha: str, *, synthetic: bool, historical: bool
 ) -> dict[str, Any]:
-    if (
-        isinstance(admission, dict)
-        and admission.get("roster_profile") == GEMINI_ROSTER_PROFILE
+    if isinstance(admission, dict) and admission.get("roster_profile") in (
+        GEMINI_ROSTER_PROFILE,
+        CARBON_ROSTER_PROFILE,
     ):
         if historical:
             raise ValueError("Gemini historical authority cannot be reused")
@@ -359,7 +365,15 @@ def _validate(
 
 def _validate_gemini(a: dict[str, Any], sha: str, *, synthetic: bool) -> dict[str, Any]:
     """Initial-only, source-bound native Gemini admission; never an approval writer."""
-    from tools.three_flow_gemini import MODELS as gemini_models
+    from tools.three_flow_gemini import ALL_MODELS as gemini_models
+
+    carbon = a["roster_profile"] == CARBON_ROSTER_PROFILE
+    limit_mode = CARBON_UNCAPPED_PROFILE if carbon else GEMINI_UNCAPPED_PROFILE
+    if carbon:
+        from datetime import date
+
+        if date.today().isoformat() > "2026-11-30":
+            raise ValueError("Carbon introductory tariff expired; fresh pricing required")
 
     fields = {
         "schema",
@@ -408,16 +422,16 @@ def _validate_gemini(a: dict[str, Any], sha: str, *, synthetic: bool) -> dict[st
         or digest(a["runtime"]) != digest(runtime_identity())
         or digest(a["registry"])
         != digest(
-            registry(roster_profile=GEMINI_ROSTER_PROFILE, mode_profile="gemini-low-v1")
+            registry(roster_profile=a["roster_profile"], mode_profile="gemini-low-v1")
         )
         or digest(a["resource_policy"]) != digest(RESOURCE_POLICY)
         or not all(identifier(a[k]) for k in ("campaign_id", "attempt_id"))
     ):
         raise ValueError("Gemini source/runtime/scope/gates mismatch")
-    validate_limit_policy(a["limit_policy"], mode=GEMINI_UNCAPPED_PROFILE)
+    validate_limit_policy(a["limit_policy"], mode=limit_mode)
     if a["limit_policy"]["source_sha"] != sha:
         raise ValueError("Gemini optional limits source binding mismatch")
-    roster = assignments(a["campaign_id"], GEMINI_ROSTER_PROFILE)
+    roster = assignments(a["campaign_id"], a["roster_profile"])
     ids = [s["trial_id"] for s in roster]
     selected = a["selected"]
     if (
@@ -770,12 +784,12 @@ def validate_profile(
         validate_published_profile(p, provider, model, roster_profile=roster_profile)
         return
     if provider == "gemini":
-        from tools.three_flow_gemini import MODELS as gemini_models
+        from tools.three_flow_gemini import ALL_MODELS as gemini_models
 
         if (
-            roster_profile != GEMINI_ROSTER_PROFILE
+            roster_profile not in (GEMINI_ROSTER_PROFILE, CARBON_ROSTER_PROFILE)
             or not isinstance(model, str)
-            or model not in gemini_models
+            or model not in {m for _, m in selected_roster(roster_profile)}
             or not isinstance(p, dict)
         ):
             raise ValueError("Gemini native candidate profile required")

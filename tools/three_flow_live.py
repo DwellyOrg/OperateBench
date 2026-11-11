@@ -407,6 +407,7 @@ def main(argv: list[str] | None = None, *, network: Any = None) -> int:
             "anthropic-fable52-same44-v1",
             "meta-standard-same44-v1",
             "gemini-standard-same44-low-v1",
+            "gemini-carbon-same44-v1",
         ),
     )
     parser.add_argument("--expected-source")
