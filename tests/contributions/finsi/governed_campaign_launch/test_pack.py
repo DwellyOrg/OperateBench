@@ -263,10 +263,10 @@ def test_failed_connector_zero_is_unknown_not_empty():
     s = d.initial_state()
     c = Context()
     assert event(d, s, c, "connector_result", {"status": "failed", "count": 0}).accepted
-    assert d.apply_action(s, "snapshot", {}, (), c).code == "ABSENCE_TREATED_AS_VALUE"
-    assert s["snapshot"] is None and len(s["members"]) == 2340
-    assert event(d, s, c, "connector_result", {"status": "ready", "count": 2340}).accepted
     assert d.apply_action(s, "snapshot", {}, (), c).accepted
+    assert len(s["snapshot"]["members"]) == len(s["members"]) == 2340
+    assert event(d, s, c, "connector_result", {"status": "ready", "count": 2340}).accepted
+    assert d.apply_action(s, "snapshot", {}, (), c).code == "IMMUTABLE_SNAPSHOT"
 
 
 def test_cancellation_requires_external_owner_and_no_schedule():

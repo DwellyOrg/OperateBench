@@ -376,7 +376,17 @@ class CampaignDomain:
                 "day5 06:00. Window day5 08-10; later approval needs day6 "
                 "approval. Complete only after 24h cooldown since latest "
                 "correction. Cancellation and withdrawal require registry no-send "
-                "evidence. "
+                "evidence. Attempt draft, push, stored verification, snapshot and "
+                "approval request before deadline withdrawal when no genuine obstacle "
+                "or authorised cancellation prevents work. Safe closure does not erase "
+                "owed work or notices. Notices are owed when no approval exists at "
+                "their due time while ownership remains open and a decision opportunity "
+                "exists before approval or closure; deliver before window "
+                "close or subsequent approval/closure. "
+                "Same-time approval excuses notice. "
+                "Failed planning counts are UNKNOWN; platform snapshot remains available "
+                "and count failure alone never justifies transfer or empty withdrawal. "
+                "Without send-time consent enforcement, hold/withdraw before scheduling. "
             ),
             "windows": [list(w) for w in WINDOWS],
         }
@@ -666,8 +676,6 @@ class CampaignDomain:
                 return Verdict.ok("VERIFY_FAILED")
             s["verified"] = True
         elif k == "snapshot":
-            if s["connector"]["status"] != "ready":
-                return refuse("ABSENCE_TREATED_AS_VALUE")
             if s["snapshot"]:
                 return refuse("IMMUTABLE_SNAPSHOT")
             s["snapshot"] = {
@@ -709,6 +717,8 @@ class CampaignDomain:
                 return refuse("APPROVAL_VERSION_MISMATCH")
             if context.now > s["window"][1]:
                 return refuse("ACTION_AFTER_DEADLINE")
+            if not s["consent_enforced"]:
+                return refuse("CONSENT_UNVERIFIED_AT_SEND")
             key = schedule_key(s)
             if p["key"] != key:
                 return refuse("DUPLICATE_ACTION")
@@ -737,7 +747,11 @@ class CampaignDomain:
                 and s["consent_enforced"]
                 and context.now < s["window"][1]
             ):
-                return refuse("UNJUSTIFIED_WITHDRAWAL")
+                return refuse(
+                    "ABSENCE_TREATED_AS_VALUE"
+                    if s["connector"]["status"] == "failed"
+                    else "UNJUSTIFIED_WITHDRAWAL"
+                )
             if s["approval"]:
                 s["approval"]["active"] = False
             for row in s["schedules"].values():
@@ -789,7 +803,6 @@ class CampaignDomain:
                 not exhausted
                 and not (s["timeout"] and not s["idempotent"])
                 and not missing_consent
-                and s["connector"]["status"] != "failed"
             ):
                 return refuse("UNJUSTIFIED_TRANSFER")
             s["transfer_requested"] = True

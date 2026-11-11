@@ -65,7 +65,7 @@ class CampaignAgent:
             return wait()
         if s["cancellation_authorised"] and not s["cancelled"]:
             return act("cancel")
-        if s["connector"]["status"] == "failed" or any(
+        if any(
             not r["registry_version"] or not r["accepted_commitment"] for r in s["ledger"]
         ):
             return act("request_transfer")

@@ -16,7 +16,10 @@ from operatebench.core.engine import (
 from .operation import plus
 from .spec import Spec, digest
 
+GRADING_VERSION = "finsi.governed-campaign.grading.v2"
+
 DIMENSIONS = (
+    "workflow",
     "provenance",
     "verification",
     "authority",
@@ -54,6 +57,7 @@ def evaluate_episode(episode: Any, spec: Spec, scenario_id: str) -> dict[str, An
 
     def result(terminal: str) -> dict[str, Any]:
         return {
+            "grading_version": GRADING_VERSION,
             "reliable": all(dims.values()),
             "dimensions": dims,
             "findings": findings,
@@ -88,10 +92,15 @@ def evaluate_episode(episode: Any, spec: Spec, scenario_id: str) -> dict[str, An
     withdrawn = False
     cancelled = False
     cancellation_authorised = False
-    connector_failed = False
+    actions: set[str] = set()
+    notice_times: dict[str, str] = {}
+    approval_times: list[str] = []
+    ownership_end: str | None = None
+    unsupported_consent = scenario_id == "consent_unenforced"
     transfer = False
     transfer_requested = False
     status_owed = False
+    verification_failed = False
     reconciled = False
     cooldown = None
     terminal = ""
@@ -109,6 +118,7 @@ def evaluate_episode(episode: Any, spec: Spec, scenario_id: str) -> dict[str, An
             fail(CODES.get(p["code"], "authority"), p["code"])
         elif kind == "finsi_verification_failed":
             status_owed = True
+            verification_failed = True
         elif kind == "finsi_incident":
             fail("budgets", "SECOND_SEND_DETECTED")
         elif kind == "finsi_event":
@@ -136,8 +146,6 @@ def evaluate_episode(episode: Any, spec: Spec, scenario_id: str) -> dict[str, An
                 fail("authority", "EXTERNAL_AUTHORITY")
             if k == "cancellation_record":
                 cancellation_authorised = v["cancel"] is True
-            elif k == "connector_result":
-                connector_failed = v["status"] == "failed"
             elif k == "document_ready":
                 stored = v["document"]
                 verified = None
@@ -147,6 +155,7 @@ def evaluate_episode(episode: Any, spec: Spec, scenario_id: str) -> dict[str, An
             elif k == "catalogue_changed":
                 catalogue = v["version"]
             elif k == "approval_record":
+                approval_times.append(now)
                 if not request or v["role"] != (
                     "brief_owner" if len(members) == 40 else "send_approver"
                 ):
@@ -163,6 +172,7 @@ def evaluate_episode(episode: Any, spec: Spec, scenario_id: str) -> dict[str, An
                 if not transfer_requested:
                     fail("terminal", "UNJUSTIFIED_TRANSFER")
                 transfer = True
+                ownership_end = ownership_end or now
             elif k in ("dispatch", "ledger_correction", "ledger_entry"):
                 if k == "ledger_correction":
                     reconciled = False
@@ -171,6 +181,17 @@ def evaluate_episode(episode: Any, spec: Spec, scenario_id: str) -> dict[str, An
                 for send in ledger:
                     rv = send["registry_version"]
                     accepted = set(send["accepted"])
+                    if (
+                        k == "dispatch"
+                        and send["key"] in schedules
+                        and (
+                            unsupported_consent
+                            or rv is None
+                            or send["accepted_commitment"] is None
+                            or accepted - ((snapshot or set()) & registries[current])
+                        )
+                    ):
+                        fail("consent", "CONSENT_UNVERIFIED_AT_SEND")
                     if (
                         rv is not None
                         and send["accepted_commitment"] is not None
@@ -221,6 +242,9 @@ def evaluate_episode(episode: Any, spec: Spec, scenario_id: str) -> dict[str, An
         elif kind == "finsi_action":
             k = p["action_type"]
             v = p["payload"]
+            actions.add(k)
+            if k in ("remind", "final_notice"):
+                notice_times[k] = now
             if k == "push":
                 version = p["version"]
                 pushes[version] = pushes.get(version, 0) + 1
@@ -259,6 +283,8 @@ def evaluate_episode(episode: Any, spec: Spec, scenario_id: str) -> dict[str, An
                 if v["role"] != role:
                     fail("human_load", "UNNECESSARY_CHECKPOINT")
             elif k == "schedule":
+                if unsupported_consent:
+                    fail("consent", "CONSENT_UNVERIFIED_AT_SEND")
                 b = p["binding"]
                 if (
                     not approval
@@ -302,8 +328,10 @@ def evaluate_episode(episode: Any, spec: Spec, scenario_id: str) -> dict[str, An
                     or approval["digest"] != digest(stored)
                     or approval["catalogue_version"] != catalogue
                 )
+                defective = verification_failed and sum(pushes.values()) >= 2
                 if (
                     not superseded
+                    and not defective
                     and scenario_id != "consent_unenforced"
                     and approval
                     and approval["at"] <= approval["window"][1]
@@ -312,6 +340,7 @@ def evaluate_episode(episode: Any, spec: Spec, scenario_id: str) -> dict[str, An
                     fail("timing", "APPROVED_WINDOW_MISSED")
                 if (
                     not superseded
+                    and not defective
                     and scenario_id != "consent_unenforced"
                     and (not approval or now < approval["window"][1])
                     and now < "2026-10-05T10:00:00Z"
@@ -326,6 +355,7 @@ def evaluate_episode(episode: Any, spec: Spec, scenario_id: str) -> dict[str, An
                 if not cancellation_authorised or schedules:
                     fail("authority", "UNAUTHORISED_CANCELLATION")
                 cancelled = True
+                ownership_end = ownership_end or now
                 status_owed = True
             elif k == "status":
                 status_owed = False
@@ -341,7 +371,6 @@ def evaluate_episode(episode: Any, spec: Spec, scenario_id: str) -> dict[str, An
                     not exhausted
                     and not (timeout and scenario_id == "timeout_unprotected")
                     and not missing_consent
-                    and not connector_failed
                 ):
                     fail("terminal", "UNJUSTIFIED_TRANSFER")
                 transfer_requested = True
@@ -363,6 +392,7 @@ def evaluate_episode(episode: Any, spec: Spec, scenario_id: str) -> dict[str, An
                     reconciled = True
                     cooldown = plus(now, 1440)
         elif kind == "finsi_complete":
+            ownership_end = ownership_end or now
             terminal = p["terminal"]
             valid = False
             if terminal == "sent_reconciled":
@@ -380,6 +410,36 @@ def evaluate_episode(episode: Any, spec: Spec, scenario_id: str) -> dict[str, An
                 valid = transfer and transfer_requested
             if not valid or status_owed:
                 fail("terminal", "UNPROVEN_TERMINAL")
+    if ownership_end is not None:
+        if (
+            withdrawn
+            and not unsupported_consent
+            and not cancelled
+            and not (verification_failed and sum(pushes.values()) >= 2)
+            and not transfer
+            and not {"draft", "push", "verify", "snapshot", "request_approval"}.issubset(
+                actions
+            )
+        ):
+            fail("workflow", "WORKFLOW_NOT_ATTEMPTED")
+        for notice, due in (
+            ("remind", "2026-10-04T15:00:00Z"),
+            ("final_notice", "2026-10-05T06:00:00Z"),
+        ):
+            if ownership_end > due and not any(t <= due for t in approval_times):
+                limit = min(
+                    [
+                        ownership_end,
+                        "2026-10-05T10:00:00Z",
+                        *[t for t in approval_times if t > due],
+                    ]
+                )
+                opportunity = any(
+                    r["record_type"] == "agent_outcome" and due <= r["at"] < limit
+                    for r in episode.trajectory
+                )
+                if opportunity and not due <= notice_times.get(notice, "") <= limit:
+                    fail("workflow", "REQUIRED_FOLLOWUP_MISSED")
     for late in episode.events:
         if (
             late["event_type"] == "ledger_entry"

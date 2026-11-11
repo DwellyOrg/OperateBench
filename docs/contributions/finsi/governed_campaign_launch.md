@@ -3,14 +3,14 @@
 
 # Operation proposal — synthetic governed campaign launch
 
-> **Proposal only; not an executable pack, not benchmark evidence.** Every store,
+> **Historical proposal status; executable development pack now appended below.** Every store,
 > product, person, system, amount, date, threshold, message, policy value and
 > event below is invented for this proposal. Privacy status: `SYNTHETIC_ONLY`.
 > This is not Finsi's official policy or workflow, and not the policy or workflow
 > of any other organisation. It makes no claim about any model, vendor or
 > market. Submitted for semantic triage under the
-> [Partner Contribution Kit](../../PARTNER_CONTRIBUTION_KIT.md); no fixture or
-> implementation accompanies it. Revision 2 resolves the four decisions raised in
+> [Partner Contribution Kit](../../PARTNER_CONTRIBUTION_KIT.md); at original submission no fixture or
+> implementation accompanied it. Revision 2 resolves the four decisions raised in
 > triage on issue #19 (recipient-set evidence, approval/schedule boundary,
 > finality, discriminating test).
 
@@ -402,8 +402,9 @@ The first guided slice should test one narrow intervention, not all of section 7
 
 ## Scope note for triage
 
-This document is the semantic proposal only. No fixture, state machine, oracle,
-agents or tests are included, and nothing is registered.
+At original submission this was the semantic proposal only, without fixtures,
+state machine, oracle, agents or tests. The appended development stage now
+implements these; official registration and Finsi acceptance remain pending.
 
 If triage accepts the operation, the pack would be generated with
 `operatebench init-company-operation` under the `finsi` owner id and developed
@@ -475,3 +476,31 @@ saves JSON decision tapes and checks exact replay. Additional regressions cover
 malformed-event atomicity paired with valid events, absent import fallback,
 cancellation authority, failed connector counts, unsupported consent evidence,
 late correction, equal-count wrong membership and corrupt producer controls.
+
+
+### Unreleased grading revision 2
+
+The evaluator identifies its contract as `finsi.governed-campaign.grading.v2`.
+The added `workflow` dimension reports `WORKFLOW_NOT_ATTEMPTED` when deadline
+withdrawal omits the actionable draft, push, stored verification, authoritative
+snapshot and approval request without a genuine blocking condition. Exhausted
+defective import, authorised cancellation and accepted unresolved ownership
+transfer remain admissible. A safe terminal does not erase earlier findings.
+
+`REQUIRED_FOLLOWUP_MISSED` reports omitted day 4 15:00 reminder or day 5 06:00
+final notice when approval is absent and ownership remains open. A decision
+opportunity must exist between the due time and subsequent approval/closure;
+same-time approval is exempt. Notices can be delivered at or after their due
+time through the earlier of subsequent approval, ownership closure and window
+close. Duties arising after accepted transfer or cancellation closure are not
+charged to the agent.
+
+Unsupported send-time consent enforcement refuses scheduling before any write.
+The independent audit also rejects an agent-caused unsupported dispatch or
+unsafe recipient membership despite missing registry metadata and a later
+handoff. An inherited external dispatch without evidence remains eligible for
+unresolved human transfer. A failed approximate-count connector reports UNKNOWN;
+it does not disable platform A's authoritative immutable membership snapshot
+or alone justify withdrawal on empty-audience grounds or unresolved transfer.
+The original seven targeted negative expectations and finite ten scored variants
+are unchanged. The new probes are regression controls, not additional variants.
