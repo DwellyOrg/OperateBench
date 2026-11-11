@@ -366,14 +366,12 @@ def _validate(
 def _validate_gemini(a: dict[str, Any], sha: str, *, synthetic: bool) -> dict[str, Any]:
     """Initial-only, source-bound native Gemini admission; never an approval writer."""
     from tools.three_flow_gemini import ALL_MODELS as gemini_models
+    from tools.three_flow_gemini import carbon_tariff_current
 
     carbon = a["roster_profile"] == CARBON_ROSTER_PROFILE
     limit_mode = CARBON_UNCAPPED_PROFILE if carbon else GEMINI_UNCAPPED_PROFILE
-    if carbon:
-        from datetime import date
-
-        if date.today().isoformat() > "2026-11-30":
-            raise ValueError("Carbon introductory tariff expired; fresh pricing required")
+    if carbon and not carbon_tariff_current(gemini_models["gemini-4-carbon"]):
+        raise ValueError("Carbon introductory tariff expired; fresh pricing required")
 
     fields = {
         "schema",

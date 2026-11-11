@@ -8,6 +8,7 @@ The default constructor is offline-only. No environment credential discovery.
 from __future__ import annotations
 
 import copy
+import datetime
 import json
 import time
 from collections.abc import Mapping
@@ -139,7 +140,7 @@ class GeminiProfile:
                     "connect": 10,
                     "pool": 10,
                     "read": None,
-                    "write": None,
+                    "write": 10,
                 },
             )
             value["pricing_basis"].update(
@@ -187,6 +188,13 @@ CARBON_MODELS = MappingProxyType(
     }
 )
 ALL_MODELS = MappingProxyType({**MODELS, **CARBON_MODELS})
+
+
+def carbon_tariff_current(profile: GeminiProfile) -> bool:
+    """The recorded introductory tariff remains valid through its UTC date."""
+    return datetime.datetime.now(datetime.UTC).date().isoformat() <= (
+        profile.price_valid_through
+    )
 
 
 def limit_profile(model: str) -> str:
@@ -471,6 +479,7 @@ class GeminiCampaignTransport:
             self.profile.input_rate
         ) or guard.policy.output_usd_per_mtok != Decimal(self.profile.output_rate):
             raise ValueError("Gemini Standard pricing differs")
+        self._direct = direct
         self.model, self.guard, self.max_output_tokens = model, guard, max_output_tokens
         self.settings = (
             self.profile.live_settings(max_output_tokens)
@@ -489,7 +498,7 @@ class GeminiCampaignTransport:
                 httpx.Timeout(
                     None,
                     connect=10,
-                    write=None if model in CARBON_MODELS else 10,
+                    write=10,
                     pool=10,
                 )
                 if api_key is not None
@@ -575,6 +584,16 @@ class GeminiCampaignTransport:
             if self.stopped:
                 raise AdapterProviderError(
                     "provider_request_rejected", "Gemini dispatch stopped; no retry"
+                )
+            if (
+                self._direct
+                and self.model in CARBON_MODELS
+                and not carbon_tariff_current(self.profile)
+            ):
+                self.stopped = True
+                raise AdapterProviderError(
+                    "provider_request_rejected",
+                    "Carbon introductory tariff expired; fresh pricing required",
                 )
             payload, bound, maximum = self.bounded_payload(request)
             if request.max_output_tokens != maximum:
@@ -798,7 +817,19 @@ def validate_replay(record: dict[str, Any]) -> None:
         settings = provider["settings"]
         if not isinstance(settings, dict):
             raise ValueError("Gemini profile provenance differs")
-        expected = profile.live_settings(maximum)
+        offline = profile.settings(maximum)
+        live = profile.live_settings(maximum)
+        # Offline-only compatibility with the exact original 19a Carbon profile.
+        # Its admission digest must still bind that original profile, not today's.
+        if model in CARBON_MODELS and settings.get("network_timeout_seconds") == {
+            "connect": 10,
+            "pool": 10,
+            "read": None,
+            "write": None,
+        }:
+            offline["network_timeout_seconds"]["write"] = None
+            live["network_timeout_seconds"]["write"] = None
+        expected = copy.deepcopy(live)
         if settings.get("admission") is True:
             from tools.three_flow_admission import digest as admission_digest
             from tools.three_flow_budget import validate_limit_policy
@@ -817,11 +848,11 @@ def validate_replay(record: dict[str, Any]) -> None:
                 admission=True,
                 admission_provenance="source-bound-admission-reference-v1",
                 admission_sha256=reference,
-                admission_profile_sha256=admission_digest(profile.live_settings(maximum)),
+                admission_profile_sha256=admission_digest(live),
                 limit_policy=settings["limit_policy"],
             )
         if settings not in (
-            profile.settings(maximum),
+            offline,
             expected,
         ) or provider != {
             "provider": "gemini",

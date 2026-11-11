@@ -32,16 +32,30 @@ from tools.three_flow_profiles import (
 )
 
 
-@pytest.fixture(autouse=True)
-def carbon_fixture_clock(monkeypatch):
-    """Keep positive offline admissions within the introductory tariff window."""
-
+def set_carbon_clock(monkeypatch, *, expired=False):
     class FixtureDate(datetime.date):
         @classmethod
         def today(cls):
-            return cls(2026, 11, 11)
+            return cls(2026, 11, 30)
+
+    class FixtureDatetime(datetime.datetime):
+        @classmethod
+        def now(cls, tz=None):
+            assert tz is datetime.UTC
+            return (
+                cls(2026, 12, 1, tzinfo=tz)
+                if expired
+                else cls(2026, 11, 30, 23, 59, 59, tzinfo=tz)
+            )
 
     monkeypatch.setattr(datetime, "date", FixtureDate)
+    monkeypatch.setattr(datetime, "datetime", FixtureDatetime)
+
+
+@pytest.fixture(autouse=True)
+def carbon_fixture_clock(monkeypatch):
+    """Pin UTC positives; local November 30 also exposes the UTC cutoff mismatch."""
+    set_carbon_clock(monkeypatch)
 
 
 def admission(tmp_path: Path, *, synthetic: bool = True) -> dict:
@@ -149,12 +163,29 @@ def test_carbon_source_bound_separate_consent(tmp_path):
             validate(bad, value["source_sha"], synthetic=True)
 
 
-def test_carbon_factory_native_wire(tmp_path):
+@pytest.mark.parametrize("historical", [False, True])
+@pytest.mark.parametrize("direct", [False, True])
+def test_carbon_factory_native_wire(tmp_path, monkeypatch, historical, direct):
     from tools.three_flow_budget import CampaignBudget
     from tools.three_flow_gemini import GeminiMockTransport
     from tools.three_flow_live_factory import live_factory
 
+    if historical:
+        from tools.three_flow_gemini import GeminiProfile
+
+        current_settings = GeminiProfile.settings
+
+        def original_settings(self, maximum):
+            settings = current_settings(self, maximum)
+            if self.model == "gemini-4-carbon":
+                settings["network_timeout_seconds"]["write"] = None
+            return settings
+
+        monkeypatch.setattr(GeminiProfile, "settings", original_settings)
     value = carbon_admission(tmp_path)
+    if direct:
+        profile = CARBON_MODELS["gemini-4-carbon"]
+        value["profiles"][profile.model] = profile.live_settings(profile.output)
     root = tmp_path / "budget"
     root.mkdir(mode=0o700)
     slot = assignments("carbon", CARBON_ROSTER_PROFILE)[0]
@@ -170,6 +201,12 @@ def test_carbon_factory_native_wire(tmp_path):
     class Network:
         def http(self, slot):
             def handle(request):
+                assert request.extensions["timeout"] == {
+                    "connect": 10,
+                    "pool": 10,
+                    "read": None,
+                    "write": 10,
+                }
                 body = json.loads(mock.handle(request).content)
                 body["usageMetadata"] = {
                     "promptTokenCount": 100,
@@ -192,11 +229,16 @@ def test_carbon_factory_native_wire(tmp_path):
         create=True,
     )
     try:
+        if direct:
+            monkeypatch.setattr(httpx, "HTTPTransport", lambda **kw: Network().http(slot))
         transport = live_factory(
-            value, {"GEMINI_API_KEY": "synthetic"}, network=Network()
+            value,
+            {"GEMINI_API_KEY": "synthetic"},
+            network=None if direct else Network(),
         )(slot, budget)
+        if not direct:
+            set_carbon_clock(monkeypatch, expired=True)
         assert transport.max_output_tokens == 32768
-        assert transport.http.timeout.write is None
         trial = Trial(
             "carbon",
             slot["trial_id"],
@@ -216,12 +258,24 @@ def test_carbon_factory_native_wire(tmp_path):
             mock.calls[1]["contents"][1]["parts"][0]["thoughtSignature"]
             == "offline-signature"
         )
+        if historical:
+            monkeypatch.setattr(GeminiProfile, "settings", current_settings)
+        set_carbon_clock(monkeypatch, expired=True)
+        retained = copy.deepcopy(record)
         assert (
             replay_trial(trial, record, expected_record_digest=record["record_digest"])[
                 "provider_calls"
             ]
             == 0
         )
+        assert record == retained
+        if historical and direct:
+            from tools.three_flow_gemini import validate_replay
+
+            bad = copy.deepcopy(record)
+            bad["provider"]["settings"]["admission_profile_sha256"] = "b" * 64
+            with pytest.raises(ValueError, match="provenance"):
+                validate_replay(bad)
         transport.close()
     finally:
         budget.close()
@@ -344,15 +398,102 @@ def test_carbon_strict_native_response_and_quality_classification():
 
 
 def test_carbon_rejects_expired_introductory_tariff(tmp_path, monkeypatch):
-    import datetime
-
     value = carbon_admission(tmp_path)
-
-    class ExpiredDate(datetime.date):
-        @classmethod
-        def today(cls):
-            return cls(2026, 12, 1)
-
-    monkeypatch.setattr(datetime, "date", ExpiredDate)
+    set_carbon_clock(monkeypatch, expired=True)
+    assert datetime.date.today().isoformat() == "2026-11-30"
     with pytest.raises(ValueError, match="tariff expired"):
         validate(value, value["source_sha"], synthetic=True)
+
+
+def test_carbon_admitted_live_send_crosses_utc_cutoff(tmp_path, monkeypatch):
+    from operatebench.agents.transport import ProviderFailure
+    from operatebench.providers.faults import AdapterProviderError
+    from tools.three_flow_budget import CampaignBudget
+    from tools.three_flow_live_factory import live_factory
+    from tools.three_flow_runtime import Trial, provider_identity, run_trial
+
+    value = carbon_admission(tmp_path)
+    validate(value, value["source_sha"], synthetic=True)
+    profile = CARBON_MODELS["gemini-4-carbon"]
+    value["profiles"][profile.model] = profile.live_settings(profile.output)
+    slot = assignments("carbon", CARBON_ROSTER_PROFILE)[0]
+    root = tmp_path / "budget"
+    root.mkdir(mode=0o700)
+    calls = []
+    mock = GeminiMockTransport(slot["model"], slot["flow"])
+
+    def handle(request):
+        calls.append(request)
+        return mock.handle(request)
+
+    monkeypatch.setattr(httpx, "HTTPTransport", lambda **kw: httpx.MockTransport(handle))
+    budget = CampaignBudget(
+        root,
+        campaign_id="carbon",
+        cap=None,
+        limit_policy=value["limit_policy"],
+        roster_profile=CARBON_ROSTER_PROFILE,
+        create=True,
+    )
+    try:
+        transport = live_factory(value, {"GEMINI_API_KEY": "synthetic"})(slot, budget)
+        original_send = transport.send
+        attempted = []
+
+        def crossing_send(request):
+            # A valid prepared request reaches send only after admission/creation.
+            set_carbon_clock(monkeypatch, expired=True)
+            authorize = transport.guard.authorize
+            reservations = []
+
+            def counted_authorize(**kwargs):
+                reservations.append(kwargs)
+                return authorize(**kwargs)
+
+            monkeypatch.setattr(transport.guard, "authorize", counted_authorize)
+            with pytest.raises(AdapterProviderError, match="tariff expired") as error:
+                original_send(request)
+            assert error.value.fault == "provider_request_rejected"
+            assert transport.stopped
+            assert calls == reservations == []
+            with pytest.raises(AdapterProviderError, match="stopped"):
+                original_send(request)
+            assert calls == reservations == []
+            attempted.append(True)
+            raise error.value
+
+        monkeypatch.setattr(transport, "send", crossing_send)
+        trial = Trial(
+            "carbon",
+            slot["trial_id"],
+            slot["flow"],
+            slot["scenario"],
+            slot["model"],
+            32768,
+            provider_identity(transport),
+        )
+        with pytest.raises(ProviderFailure):
+            run_trial(trial, transport, output=tmp_path / "trial")
+        assert attempted == [True]
+        transport.close()
+    finally:
+        budget.close()
+
+
+def test_carbon_live_admission_rejects_original_timeout_metadata(tmp_path):
+    value = carbon_admission(tmp_path)
+    value["profiles"]["gemini-4-carbon"]["network_timeout_seconds"]["write"] = None
+    with pytest.raises(ValueError):
+        validate(value, value["source_sha"], synthetic=True)
+
+
+def test_carbon_cutoff_uses_profile_validity(monkeypatch):
+    from dataclasses import replace
+
+    from tools.three_flow_gemini import carbon_tariff_current
+
+    profile = CARBON_MODELS["gemini-4-carbon"]
+    assert carbon_tariff_current(profile)
+    assert not carbon_tariff_current(replace(profile, price_valid_through="2026-11-29"))
+    set_carbon_clock(monkeypatch, expired=True)
+    assert not carbon_tariff_current(profile)
