@@ -16,7 +16,7 @@ from operatebench.core.engine import (
 from .operation import plus
 from .spec import Spec, digest
 
-GRADING_VERSION = "finsi.governed-campaign.grading.v2"
+GRADING_VERSION = "finsi.governed-campaign.grading.v3"
 
 DIMENSIONS = (
     "workflow",
@@ -79,13 +79,16 @@ def evaluate_episode(episode: Any, spec: Spec, scenario_id: str) -> dict[str, An
     registries = {"1": members.copy()}
     current = "1"
     catalogue = 1
+    window = ["2026-10-05T08:00:00Z", "2026-10-05T10:00:00Z"]
     stored = None
     verified = None
+    requests: dict[str, Any] = {}
     request = None
     approval = None
     snapshot = None
     pushes: dict[int, int] = {}
     attempts: dict[str, int] = {}
+    schedule_times: dict[str, str] = {}
     schedules = {}
     schedule_bindings = {}
     ledger = []
@@ -156,15 +159,20 @@ def evaluate_episode(episode: Any, spec: Spec, scenario_id: str) -> dict[str, An
                 catalogue = v["version"]
             elif k == "approval_record":
                 approval_times.append(now)
-                if not request or v["role"] != (
-                    "brief_owner" if len(members) == 40 else "send_approver"
+                reviewed = requests.get(v["request_id"])
+                if (
+                    not reviewed
+                    or v["reviewed_binding"] != digest(reviewed)
+                    or v["approval_id"] != reviewed["approval_id"]
+                    or v["role"]
+                    != ("brief_owner" if len(members) == 40 else "send_approver")
                 ):
                     fail("authority", "UNBOUND_APPROVAL")
-                else:
+                elif request and request["request_id"] == v["request_id"]:
                     approval = {
-                        **request,
+                        **reviewed,
                         "role": v["role"],
-                        "id": f"approval-{v['version']}",
+                        "id": v["approval_id"],
                         "active": True,
                         "at": now,
                     }
@@ -181,14 +189,21 @@ def evaluate_episode(episode: Any, spec: Spec, scenario_id: str) -> dict[str, An
                 for send in ledger:
                     rv = send["registry_version"]
                     accepted = set(send["accepted"])
+                    send_consent = members - {
+                        e["payload"]["member"]
+                        for e in episode.events
+                        if e["event_type"] == "consent_revoked"
+                        and e["disposition"] in ("accepted", "audit")
+                        and e["at"] <= send["at"]
+                    }
                     if (
-                        k == "dispatch"
-                        and send["key"] in schedules
+                        send["key"] in schedules
+                        and schedule_times[send["key"]] <= send["at"] <= now
                         and (
                             unsupported_consent
                             or rv is None
                             or send["accepted_commitment"] is None
-                            or accepted - ((snapshot or set()) & registries[current])
+                            or accepted - ((snapshot or set()) & send_consent)
                         )
                     ):
                         fail("consent", "CONSENT_UNVERIFIED_AT_SEND")
@@ -204,10 +219,10 @@ def evaluate_episode(episode: Any, spec: Spec, scenario_id: str) -> dict[str, An
                     ):
                         fail("consent", "CONSENT_UNVERIFIED_AT_SEND")
                     if (
-                        k == "dispatch"
+                        send["key"] in schedules
                         and rv is not None
                         and (
-                            rv != current
+                            registries.get(rv) != send_consent
                             or send["filtered"]
                             != sorted((snapshot or set()) - registries.get(rv, set()))
                         )
@@ -245,7 +260,15 @@ def evaluate_episode(episode: Any, spec: Spec, scenario_id: str) -> dict[str, An
             actions.add(k)
             if k in ("remind", "final_notice"):
                 notice_times[k] = now
-            if k == "push":
+            if k == "draft":
+                stored = None
+                verified = None
+                request = None
+                approval = None
+                if withdrawn:
+                    window = ["2026-10-06T08:00:00Z", "2026-10-06T10:00:00Z"]
+                    withdrawn = False
+            elif k == "push":
                 version = p["version"]
                 pushes[version] = pushes.get(version, 0) + 1
                 if pushes[version] > 2:
@@ -270,7 +293,32 @@ def evaluate_episode(episode: Any, spec: Spec, scenario_id: str) -> dict[str, An
                 else:
                     verified = digest(doc)
             elif k == "request_approval":
-                request = p["binding"]
+                request = p["request"]
+                if request["request_id"] in requests:
+                    fail("human_load", "DUPLICATE_REQUEST")
+                requests[request["request_id"]] = request
+                expected_binding = {
+                    "digest": verified,
+                    "snapshot_id": "snapshot-1",
+                    "commitment": digest(sorted(snapshot or set())),
+                    "window": window,
+                    "catalogue_version": catalogue,
+                }
+                if (
+                    request["window"]
+                    not in [
+                        ["2026-10-05T08:00:00Z", "2026-10-05T10:00:00Z"],
+                        ["2026-10-06T08:00:00Z", "2026-10-06T10:00:00Z"],
+                    ]
+                    or p["binding"] != expected_binding
+                    or any(request[x] != expected_binding[x] for x in expected_binding)
+                    or request["request_id"]
+                    != digest([expected_binding, p["version"], v["role"]])
+                    or request["verified_stored_document"] != stored
+                    or request["snapshot_count"] != len(members)
+                    or request["catalogue_prices"] != (stored or {}).get("prices")
+                ):
+                    fail("authority", "UNBOUND_APPROVAL")
                 if (
                     not stored
                     or verified != digest(stored)
@@ -316,6 +364,7 @@ def evaluate_episode(episode: Any, spec: Spec, scenario_id: str) -> dict[str, An
                     )
                 ):
                     fail("budgets", "DUPLICATE_ACTION")
+                schedule_times.setdefault(key, now)
                 schedules[key] = True
                 schedule_bindings[key] = b
                 timeout = (
@@ -374,15 +423,31 @@ def evaluate_episode(episode: Any, spec: Spec, scenario_id: str) -> dict[str, An
                 ):
                     fail("terminal", "UNJUSTIFIED_TRANSFER")
                 transfer_requested = True
-            elif k == "reconcile_counts":
-                fail("consent", "CONSENT_UNVERIFIED_AT_SEND")
             elif k == "reconcile":
                 if len(ledger) != 1:
                     fail("consent", "LEDGER_MISSING")
                 else:
                     send = ledger[0]
+                    report = {
+                        "snapshot_id": "snapshot-1",
+                        "snapshot_commitment": digest(sorted(snapshot or set())),
+                        "send_id": send["send_id"],
+                        "key": send["key"],
+                        "accepted_commitment": send["accepted_commitment"],
+                        "registry_version": send["registry_version"],
+                        "unauthorized": sorted(
+                            set(send["accepted"])
+                            - (
+                                (snapshot or set())
+                                & registries.get(send["registry_version"], set())
+                            )
+                        ),
+                        "filtered": send["filtered"],
+                    }
                     if (
-                        not send["registry_version"]
+                        v.get("proof") != digest(report)
+                        or send["accepted_commitment"] != digest(send["accepted"])
+                        or not send["registry_version"]
                         or not send["accepted_commitment"]
                         or snapshot is None
                         or set(send["accepted"])

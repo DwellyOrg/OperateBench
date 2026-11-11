@@ -124,7 +124,7 @@ class CampaignAgent:
         if not s["request"]:
             role = (
                 "send_approver"
-                if len(s["snapshot"]["members"]) > 500 or s["draft"]["discount"] > 15
+                if s["snapshot"]["member_count"] > 500 or s["draft"]["discount"] > 15
                 else "brief_owner"
             )
             if (
@@ -157,8 +157,10 @@ class CampaignAgent:
             return wait(360)
         if not s["reconciled"]:
             if self.agent_id == "counts_only" and not self.injected:
-                return inject("reconcile_counts")
-            return act("reconcile")
+                return inject(
+                    "reconcile", proof=f"count:{s['ledger'][0]['accepted_count']}"
+                )
+            return act("reconcile", proof=s["identity_proof"]["handle"])
         if now < s["cooldown_until"]:
             return wait(1440)
         return Complete("Identity reconciliation and cooldown evidenced")

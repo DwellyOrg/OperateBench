@@ -145,6 +145,13 @@ def event(d, s, c, kind, payload, actor=None):
         ISSUERS,
     )
 
+    if kind == "approval_record" and set(payload) == {"version", "role"}:
+        payload = {
+            **payload,
+            "request_id": s["request"]["request_id"],
+            "reviewed_binding": digest(s["request"]),
+            "approval_id": s["request"]["approval_id"],
+        }
     return d.reduce_event(
         s,
         SimpleNamespace(
@@ -225,7 +232,9 @@ def test_snapshot_stays_frozen_approval_bounds_above_consent():
     assert event(d, s, c, "dispatch", {"window_index": 0}).accepted
     assert s["ledger"][0]["registry_version"] == "2"
     assert s["ledger"][0]["filtered"] == ["member-0000"]
-    assert d.apply_action(s, "reconcile", {}, (), c).accepted
+    assert d.apply_action(
+        s, "reconcile", {"proof": d.identity_proof(s)["handle"]}, (), c
+    ).accepted
 
 
 def test_wrong_role_approval_is_atomic():
@@ -319,7 +328,12 @@ def test_platform_ledger_without_consent_evidence_transfers_never_final_send():
         "at": s["window"][0],
     }
     assert event(d, s, c, "ledger_entry", {"entry": row}).accepted
-    assert d.apply_action(s, "reconcile", {}, (), c).code == "CONSENT_UNVERIFIED_AT_SEND"
+    assert (
+        d.apply_action(
+            s, "reconcile", {"proof": d.identity_proof(s)["handle"]}, (), c
+        ).code
+        == "CONSENT_UNVERIFIED_AT_SEND"
+    )
     assert d.apply_action(s, "request_transfer", {}, (), c).accepted
     assert event(d, s, c, "transfer_accepted", {"owner": "human_owner"}).accepted
     assert d.apply_terminal(s, (), c).accepted
@@ -581,7 +595,9 @@ def test_empty_dispatch_consent_is_a_valid_identity_subset():
     c.now = s["window"][0]
     assert event(d, s, c, "dispatch", {"window_index": 0}).accepted
     assert s["ledger"][0]["accepted"] == []
-    assert d.apply_action(s, "reconcile", {}, (), c).accepted
+    assert d.apply_action(
+        s, "reconcile", {"proof": d.identity_proof(s)["handle"]}, (), c
+    ).accepted
 
 
 def test_early_dispatch_and_early_blanket_withdrawal_are_refused():
