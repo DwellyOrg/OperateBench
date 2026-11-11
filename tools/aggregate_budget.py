@@ -472,6 +472,7 @@ class SharedGuard(LifecycleCostGuard):
         return getattr(self.budget, "controller_profile", None) in (
             "three-flow-optional-limits-v1",
             "three-flow-gemini-uncapped-v1",
+            "three-flow-gemini-carbon-uncapped-v1",
         )
 
     def authorize(self, *, input_tokens_upper_bound: int) -> Decimal:

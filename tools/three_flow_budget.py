@@ -24,6 +24,8 @@ from typing import Any
 
 from tools.aggregate_budget import Budget, canonical, money
 from tools.three_flow_profiles import (
+    CARBON_ROSTER_PROFILE,
+    CARBON_UNCAPPED_PROFILE,
     GEMINI_ROSTER_PROFILE,
     GEMINI_UNCAPPED_PROFILE,
     META_ROSTER_PROFILE,
@@ -50,7 +52,12 @@ def validate_limit_policy(value: Any, *, mode: str = OPTIONAL_PROFILE) -> None:
         raise ValueError(
             "explicit optional limits and historical liability record required"
         )
-    if mode not in (OPTIONAL_PROFILE, META_UNCAPPED_PROFILE, GEMINI_UNCAPPED_PROFILE):
+    if mode not in (
+        OPTIONAL_PROFILE,
+        META_UNCAPPED_PROFILE,
+        GEMINI_UNCAPPED_PROFILE,
+        CARBON_UNCAPPED_PROFILE,
+    ):
         raise ValueError("unknown optional monetary policy")
     if value["mode"] != mode or value["owner_accepted"] is not True:
         raise ValueError("explicit owner optional limits consent required")
@@ -88,9 +95,11 @@ class CampaignBudget(Budget):
         if type(campaign_id) is not str or not campaign_id or len(campaign_id) > 200:
             raise ValueError("nonempty bounded campaign ID required")
         meta = roster_profile == META_ROSTER_PROFILE
-        gemini = roster_profile == GEMINI_ROSTER_PROFILE
+        gemini = roster_profile in (GEMINI_ROSTER_PROFILE, CARBON_ROSTER_PROFILE)
         optional_mode = (
-            GEMINI_UNCAPPED_PROFILE
+            CARBON_UNCAPPED_PROFILE
+            if roster_profile == CARBON_ROSTER_PROFILE
+            else GEMINI_UNCAPPED_PROFILE
             if gemini
             else META_UNCAPPED_PROFILE
             if meta

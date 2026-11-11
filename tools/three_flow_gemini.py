@@ -8,6 +8,7 @@ The default constructor is offline-only. No environment credential discovery.
 from __future__ import annotations
 
 import copy
+import datetime
 import json
 import time
 from collections.abc import Mapping
@@ -50,6 +51,7 @@ from operatebench.sdk.profile_packs.pack import COMMERCE_COMMANDS, COMPLIANCE_CO
 from tools.aggregate_budget import SharedGuard
 from tools.three_flow_http import BudgetWire
 from tools.three_flow_profiles import (
+    CARBON_UNCAPPED_PROFILE,
     GEMINI_ROSTER_PROFILE,
 )
 from tools.three_flow_profiles import (
@@ -78,7 +80,7 @@ class GeminiProfile:
     def settings(self, maximum: int) -> dict[str, Any]:
         if type(maximum) is not int or maximum != self.output:
             raise ValueError("nominal Gemini physical output maximum required")
-        return {
+        value: dict[str, Any] = {
             "endpoint": self.endpoint,
             "model": self.model,
             "protocol_version": MODEL_PROTOCOL_VERSION,
@@ -121,6 +123,42 @@ class GeminiProfile:
             },
         }
 
+        if self.model == "gemini-4-carbon":
+            value.update(
+                context_bound_basis=(
+                    "account metadata and shared input/output intersection"
+                ),
+                physical_output_basis=(
+                    "account metadata and non-streaming single foreground hop"
+                ),
+                advertised_model_bounds={
+                    "synchronous_output": 65536,
+                    "long_decode_output": 1048576,
+                },
+                route="native non-streaming generateContent; no long decode",
+                network_timeout_seconds={
+                    "connect": 10,
+                    "pool": 10,
+                    "read": None,
+                    "write": 10,
+                },
+            )
+            value["pricing_basis"].update(
+                verified_on="2026-11-11",
+                cached_input_usd_per_mtok="0.1",
+                implicit_cache=(
+                    "cached subset at cached input tariff; "
+                    "explicit cachedContents unsupported"
+                ),
+                settlement_policy=(
+                    "conservative full-input envelope; separate "
+                    "from reported tariff estimate"
+                ),
+                next_tariff_effective="2026-12-01",
+                next_tariff_multiplier=2,
+            )
+        return value
+
     def live_settings(self, maximum: int) -> dict[str, Any]:
         """Direct-wire provenance; this is not launch authority."""
         value = self.settings(maximum)
@@ -140,6 +178,41 @@ MODELS = MappingProxyType(
         ),
     }
 )
+
+
+CARBON_MODELS = MappingProxyType(
+    {
+        "gemini-4-carbon": GeminiProfile(
+            "gemini-4-carbon", "2", "10", "2026-11-30", output=32768
+        ),
+    }
+)
+ALL_MODELS = MappingProxyType({**MODELS, **CARBON_MODELS})
+
+
+def carbon_tariff_current(profile: GeminiProfile) -> bool:
+    """The recorded introductory tariff remains valid through its UTC date."""
+    return datetime.datetime.now(datetime.UTC).date().isoformat() <= (
+        profile.price_valid_through
+    )
+
+
+def limit_profile(model: str) -> str:
+    return CARBON_UNCAPPED_PROFILE if model in CARBON_MODELS else LIMIT_PROFILE
+
+
+def reported_tariff(counts: dict[str, int]) -> Decimal:
+    """Carbon reported Standard tariff estimate; cache is a prompt subset."""
+    return (
+        Decimal(
+            counts["promptTokenCount"]
+            - counts["cachedContentTokenCount"]
+            + counts["toolUsePromptTokenCount"]
+        )
+        * 2
+        + Decimal(counts["cachedContentTokenCount"]) * Decimal("0.1")
+        + Decimal(counts["candidatesTokenCount"] + counts["thoughtsTokenCount"]) * 10
+    ) / 1000000
 
 
 def declarations() -> list[dict[str, Any]]:
@@ -336,8 +409,8 @@ class GeminiCampaignTransport:
         if admitted is not True:
             raise ValueError("explicit Gemini live admission required")
         if (
-            model not in MODELS
-            or getattr(guard.budget, "controller_profile", None) != LIMIT_PROFILE
+            model not in ALL_MODELS
+            or getattr(guard.budget, "controller_profile", None) != limit_profile(model)
             or guard.budget.cap is not None
         ):
             raise ValueError("Gemini live guard/profile admission differs")
@@ -375,9 +448,9 @@ class GeminiCampaignTransport:
         api_key: str | None = None,
         endpoint: str | None = None,
     ) -> None:
-        if model not in MODELS:
+        if model not in ALL_MODELS:
             raise ValueError("exact stable Gemini model required")
-        self.profile = MODELS[model]
+        self.profile = ALL_MODELS[model]
         if api_key is not None or not isinstance(inner, httpx.MockTransport):
             raise ValueError("offline Gemini accepts no credential or live transport")
         if endpoint is not None and endpoint != self.profile.endpoint:
@@ -399,13 +472,14 @@ class GeminiCampaignTransport:
         api_key: str | None = None,
         direct: bool = False,
     ) -> None:
-        self.profile = MODELS[model]
+        self.profile = ALL_MODELS[model]
         if guard._max_output_tokens != max_output_tokens:
             raise ValueError("Gemini guard/output binding differs")
         if guard.policy.input_usd_per_mtok != Decimal(
             self.profile.input_rate
         ) or guard.policy.output_usd_per_mtok != Decimal(self.profile.output_rate):
             raise ValueError("Gemini Standard pricing differs")
+        self._direct = direct
         self.model, self.guard, self.max_output_tokens = model, guard, max_output_tokens
         self.settings = (
             self.profile.live_settings(max_output_tokens)
@@ -421,7 +495,12 @@ class GeminiCampaignTransport:
             transport=self.wire,
             trust_env=False,
             timeout=(
-                httpx.Timeout(None, connect=10, write=10, pool=10)
+                httpx.Timeout(
+                    None,
+                    connect=10,
+                    write=10,
+                    pool=10,
+                )
                 if api_key is not None
                 else None
             ),
@@ -506,6 +585,16 @@ class GeminiCampaignTransport:
                 raise AdapterProviderError(
                     "provider_request_rejected", "Gemini dispatch stopped; no retry"
                 )
+            if (
+                self._direct
+                and self.model in CARBON_MODELS
+                and not carbon_tariff_current(self.profile)
+            ):
+                self.stopped = True
+                raise AdapterProviderError(
+                    "provider_request_rejected",
+                    "Carbon introductory tariff expired; fresh pricing required",
+                )
             payload, bound, maximum = self.bounded_payload(request)
             if request.max_output_tokens != maximum:
                 raise ValueError("Gemini actual request/output binding differs")
@@ -558,6 +647,14 @@ class GeminiCampaignTransport:
                     "wire": dict(self.wire.captures[-1]),
                     "network_rpcs": 1,
                 }
+                if self.model in CARBON_MODELS:
+                    self.last_turn.update(
+                        reported_tariff_estimate_usd=str(reported_tariff(counts)),
+                        custody_settlement_basis=(
+                            "conservative full-input envelope; "
+                            "estimated usage, not invoice"
+                        ),
+                    )
                 # Classify only after validated usage has been settled and captured.
                 outcome = ModelAgent(
                     ForbiddenTransport(), model=self.model, max_output_tokens=maximum
@@ -681,8 +778,11 @@ def offline_limit_policy() -> dict[str, Any]:
 def offline_factory(slot: dict[str, Any], budget: Any) -> GeminiCampaignTransport:
     from operatebench.agents.pricing import LifecyclePricingPolicy
 
-    profile = MODELS[slot["model"]]
-    if budget.controller_profile != LIMIT_PROFILE or budget.cap is not None:
+    profile = ALL_MODELS[slot["model"]]
+    if (
+        budget.controller_profile != limit_profile(slot["model"])
+        or budget.cap is not None
+    ):
         raise ValueError("Gemini offline campaign requires distinct null-cap journal")
     guard = SharedGuard(
         budget=budget,
@@ -712,12 +812,24 @@ def validate_replay(record: dict[str, Any]) -> None:
     try:
         model = record["trial"]["model"]
         maximum = record["trial"]["max_output_tokens"]
-        profile = MODELS[model]
+        profile = ALL_MODELS[model]
         provider = record["provider"]
         settings = provider["settings"]
         if not isinstance(settings, dict):
             raise ValueError("Gemini profile provenance differs")
-        expected = profile.live_settings(maximum)
+        offline = profile.settings(maximum)
+        live = profile.live_settings(maximum)
+        # Offline-only compatibility with the exact original 19a Carbon profile.
+        # Its admission digest must still bind that original profile, not today's.
+        if model in CARBON_MODELS and settings.get("network_timeout_seconds") == {
+            "connect": 10,
+            "pool": 10,
+            "read": None,
+            "write": None,
+        }:
+            offline["network_timeout_seconds"]["write"] = None
+            live["network_timeout_seconds"]["write"] = None
+        expected = copy.deepcopy(live)
         if settings.get("admission") is True:
             from tools.three_flow_admission import digest as admission_digest
             from tools.three_flow_budget import validate_limit_policy
@@ -731,16 +843,16 @@ def validate_replay(record: dict[str, Any]) -> None:
                 or any(c not in "0123456789abcdef" for c in reference)
             ):
                 raise ValueError("Gemini admission reference invalid")
-            validate_limit_policy(settings.get("limit_policy"), mode=LIMIT_PROFILE)
+            validate_limit_policy(settings.get("limit_policy"), mode=limit_profile(model))
             expected.update(
                 admission=True,
                 admission_provenance="source-bound-admission-reference-v1",
                 admission_sha256=reference,
-                admission_profile_sha256=admission_digest(profile.live_settings(maximum)),
+                admission_profile_sha256=admission_digest(live),
                 limit_policy=settings["limit_policy"],
             )
         if settings not in (
-            profile.settings(maximum),
+            offline,
             expected,
         ) or provider != {
             "provider": "gemini",
@@ -821,6 +933,12 @@ def validate_replay(record: dict[str, Any]) -> None:
                 or Decimal(turn["measured_usd"]) != cost
             ):
                 raise ValueError("Gemini usage/context/cost provenance differs")
+            if model in CARBON_MODELS and (
+                turn.get("reported_tariff_estimate_usd") != str(reported_tariff(counts))
+                or turn.get("custody_settlement_basis")
+                != "conservative full-input envelope; estimated usage, not invoice"
+            ):
+                raise ValueError("Carbon reported tariff provenance differs")
             outcome = ModelAgent(
                 ForbiddenTransport(), model=model, max_output_tokens=actual_maximum
             )._parse(response)
