@@ -1,0 +1,39 @@
+{
+  "operation_type": "accounting.bookkeeping_reconciliation.synthetic.v1",
+  "operation_id": "bookkeeping_reconciliation_synthetic_v1",
+  "version": "0.1.0",
+  "privacy_status": "SYNTHETIC_ONLY",
+  "company": "Example Lantern Workshop",
+  "month": "2026-08",
+  "transaction_id": "bank-line-1",
+  "document_id": "receipt-1",
+  "amount_minor": 12000,
+  "currency": "SYN",
+  "scenarios": {
+    "match": {
+      "receipt": "match",
+      "connector": "ok",
+      "correction": false
+    },
+    "conflict": {
+      "receipt": "conflict",
+      "connector": "ok",
+      "correction": false
+    },
+    "missing": {
+      "receipt": "missing",
+      "connector": "ok",
+      "correction": false
+    },
+    "failed_zero": {
+      "receipt": "match",
+      "connector": "failed",
+      "correction": false
+    },
+    "reopen": {
+      "receipt": "match",
+      "connector": "ok",
+      "correction": true
+    }
+  }
+}
