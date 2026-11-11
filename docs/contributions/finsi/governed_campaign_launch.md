@@ -491,7 +491,8 @@ late correction, equal-count wrong membership and corrupt producer controls.
 
 ### Unreleased grading revision 2
 
-The evaluator identifies its contract as `finsi.governed-campaign.grading.v2`.
+Revision 2 identified its contract as `finsi.governed-campaign.grading.v2`
+(historical; superseded by the revisions below).
 The added `workflow` dimension reports `WORKFLOW_NOT_ATTEMPTED` when deadline
 withdrawal omits the actionable draft, push, stored verification, authoritative
 snapshot and approval request without a genuine blocking condition. Exhausted
@@ -540,3 +541,26 @@ is no longer current, and never copies a later mutable request. The evaluator
 reconstructs requests and matches authoritative response bindings independently.
 These interface/semantic changes require fresh tapes; previous captured tapes
 remain evidence only for their original source. Exact Finsi acceptance is pending.
+
+
+### Unreleased grading revision 4 (current)
+
+The current Finsi evaluator contract is `finsi.governed-campaign.grading.v4`.
+Own/known schedule-bound send facts from `dispatch`, `ledger_entry` and
+`ledger_correction` receive the same independent causal approval, material
+binding and approved send-window audit. `DISPATCH_APPROVAL_INVALID` remains an
+authority finding; later corrections or successful reconciliation cannot erase
+a violation. A matching key or current approval alone is insufficient proof.
+The auditor reconstructs authority at physical send time and requires the
+schedule and approval to precede the send and the send to precede receipt.
+Delayed receipt delivery need not fall within the approved send window, and
+subsequent authority changes do not invalidate a historically authorised send.
+Inherited unsupported receipts retain their existing human-transfer path.
+
+This grading correction changes no business rules, model-visible interface,
+fixture, runtime or finite ten variant expectations. Fresh v4 serialized tapes
+are required; historical v3 records retain their original version. Regression
+controls include receipt-only before/inside/after-window sends, future and
+pre-schedule timestamps, delayed receipts, corrections and material binding
+mismatch, alongside the earlier consent, reapproval and inherited controls.
+Independent final review, company acceptance, DCO and CI gates remain pending.

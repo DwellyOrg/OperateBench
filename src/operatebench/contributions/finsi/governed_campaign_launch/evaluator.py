@@ -6,6 +6,7 @@ acceptance and final-state readiness flags are not proof of those predicates.
 
 from __future__ import annotations
 
+from copy import deepcopy
 from typing import Any
 
 from operatebench.core.engine import (
@@ -16,7 +17,7 @@ from operatebench.core.engine import (
 from .operation import plus
 from .spec import Spec, digest
 
-GRADING_VERSION = "finsi.governed-campaign.grading.v3"
+GRADING_VERSION = "finsi.governed-campaign.grading.v4"
 
 DIMENSIONS = (
     "workflow",
@@ -89,8 +90,8 @@ def evaluate_episode(episode: Any, spec: Spec, scenario_id: str) -> dict[str, An
     pushes: dict[int, int] = {}
     attempts: dict[str, int] = {}
     schedule_times: dict[str, str] = {}
-    schedules = {}
-    schedule_bindings = {}
+    schedules: dict[str, bool] = {}
+    schedule_bindings: dict[str, Any] = {}
     ledger = []
     withdrawn = False
     cancelled = False
@@ -113,7 +114,25 @@ def evaluate_episode(episode: Any, spec: Spec, scenario_id: str) -> dict[str, An
         for e in episode.events
         if e["disposition"] in ("accepted", "audit")
     }
-    for row in episode.trajectory:
+    # Historical authority is reconstructed independently of producer readiness.
+    # Keep observation order as well as physical time: a later approval cannot
+    # authorise an earlier receipt, even when their timestamps match.
+    authority_history: list[dict[str, Any]] = []
+    send_observations: list[tuple[int, str, str, Any]] = []
+    for index, row in enumerate(episode.trajectory):
+        authority_history.append(
+            deepcopy(
+                {
+                    "at": episode.trajectory[index - 1]["at"] if index else "",
+                    "approval": approval,
+                    "stored": stored,
+                    "catalogue": catalogue,
+                    "schedules": schedules,
+                    "bindings": schedule_bindings,
+                    "times": schedule_times,
+                }
+            )
+        )
         kind = row["record_type"]
         p = row
         now = row["at"]
@@ -230,28 +249,7 @@ def evaluate_episode(episode: Any, spec: Spec, scenario_id: str) -> dict[str, An
                         fail("consent", "CONSENT_UNVERIFIED_AT_SEND")
                     if k == "dispatch" and send["key"] not in schedules:
                         fail("authority", "UNSCHEDULED_SEND")
-                    if k == "dispatch" and (
-                        not approval
-                        or not approval["active"]
-                        or not stored
-                        or approval["digest"] != digest(stored)
-                        or approval["catalogue_version"] != catalogue
-                        or not approval["window"][0]
-                        <= send["at"]
-                        <= approval["window"][1]
-                        or schedule_bindings.get(send["key"])
-                        != {
-                            x: approval[x]
-                            for x in (
-                                "digest",
-                                "snapshot_id",
-                                "commitment",
-                                "window",
-                                "catalogue_version",
-                            )
-                        }
-                    ):
-                        fail("authority", "DISPATCH_APPROVAL_INVALID")
+                    send_observations.append((index, now, k, deepcopy(send)))
                 if len({x["send_id"] for x in ledger}) > 1:
                     fail("budgets", "SECOND_SEND_DETECTED")
         elif kind == "finsi_action":
@@ -475,6 +473,39 @@ def evaluate_episode(episode: Any, spec: Spec, scenario_id: str) -> dict[str, An
                 valid = transfer and transfer_requested
             if not valid or status_owed:
                 fail("terminal", "UNPROVEN_TERMINAL")
+    for index, arrival, source, send in send_observations:
+        key = send["key"]
+        if source != "dispatch" and key not in schedule_times:
+            # Unsupported inherited receipts remain eligible for human handoff.
+            continue
+        contexts = [h for h in authority_history[: index + 1] if h["at"] <= send["at"]]
+        h = contexts[-1] if contexts else {}
+        a = h.get("approval")
+        if (
+            send["at"] > arrival
+            or key not in h.get("times", {})
+            or h["times"][key] > send["at"]
+            or not h.get("schedules", {}).get(key)
+            or not a
+            or not a["active"]
+            or not h["stored"]
+            or a["at"] > send["at"]
+            or a["digest"] != digest(h["stored"])
+            or a["catalogue_version"] != h["catalogue"]
+            or not a["window"][0] <= send["at"] <= a["window"][1]
+            or h["bindings"].get(key)
+            != {
+                x: a[x]
+                for x in (
+                    "digest",
+                    "snapshot_id",
+                    "commitment",
+                    "window",
+                    "catalogue_version",
+                )
+            }
+        ):
+            fail("authority", "DISPATCH_APPROVAL_INVALID")
     if ownership_end is not None:
         if (
             withdrawn
