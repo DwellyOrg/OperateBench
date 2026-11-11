@@ -30,7 +30,7 @@ LATEST_HTTP_MODELS = (
 
 
 def minimum_effort(model: str) -> str:
-    return "none" if model in ("gpt-6-luna", "gpt-6-sol") else "low"
+    return "none" if model in ("gpt-6-luna", "gpt-6-sol", "gpt-6.1-terra") else "low"
 
 
 ENDPOINTS = {
@@ -66,7 +66,33 @@ LATEST_ROSTER_PROFILE = "latest-http-v1"
 EXCLUDED_FUTURE_MODEL = "Qwen/Qwen3.5-122B-A10B-FP8"
 
 
+NOVEMBER_PROFILE = "november-model-expansion-v1"
+NOVEMBER_MODELS = (("anthropic", "claude-sonnet-5-5"),)
+FABLE52_PROFILE = "anthropic-fable52-same44-v1"
+FABLE52_MODELS = (("anthropic", "claude-fable-5-2"),)
+
+SELECTED_SIX_PROFILE = "selected-six-http-v1"
+SELECTED_SIX = (
+    ("openai", "gpt-6.1-terra"),
+    ("anthropic", "claude-haiku-5-5"),
+    ("mistral", "mistral-large-4"),
+    ("xai", "grok-4.7"),
+    ("river_http", "GLM-5.3"),
+    ("river_http", "moonshotai/Kimi-K3"),
+)
+ENDPOINTS.update(
+    xai="https://api.x.ai/v1/responses",
+    river_http="https://api.river.ai/v1/chat/completions",
+)
+
+
 def selected_roster(roster_profile: str = "legacy-v1") -> tuple[tuple[str, str], ...]:
+    if roster_profile == FABLE52_PROFILE:
+        return FABLE52_MODELS
+    if roster_profile == NOVEMBER_PROFILE:
+        return NOVEMBER_MODELS
+    if roster_profile == SELECTED_SIX_PROFILE:
+        return SELECTED_SIX
     if roster_profile == GEMINI_ROSTER_PROFILE:
         from tools.three_flow_gemini import MODELS as gemini_models
 
@@ -117,6 +143,20 @@ def selection_for(
     provider: str, model: str, mode_profile: str
 ) -> CampaignSelection | None:
     """Resolve only existing valid cells; callers retain their validation order."""
+    if mode_profile == "off-or-minimum-v1" and (
+        (provider, model) in SELECTED_SIX + NOVEMBER_MODELS + FABLE52_MODELS
+    ):
+        return CampaignSelection(
+            provider,
+            model,
+            "responses"
+            if provider in ("openai", "xai")
+            else "messages"
+            if provider == "anthropic"
+            else "chat_completions",
+            mode_profile,
+            "tools/three_flow_http.py",
+        )
     return next(
         (
             s
@@ -144,6 +184,12 @@ def http_reasoning_mode(model: str) -> str:
 
 
 def http_mode_fields(provider: str, model: str, mode_profile: str) -> dict[str, Any]:
+    if (provider, model) in NOVEMBER_MODELS:
+        return {"thinking": {"type": "between_tools"}, "output_config": {"effort": "low"}}
+    if (provider, model) in SELECTED_SIX:
+        from tools.three_flow_selected import mode_fields
+
+        return mode_fields(provider, model)
     controls: dict[str, dict[str, Any]] = {
         "openai": {"reasoning": {"effort": minimum_effort(model)}},
         "anthropic": {
@@ -207,6 +253,39 @@ def registry(
     transport_policy: str = "legacy-v1",
     roster_profile: str = "legacy-v1",
 ) -> list[dict[str, Any]]:
+    if roster_profile in (NOVEMBER_PROFILE, FABLE52_PROFILE):
+        fable = roster_profile == FABLE52_PROFILE
+        if mode_profile != "off-or-minimum-v1":
+            raise ValueError("November requires qualified minimum mode")
+        if transport_policy != "legacy-v1":
+            raise ValueError("November requires legacy-v1 transport policy")
+        return [
+            {
+                "provider": p,
+                "model": m,
+                "endpoint": ENDPOINTS[p],
+                "mapping": (
+                    "three-flow-anthropic-fable52-stateless-v1"
+                    if fable
+                    else "three-flow-anthropic-november-stateless-v1"
+                ),
+                "request_settings": {
+                    **http_mode_fields(p, m, mode_profile),
+                    "tool_choice": {"type": "auto", "disable_parallel_tool_use": True},
+                    "no_native_continuation": True,
+                },
+                "settings_source": "tools/three_flow_http.py",
+                "retries": 0,
+                "admitted": False,
+            }
+            for p, m in (FABLE52_MODELS if fable else NOVEMBER_MODELS)
+        ]
+    if roster_profile == SELECTED_SIX_PROFILE:
+        if mode_profile != "off-or-minimum-v1":
+            raise ValueError("selected six requires qualified minimum mode")
+        from tools.three_flow_selected import selected_registry
+
+        return selected_registry(transport_policy)
     if roster_profile == GEMINI_ROSTER_PROFILE:
         from tools.three_flow_gemini import MAPPING
         from tools.three_flow_gemini import MODELS as gemini_models

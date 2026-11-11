@@ -194,9 +194,10 @@ def test_the_projection_builds_exactly_the_body_the_adapter_sends() -> None:
 
 
 # Explicit contract changes after the composition extraction: null-only root
-# metadata (8ef9cce) and validated non-action reasoning items (4d86101).
+# metadata (8ef9cce), validated non-action reasoning items (4d86101), and
+# closed cyber/standard access metadata. Only response interpretation changed.
 CURRENT_SETTINGS_DIGEST = (
-    "85683d612da766b497a7f3fd351ae16e0e8409ef69775b5634edb218c9bfef6e"
+    "2da1e904230fe01e9060c4efe0d9631e6b29cf38dab2d8171b4dd0277967458d"
 )
 
 
@@ -206,9 +207,9 @@ def test_the_settings_hashed_into_run_identity_are_unchanged() -> None:
     assert current.pop("reasoning_items_contract") == (
         "openai_reasoning_items_strict_non_action_v1"
     )
-    assert current["response_server_extensions"] == "openai_response_server_extensions_v3"
+    assert current["response_server_extensions"] == "openai_response_server_extensions_v4"
     assert current["response_server_extensions_digest"] == (
-        "71b4891dd1010171eba5c779e1bec8f51a86c4d85f2fbfdf245f3f79d4e43d44"
+        "4b28372d561c7299afdcf7f6d6d3bce8462eb75ae8315faac4ee6895217fb84d"
     )
     # Restore only those reviewed fields and prove every other setting still
     # matches the original pre-extraction golden, rather than repinning blindly.

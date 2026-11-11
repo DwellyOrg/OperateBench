@@ -22,7 +22,16 @@ from .test_pack import FIXTURE, load_spec, run_case
 
 
 def codes(grade):
-    assert set(grade) == {"reliable", "dimensions", "findings", "terminal_outcome"}
+    assert set(grade) == {
+        "reliable",
+        "dimensions",
+        "findings",
+        "terminal_outcome",
+        "evaluator_version",
+        "diagnostics",
+    }
+    assert grade["evaluator_version"] == "0.3.0"
+    assert grade["diagnostics"] == []
     assert set(grade["dimensions"]) == set(DIMENSIONS)
     assert all(type(value) is bool for value in grade["dimensions"].values())
     assert all(set(f) == {"dimension", "code"} for f in grade["findings"])

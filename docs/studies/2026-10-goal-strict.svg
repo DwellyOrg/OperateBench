@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 1034" role="img" aria-labelledby="title desc">
+<title id="title">Latest goal and original strict rates</title><desc id="desc">Two bars per model; goal above original strict. Exact fractions are in the adjacent report table. Scale is zero to 100 percent.</desc>
+<rect width="100%" height="100%" fill="white"/>
+<text x="16" y="28" font-family="sans-serif" font-size="20">Latest goal and original strict rates</text>
+<text x="495" y="56" fill="#176381" font-family="sans-serif" font-size="15">Goal (upper bar)</text>
+<text x="735" y="56" fill="#984516" font-family="sans-serif" font-size="15">Original strict (lower bar)</text>
+<text x="16" y="98" font-family="sans-serif" font-size="14">gpt-6-astra</text>
+<rect x="495" y="88" width="440.000" height="11" fill="#176381"/><text x="940.000" y="98" font-family="sans-serif" font-size="12">43/43</text>
+<rect x="495" y="103" width="429.767" height="11" fill="#984516"/><text x="929.767" y="113" font-family="sans-serif" font-size="12">42/43</text>
+<text x="16" y="142" font-family="sans-serif" font-size="14">gemini-4-argon</text>
+<rect x="495" y="132" width="440.000" height="11" fill="#176381"/><text x="940.000" y="142" font-family="sans-serif" font-size="12">44/44</text>
+<rect x="495" y="147" width="420.000" height="11" fill="#984516"/><text x="920.000" y="157" font-family="sans-serif" font-size="12">42/44</text>
+<text x="16" y="186" font-family="sans-serif" font-size="14">gpt-6.1-sol</text>
+<rect x="495" y="176" width="440.000" height="11" fill="#176381"/><text x="940.000" y="186" font-family="sans-serif" font-size="12">44/44</text>
+<rect x="495" y="191" width="420.000" height="11" fill="#984516"/><text x="920.000" y="201" font-family="sans-serif" font-size="12">42/44</text>
+<text x="16" y="230" font-family="sans-serif" font-size="14">claude-fable-5-1</text>
+<rect x="495" y="220" width="440.000" height="11" fill="#176381"/><text x="940.000" y="230" font-family="sans-serif" font-size="12">44/44</text>
+<rect x="495" y="235" width="350.000" height="11" fill="#984516"/><text x="850.000" y="245" font-family="sans-serif" font-size="12">35/44</text>
+<text x="16" y="274" font-family="sans-serif" font-size="14">claude-opus-5-5</text>
+<rect x="495" y="264" width="440.000" height="11" fill="#176381"/><text x="940.000" y="274" font-family="sans-serif" font-size="12">44/44</text>
+<rect x="495" y="279" width="260.000" height="11" fill="#984516"/><text x="760.000" y="289" font-family="sans-serif" font-size="12">26/44</text>
+<text x="16" y="318" font-family="sans-serif" font-size="14">gpt-6-sol</text>
+<rect x="495" y="308" width="400.000" height="11" fill="#176381"/><text x="900.000" y="318" font-family="sans-serif" font-size="12">40/44</text>
+<rect x="495" y="323" width="200.000" height="11" fill="#984516"/><text x="700.000" y="333" font-family="sans-serif" font-size="12">20/44</text>
+<text x="16" y="362" font-family="sans-serif" font-size="14">gemini-3.8-flash</text>
+<rect x="495" y="352" width="440.000" height="11" fill="#176381"/><text x="940.000" y="362" font-family="sans-serif" font-size="12">43/43</text>
+<rect x="495" y="367" width="194.419" height="11" fill="#984516"/><text x="694.419" y="377" font-family="sans-serif" font-size="12">19/43</text>
+<text x="16" y="406" font-family="sans-serif" font-size="14">muse-wonder-1.0</text>
+<rect x="495" y="396" width="220.000" height="11" fill="#176381"/><text x="720.000" y="406" font-family="sans-serif" font-size="12">20/40</text>
+<rect x="495" y="411" width="110.000" height="11" fill="#984516"/><text x="610.000" y="421" font-family="sans-serif" font-size="12">10/40</text>
+<text x="16" y="450" font-family="sans-serif" font-size="14">zai-org/GLM-5.3-Flash</text>
+<rect x="495" y="440" width="350.000" height="11" fill="#176381"/><text x="850.000" y="450" font-family="sans-serif" font-size="12">35/44</text>
+<rect x="495" y="455" width="90.000" height="11" fill="#984516"/><text x="590.000" y="465" font-family="sans-serif" font-size="12">9/44</text>
+<text x="16" y="494" font-family="sans-serif" font-size="14">nvidia/GLM-5.2-NVFP4-262K</text>
+<rect x="495" y="484" width="290.000" height="11" fill="#176381"/><text x="790.000" y="494" font-family="sans-serif" font-size="12">29/44</text>
+<rect x="495" y="499" width="60.000" height="11" fill="#984516"/><text x="560.000" y="509" font-family="sans-serif" font-size="12">6/44</text>
+<text x="16" y="538" font-family="sans-serif" font-size="14">muse-spark-1.3</text>
+<rect x="495" y="528" width="190.000" height="11" fill="#176381"/><text x="690.000" y="538" font-family="sans-serif" font-size="12">19/44</text>
+<rect x="495" y="543" width="50.000" height="11" fill="#984516"/><text x="550.000" y="553" font-family="sans-serif" font-size="12">5/44</text>
+<text x="16" y="582" font-family="sans-serif" font-size="14">deepseek-ai/DeepSeek-V4.1-Flash</text>
+<rect x="495" y="572" width="71.628" height="11" fill="#176381"/><text x="571.628" y="582" font-family="sans-serif" font-size="12">7/43</text>
+<rect x="495" y="587" width="20.465" height="11" fill="#984516"/><text x="520.465" y="597" font-family="sans-serif" font-size="12">2/43</text>
+<text x="16" y="626" font-family="sans-serif" font-size="14">Qwen/Qwen3.8-27B-FP8</text>
+<rect x="495" y="616" width="20.000" height="11" fill="#176381"/><text x="520.000" y="626" font-family="sans-serif" font-size="12">2/44</text>
+<rect x="495" y="631" width="20.000" height="11" fill="#984516"/><text x="520.000" y="641" font-family="sans-serif" font-size="12">2/44</text>
+<text x="16" y="670" font-family="sans-serif" font-size="14">deepseek-ai/DeepSeek-V4-Flash-0731</text>
+<rect x="495" y="660" width="30.000" height="11" fill="#176381"/><text x="530.000" y="670" font-family="sans-serif" font-size="12">3/44</text>
+<rect x="495" y="675" width="10.000" height="11" fill="#984516"/><text x="510.000" y="685" font-family="sans-serif" font-size="12">1/44</text>
+<text x="16" y="714" font-family="sans-serif" font-size="14">gpt-6-luna</text>
+<rect x="495" y="704" width="90.000" height="11" fill="#176381"/><text x="590.000" y="714" font-family="sans-serif" font-size="12">9/44</text>
+<rect x="495" y="719" width="0.000" height="11" fill="#984516"/><text x="500.000" y="729" font-family="sans-serif" font-size="12">0/44</text>
+<text x="16" y="758" font-family="sans-serif" font-size="14">nvidia/Kimi-K2.6-NVFP4</text>
+<rect x="495" y="748" width="70.000" height="11" fill="#176381"/><text x="570.000" y="758" font-family="sans-serif" font-size="12">7/44</text>
+<rect x="495" y="763" width="0.000" height="11" fill="#984516"/><text x="500.000" y="773" font-family="sans-serif" font-size="12">0/44</text>
+<text x="16" y="802" font-family="sans-serif" font-size="14">Qwen/Qwen3.6-35B-A3B-FP8</text>
+<rect x="495" y="792" width="70.000" height="11" fill="#176381"/><text x="570.000" y="802" font-family="sans-serif" font-size="12">7/44</text>
+<rect x="495" y="807" width="0.000" height="11" fill="#984516"/><text x="500.000" y="817" font-family="sans-serif" font-size="12">0/44</text>
+<text x="16" y="846" font-family="sans-serif" font-size="14">Qwen/Qwen3.5-397B-A17B-FP8</text>
+<rect x="495" y="836" width="30.000" height="11" fill="#176381"/><text x="530.000" y="846" font-family="sans-serif" font-size="12">3/44</text>
+<rect x="495" y="851" width="0.000" height="11" fill="#984516"/><text x="500.000" y="861" font-family="sans-serif" font-size="12">0/44</text>
+<text x="16" y="890" font-family="sans-serif" font-size="14">mistral-medium-3-5</text>
+<rect x="495" y="880" width="0.000" height="11" fill="#176381"/><text x="500.000" y="890" font-family="sans-serif" font-size="12">0/44</text>
+<rect x="495" y="895" width="0.000" height="11" fill="#984516"/><text x="500.000" y="905" font-family="sans-serif" font-size="12">0/44</text>
+<text x="16" y="934" font-family="sans-serif" font-size="14">nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4</text>
+<rect x="495" y="924" width="0.000" height="11" fill="#176381"/><text x="500.000" y="934" font-family="sans-serif" font-size="12">0/44</text>
+<rect x="495" y="939" width="0.000" height="11" fill="#984516"/><text x="500.000" y="949" font-family="sans-serif" font-size="12">0/44</text>
+<text x="16" y="978" font-family="sans-serif" font-size="14">Qwen/Qwen3.5-9B</text>
+<rect x="495" y="968" width="0.000" height="11" fill="#176381"/><text x="500.000" y="978" font-family="sans-serif" font-size="12">0/44</text>
+<rect x="495" y="983" width="0.000" height="11" fill="#984516"/><text x="500.000" y="993" font-family="sans-serif" font-size="12">0/44</text>
+</svg>

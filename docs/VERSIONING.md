@@ -884,3 +884,19 @@ an Artifact. Existing permanent one-shot claim markers retain their semantics.
 Frozen Alpha execution and historical readers are not assigned this new output
 contract. Its test-only historical dependency identities are obtained from the
 exact archived runtime, while current causal replay still rejects old tapes.
+
+### Compliance evaluator 0.3.0: terminal read-guard accounting
+
+The property-compliance profiles evaluator introduces a separate emitted
+`evaluator_version=0.3.0`, following the Commerce profile convention after the
+unversioned evaluator shipped with pack 0.2.0. Its paired `diagnostics` list is
+empty. Only terminal rejections for `ACTION_WITHOUT_RETRIEVAL` and
+`STALE_RETRIEVED_RECORD` gain retrieval findings; action rejection, unrelated
+terminal codes and WAIT policy are unchanged. See the
+[bounded grading seam](contributions/prospire/property_compliance_profiles.md#evaluator-030-terminal-read-guard-attempts).
+Operation/pack, fixture, profile, Core and distribution versions do not move;
+the evaluator implementation digest changes. Historical grades remain preserved
+and must not be pooled as equivalent across this correction. Fresh comparable
+results require new runs. No historical regrade or public model report is part
+of this change; the corrections policy's publication/tag steps remain pending
+authorized publication.

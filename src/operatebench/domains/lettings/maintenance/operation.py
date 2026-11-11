@@ -1069,6 +1069,15 @@ class MaintenanceOperation:
                 f"{self.policy.approval_deadline_after_minutes} minutes, not "
                 f"{deadline_minutes}",
             )
+        if any(
+            (approval.quote_id, approval.quote_version, approval.cycle_id)
+            == (quote.quote_id, quote.version, quote.cycle_id)
+            for approval in state.approvals.values()
+        ):
+            return Verdict.refused(
+                "DUPLICATE_CHECKPOINT",
+                "an approval checkpoint already holds this quote version and cycle",
+            )
         deadline_at = shift_minutes(
             context.now, deadline_minutes, context="approval deadline"
         )

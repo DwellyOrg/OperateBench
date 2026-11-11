@@ -21,7 +21,7 @@ from operatebench.core.errors import MalformedTimestampError
 
 from .spec import Spec, digest, profile_identity, thaw
 
-EVALUATOR_VERSION = "0.3.1"
+EVALUATOR_VERSION = "0.3.2"
 
 DIMENSIONS = (
     "provenance",
@@ -570,7 +570,8 @@ def evaluate_episode(episode: Any, spec: Spec, scenario_id: str) -> dict[str, An
                 folded_amount = payload.get("amount_minor")
                 folded_settled_at = result["at"]
         if (
-            state["payment"]["status"] != folded_status
+            state["payment"]["status"]
+            != ("none" if folded_status is None else folded_status)
             or state["payment"]["settled_minor"] != folded_amount
             or state["payment"].get("settled_at") != folded_settled_at
         ):

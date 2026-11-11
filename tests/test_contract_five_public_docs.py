@@ -193,3 +193,70 @@ class TestNoPublishedDocumentContradictsTheCurrentContract:
             "state duplication is resolved",
         ):
             assert overclaim not in lowered, f"{relative} overclaims the migration"
+
+
+class TestMistralDocumentationKeepsImplementationBoundaries:
+    def test_each_lane_describes_its_own_schema_and_validation(self) -> None:
+        from boundarybench.providers import mistral_chat as historical
+        from operatebench.providers import mistral_chat as lifecycle
+
+        text = _read("docs/PROVIDER_MATRIX.md")
+        historical_text, lifecycle_text = text.split(
+            "### Lifecycle/operatebench selected-six Mistral metadata", 1
+        )
+        historical_text = historical_text.split(
+            "### Historical BoundaryBench Mistral: one object on the usage block", 1
+        )[1]
+        lifecycle_text = lifecycle_text.split("## Pricing provenance", 1)[0]
+        historical_text = " ".join(historical_text.split())
+        lifecycle_text = " ".join(lifecycle_text.split())
+
+        assert dict(historical.RESPONSE_EXTENSION_SCHEMA) == {
+            "prompt_tokens_details": {"cached_tokens": historical.EXTENSION_COUNT}
+        }
+        assert dict(lifecycle.RESPONSE_EXTENSION_SCHEMA) == {
+            "prompt_tokens_details": {"cached_tokens": lifecycle.EXTENSION_COUNT},
+            "completion_tokens_details": {"reasoning_tokens": lifecycle.EXTENSION_COUNT},
+        }
+        for lane, prose in ((historical, historical_text), (lifecycle, lifecycle_text)):
+            assert lane.MISTRAL_RESPONSE_EXTENSIONS in prose
+            assert lane.__name__.replace(".", "/") + ".py" in prose
+            contract = lane.RESPONSE_EXTENSION_CONTRACT
+            assert contract["object_members_required"] is True
+            assert contract["top_level_members_required"] is False
+            assert contract["extension_values_read"] is False
+            for block, members in lane.RESPONSE_EXTENSION_SCHEMA.items():
+                assert f"`{block}`" in prose
+                for member in members:
+                    assert f"`{member}`" in prose
+            assert "not an invoice" in prose
+            assert "additional or unreported fees remain unknown" in prose
+
+        assert "subsets" not in historical.RESPONSE_EXTENSION_CONTRACT
+        assert not hasattr(historical, "check_usage_subsets")
+        assert "does not check `cached_tokens <= prompt_tokens`" in historical_text
+        assert "rejects `completion_tokens_details` entirely" in historical_text
+        assert "reasoning_tokens" not in historical_text
+        assert "two bounded schema-only diagnostics" in historical_text
+        assert "raw bodies were not kept" in historical_text
+        assert "actual retained native" not in historical_text
+        assert "Read for nothing, and priced into nothing" in historical_text
+
+        subsets = lifecycle.RESPONSE_EXTENSION_CONTRACT["subsets"]
+        assert subsets == {
+            "prompt_tokens_details.cached_tokens": "prompt_tokens",
+            "completion_tokens_details.reasoning_tokens": "completion_tokens",
+        }
+        for field, total in subsets.items():
+            assert f"`{field.split('.')[-1]} <= {total}`" in lifecycle_text
+        for claim in (
+            "independently optional",
+            "exact non-negative bounded integer",
+            "exactly its required member",
+            "check_response_extensions_agree",
+            "no subset double charge and no cache discount",
+            "actual retained native responses and offline pinned-SDK replay",
+            "not public traces",
+            "not an official vendor declaration",
+        ):
+            assert claim in lifecycle_text

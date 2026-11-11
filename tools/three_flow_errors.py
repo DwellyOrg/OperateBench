@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import importlib
+import json
+import re
 import threading
 import time
 from collections.abc import Callable
@@ -12,7 +14,7 @@ import httpx
 
 
 class ProviderPacer:
-    """One process-wide cooperative Mistral lane; no automatic resubmission.
+    """One process-wide cooperative provider lane; no automatic resubmission.
 
     A 429 plus Retry-After alone cannot prove generation was not accepted or
     distinguish quota from rate windows. The delay gates *subsequent* work,
@@ -220,8 +222,65 @@ def retry_after_seconds(value: object) -> int | None:
     return seconds if 0 <= seconds <= 86400 else None
 
 
-def http_error(status: object, operation: str, retry_after: object) -> dict[str, Any]:
-    return {
+def typed_http_facts(body: bytes) -> dict[str, Any]:
+    """Closed JSON shapes and full-message numeric grammar; never emit text.
+
+    Diagnostic only: these reported numbers do not authorize policy changes.
+    Duplicate keys, oversized input and unrecognized messages fail closed.
+    """
+    if len(body) > 16384:
+        return {}
+
+    def unique(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+        result: dict[str, Any] = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError("duplicate field")
+            result[key] = value
+        return result
+
+    try:
+        root = json.loads(body.decode("utf-8"), object_pairs_hook=unique)
+    except (ValueError, UnicodeError, RecursionError):
+        return {}
+    if type(root) is not dict:
+        return {}
+    error = root.get("error", root)
+    if type(error) is not dict:
+        return {}
+    facts: dict[str, Any] = {}
+    for key, allowed in (
+        (
+            "code",
+            {
+                "invalid_request_error",
+                "context_length_exceeded",
+                "invalid_parameter",
+                "max_tokens_exceeded",
+            },
+        ),
+        ("type", {"invalid_request_error", "invalid_request", "validation_error"}),
+        ("param", {"max_tokens", "context_limit"}),
+    ):
+        value = error.get(key)
+        if type(value) is str and value in allowed:
+            facts["error_" + key] = value
+    message = error.get("message")
+    if type(message) is str and len(message) <= 160:
+        match = re.fullmatch(
+            r"(max_tokens|context_limit) must be (?:less than or equal to|<=) "
+            r"([1-9][0-9]{0,8})(?:[.])?",
+            message,
+        )
+        if match:
+            facts.update(limit_parameter=match[1], reported_limit=int(match[2]))
+    return facts
+
+
+def http_error(
+    status: object, operation: str, retry_after: object, *, body: bytes | None = None
+) -> dict[str, Any]:
+    projection = {
         "representation": "sanitized_http_error_v2",
         "diagnostic": "http_non_success",
         "body_retained": False,
@@ -231,3 +290,10 @@ def http_error(status: object, operation: str, retry_after: object) -> dict[str,
         "retry_after_seconds": retry_after_seconds(retry_after),
         "automatic_resubmission": False,
     }
+
+    if body is not None:
+        facts = typed_http_facts(body)
+        if facts:
+            projection.update(facts)
+            projection["reason"] = "recognized_typed_error"
+    return projection

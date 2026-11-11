@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 242" role="img" aria-labelledby="title desc">
+<title id="title">Common-scored strict gains and losses</title><desc id="desc">Among 910 common-scored cases: Maintenance 3 gained and 1 lost; Commerce 18 gained and 13 lost; Compliance 18 gained and 13 lost. Total 39 gained and 27 lost.</desc>
+<rect width="100%" height="100%" fill="white"/>
+<text x="16" y="28" font-family="sans-serif" font-size="20">Common-scored strict gains and losses</text>
+<text x="495" y="56" fill="#176381" font-family="sans-serif" font-size="15">Gained (upper bar)</text>
+<text x="735" y="56" fill="#984516" font-family="sans-serif" font-size="15">Lost (lower bar)</text>
+<text x="16" y="98" font-family="sans-serif" font-size="14">Maintenance</text>
+<rect x="495" y="88" width="66.000" height="11" fill="#176381"/><text x="566.000" y="98" font-family="sans-serif" font-size="12">3</text>
+<rect x="495" y="103" width="22.000" height="11" fill="#984516"/><text x="522.000" y="113" font-family="sans-serif" font-size="12">1</text>
+<text x="16" y="142" font-family="sans-serif" font-size="14">Commerce</text>
+<rect x="495" y="132" width="396.000" height="11" fill="#176381"/><text x="896.000" y="142" font-family="sans-serif" font-size="12">18</text>
+<rect x="495" y="147" width="286.000" height="11" fill="#984516"/><text x="786.000" y="157" font-family="sans-serif" font-size="12">13</text>
+<text x="16" y="186" font-family="sans-serif" font-size="14">Compliance</text>
+<rect x="495" y="176" width="396.000" height="11" fill="#176381"/><text x="896.000" y="186" font-family="sans-serif" font-size="12">18</text>
+<rect x="495" y="191" width="286.000" height="11" fill="#984516"/><text x="786.000" y="201" font-family="sans-serif" font-size="12">13</text>
+</svg>

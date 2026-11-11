@@ -1,5 +1,67 @@
 # Repository corrections
 
+## OB-CORR-2026-10-24-COMPLIANCE-TERMINAL-READ-GUARD
+
+- **Date / scope / identity:** 2026-10-24; evaluator-only correction in
+  development pack `lettings.property_compliance.profiles.v1`, applicable to all
+  25 authored scenarios (the EN/SC/AU/NZ normal, remediation, access, reopen and
+  qualification families, plus SC_checklist, AU_gas_expired, NZ_assessor_only,
+  EN_wrong_property and EN_no_response). The evaluator previously shipped with
+  pack 0.2.0 without a separate emitted version; it now emits
+  `evaluator_version=0.3.0` and `diagnostics=[]`. Operation/pack 0.2.0, fixtures,
+  profiles, engine 0.13.0 and distribution 0.1.0 are unchanged. Implementation
+  digests change with source; the shared envelope reader also changes the
+  content-bound development runtime digest, without changing Core execution.
+- **Defect / correction:** Core rejects stale or absent required reads before
+  domain terminal execution. The evaluator omitted these `terminal_rejected`
+  rows, allowing subsequent recovery to hide the attempt. Only
+  `ACTION_WITHOUT_RETRIEVAL` and `STALE_RETRIEVED_RECORD` now use the existing
+  retrieval mapping and finding deduplication. Action rejections, other terminal
+  codes, the unmapped `ACTED_ON_CLAIM_WITHOUT_RECORD`, and WAIT retain their
+  existing treatment. Core still prevents the unsafe proposal.
+- **Evidence / comparability / action:** genuine Engine regressions cover
+  stale and absent reads, recovery, action parity/deduplication, independent
+  failures and clean/unrelated-code/WAIT controls. This establishes synthetic
+  grading behavior, not model performance. Historical grades remain preserved;
+  no published results are superseded here. Current comparable results require
+  fresh runs. Saved outcomes remain untrusted without process-local attestation;
+  private diagnostic reanalysis is not an official regrade. Pre-fix source is
+  retained in git history. Publication and the corrections policy's
+  pre-correction tag remain pending authorized publication.
+
+## OB-CORR-2026-10-19-COMMERCE-EMPTY-PAYMENT-HISTORY
+
+- **Date / scope / identity:** 2026-10-19; evaluator-only correction in development
+  pack `commerce.return_refund.profiles.v1`, evaluator 0.3.1 → 0.3.2. All refund
+  branches (UK_NORMAL, UK_LABEL_UNKNOWN, UK_PAYMENT_FAILED, DE_NORMAL,
+  DE_WITHHOLDING, CA_POLICY, AU_MAJOR) can expose the defect before submission.
+  Operation/pack 0.2.0, engine/runtime 0.13.0, distribution 0.1.0, profiles and
+  fixtures are unchanged. The evaluator implementation digest follows source
+  content automatically; operation and runtime inputs do not change.
+- **Defect / correction:** an empty accepted processor history folds to the
+  internal `None` sentinel, but canonical initial payment status is `"none"`.
+  Only the final status comparison normalizes that sentinel. First-result
+  validation still requires `processor_1`; amount and settlement timestamp
+  comparisons, causal submission checks and all other grading remain intact.
+- **Evidence / impact:** focused synthetic Engine regressions reproduce the false
+  `PROCESSOR_HISTORY_STATE_MISMATCH`, preserve genuine state mismatches with and
+  without accepted updates, reject query-first history, and retain reliable
+  no-submit non-refund branches. The sanitized 2026-10-19 audit reports 70
+  historical cases across 12 models with initial payment state and no accepted
+  update. Removing this finding would leave their settlement dimension failing
+  (`REFUND_NOT_SUBMITTED`, `NO_CAUSAL_PROCESSOR_RESULT`), goal=false and
+  reliable=false; published success/reliability fractions would not change.
+  This is an impact inference from the sanitized report, not a historical regrade.
+- **Comparability / preservation / action:** finding lists across 0.3.1 and 0.3.2
+  are not equivalent and must retain their evaluator identities. No published
+  result is superseded or rewritten. No historical regrade or rerun is performed
+  or authorized here; current comparable results require fresh runs under the
+  preview boundary in [VERSIONING.md](VERSIONING.md#evaluator-only-change).
+  Pre-fix source is preserved in repository history as evaluator 0.3.1.
+  Historical records and grades remain unchanged. The policy's pre-correction
+  tag and publication requirement remains pending; this correction creates no
+  tag and publishes no evidence.
+
 ## OB-CORR-2026-10-01-COMMERCE-FAILED-ATTEMPT-HISTORY
 
 - **Scope / identity:** finite failed-attempt clock followup in development pack

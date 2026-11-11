@@ -161,7 +161,7 @@ def test_http_admission_controls_share_payload_owner(monkeypatch):
         ({"transport_policy": "bad", "mode_profile": "bad"}, "unknown transport policy"),
         (
             {"transport_policy": "paced-safe-errors-v1", "mode_profile": "bad"},
-            "pacing policy is Mistral-only",
+            "pacing policy requires Mistral or selected River HTTP",
         ),
         ({"mode_profile": "bad", "model": "unknown"}, "unknown reasoning mode profile"),
         ({"model": "unknown"}, "unsupported HTTP provider/model pair"),
@@ -177,9 +177,13 @@ def test_http_admission_controls_share_payload_owner(monkeypatch):
         ({"max_output_tokens": 1}, "successor flagship output profile is 128000"),
     ],
 )
-def test_http_refusal_order_before_client_construction(overrides, message):
+def test_http_refusal_order_before_client_construction(overrides, message, monkeypatch):
     from types import SimpleNamespace
 
+    def forbidden_client(*args, **kwargs):
+        raise AssertionError("client constructed before refusal")
+
+    monkeypatch.setattr(http.httpx, "Client", forbidden_client)
     kwargs = {
         "provider": "openai",
         "model": "gpt-6-astra",

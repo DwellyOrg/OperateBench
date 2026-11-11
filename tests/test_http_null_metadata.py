@@ -108,6 +108,8 @@ def dispatch(provider, body):
             base_url=ENDPOINTS[provider].rsplit("/", 1)[0],
         )
         transport = object.__new__(HTTPCampaignTransport)
+        transport.selected_six = False
+        transport.november = False
         transport.provider = provider
         transport.model = MODELS[provider]
         transport.client = client

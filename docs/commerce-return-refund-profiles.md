@@ -290,3 +290,12 @@ fixture/pack version remains 0.2.0; no historical source pins or fixtures are
 rewritten. Old serialized records cannot become official 0.3.1 grades through
 unsupported replay or diagnostic adapters. Fresh grades still require Engine
 provenance.
+
+
+### Empty payment history correction 0.3.2
+
+Evaluator 0.3.2 compares an empty accepted processor fold with canonical initial
+payment status `"none"`. The internal first-result sentinel, amount/timestamp
+checks and missing-submission failures remain enforced. Non-refund branches are
+unchanged. Historical records and grades remain preserved; see the
+[correction note](CORRECTIONS.md#ob-corr-2026-10-19-commerce-empty-payment-history).

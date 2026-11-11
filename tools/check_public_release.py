@@ -22,7 +22,9 @@ from __future__ import annotations
 
 import argparse
 import ast
+import hashlib
 import json
+import math
 import re
 import sys
 import tomllib
@@ -165,7 +167,8 @@ PRIVATE_REFERENCE_PATTERNS: tuple[tuple[str, str], ...] = (
 
 #: A bare Git commit identity is internal provenance, not a content digest. Match
 #: every hexadecimal case representation. Exceptions are validated Action pins
-#: and strictly scoped Hugging Face asset provenance in the canonical manifest.
+#: and strictly scoped Hugging Face asset provenance in the canonical manifest,
+#: plus digest-approved public aggregate source scalars (disabled by default).
 BARE_COMMIT_IDENTIFIER = re.compile(r"(?<![0-9A-Za-z_-])[0-9A-Fa-f]{40}(?![0-9A-Za-z_-])")
 PINNED_ACTION_USES_LINE = re.compile(
     r"^\s*(?:-\s+)?uses:\s+"
@@ -955,13 +958,153 @@ def _hf_provenance_spans(text: str, relative: str | None) -> list[tuple[int, int
     return spans
 
 
+# Parent approval must pin the complete final UTF-8 artifacts before activation.
+PUBLIC_AGGREGATE_SHA256: dict[str, str | None] = {
+    "docs/studies/2026-10-selected-six.json": (
+        "a5032145578776f88e32d6235849dfb2243afefc4992827c4344bcc34817e432"
+    ),
+    "docs/studies/2026-10-model-averages.json": (
+        "af31cc190eac3adee1aea88ea74f360d255604624f2c98728318943b5212cc0a"
+    ),
+}
+
+
+def _finite_json_float(value: str) -> float:
+    number = float(value)
+    if not math.isfinite(number):
+        raise ValueError("nonfinite JSON number")
+    return number
+
+
+def _public_aggregate_source_spans(
+    text: str, relative: str | None
+) -> list[tuple[int, int]]:
+    """Grant only the source scalar in an explicitly approved complete artifact."""
+    if relative not in (
+        "docs/studies/2026-10-selected-six.json",
+        "docs/studies/2026-10-model-averages.json",
+    ):
+        return []
+    pin = PUBLIC_AGGREGATE_SHA256.get(relative)
+    if pin is None or hashlib.sha256(text.encode("utf-8")).hexdigest() != pin:
+        return []
+    try:
+        data = json.loads(
+            text,
+            object_pairs_hook=_unique_json_object,
+            parse_constant=_reject_json_constant,
+            parse_float=_finite_json_float,
+        )
+    except (ValueError, RecursionError):
+        return []
+    if not isinstance(data, dict):
+        return []
+    if relative == "docs/studies/2026-10-model-averages.json":
+        data = data.get("selected_six_provenance")
+    if not isinstance(data, dict):
+        return []
+    if data.get("schema_version") == 2:
+        provenance = data.get("provenance")
+        if not isinstance(provenance, dict):
+            return []
+        original = provenance.get("original_source_revision")
+        correction = provenance.get("correction_source_revision")
+        if (
+            not isinstance(original, str)
+            or not isinstance(correction, str)
+            or re.fullmatch(r"[0-9a-f]{40}", original) is None
+            or re.fullmatch(r"[0-9a-f]{40}", correction) is None
+            or original == correction
+        ):
+            return []
+        if (
+            data.get("source_revision") != correction
+            or provenance.get("original_source_revision") != original
+            or provenance.get("correction_source_revision") != correction
+        ):
+            return []
+        if set(provenance) != {
+            "original_source_revision",
+            "correction_source_revision",
+            "models",
+        } or not isinstance(provenance["models"], list):
+            return []
+        expected_sources = [correction, original, correction]
+        for model in provenance["models"]:
+            if not isinstance(model, dict) or not isinstance(
+                model.get("attempt_groups"), list
+            ):
+                return []
+            for group in model["attempt_groups"]:
+                if (
+                    not isinstance(group, dict)
+                    or group.get("phase") not in ("original", "correction")
+                    or group.get("source_revision")
+                    not in (
+                        (original,)
+                        if group["phase"] == "original"
+                        else (original, correction)
+                    )
+                ):
+                    return []
+                expected_sources.append(group["source_revision"])
+        # Numerical/schema validation belongs to the site intake validator;
+        # this consumer copies approved bytes and only scopes source exceptions.
+        # Whole-artifact approval remains mandatory. Only these exact JSON source
+        # scalars receive an exception, never arbitrary strings or source paths.
+        pattern = (
+            r'"(source_revision|original_source_revision|correction_source_revision)"'
+            r'\s*:\s*"([0-9a-f]{40})"'
+        )
+        matches = list(re.finditer(pattern, text))
+        if sorted(m.group(2) for m in matches) != sorted(expected_sources):
+            return []
+        # Every decoded source key/value must be one of these readable scalars.
+        # This rejects escaped aliases and same-valued notes even under a new pin.
+        tokens = list(re.finditer(r'"(?:[^"\\]|\\.)*"', text))
+        source_keys = {
+            "source_revision",
+            "original_source_revision",
+            "correction_source_revision",
+        }
+        permitted_keys = {m.start(1) - 1 for m in matches}
+        permitted_values = {m.start(2) - 1 for m in matches}
+        for token in tokens:
+            decoded = json.loads(token.group())
+            if decoded in source_keys and token.start() not in permitted_keys:
+                return []
+            if (
+                decoded in (original, correction)
+                and token.start() not in permitted_values
+            ):
+                return []
+        return [(m.start(2), m.end(2)) for m in matches]
+    source = data.get("source_revision")
+    if not isinstance(source, str) or re.fullmatch(r"[0-9a-f]{40}", source) is None:
+        return []
+    strings = list(re.finditer(r'"(?:[^"\\]|\\.)*"', text))
+    # Count decoded spellings too: no other occurrence may obscure the location.
+    keys = [token for token in strings if json.loads(token.group()) == "source_revision"]
+    if len(keys) != 1 or keys[0].group() != '"source_revision"':
+        return []
+    for key, value in pairwise(strings):
+        if (
+            key is keys[0]
+            and text[key.end() : value.start()].strip() == ":"
+            and value.group() == '"' + source + '"'
+        ):
+            return [(value.start() + 1, value.end() - 1)]
+    return []
+
+
 def scan_bare_commit_identifiers(
     text: str, *, where: str, workflow_path: str | None = None
 ) -> list[str]:
-    """Reject commit tokens except validated Action and canonical HF asset pins."""
+    """Reject commit tokens outside validated pins and approved source scalars."""
     problems: list[str] = []
     workflow = workflow_path is not None and _is_workflow_path(workflow_path)
     provenance_spans = _hf_provenance_spans(text, workflow_path)
+    provenance_spans += _public_aggregate_source_spans(text, workflow_path)
     for match in BARE_COMMIT_IDENTIFIER.finditer(text):
         if any(
             start <= match.start() and match.end() <= end
@@ -981,7 +1124,7 @@ def scan_bare_commit_identifiers(
 
 
 def check_no_bare_commit_identifiers(root: Path = REPO_ROOT) -> list[str]:
-    """No commit identity outside validated Action or canonical HF asset pins."""
+    """No commit identity outside validated pins and approved source scalars."""
     problems: list[str] = []
     for path in candidate_files(root):
         text = _read(path)

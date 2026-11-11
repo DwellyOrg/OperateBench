@@ -23,6 +23,7 @@ import base64
 import csv
 import hashlib
 import io
+import json
 import re
 import stat
 import tarfile
@@ -2463,3 +2464,237 @@ class TestHuggingFacePublicationPins:
         problems = checks.check_built_distributions(tmp_path)
         allowed = variant == "canonical" or (kind == "wheel" and variant == "two-roots")
         assert (problems == []) is allowed
+
+
+class TestPublicAggregateSourcePins:
+    token = "ac" * 20
+
+    @pytest.fixture(params=list(checks.PUBLIC_AGGREGATE_SHA256))
+    def path(self, request: pytest.FixtureRequest) -> str:
+        return request.param
+
+    def blob(self, path: str, **extra: object) -> str:
+        source = {"source_revision": self.token}
+        data = (
+            {"selected_six_provenance": source}
+            if path.endswith("model-averages.json")
+            else source
+        )
+        return json.dumps({**data, **extra}, ensure_ascii=False) + "\n"
+
+    def pin(self, monkeypatch: pytest.MonkeyPatch, path: str, text: str) -> None:
+        monkeypatch.setitem(
+            checks.PUBLIC_AGGREGATE_SHA256,
+            path,
+            hashlib.sha256(text.encode("utf-8")).hexdigest(),
+        )
+
+    def scan(self, text: str, path: str) -> list[str]:
+        return checks.scan_bare_commit_identifiers(text, where=path, workflow_path=path)
+
+    def test_disabled_missing_and_mismatched_pin(
+        self, path: str, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        text = self.blob(path)
+        monkeypatch.setitem(checks.PUBLIC_AGGREGATE_SHA256, path, None)
+        assert checks.PUBLIC_AGGREGATE_SHA256[path] is None
+        assert self.scan(text, path)
+        monkeypatch.delitem(checks.PUBLIC_AGGREGATE_SHA256, path)
+        assert self.scan(text, path)
+        monkeypatch.setitem(checks.PUBLIC_AGGREGATE_SHA256, path, "0" * 64)
+        assert self.scan(text, path)
+
+    def test_exact_source_span_only(
+        self, path: str, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        text = self.blob(path, note=self.token, label="café")
+        self.pin(monkeypatch, path, text)
+        spans = checks._public_aggregate_source_spans(text, path)
+        assert len(spans) == 1
+        assert text[slices := slice(*spans[0])] == self.token
+        assert text[slices.start - 1 : slices.stop + 1] == json.dumps(self.token)
+        assert len(self.scan(text, path)) == 1
+        text = self.blob(path)
+        self.pin(monkeypatch, path, text)
+        assert self.scan(text, path) == []
+        assert self.scan(text + " ", path)
+        assert self.scan(text.replace("\n", "\r\n"), path)
+
+    @pytest.mark.parametrize("prefix", ["copy/", "./", "/", ""])
+    def test_nearpaths_never_grant_relief(
+        self, path: str, prefix: str, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        text = self.blob(path)
+        nearpath = prefix + path if prefix else path + ".bak"
+        self.pin(monkeypatch, nearpath, text)
+        assert self.scan(text, nearpath)
+        assert checks._public_aggregate_source_spans(text, None) == []
+
+    @pytest.mark.parametrize(
+        "mutation",
+        [
+            "malformed",
+            "duplicate",
+            "multiple",
+            "escaped-key",
+            "escaped-value",
+            "nonfinite",
+            "overflow",
+            "wrong-location",
+            "wrong-type",
+            "uppercase",
+            "wrong-format",
+            "null",
+            "array",
+        ],
+    )
+    def test_invalid_or_ambiguous_documents(
+        self, path: str, mutation: str, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        text = self.blob(path)
+        if mutation == "malformed":
+            text += "trailing"
+        elif mutation == "duplicate":
+            text = text.replace(
+                '"source_revision":', '"source_revision": null, "source_revision":'
+            )
+        elif mutation == "multiple":
+            text = self.blob(path, other={"source_revision": self.token})
+        elif mutation == "escaped-key":
+            text = text.replace("source_revision", "source_" + r"\u0072evision")
+        elif mutation == "escaped-value":
+            text = text.replace(self.token, r"\u0061" + self.token[1:])
+        elif mutation in {"nonfinite", "overflow"}:
+            text = (
+                text.rstrip()[:-1]
+                + ', "number": '
+                + ("NaN" if mutation == "nonfinite" else "1e999")
+                + "}"
+            )
+        elif mutation == "wrong-location":
+            text = json.dumps({"other": {"source_revision": self.token}})
+        elif mutation == "wrong-type":
+            text = text.replace(json.dumps(self.token), json.dumps([self.token]))
+        elif mutation == "uppercase":
+            text = text.replace(self.token, self.token.upper())
+        elif mutation == "wrong-format":
+            text = text.replace(self.token, "rev-" + self.token)
+        elif mutation == "null":
+            text = text.replace(json.dumps(self.token), "null")
+        elif mutation == "array":
+            text = "[" + text + "]"
+        self.pin(monkeypatch, path, text)
+        assert checks._public_aggregate_source_spans(text, path) == []
+        assert len(self.scan(text, path)) == len(
+            list(checks.BARE_COMMIT_IDENTIFIER.finditer(text))
+        )
+
+    @pytest.mark.parametrize("archive_kind", ["wheel", "sdist"])
+    def test_source_and_archive_routing_preserves_other_scanners(
+        self,
+        path: str,
+        archive_kind: str,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        text = self.blob(path)
+        self.pin(monkeypatch, path, text)
+        target = tmp_path / path
+        target.parent.mkdir(parents=True)
+        target.write_bytes(text.encode())
+        assert checks.check_no_bare_commit_identifiers(tmp_path) == []
+        distribution = tmp_path / "dist"
+        _empty_distribution(distribution)
+
+        def archive_payload(payload: str) -> None:
+            if archive_kind == "wheel":
+                with zipfile.ZipFile(
+                    distribution / "pkg-0.1.0-py3-none-any.whl", "w"
+                ) as archive:
+                    archive.writestr(path, payload.encode())
+            else:
+                with tarfile.open(distribution / "pkg-0.1.0.tar.gz", "w:gz") as archive:
+                    member = tarfile.TarInfo("pkg-0.1.0/" + path)
+                    raw = payload.encode()
+                    member.size = len(raw)
+                    archive.addfile(member, io.BytesIO(raw))
+
+        archive_payload(text)
+        assert checks.check_built_distributions(tmp_path) == []
+        text = self.blob(
+            path,
+            note=self.token,
+            message="recorded in " + " ".join(["an", "internal", "audit"]),
+            location="/" + "var/www/example",
+            token="sk-ant-" + "x" * 40,
+        )
+        self.pin(monkeypatch, path, text)
+        target.write_bytes(text.encode())
+        archive_payload(text)
+        assert len(checks.check_no_bare_commit_identifiers(tmp_path)) == 1
+        assert checks.check_no_private_provenance(tmp_path)
+        assert checks.check_no_private_references(tmp_path)
+        assert checks.check_no_credential_shapes(tmp_path)
+        problems = checks.check_built_distributions(tmp_path)
+        assert len(problems) == 4
+        assert any("bare 40-hex" in problem for problem in problems)
+        assert any("absolute local path" in problem for problem in problems)
+        assert any("Anthropic-style" in problem for problem in problems)
+        assert any(_label("non-public", "audit", "claim") in p for p in problems)
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "docs/studies/2026-10-selected-six.json",
+        "docs/studies/2026-10-model-averages.json",
+    ],
+)
+def test_recovery_v2_source_exceptions_remain_byte_pinned(monkeypatch, path):
+    original, correction = "a" * 40, "b" * 40
+    value = {
+        "schema_version": 2,
+        "source_revision": correction,
+        "provenance": {
+            "original_source_revision": original,
+            "correction_source_revision": correction,
+            "models": [
+                {
+                    "attempt_groups": [
+                        {"phase": "original", "source_revision": original},
+                        {"phase": "correction", "source_revision": original},
+                        {"phase": "correction", "source_revision": correction},
+                    ]
+                }
+            ],
+        },
+    }
+
+    def spans(text, pin=True):
+        monkeypatch.setitem(
+            checks.PUBLIC_AGGREGATE_SHA256,
+            path,
+            hashlib.sha256(text.encode()).hexdigest() if pin else "0" * 64,
+        )
+        return checks._public_aggregate_source_spans(text, path)
+
+    text = json.dumps({"selected_six_provenance": value} if "averages" in path else value)
+    assert len(spans(text)) == 6
+    assert not spans(text, pin=False)
+    adversaries = [
+        text[:-1] + ', "note": "' + original + '"}',
+        text[:-1] + ', "note": "source_revision"}',
+        text.replace('"source_revision"', '"source\\u005frevision"', 1),
+        text.replace(original, "\\u0061" + original[1:], 1),
+        text.replace('"source_revision"', '"source\\u005frevision"', 1)[:-1]
+        + ', "note": {"source_revision": "'
+        + correction
+        + '"}}',
+        text[:-1] + ', "source_revision": "' + correction + '"}',
+        text[:-1] + ', "note": {"source_revision": "' + correction + '"}}',
+        text.replace('"phase": "original"', '"phase": "other"'),
+        text.replace(original, "c" * 40, 1),
+    ]
+    for bad in adversaries:
+        assert not spans(bad)
+    assert checks.scan_bare_commit_identifiers(text + " ", where=path, workflow_path=path)

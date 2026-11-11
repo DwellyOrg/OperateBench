@@ -11,6 +11,7 @@ stub rather than by reusing the resolver as its own oracle.
 from __future__ import annotations
 
 from collections.abc import Mapping
+from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
@@ -20,7 +21,9 @@ from operatebench.agents.model import tool_schema
 from operatebench.agents.openai_responses import outcome_tools
 from operatebench.core.clock import shift_minutes
 from operatebench.core.events import DuplicateEventError, Event, EventQueue
-from operatebench.core.retrieval import RetrievalRequest
+from operatebench.core.outcomes import Act
+from operatebench.core.retrieval import RetrievalRequest, RetrieveBatch
+from operatebench.domains.lettings.maintenance.agents import RetrievingReferenceAgent
 from operatebench.domains.lettings.maintenance.operation import MaintenanceOperation
 from operatebench.domains.lettings.maintenance.spec import load_spec
 from operatebench.domains.lettings.maintenance.state import (
@@ -382,6 +385,75 @@ class TestDomainGuards:
             valid_until="2031-03-20T09:00:00Z",
         )
         return domain, state, context
+
+    @pytest.mark.parametrize(
+        "status", ["OPEN", "RESOLVED_APPROVED", "RESOLVED_REJECTED", "EXPIRED"]
+    )
+    def test_duplicate_approval_is_refused_without_side_effects(
+        self, spec: Any, status: str
+    ) -> None:
+        domain, state, context = self._prepared(spec)
+        payload = _approval_payload(state.quotes["quote_1:v1"], spec)
+        assert domain.apply_action(
+            state, "request_approval", payload, [], context
+        ).accepted
+        assert len(state.approvals) == 1
+        assert len(context.timers) == len(state.obligations) == 2
+        assert sum(kind == "checkpoint_opened" for kind, _ in context.records) == 1
+        # Retained bindings must not reopen even if the quote is still RECEIVED.
+        state.approvals["checkpoint_1"].status = status
+        for refs in ([], ["checkpoint_1"]):
+            context.advance(1)
+            before = deepcopy((state.canonical(), context.records, context.timers))
+            verdict = domain.apply_action(
+                state,
+                "request_approval",
+                dict(reversed(list(payload.items()))),
+                refs,
+                context,
+            )
+            assert not verdict.accepted, verdict
+            assert verdict.code == "DUPLICATE_CHECKPOINT"
+            assert (state.canonical(), context.records, context.timers) == before
+
+    @pytest.mark.parametrize("change", ["version", "quote_id_and_cycle"])
+    def test_distinct_approval_binding_is_legal(self, spec: Any, change: str) -> None:
+        domain, state, context = self._prepared(spec)
+        quote = state.quotes["quote_1:v1"]
+        assert domain.apply_action(
+            state, "request_approval", _approval_payload(quote, spec), [], context
+        ).accepted
+        other = deepcopy(quote)
+        if change == "version":
+            other.version += 1
+        else:
+            # A quote key cannot move cycles; further work needs a new quote ID.
+            other.quote_id = "quote_2"
+            other.cycle_id = "work_cycle_4"
+            state.cycles[other.cycle_id] = Cycle(
+                cycle_id=other.cycle_id, kind="APPROVED_WORK", scope_digest=SCOPE_A
+            )
+        assert other.key not in state.quotes
+        state.quotes[other.key] = other
+        assert domain.apply_action(
+            state, "request_approval", _approval_payload(other, spec), [], context
+        ).accepted
+        assert len(state.approvals) == 2
+
+    def test_rejected_quote_still_refuses_approval(self, spec: Any) -> None:
+        domain, state, context = self._prepared(spec)
+        quote = state.quotes["quote_1:v1"]
+        payload = _approval_payload(quote, spec)
+        assert domain.apply_action(
+            state, "request_approval", payload, [], context
+        ).accepted
+        quote.status = "REJECTED"
+        state.approvals["checkpoint_1"].status = "RESOLVED_REJECTED"
+        before = deepcopy((state.canonical(), context.records, context.timers))
+        verdict = domain.apply_action(state, "request_approval", payload, [], context)
+        assert not verdict.accepted
+        assert verdict.code == "QUOTE_NOT_OPEN"
+        assert (state.canonical(), context.records, context.timers) == before
 
     def test_citations_are_operation_record_keys_not_retrieval_result_ids(
         self, spec: Any
@@ -940,3 +1012,86 @@ class TestDeclaredVocabularies:
         # ACT, WAIT, ESCALATE and COMPLETE all occur in the shipped agent set;
         # ASK is exercised separately in TestAskContract.
         assert {"ACT", "WAIT", "ESCALATE", "COMPLETE"} <= kinds
+
+
+def _approval_payload(quote: Quote, spec: Any) -> dict[str, Any]:
+    return {
+        "quote_id": quote.quote_id,
+        "quote_version": quote.version,
+        "cycle_id": quote.cycle_id,
+        "amount_minor": quote.amount_minor,
+        "currency": quote.currency,
+        "scope_digest": quote.scope_digest,
+        "deadline_after_minutes": spec.policy.approval_deadline_after_minutes,
+    }
+
+
+class DuplicateApprovalAgent(RetrievingReferenceAgent):
+    """Retry one approval after refreshing all required reads."""
+
+    agent_id = "duplicate_approval_control"
+
+    def begin_episode(self, identity: Any) -> None:
+        super().begin_episode(identity)
+        self.pending_payload: dict[str, Any] | None = None
+        self.retried = False
+
+    def decide(self, observation: Any) -> Any:
+        if self.pending_payload is not None:
+            tools = ("get_case_record", "list_checkpoints", "list_quotes")
+            if not all(tool in observation.retrieval["served"] for tool in tools):
+                return RetrieveBatch(
+                    requests=tuple(RetrievalRequest(tool=tool) for tool in tools)
+                )
+            payload = self.pending_payload
+            self.pending_payload = None
+            self.retried = True
+            return Act(action_type="request_approval", payload=payload, evidence_refs=())
+        outcome = super().decide(observation)
+        if (
+            isinstance(outcome, Act)
+            and outcome.action_type == "request_approval"
+            and not self.retried
+        ):
+            self.pending_payload = dict(outcome.payload)
+        return outcome
+
+
+def test_duplicate_approval_with_fresh_engine_reads(spec: Any) -> None:
+    run = run_episode(spec, "V1", "reference", agent_factory=DuplicateApprovalAgent)
+    effects = [
+        row
+        for row in rows(run, "effect_accepted")
+        if row["action_type"] == "request_approval"
+    ]
+    approvals = [
+        row
+        for row in rows(run, "checkpoint_opened")
+        if row["checkpoint_type"] == "repair_quote_approval"
+    ]
+    assert len(effects) == 1
+    assert len(approvals) == 1
+    refusals = [
+        row
+        for row in rows(run, "action_rejected")
+        if row["action_type"] == "request_approval"
+    ]
+    assert [row["code"] for row in refusals] == ["DUPLICATE_CHECKPOINT"]
+    duplicate_proposal = next(
+        row
+        for row in rows(run, "action_proposed")
+        if row["proposal_id"] == refusals[0]["proposal_id"]
+    )
+    fresh_tools = {
+        row["tool"]
+        for row in rows(run, "retrieval_served")
+        if effects[0]["index"] < row["index"] < duplicate_proposal["index"]
+        and row["ok"] is True
+    }
+    assert {"get_case_record", "list_checkpoints", "list_quotes"} <= fresh_tools
+    validity = next(
+        dimension
+        for dimension in run.evaluation.as_dict()["dimensions"]
+        if dimension["name"] == "action_validity"
+    )
+    assert validity["counts"]["duplicate_actions"] == 1

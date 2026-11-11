@@ -190,11 +190,15 @@ def _execute(
 
 
 def _evaluation_fields(grade: Any, pack_id: str) -> set[str]:
-    """Accept paired commerce clock metadata without opening other envelopes."""
+    """Accept versioned metadata only for the two profile evaluators."""
     fields = {"reliable", "dimensions", "findings", "terminal_outcome"}
     if (
         isinstance(grade, dict)
-        and pack_id == "commerce.return_refund.profiles.v1"
+        and pack_id
+        in {
+            "commerce.return_refund.profiles.v1",
+            "lettings.property_compliance.profiles.v1",
+        }
         and {"evaluator_version", "diagnostics"} & grade.keys()
     ):
         if (
@@ -202,7 +206,8 @@ def _evaluation_fields(grade: Any, pack_id: str) -> set[str]:
             or not grade["evaluator_version"]
             or not isinstance(grade.get("diagnostics"), list)
             or not all(
-                isinstance(item, dict)
+                pack_id == "commerce.return_refund.profiles.v1"
+                and isinstance(item, dict)
                 and set(item) == {"dimension", "code"}
                 and item["dimension"] == "clock"
                 and item["code"] == "REFUND_UNSETTLED_AT_OBSERVATION_END"

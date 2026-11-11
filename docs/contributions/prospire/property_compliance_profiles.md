@@ -197,3 +197,27 @@ The finite synthetic evidence does not establish live operational robustness,
 legal compliance, production authority or real model performance. Shared SDK
 registration, canonical development run records and broader integration testing
 remain outside this contribution's ownership.
+
+### Evaluator 0.3.0: terminal read-guard attempts
+
+The evaluator now counts Core `terminal_rejected` rows only for
+`ACTION_WITHOUT_RETRIEVAL` and `STALE_RETRIEVED_RECORD`, through the existing
+retrieval mapping and finding deduplication. A fresh read and successful COMPLETE
+later in the episode preserve completion but do not erase the earlier retrieval
+fault. Action-rejection grading is unchanged. Other terminal codes, including
+`FINALITY`, `REPORTS_MISSING` and the unmapped
+`ACTED_ON_CLAIM_WITHOUT_RECORD`, and WAIT policy retain their existing treatment.
+Core continues to block unsafe proposals before domain execution.
+
+As with the Commerce profile evaluator's first separate semantic identity, this
+correction introduces `evaluator_version="0.3.0"` and `diagnostics=[]` in every
+result. The shared development reader accepts that exact paired envelope;
+Compliance has no diagnostic codes in this version. Operation/pack 0.2.0,
+fixture and profile identities, engine 0.13.0 and distribution 0.1.0 are unchanged.
+The evaluator implementation digest follows the source change. The shared
+envelope consumer also changes the content-bound development `runtime_digest`;
+Core execution semantics are unchanged. Historical
+records and grades remain unchanged; saved outcomes without process-local Core
+attestation remain untrusted. Offline diagnostic reanalysis is neither
+authenticated replay nor an official regrade. Comparable new results require
+fresh runs; no model-performance result is established by the synthetic tests.
