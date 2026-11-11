@@ -345,6 +345,7 @@ def test_positive_controls(tmp_path: Path) -> None:
         "riverside:riverside_sample",
     )
     assert check_contributions(Path.cwd()) == (
+        "finsi:finsi_governed_campaign_launch_synthetic_v1",
         "prospire:lettings_property_compliance_synthetic_v1",
         "prospire:lettings_property_compliance_profiles_v1",
     )

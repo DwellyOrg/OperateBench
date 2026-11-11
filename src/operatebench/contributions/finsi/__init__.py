@@ -1,0 +1,1 @@
+"""Finsi synthetic contribution namespace."""

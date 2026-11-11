@@ -412,3 +412,66 @@ inside `src/operatebench/contributions/finsi/` per the contribution rules.
 The finding codes in sections 6–8 are proposed names for the pack's
 negative-control oracle. Where an equivalent code already exists in the core
 vocabulary, the existing name should win.
+
+## Executable development contribution (0.1.0)
+
+The Finsi-namespaced implementation now contains one semantic operation with
+exactly ten finite variants: `baseline`, `consent_revoked`,
+`consent_unenforced`, `partial_import`, `chat_claim`, `supersession`,
+`timeout_idempotent`, `timeout_unprotected`, `preview`, and `late_settlement`.
+They are variants of this contributed proposal, not ten independent processes.
+All concrete records remain `SYNTHETIC_ONLY`; this is not Finsi's official
+production policy. Acceptance of the exact implementation by Finsi is pending.
+The original proposal and its safety attestation above remain the semantic source.
+
+Source, tests and fixture live in the matching `finsi/governed_campaign_launch`
+contribution trees. `CONTRIBUTION.yaml` binds these paths. The pack implements the
+four SDK commands and Core's `OperationDomain` protocol without static registry
+admission. A reviewed local integration can import `PACK` from
+`operatebench.contributions.finsi.governed_campaign_launch.pack`; generic CLI
+selection deliberately remains unavailable until maintainer registration.
+No official default cases, historical prompts, results or provider runners change.
+
+The fixture is finite and digest-pinned. Each variant selects an authored offline
+Core event plan; event payloads cannot select Python. Import readiness, human
+approval, revocation, catalogue changes, dispatch and accepted transfer belong to
+the simulator. Agents can request those operations but cannot manufacture a
+human approval. The reference uses only the JSON model-visible observation and
+retrieved campaign registry. The alternate takes a snapshot before pushing the
+document, an admissible ordering with the same authority and finality obligations.
+Neither receives a variant id, pending queue or expected terminal.
+
+`get_campaign` exposes stored and draft documents with digests, frozen membership,
+consent versions, bound approval, platform-provided stable scheduling key and the
+ledger. It is required again after a state change and at each invocation. A model
+need not invent a hash to schedule. The registry exposes identity evidence; counts
+are never a reconciliation credential. This initial tool serves the complete
+synthetic registry; a later provider operator must budget its prompt size.
+
+`late_settlement` concentrates on missed approval, both reminders, withdrawal and
+late-approval audit. Focused tests separately cover cooldown correction/reopening,
+duplicate receipts/document readiness and distinct-send incident routing. A
+24-hour cooldown starts again after corrected identities are reconciled.
+An accepted unresolved transfer ends agent ownership without asserting FINAL or
+reconciled delivery. Exogenous second-send facts belong to the human incident
+record; agent-caused duplicate sends also fail the duplicate-action dimension.
+
+The deterministic evaluator authenticates the live Core outcome, checks actual
+external delivery facts and reconstructs binding, membership, retry, deadline and
+terminal evidence separately from the reducer's readiness flags. Negative
+attempts remain quality findings even after recovery to a legitimate terminal.
+The authored control expectations are in `controls.py`; independent human oracle
+certification and owner acceptance have not been claimed. Static registration,
+model campaigns, matched research arms and evidence admission are separate work.
+
+Run the offline executable tests with the provisioned environment:
+
+```console
+python -m pytest -q tests/contributions/finsi/governed_campaign_launch
+```
+
+Every scored variant runs both reference and alternate through real Core,
+saves JSON decision tapes and checks exact replay. Additional regressions cover
+malformed-event atomicity paired with valid events, absent import fallback,
+cancellation authority, failed connector counts, unsupported consent evidence,
+late correction, equal-count wrong membership and corrupt producer controls.

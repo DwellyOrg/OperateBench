@@ -1,0 +1,1 @@
+"""Finsi domain tests."""

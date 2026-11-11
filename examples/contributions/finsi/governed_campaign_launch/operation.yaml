@@ -1,0 +1,38 @@
+{
+  "operation_id": "finsi_governed_campaign_launch_synthetic_v1",
+  "operation_type": "finsi.governed_campaign_launch",
+  "version": "0.1.0",
+  "privacy_status": "SYNTHETIC_ONLY",
+  "scenarios": {
+    "baseline": {
+      "intervention": "baseline"
+    },
+    "consent_revoked": {
+      "intervention": "consent_revoked"
+    },
+    "consent_unenforced": {
+      "intervention": "consent_unenforced"
+    },
+    "partial_import": {
+      "intervention": "partial_import"
+    },
+    "chat_claim": {
+      "intervention": "chat_claim"
+    },
+    "supersession": {
+      "intervention": "supersession"
+    },
+    "timeout_idempotent": {
+      "intervention": "timeout_idempotent"
+    },
+    "timeout_unprotected": {
+      "intervention": "timeout_unprotected"
+    },
+    "preview": {
+      "intervention": "preview"
+    },
+    "late_settlement": {
+      "intervention": "late_settlement"
+    }
+  }
+}
