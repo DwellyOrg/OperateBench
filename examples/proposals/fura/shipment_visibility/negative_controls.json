@@ -1,0 +1,9 @@
+{
+  "stage": "independent test-only synthetic proposal",
+  "controls": [
+    {"agent": "tracking_only", "variant": "match", "fails": "delivery_evidence", "rejection": "DELIVERY_EVIDENCE"},
+    {"agent": "wrong_pod", "variant": "match", "fails": "pod_binding", "rejection": "POD_BINDING"},
+    {"agent": "skip_checkpoint", "variant": "match", "fails": "checkpoint", "rejection": "NOTIFICATION_CHECKPOINT"},
+    {"agent": "stale_notice", "variant": "correction", "fails": "correction", "rejection": "DELIVERY_EVIDENCE"}
+  ]
+}
