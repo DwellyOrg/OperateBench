@@ -538,6 +538,7 @@ def test_real_source_layout_cli_tolerates_shared_caches_across_operations(
     second_result = yaml.safe_load(second.stdout)
     assert len(second_result["created_paths"]) == 13
     assert check_contributions(root) == (
+        "finsi:finsi_governed_campaign_launch_synthetic_v1",
         "northstar:northstar_account_recovery_synthetic_v1",
         "northstar:northstar_invoice_review_synthetic_v1",
         "prospire:lettings_property_compliance_synthetic_v1",
