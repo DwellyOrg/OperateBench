@@ -10,6 +10,9 @@ from pathlib import Path
 from types import MappingProxyType
 from typing import Any
 
+from .input import InputError, read_json
+from .input import unique as unique
+
 PACK_ID = "partner.finsi.governed_campaign_launch.synthetic"
 OPERATION_TYPE = "finsi.governed_campaign_launch"
 REFERENCE_SCENARIOS = (
@@ -32,15 +35,6 @@ def digest(value: Any) -> str:
     ).hexdigest()
 
 
-def unique(pairs: Any) -> Any:
-    result = {}
-    for k, v in pairs:
-        if k in result:
-            raise ValueError("duplicate key")
-        result[k] = v
-    return result
-
-
 @dataclass(frozen=True)
 class Spec:
     operation_id: str
@@ -49,12 +43,9 @@ class Spec:
 
 
 def load_spec(path: str | Path) -> Spec:
-    raw = Path(path).read_bytes()
-    if len(raw) > 100000:
-        raise ValueError("oversize fixture")
-    body = json.loads(raw, object_pairs_hook=unique)
+    body = read_json(path, 100000)
     if digest(body) != FIXTURE_DIGEST:
-        raise ValueError("unreviewed finite fixture")
+        raise InputError("unreviewed finite fixture")
     return Spec(
         body["operation_id"],
         digest(body),

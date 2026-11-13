@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import json
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -11,12 +11,94 @@ from operatebench.core.outcomes import Act, Complete, Wait
 from operatebench.core.protocol import model_projection
 from operatebench.core.retrieval import RetrievalRequest, RetrieveBatch
 
-from .agents import build_agent
+from .agents import AGENT_IDS, build_agent
 from .evaluator import evaluate_episode
-from .operation import build_domain
-from .spec import digest, load_spec
+from .input import InputError, read_json
+from .operation import START, build_domain
+from .spec import REFERENCE_SCENARIOS, digest, load_spec
 
 FORMAT = "finsi.governed-campaign.development.v1"
+
+
+def validate_selection(scenario: Any, agent: Any) -> None:
+    if not isinstance(scenario, str) or scenario not in REFERENCE_SCENARIOS:
+        raise InputError("unknown scenario")
+    if not isinstance(agent, str) or agent not in AGENT_IDS:
+        raise InputError("unknown agent")
+
+
+def is_digest(value: Any) -> bool:
+    return (
+        isinstance(value, str)
+        and len(value) == 64
+        and all(c in "0123456789abcdef" for c in value)
+    )
+
+
+def decision_from_input(p: Any) -> Any:
+    if not isinstance(p, dict) or not isinstance(p.get("kind"), str):
+        raise InputError("malformed decision")
+    fields = {
+        "ACT": {"kind", "action_type", "payload", "evidence_refs"},
+        "WAIT": {"kind", "reason", "wake_on", "fallback_after_minutes"},
+        "COMPLETE": {"kind", "reason", "evidence_refs"},
+        "RETRIEVE": {"kind", "requests"},
+    }
+    kind = p["kind"]
+    if kind not in fields or set(p) != fields[kind]:
+        raise InputError("malformed decision variant")
+    if kind == "RETRIEVE":
+        if not isinstance(p["requests"], list):
+            raise InputError("malformed retrieval requests")
+        requests = []
+        for r in p["requests"]:
+            if (
+                not isinstance(r, dict)
+                or set(r) != {"tool", "arguments"}
+                or not isinstance(r["tool"], str)
+                or not r["tool"]
+                or not isinstance(r["arguments"], dict)
+                or any(not isinstance(k, str) or not k for k in r["arguments"])
+            ):
+                raise InputError("malformed retrieval request")
+            requests.append(RetrievalRequest(r["tool"], r["arguments"]))
+        return RetrieveBatch(tuple(requests))
+    outcome: Any
+    if kind == "WAIT":
+        deadline = p["fallback_after_minutes"]
+        if (
+            not isinstance(p["wake_on"], list)
+            or (deadline is not None and (type(deadline) is not int or deadline <= 0))
+            or (not p["wake_on"] and deadline is None)
+        ):
+            raise InputError("malformed WAIT bound")
+        validate_wait_time(START, deadline)
+        outcome = Wait(p["reason"], p["wake_on"], deadline)
+    elif kind == "ACT":
+        if not isinstance(p["action_type"], str) or not p["action_type"]:
+            raise InputError("malformed action type")
+        outcome = Act(p["action_type"], p["payload"], p["evidence_refs"])
+    else:
+        outcome = Complete(p["reason"], p["evidence_refs"])
+    refs = p["wake_on"] if kind == "WAIT" else p["evidence_refs"]
+    if (
+        not isinstance(refs, list)
+        or any(not isinstance(ref, str) or not ref for ref in refs)
+        or (kind == "ACT" and not isinstance(p["payload"], dict))
+        or (kind != "ACT" and not isinstance(p["reason"], str))
+    ):
+        raise InputError("malformed outcome fields")
+    return outcome
+
+
+def validate_wait_time(now: str, minutes: int | None) -> None:
+    if minutes is not None:
+        try:
+            datetime.fromisoformat(now.replace("Z", "+00:00")) + timedelta(
+                minutes=minutes
+            )
+        except OverflowError as exc:
+            raise InputError("WAIT fallback exceeds timestamp range") from exc
 
 
 class TapeAgent:
@@ -39,22 +121,15 @@ class TapeAgent:
                 self.cursor >= len(self.rows)
                 or self.rows[self.cursor]["observation"] != obs
             ):
-                raise ValueError("decision observation mismatch")
+                raise InputError("decision observation mismatch")
             p = self.rows[self.cursor]["decision"]
             self.cursor += 1
-            if p["kind"] == "ACT":
-                return Act(p["action_type"], p["payload"], p["evidence_refs"])
-            if p["kind"] == "WAIT":
-                return Wait(p["reason"], p["wake_on"], p["fallback_after_minutes"])
-            if p["kind"] == "COMPLETE":
-                return Complete(p["reason"], p["evidence_refs"])
-            if p["kind"] == "RETRIEVE":
-                return RetrieveBatch(
-                    tuple(
-                        RetrievalRequest(x["tool"], x["arguments"]) for x in p["requests"]
-                    )
+            decision = decision_from_input(p)
+            if isinstance(decision, Wait):
+                validate_wait_time(
+                    model_projection(observation)["now"], decision.fallback_after_minutes
                 )
-            raise ValueError("unknown tape outcome")
+            return decision
         assert self.delegate is not None
         decision = self.delegate.decide(observation)
         if isinstance(decision, Act):
@@ -102,6 +177,7 @@ def execute(spec: Any, scenario: str, agent: Any) -> Any:
 
 
 def run(path: str | Path, scenario: str, agent_id: str = "reference") -> dict[str, Any]:
+    validate_selection(scenario, agent_id)
     spec = load_spec(path)
     agent = TapeAgent(agent_id)
     episode = execute(spec, scenario, agent)
@@ -121,7 +197,8 @@ def run(path: str | Path, scenario: str, agent_id: str = "reference") -> dict[st
 
 def replay(path: str | Path, record: Any) -> dict[str, Any]:
     if (
-        set(record)
+        not isinstance(record, dict)
+        or set(record)
         != {
             "format",
             "scope",
@@ -135,10 +212,30 @@ def replay(path: str | Path, record: Any) -> dict[str, Any]:
         or record["format"] != FORMAT
         or record["scope"] != "SYNTHETIC_ONLY_DEVELOPMENT_NON_EVIDENCE"
     ):
-        raise ValueError("wrong development record")
+        raise InputError("wrong development record")
+    validate_selection(record["scenario"], record["agent"])
+    if (
+        not is_digest(record["spec_digest"])
+        or not isinstance(record["episode"], dict)
+        or not isinstance(record["evaluation"], dict)
+        or not isinstance(record["decisions"], list)
+    ):
+        raise InputError("malformed development envelope")
+    from .evaluator import GRADING_VERSION
+
+    if record["evaluation"].get("grading_version") != GRADING_VERSION:
+        raise InputError("grading version mismatch")
+    for row in record["decisions"]:
+        if (
+            not isinstance(row, dict)
+            or set(row) != {"observation", "decision"}
+            or not is_digest(row["observation"])
+        ):
+            raise InputError("malformed decision row")
+        decision_from_input(row["decision"])
     spec = load_spec(path)
     if spec.content_digest != record["spec_digest"]:
-        raise ValueError("spec binding mismatch")
+        raise InputError("spec binding mismatch")
     agent = TapeAgent(record["agent"], record["decisions"])
     episode = execute(spec, record["scenario"], agent)
     if (
@@ -146,12 +243,9 @@ def replay(path: str | Path, record: Any) -> dict[str, Any]:
         or episode.as_dict() != record["episode"]
         or evaluate_episode(episode, spec, record["scenario"]) != record["evaluation"]
     ):
-        raise ValueError("live replay mismatch")
+        raise InputError("live replay mismatch")
     return {"consistent": True, "decisions_consumed": agent.cursor, "provider_calls": 0}
 
 
 def read_record(path: str | Path) -> Any:
-    raw = Path(path).read_bytes()
-    if len(raw) > 20000000:
-        raise ValueError("oversize run")
-    return json.loads(raw)
+    return read_json(path, 20000000)

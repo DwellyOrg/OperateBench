@@ -896,9 +896,12 @@ class CampaignDomain:
                 return refuse("LEDGER_MISSING")
             row = s["ledger"][0]
             registry = s["consent_versions"].get(row["registry_version"])
+            proof = self.identity_proof(s)
             if (
-                registry is None
-                or p["proof"] != self.identity_proof(s)["handle"]
+                s["snapshot"] is None
+                or proof is None
+                or registry is None
+                or p["proof"] != proof["handle"]
                 or row["accepted_commitment"] != digest(row["accepted"])
                 or identity_diff(s["snapshot"]["members"], registry, row["accepted"])
             ):

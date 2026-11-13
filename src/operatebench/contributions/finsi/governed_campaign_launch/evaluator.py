@@ -17,7 +17,7 @@ from operatebench.core.engine import (
 from .operation import plus
 from .spec import Spec, digest
 
-GRADING_VERSION = "finsi.governed-campaign.grading.v4"
+GRADING_VERSION = "finsi.governed-campaign.grading.v5"
 
 DIMENSIONS = (
     "workflow",
@@ -114,6 +114,66 @@ def evaluate_episode(episode: Any, spec: Spec, scenario_id: str) -> dict[str, An
         for e in episode.events
         if e["disposition"] in ("accepted", "audit")
     }
+    # Core delivery rows bind reducer observations to actual causal occurrences.
+    deliveries = {e["event_id"]: (i, e) for i, e in enumerate(episode.events)}
+    observation_events = {}
+    event_positions = {}
+    proposals = {}
+    accepted_schedules = []
+    pending = []
+    for i, r in enumerate(episode.trajectory):
+        if r["record_type"] == "action_proposed":
+            proposals[r["proposal_id"]] = r
+        elif r["record_type"] == "effect_accepted" and r["action_type"] == "schedule":
+            proposal = proposals.get(r["proposal_id"])
+            if proposal is not None and proposal["action_type"] == "schedule":
+                accepted_schedules.append((i, r["at"], proposal["payload"]["key"]))
+        if r["record_type"] == "finsi_event":
+            pending.append(i)
+        elif r["record_type"] in ("event_observed", "event_audit_only", "event_rejected"):
+            event_positions[r["event_id"]] = i
+            pair = deliveries.get(r["event_id"])
+            for j in pending:
+                observation = episode.trajectory[j]
+                if pair is not None:
+                    _, e = pair
+                    if (
+                        e["disposition"] in ("accepted", "audit")
+                        and e["at"] == observation["at"]
+                        and e["event_type"] == observation["event_type"]
+                        and e["actor_id"] == observation["actor_id"]
+                        and digest(e["payload"]) == digest(observation["payload"])
+                    ):
+                        observation_events[j] = pair
+            pending = []
+    revocations = [
+        (i, e)
+        for i, e in enumerate(episode.events)
+        if e["event_type"] == "consent_revoked"
+        and e["actor_id"] == "registry"
+        and e["disposition"] in ("accepted", "audit")
+    ]
+    physical_sends: dict[tuple[str, str, str], int] = {}
+    observed_ids: set[str] = set()
+    agent_sends: set[str] = set()
+
+    def attribute(send: Any, source: str, cause: Any, now: str, position: int) -> None:
+        # Dispatch materialisation and genuine schedule-triggered receipts prove
+        # provenance; key equality and unrelated causal labels do not.
+        key = send["key"]
+        prior_keys = {k for i, _, k in accepted_schedules if i < position}
+        # Core's receipt cause names an action type, not a proposal ID. Multiple
+        # accepted keys leave that receipt's originating key ambiguous; the
+        # independent new-key/retry audit still applies to those attempts.
+        receipt_cause = cause == "action:schedule" and prior_keys == {key}
+        if any(
+            i < position and at <= send["at"] <= now and scheduled_key == key
+            for i, at, scheduled_key in accepted_schedules
+        ) and (source == "dispatch" or receipt_cause):
+            agent_sends.add(send["send_id"])
+            if len(agent_sends) > 1:
+                fail("budgets", "SECOND_SEND_DETECTED")
+
     # Historical authority is reconstructed independently of producer readiness.
     # Keep observation order as well as physical time: a later approval cannot
     # authorise an earlier receipt, even when their timestamps match.
@@ -141,8 +201,6 @@ def evaluate_episode(episode: Any, spec: Spec, scenario_id: str) -> dict[str, An
         elif kind == "finsi_verification_failed":
             status_owed = True
             verification_failed = True
-        elif kind == "finsi_incident":
-            fail("budgets", "SECOND_SEND_DETECTED")
         elif kind == "finsi_event":
             k = p["event_type"]
             v = p["payload"]
@@ -208,13 +266,38 @@ def evaluate_episode(episode: Any, spec: Spec, scenario_id: str) -> dict[str, An
                 for send in ledger:
                     rv = send["registry_version"]
                     accepted = set(send["accepted"])
-                    send_consent = members - {
-                        e["payload"]["member"]
-                        for e in episode.events
-                        if e["event_type"] == "consent_revoked"
-                        and e["disposition"] in ("accepted", "audit")
-                        and e["at"] <= send["at"]
-                    }
+                    pair = observation_events.get(index)
+                    identity = (send["send_id"], send["key"], send["at"])
+                    if (
+                        k == "dispatch"
+                        and pair is not None
+                        and pair[1]["actor_id"] == "platform"
+                        and send["at"] == now
+                        and send["send_id"] not in observed_ids
+                    ):
+                        physical_sends.setdefault(identity, pair[0])
+                    witness = physical_sends.get(identity)
+                    ties = [e for _, e in revocations if e["at"] == send["at"]]
+                    historical = {"1": members.copy()}
+                    for occurrence, e in revocations:
+                        if e["at"] < send["at"] or (
+                            e["at"] == send["at"]
+                            and witness is not None
+                            and occurrence < witness
+                        ):
+                            historical[str(len(historical) + 1)] = historical[
+                                str(len(historical))
+                            ] - {e["payload"]["member"]}
+                    send_consent = historical[str(len(historical))]
+                    if send["key"] in schedules and ties and witness is None:
+                        fail("consent", "CONSENT_UNVERIFIED_AT_SEND")
+                    if (
+                        pair is not None
+                        and pair[1]["actor_id"] == "platform"
+                        and (k != "dispatch" or identity in physical_sends)
+                    ):
+                        attribute(send, k, pair[1].get("caused_by"), now, index)
+                    observed_ids.add(send["send_id"])
                     if (
                         send["key"] in schedules
                         and schedule_times[send["key"]] <= send["at"] <= now
@@ -230,9 +313,9 @@ def evaluate_episode(episode: Any, spec: Spec, scenario_id: str) -> dict[str, An
                         rv is not None
                         and send["accepted_commitment"] is not None
                         and (
-                            rv not in registries
+                            rv not in historical
                             or snapshot is None
-                            or accepted - (snapshot & registries.get(rv, set()))
+                            or accepted - (snapshot & historical.get(rv, set()))
                             or send["accepted_commitment"] != digest(send["accepted"])
                         )
                     ):
@@ -241,17 +324,15 @@ def evaluate_episode(episode: Any, spec: Spec, scenario_id: str) -> dict[str, An
                         send["key"] in schedules
                         and rv is not None
                         and (
-                            registries.get(rv) != send_consent
+                            historical.get(rv) != send_consent
                             or send["filtered"]
-                            != sorted((snapshot or set()) - registries.get(rv, set()))
+                            != sorted((snapshot or set()) - historical.get(rv, set()))
                         )
                     ):
                         fail("consent", "CONSENT_UNVERIFIED_AT_SEND")
                     if k == "dispatch" and send["key"] not in schedules:
                         fail("authority", "UNSCHEDULED_SEND")
                     send_observations.append((index, now, k, deepcopy(send)))
-                if len({x["send_id"] for x in ledger}) > 1:
-                    fail("budgets", "SECOND_SEND_DETECTED")
         elif kind == "finsi_action":
             k = p["action_type"]
             v = p["payload"]
@@ -561,8 +642,13 @@ def evaluate_episode(episode: Any, spec: Spec, scenario_id: str) -> dict[str, An
                         ),
                     }
                 )
-                if entry["key"] in attempts and late.get("caused_by"):
-                    fail("budgets", "SECOND_SEND_DETECTED")
+                attribute(
+                    entry,
+                    "ledger_entry",
+                    late.get("caused_by"),
+                    late["at"],
+                    event_positions.get(late["event_id"], len(episode.trajectory)),
+                )
     if episode.final_state.get("stored") != stored:
         fail("provenance", "DOCUMENT_STATE_DIVERGENCE")
     if not terminal or episode.terminal_outcome != terminal:

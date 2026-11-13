@@ -543,9 +543,9 @@ These interface/semantic changes require fresh tapes; previous captured tapes
 remain evidence only for their original source. Exact Finsi acceptance is pending.
 
 
-### Unreleased grading revision 4 (current)
+### Unreleased grading revision 4 (historical)
 
-The current Finsi evaluator contract is `finsi.governed-campaign.grading.v4`.
+The historical Finsi evaluator contract is `finsi.governed-campaign.grading.v4`.
 Own/known schedule-bound send facts from `dispatch`, `ledger_entry` and
 `ledger_correction` receive the same independent causal approval, material
 binding and approved send-window audit. `DISPATCH_APPROVAL_INVALID` remains an
@@ -564,3 +564,28 @@ controls include receipt-only before/inside/after-window sends, future and
 pre-schedule timestamps, delayed receipts, corrections and material binding
 mismatch, alongside the earlier consent, reapproval and inherited controls.
 Independent final review, company acceptance, DCO and CI gates remain pending.
+
+
+### Unreleased grading revision 5 (current)
+
+The current contract is `finsi.governed-campaign.grading.v5`. Consent auditing
+uses physical dispatch causal order for same-time revocations, including later
+receipts and corrections of that send. Earlier effective revocations remain
+authoritative; later revocations do not invalidate an earlier physical send.
+Receipt-only timestamp ties without an independent dispatch witness remain
+unverified. The auditor retains independent registry and recipient checks.
+
+External second-send facts retain human incident reporting. Agent budgets use
+accepted schedules and actual dispatch or schedule-triggered receipt provenance;
+a matching key or unrelated `caused_by` label alone establishes no retry.
+Multiple agent-caused physical sends still fail, including corrupt producer
+materialisation. Existing retry, push, authority and terminal checks remain.
+
+Spec and replay reads now require bounded regular files without following the
+final symlink, retaining the 100,000 and 20,000,000 byte limits respectively.
+Replay envelopes and decision variants are validated before execution, with
+named input refusals; internal execution errors remain internal errors.
+Pre-snapshot reconciliation refuses unverified consent and retains ledger facts.
+Historical v4 source and records retain their identity; current replay refuses
+a grading-version mismatch. No canonical observations have been regraded, and
+full actual corpus impact remains for parent measurement and independent review.
