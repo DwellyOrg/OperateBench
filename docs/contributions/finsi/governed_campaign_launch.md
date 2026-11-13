@@ -588,4 +588,4 @@ named input refusals; internal execution errors remain internal errors.
 Pre-snapshot reconciliation refuses unverified consent and retains ledger facts.
 Historical v4 source and records retain their identity; current replay refuses
 a grading-version mismatch. No canonical observations have been regraded, and
-full actual corpus impact remains for parent measurement and independent review.
+full actual corpus impact remains for retained-corpus measurement and independent review.

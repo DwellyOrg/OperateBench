@@ -166,10 +166,15 @@ def evaluate_episode(episode: Any, spec: Spec, scenario_id: str) -> dict[str, An
         # accepted keys leave that receipt's originating key ambiguous; the
         # independent new-key/retry audit still applies to those attempts.
         receipt_cause = cause == "action:schedule" and prior_keys == {key}
-        if any(
+        chronology_valid = any(
             i < position and at <= send["at"] <= now and scheduled_key == key
             for i, at, scheduled_key in accepted_schedules
-        ) and (source == "dispatch" or receipt_cause):
+        )
+        # A proven schedule-associated receipt remains contradictory evidence
+        # when its claimed send time cannot follow the schedule and precede receipt.
+        if receipt_cause and not chronology_valid:
+            fail("authority", "DISPATCH_APPROVAL_INVALID")
+        if chronology_valid and (source == "dispatch" or receipt_cause):
             agent_sends.add(send["send_id"])
             if len(agent_sends) > 1:
                 fail("budgets", "SECOND_SEND_DETECTED")
@@ -642,13 +647,14 @@ def evaluate_episode(episode: Any, spec: Spec, scenario_id: str) -> dict[str, An
                         ),
                     }
                 )
-                attribute(
-                    entry,
-                    "ledger_entry",
-                    late.get("caused_by"),
-                    late["at"],
-                    event_positions.get(late["event_id"], len(episode.trajectory)),
-                )
+                if late["disposition"] in ("accepted", "audit"):
+                    attribute(
+                        entry,
+                        "ledger_entry",
+                        late.get("caused_by"),
+                        late["at"],
+                        event_positions.get(late["event_id"], len(episode.trajectory)),
+                    )
     if episode.final_state.get("stored") != stored:
         fail("provenance", "DOCUMENT_STATE_DIVERGENCE")
     if not terminal or episode.terminal_outcome != terminal:

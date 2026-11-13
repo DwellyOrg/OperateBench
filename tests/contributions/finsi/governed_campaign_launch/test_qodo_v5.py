@@ -599,3 +599,198 @@ def test_replay_mismatches_are_named(record, tmp_path, change):
     path.write_text(json.dumps(body))
     with pytest.raises(OperationPackError, match="mismatch"):
         PACK.replay(ReplayRequest(FIXTURE, path))
+
+
+@pytest.fixture(scope="module")
+def receipt_baseline():
+    return episode()[0]
+
+
+def chronology_receipt_episode(
+    baseline, physical, cause, known_key, first=False, arrival="2026-10-05T08:01:00Z"
+):
+    """Real Core delivery/cause; only the receipt's physical timestamp varies."""
+    from datetime import datetime, timedelta
+
+    from operatebench.core.protocol import PlannedTrigger
+
+    def action_time(kind):
+        return next(
+            r["at"]
+            for r in baseline.trajectory
+            if r["record_type"] == "finsi_action" and r["action_type"] == kind
+        )
+
+    scheduled_at = action_time("schedule")
+    physical_at = {
+        "before_schedule": (
+            datetime.fromisoformat(scheduled_at.replace("Z", "+00:00"))
+            - timedelta(minutes=1)
+        ).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "at_schedule": scheduled_at,
+        "valid": baseline.final_state["ledger"][0]["at"],
+        "at_arrival": arrival,
+        "after_arrival": (
+            datetime.fromisoformat(arrival.replace("Z", "+00:00")) + timedelta(minutes=1)
+        ).strftime("%Y-%m-%dT%H:%M:%SZ"),
+    }[physical]
+    entry = deepcopy(baseline.final_state["ledger"][0])
+    entry.update(send_id="send-1" if first else "second-send", at=physical_at)
+    if not known_key:
+        entry["key"] = "unknown-external-key"
+    timing = {"at": arrival}
+    if cause is not None:
+        delay = int(
+            (
+                datetime.fromisoformat(arrival.replace("Z", "+00:00"))
+                - datetime.fromisoformat(action_time(cause).replace("Z", "+00:00"))
+            ).total_seconds()
+            / 60
+        )
+        timing = {"trigger": PlannedTrigger("action", cause), "delay_minutes": delay}
+
+    class Receipt(CampaignDomain):
+        def build_plan(self):
+            p = super().build_plan()
+            events = tuple(e for e in p.events if not first or e.event_type != "dispatch")
+            return replace(
+                p,
+                events=(
+                    *events,
+                    PlannedEvent(
+                        "chronology-receipt",
+                        "ledger_entry",
+                        "platform",
+                        100,
+                        {"entry": entry},
+                        **timing,
+                    ),
+                ),
+            )
+
+    ep, grade = episode(Receipt)
+    fact = next(e for e in ep.events if e["event_id"] == "chronology-receipt")
+    assert fact["caused_by"] == (None if cause is None else "action:" + cause)
+    assert fact["payload"]["entry"] == entry
+    return ep, grade, fact
+
+
+@pytest.mark.parametrize(
+    "physical",
+    [
+        "before_schedule",
+        "at_schedule",
+        "valid",
+        "at_arrival",
+        "after_arrival",
+    ],
+)
+@pytest.mark.parametrize(
+    "cause,known_key",
+    [
+        ("schedule", True),
+        ("verify", True),
+        (None, True),
+        ("schedule", False),
+    ],
+)
+def test_second_receipt_chronology_boundary(receipt_baseline, physical, cause, known_key):
+    ep, grade, fact = chronology_receipt_episode(
+        receipt_baseline, physical, cause, known_key
+    )
+    assert fact["disposition"] == "accepted"
+    assert ep.final_state == receipt_baseline.final_state
+    assert grade["incidents"] == [
+        {
+            "code": "SECOND_SEND_DETECTED",
+            "send_id": "second-send",
+            "owner": "human_owner",
+            "after_terminal": False,
+        }
+    ]
+    assert any(r["record_type"] == "finsi_incident" for r in ep.trajectory)
+    associated = cause == "schedule" and known_key
+    contradiction = physical in ("before_schedule", "after_arrival")
+    assert grade["reliable"] is (not associated), grade
+    assert grade["dimensions"]["budgets"] is (not associated or contradiction), grade
+    assert grade["dimensions"]["authority"] is (not associated or not contradiction), (
+        grade
+    )
+    if associated and contradiction:
+        assert grade["findings"] == [
+            {"dimension": "authority", "code": "DISPATCH_APPROVAL_INVALID"}
+        ]
+
+
+@pytest.mark.parametrize(
+    "physical",
+    [
+        "before_schedule",
+        "at_schedule",
+        "valid",
+        "at_arrival",
+        "after_arrival",
+    ],
+)
+@pytest.mark.parametrize(
+    "cause,known_key",
+    [
+        ("schedule", True),
+        ("verify", True),
+        (None, True),
+        ("schedule", False),
+    ],
+)
+def test_first_receipt_chronology_boundary(receipt_baseline, physical, cause, known_key):
+    ep, grade, fact = chronology_receipt_episode(
+        receipt_baseline, physical, cause, known_key, first=True
+    )
+    assert fact["disposition"] == "accepted"
+    assert ep.terminal_outcome == "sent_reconciled"
+    assert grade["incidents"] == []
+    assert grade["dimensions"]["budgets"]
+    # Existing own first-receipt audit also requires the approved window;
+    # inherited unknown-key receipts do not establish an agent schedule origin.
+    invalid = known_key and physical in (
+        "before_schedule",
+        "at_schedule",
+        "after_arrival",
+    )
+    assert grade["reliable"] is (not invalid), grade
+    assert grade["dimensions"]["authority"] is (not invalid), grade
+    if invalid:
+        assert grade["findings"] == [
+            {"dimension": "authority", "code": "DISPATCH_APPROVAL_INVALID"}
+        ]
+
+
+@pytest.mark.parametrize("physical", ["before_schedule", "valid", "after_arrival"])
+@pytest.mark.parametrize(
+    "cause,known_key",
+    [
+        ("schedule", True),
+        ("verify", True),
+        (None, True),
+        ("schedule", False),
+    ],
+)
+def test_post_terminal_receipt_chronology_is_human_incident(
+    receipt_baseline,
+    physical,
+    cause,
+    known_key,
+):
+    ep, grade, fact = chronology_receipt_episode(
+        receipt_baseline, physical, cause, known_key, arrival="2026-10-07T09:00:00Z"
+    )
+    assert fact["disposition"] == "post_terminal"
+    assert ep.final_state == receipt_baseline.final_state
+    assert grade["incidents"] == [
+        {
+            "code": "SECOND_SEND_DETECTED",
+            "send_id": "second-send",
+            "owner": "human_owner",
+            "after_terminal": True,
+        }
+    ]
+    assert grade["reliable"], grade
