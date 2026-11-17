@@ -719,9 +719,13 @@ class HTTPCampaignTransport:
                     wire, model=self.model
                 )
                 if self.selected_six and self.provider == "openai":
-                    from tools.three_flow_selected import check_openai_usage_reading
+                    from tools.three_flow_selected import (
+                        check_openai62_service_tier,
+                        check_openai_usage_reading,
+                    )
 
                     check_openai_usage_reading(wire)
+                    check_openai62_service_tier(wire, model=self.model)
                 meta_projection = wire
             return (xp if self.provider == "xai" else op).response_usage(wire), (
                 xa if self.provider == "xai" else oa

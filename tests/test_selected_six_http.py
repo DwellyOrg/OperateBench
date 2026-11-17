@@ -6,7 +6,7 @@ import httpx
 import pytest
 
 from tools.three_flow_mock import SDKMockTransport
-from tools.three_flow_profiles import SELECTED_SIX, SELECTED_SIX_PROFILE
+from tools.three_flow_profiles import OPENAI62_MODELS, SELECTED_SIX, SELECTED_SIX_PROFILE
 
 
 class SelectedMock(httpx.MockTransport):
@@ -141,6 +141,10 @@ class SelectedMock(httpx.MockTransport):
                 result["stop_reason"] = (
                     "refusal" if self.fault == "refusal" else "end_turn"
                 )
+        if (self.provider, self.model) in OPENAI62_MODELS:
+            result["service_tier"] = (
+                "priority" if self.fault == "tier_priority" else "default"
+            )
         if self.fault == "unknown_root":
             result["synthetic_unknown"] = True
         if self.fault == "usage":

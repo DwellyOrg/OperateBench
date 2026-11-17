@@ -164,7 +164,7 @@ def test_sdk_engine_and_zero_api_replay(tmp_path, _, model, flow):
 
 
 @pytest.mark.parametrize("_,model", OPENAI62_MODELS)
-@pytest.mark.parametrize("fault", ["model", "unknown_root"])
+@pytest.mark.parametrize("fault", ["model", "unknown_root", "tier_priority"])
 def test_wrong_model_excluded(tmp_path, _, model, fault):
     from operatebench.agents.transport import ProviderFailure
     from tools.three_flow_runtime import run_trial

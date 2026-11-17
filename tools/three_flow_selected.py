@@ -519,6 +519,23 @@ def check_anthropic_reading(wire: WireResponse[Any]) -> None:
                 raise wire_invalid("Anthropic thinking subset differs")
 
 
+def check_openai62_service_tier(wire: WireResponse[Any], *, model: str) -> None:
+    """Require a Standard served-tier echo for the two Standard-only lanes."""
+    if ("openai", model) not in OPENAI62_MODELS:
+        return
+    raw = wire.wire.get("service_tier")
+    typed = wire.parsed
+    value = getattr(typed, "service_tier", None)
+    if (
+        type(raw) is not str
+        or raw != "default"
+        or "service_tier" not in typed.model_fields_set
+        or type(value) is not str
+        or value != "default"
+    ):
+        raise wire_invalid("OpenAI 6.2 served tier is not the admitted Standard tier")
+
+
 def check_openai_usage_reading(wire: WireResponse[Any]) -> None:
     """Preserve cache/reasoning subsets and prove original typed/raw agreement."""
     body = wire.wire

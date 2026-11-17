@@ -14,7 +14,10 @@ bounded by 128,000 and remaining context; input is bounded by 922,000 within
 1,050,000 total context. Existing Core liveness and fixture limits still apply.
 The optional-money policy adds no model-call, token, or generation-time cap.
 Connection and pool acquisition retain the existing 10-second liveness bounds.
-No response schema is broadened for these models.
+The shared named, versioned response contract admits its closed inert root
+metadata and cache-write TTL partition. Model identity, actions and unknown fields
+continue to fail closed. For these two models, the raw and SDK response must both
+report `service_tier=default` before usage is settled.
 
 The closed published profile uses `openai62-standard-token-envelope-v1` with
 reported usage accounting, unknown additional fees, and no invoice guarantee.
