@@ -66,6 +66,9 @@ LATEST_ROSTER_PROFILE = "latest-http-v1"
 EXCLUDED_FUTURE_MODEL = "Qwen/Qwen3.5-122B-A10B-FP8"
 
 
+OPENAI62_PROFILE = "openai62-standard-same44-low-v1"
+OPENAI62_MODELS = (("openai", "gpt-6.2-astra"), ("openai", "gpt-6.2-sol"))
+
 NOVEMBER_PROFILE = "november-model-expansion-v1"
 NOVEMBER_MODELS = (("anthropic", "claude-sonnet-5-5"),)
 FABLE52_PROFILE = "anthropic-fable52-same44-v1"
@@ -87,6 +90,8 @@ ENDPOINTS.update(
 
 
 def selected_roster(roster_profile: str = "legacy-v1") -> tuple[tuple[str, str], ...]:
+    if roster_profile == OPENAI62_PROFILE:
+        return OPENAI62_MODELS
     if roster_profile == FABLE52_PROFILE:
         return FABLE52_MODELS
     if roster_profile == NOVEMBER_PROFILE:
@@ -144,7 +149,8 @@ def selection_for(
 ) -> CampaignSelection | None:
     """Resolve only existing valid cells; callers retain their validation order."""
     if mode_profile == "off-or-minimum-v1" and (
-        (provider, model) in SELECTED_SIX + NOVEMBER_MODELS + FABLE52_MODELS
+        (provider, model)
+        in SELECTED_SIX + NOVEMBER_MODELS + FABLE52_MODELS + OPENAI62_MODELS
     ):
         return CampaignSelection(
             provider,
@@ -280,12 +286,12 @@ def registry(
             }
             for p, m in (FABLE52_MODELS if fable else NOVEMBER_MODELS)
         ]
-    if roster_profile == SELECTED_SIX_PROFILE:
+    if roster_profile in (SELECTED_SIX_PROFILE, OPENAI62_PROFILE):
         if mode_profile != "off-or-minimum-v1":
             raise ValueError("selected six requires qualified minimum mode")
         from tools.three_flow_selected import selected_registry
 
-        return selected_registry(transport_policy)
+        return selected_registry(transport_policy, roster_profile=roster_profile)
     if roster_profile == GEMINI_ROSTER_PROFILE:
         from tools.three_flow_gemini import MAPPING
         from tools.three_flow_gemini import MODELS as gemini_models

@@ -32,6 +32,7 @@ from tools.three_flow_profiles import (
     GEMINI_UNCAPPED_PROFILE,
     META_ROSTER_PROFILE,
     NOVEMBER_PROFILE,
+    OPENAI62_PROFILE,
     SELECTED_SIX_PROFILE,
 )
 from tools.three_flow_profiles import minimum_effort as minimum_effort
@@ -116,7 +117,12 @@ def proposal(sha: str, roster_profile: str = "legacy-v1") -> dict[str, Any]:
         ],
     }
 
-    if roster_profile in (SELECTED_SIX_PROFILE, NOVEMBER_PROFILE, FABLE52_PROFILE):
+    if roster_profile in (
+        SELECTED_SIX_PROFILE,
+        NOVEMBER_PROFILE,
+        FABLE52_PROFILE,
+        OPENAI62_PROFILE,
+    ):
         result["cap_usd"] = None
     if roster_profile == GEMINI_ROSTER_PROFILE:
         result["cap_usd"] = None
@@ -195,6 +201,7 @@ def _validate(
                 SELECTED_SIX_PROFILE,
                 NOVEMBER_PROFILE,
                 FABLE52_PROFILE,
+                OPENAI62_PROFILE,
             )
             or admission.get("mode_profile") != "off-or-minimum-v1"
         ):
@@ -496,6 +503,7 @@ def validate_historical_identity(a: dict[str, Any]) -> None:
         SELECTED_SIX_PROFILE,
         NOVEMBER_PROFILE,
         FABLE52_PROFILE,
+        OPENAI62_PROFILE,
     ):
         string_fields.add("output_limit")
     fields = string_fields | {
@@ -764,7 +772,12 @@ def validate_profile(
     model: str | None = None,
     roster_profile: str = "legacy-v1",
 ) -> None:
-    if roster_profile in (SELECTED_SIX_PROFILE, NOVEMBER_PROFILE, FABLE52_PROFILE):
+    if roster_profile in (
+        SELECTED_SIX_PROFILE,
+        NOVEMBER_PROFILE,
+        FABLE52_PROFILE,
+        OPENAI62_PROFILE,
+    ):
         from tools.three_flow_selected import validate_published_profile
 
         validate_published_profile(p, provider, model, roster_profile=roster_profile)
