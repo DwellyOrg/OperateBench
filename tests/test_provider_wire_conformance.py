@@ -243,7 +243,7 @@ def test_every_adapter_records_how_it_captured_the_wire_response() -> None:
     # service's own ``prompt_tokens_details`` object — so the assertion is per
     # lane rather than one number for all three. Reading the capture mode off a
     # shared version would stop being a check the moment any one lane moved.
-    assert OPENAI_ADAPTER_VERSION == "0.5.0"
+    assert OPENAI_ADAPTER_VERSION == "0.6.0"
     assert XAI_ADAPTER_VERSION == "0.3.0"
     assert MISTRAL_ADAPTER_VERSION == "0.3.0"
 

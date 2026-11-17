@@ -63,7 +63,13 @@ class SelectedMock(httpx.MockTransport):
             )
             if self.provider == "openai":
                 result["access_programs"] = {"cyber": "standard"}
+                result["image"] = {"context_compression": "disabled"}
+                result["input_transformations"] = []
                 result["usage"]["input_tokens_details"]["cache_write_tokens"] = 4
+                result["usage"]["input_tokens_details"]["cache_write_tokens_details"] = {
+                    "ttl_30m_tokens": 1,
+                    "ttl_12h_tokens": 3,
+                }
         elif self.provider == "anthropic":
             result["usage"]["speed"] = "standard"
             result["usage"]["output_tokens_details"] = {"thinking_tokens": 2}
@@ -135,6 +141,8 @@ class SelectedMock(httpx.MockTransport):
                 result["stop_reason"] = (
                     "refusal" if self.fault == "refusal" else "end_turn"
                 )
+        if self.fault == "unknown_root":
+            result["synthetic_unknown"] = True
         if self.fault == "usage":
             result.pop("usage")
         if self.fault == "model":

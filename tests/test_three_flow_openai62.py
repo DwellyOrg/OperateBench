@@ -164,12 +164,13 @@ def test_sdk_engine_and_zero_api_replay(tmp_path, _, model, flow):
 
 
 @pytest.mark.parametrize("_,model", OPENAI62_MODELS)
-def test_wrong_model_excluded(tmp_path, _, model):
+@pytest.mark.parametrize("fault", ["model", "unknown_root"])
+def test_wrong_model_excluded(tmp_path, _, model, fault):
     from operatebench.agents.transport import ProviderFailure
     from tools.three_flow_runtime import run_trial
 
     budget, t, trial, network = fixture(
-        tmp_path, "openai", model, "model", roster_profile=OPENAI62_PROFILE
+        tmp_path, "openai", model, fault, roster_profile=OPENAI62_PROFILE
     )
     try:
         with pytest.raises(ProviderFailure):

@@ -814,7 +814,7 @@ def test_no_other_lane_accepts_this_field_or_records_this_contract() -> None:
     )
 
     # The other three lanes' versions are unmoved by this amendment.
-    assert OPENAI_ADAPTER_VERSION == "0.5.0"
+    assert OPENAI_ADAPTER_VERSION == "0.6.0"
     assert XAI_ADAPTER_VERSION == "0.3.0"
     assert ANTHROPIC_ADAPTER_VERSION == "0.8.0"
 

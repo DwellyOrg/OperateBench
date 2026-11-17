@@ -544,17 +544,29 @@ def check_openai_usage_reading(wire: WireResponse[Any]) -> None:
             raw[key] = other
     _agree(raw, typed)
     usage = body["usage"]
+    from operatebench.providers.openai_responses import check_cache_usage_details
+
+    check_cache_usage_details(usage)
     for key in ("input_tokens", "output_tokens", "total_tokens"):
         _count(usage.get(key))
     if usage["total_tokens"] != usage["input_tokens"] + usage["output_tokens"]:
         raise wire_invalid("OpenAI total usage differs")
     for key, names, total in (
-        ("input_tokens_details", {"cached_tokens", "cache_write_tokens"}, "input_tokens"),
+        (
+            "input_tokens_details",
+            {"cached_tokens", "cache_write_tokens", "cache_write_tokens_details"},
+            "input_tokens",
+        ),
         ("output_tokens_details", {"reasoning_tokens"}, "output_tokens"),
     ):
         if usage.get(key) is not None:
             details = _object(usage[key], names)
-            for value in details.values():
+            counts = [
+                value
+                for name, value in details.items()
+                if name != "cache_write_tokens_details"
+            ]
+            for value in counts:
                 _count(value)
-            if sum(details.values()) > usage[total]:
+            if sum(counts) > usage[total]:
                 raise wire_invalid("OpenAI usage subset differs")
