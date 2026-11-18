@@ -497,6 +497,8 @@ alone is not proof of benchmark validity.
   model-performance evidence.
 - [Three-flow latest HTTP roster](docs/THREE_FLOW_LATEST_HTTP.md) — explicit
   roster and mode profile selection, pricing safeguards and compatibility boundaries.
+- [OpenAI 6.2 SAME44 profile](docs/OPENAI62_SAME44.md) — opt-in model,
+  transport and Standard pricing boundaries.
 - [Meta Muse Standard snapshot method](docs/META_MUSE_SNAPSHOT.md) — provider
   settings, integration boundaries and pricing.
 - [Gemini native offline campaign](docs/GEMINI_OFFLINE.md) — two 44-case

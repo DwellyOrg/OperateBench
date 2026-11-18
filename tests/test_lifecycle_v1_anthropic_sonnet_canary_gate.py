@@ -29,6 +29,7 @@ import inspect
 import json
 import os
 import shlex
+import shutil
 import stat
 import subprocess
 import sys
@@ -659,6 +660,76 @@ def _assert_frozen_security_ast(source: str, operator: str) -> None:
     assert _security_ast_fingerprints(source) == _FROZEN_SECURITY_AST[operator]
 
 
+def _select_supported_interpreters(candidates: list[Path]) -> list[Path]:
+    """Select distinct probed Python 3.11 and 3.14 executables, in order."""
+    found: dict[tuple[int, int], Path] = {}
+    seen: set[Path] = set()
+    for candidate in candidates:
+        if not candidate.is_file():
+            continue
+        resolved = candidate.resolve()
+        if resolved in seen:
+            continue
+        seen.add(resolved)
+        try:
+            result = subprocess.run(
+                [
+                    str(candidate),
+                    "-c",
+                    "import json,sys; print(json.dumps(list(sys.version_info[:2])))",
+                ],
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=10,
+            )
+            version = json.loads(result.stdout) if result.returncode == 0 else None
+        except (OSError, subprocess.TimeoutExpired, ValueError):
+            continue
+        if version in ([3, 11], [3, 14]):
+            found.setdefault(tuple(version), candidate)
+    return [found[v] for v in ((3, 11), (3, 14)) if v in found]
+
+
+def _interpreter_candidates() -> list[Path]:
+    candidates = [
+        canary.REPO_ROOT / ".venv/bin/python",
+        Path(sys.executable),
+        Path("/usr/bin/python3.11"),
+        Path("/usr/bin/python3.14"),
+        Path("/usr/local/bin/python3.11"),
+        Path("/usr/local/bin/python3.14"),
+    ]
+    candidates.extend(
+        Path(path)
+        for name in ("python3.11", "python3.14")
+        if (path := shutil.which(name))
+    )
+    return candidates
+
+
+def test_interpreter_selection_rejects_same_version_aliases(tmp_path: Path) -> None:
+    executable = tmp_path / "python314"
+    executable.write_text('#!/bin/sh\nprintf "[3, 14]\\n"\n')
+    executable.chmod(0o700)
+    alias = tmp_path / "venv-python"
+    alias.symlink_to(executable)
+    other = tmp_path / "other314"
+    other.write_text('#!/bin/sh\nprintf "[3, 14]\\n"\n')
+    other.chmod(0o700)
+    assert _select_supported_interpreters([alias, executable, other]) == [alias]
+
+
+def test_interpreter_selection_orders_distinct_probed_versions(tmp_path: Path) -> None:
+    interpreters = []
+    for version in (14, 11):
+        executable = tmp_path / f"python3.{version}"
+        executable.write_text(f'#!/bin/sh\nprintf "[3, {version}]\\n"\n')
+        executable.chmod(0o700)
+        interpreters.append(executable)
+    assert _select_supported_interpreters(interpreters) == interpreters[::-1]
+
+
 class TestTheToolIsOneCellWide:
     def test_security_dependency_closure_matches_hardened_haiku_operator(self) -> None:
         """Finite top-level census: no imports, globals, classes or helpers escape."""
@@ -900,12 +971,9 @@ class TestTheToolIsOneCellWide:
             assert sonnet_assignments[name] != haiku_assignments[name]
 
     def test_security_ast_fingerprints_match_across_supported_interpreters(self) -> None:
-        interpreters = [
-            canary.REPO_ROOT / ".venv/bin/python",
-            Path("/usr/bin/python3.14"),
-        ]
-        if not all(interpreter.is_file() for interpreter in interpreters):
-            pytest.skip("local Python 3.11/3.14 pair is unavailable")
+        interpreters = _select_supported_interpreters(_interpreter_candidates())
+        if len(interpreters) != 2:
+            pytest.skip("genuine Python 3.11/3.14 pair is unavailable")
         script = """
 from __future__ import annotations
 
