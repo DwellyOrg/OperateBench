@@ -477,9 +477,9 @@ def check_reasoning_items_agree(raw: Mapping[str, Any], parsed: Response) -> Non
 # So this lane names **one exact contract** for that block and accepts precisely
 # it. Four properties make that safe to do:
 #
-# * It is *closed*, recursively. Five top-level names, fixed children under each,
+# * It is *closed*, recursively. Eight top-level names, fixed children under each,
 #   and an unknown key at any depth is still ``provider_response_invalid``.
-# * It is *complete where it is present*. The five top-level names are
+# * It is *complete where it is present*. The eight top-level names are
 #   independently optional — a service that stops sending a whole block has
 #   stopped making a statement nothing here reads — but an object that does
 #   arrive states every child fixed for it. A half-stated object is not the shape
@@ -502,10 +502,12 @@ def check_reasoning_items_agree(raw: Mapping[str, Any], parsed: Response) -> Non
 
 #: The name of that contract, as adapter settings record it.
 #:
-#: ``_v4`` accepts null or the observed closed cyber/standard access metadata.
+#: ``_v5`` additionally accepts only disabled image compression and empty
+#: input transformations. ``_v4`` accepts null or the observed closed
+#: cyber/standard access metadata.
 #: The ``_v2`` rule requiring every present object to be whole is unchanged.
 #: This is observed compatibility, not a general vendor metadata contract.
-OPENAI_RESPONSE_SERVER_EXTENSIONS = "openai_response_server_extensions_v4"
+OPENAI_RESPONSE_SERVER_EXTENSIONS = "openai_response_server_extensions_v5"
 
 #: The scalar vocabulary the contract fixes. Each kind is a
 #: closed-set label this build chose, so it may appear in a durable failure
@@ -516,6 +518,8 @@ EXTENSION_FLAG = "boolean"
 EXTENSION_TEXT = "bounded_text"
 EXTENSION_NULL = "null"
 EXTENSION_ACCESS = "null_or_cyber_access"
+EXTENSION_DISABLED = "disabled"
+EXTENSION_EMPTY_LIST = "empty_list"
 
 #: The inclusive range the vendor publishes for these two parameters on its
 #: request surface, and the range this contract holds their echoes to. A number
@@ -539,7 +543,7 @@ MAX_EXTENSION_TEXT_CHARACTERS = 128
 #: A string value is one of the five scalar kinds above.
 #:
 #: Optionality is decided by *level*, and the two levels are not the same
-#: question. Each of the six top-level names may be absent, independently of the
+#: question. Each of the eight top-level names may be absent, independently of the
 #: others: this build reads none of them, so a service that stops sending a whole
 #: block has not broken anything a run depends on, and demanding it would refuse
 #: a body this build can read perfectly well. Inside a block that *is* present,
@@ -552,6 +556,8 @@ SERVER_EXTENSION_SCHEMA: Mapping[str, Any] = _frozen(
         # Accept only the established null or closed cyber/standard shape.
         "access_programs": EXTENSION_ACCESS,
         "billing": {"payer": EXTENSION_TEXT},
+        "image": {"context_compression": EXTENSION_DISABLED},
+        "input_transformations": EXTENSION_EMPTY_LIST,
         "frequency_penalty": EXTENSION_PENALTY,
         "presence_penalty": EXTENSION_PENALTY,
         "store": EXTENSION_FLAG,
@@ -595,7 +601,7 @@ SERVER_EXTENSION_CONTRACT: Mapping[str, Any] = _frozen(
         "members": SERVER_EXTENSION_SCHEMA,
         # Present object, whole object.
         "object_members_required": True,
-        # ...and each of the six top-level names may be absent on its own.
+        # ...and each of the eight top-level names may be absent on its own.
         "top_level_members_required": False,
     }
 )
@@ -628,6 +634,10 @@ def _extension_scalar_valid(value: Any, kind: str) -> bool:
     as a penalty of one — and a lenient reader downstream would render either as
     a measurement nobody took.
     """
+    if kind == EXTENSION_DISABLED:
+        return type(value) is str and value == "disabled"
+    if kind == EXTENSION_EMPTY_LIST:
+        return type(value) is list and not value
     if kind == EXTENSION_NULL:
         return value is None
     if kind == EXTENSION_COUNT:
@@ -709,7 +719,7 @@ def check_server_extensions(fields: Mapping[str, Any]) -> None:
     """Prove every named extension this mapping states is the exact fixed shape.
 
     A name that is absent is not checked, and that is this level's rule rather
-    than the contract's rule everywhere: the six top-level names are
+    than the contract's rule everywhere: the eight top-level names are
     independently optional, and everything below one of them is required once
     its parent is here.
 
@@ -799,9 +809,43 @@ USAGE_WIRE_SHAPE = WireShape(
 )
 INPUT_TOKENS_DETAILS_WIRE_SHAPE = WireShape(
     kind="input token details",
-    allowed=declared_wire_fields(InputTokensDetails),
+    allowed=declared_wire_fields(InputTokensDetails) | {"cache_write_tokens_details"},
     required=(),
 )
+CACHE_TTL_WIRE_SHAPE = WireShape(
+    kind="cache write token details",
+    allowed=frozenset({"ttl_30m_tokens", "ttl_12h_tokens"}),
+    required=("ttl_30m_tokens", "ttl_12h_tokens"),
+)
+
+
+def check_cache_usage_details(usage: Mapping[str, Any]) -> None:
+    """Validate observed cache accounting without adding it to token totals."""
+    details = usage.get("input_tokens_details")
+    if details is None:
+        return
+    details = checked_wire_object(details, INPUT_TOKENS_DETAILS_WIRE_SHAPE)
+    for name in ("cached_tokens", "cache_write_tokens"):
+        if name in details and not is_wire_token_count(details[name]):
+            raise wire_invalid("invalid OpenAI cache token count")
+    if "cache_write_tokens_details" in details:
+        ttl = checked_wire_object(
+            details["cache_write_tokens_details"], CACHE_TTL_WIRE_SHAPE
+        )
+        if any(
+            not is_wire_token_count(ttl[name]) for name in CACHE_TTL_WIRE_SHAPE.required
+        ):
+            raise wire_invalid("invalid OpenAI cache TTL token count")
+        aggregate = details.get("cache_write_tokens")
+        if not is_wire_token_count(aggregate) or sum(ttl.values()) != aggregate:
+            raise wire_invalid("OpenAI cache TTL partition differs")
+    total = usage.get("input_tokens")
+    if not is_wire_token_count(total) or (
+        details.get("cached_tokens", 0) + details.get("cache_write_tokens", 0) > total
+    ):
+        raise wire_invalid("OpenAI cache token subsets differ")
+
+
 OUTPUT_TOKENS_DETAILS_WIRE_SHAPE = WireShape(
     kind="output token details",
     allowed=declared_wire_fields(OutputTokensDetails),
@@ -1016,6 +1060,7 @@ def check_wire_response(raw: Mapping[str, Any]) -> None:
         if usage.get(field) is not None:
             checked_wire_object(usage[field], shape)
     wire_token_usage(usage, fields=USAGE_FIELDS)
+    check_cache_usage_details(usage)
 
 
 def check_response_admissible(response: WireResponse[Response], *, model: str) -> None:
@@ -1057,7 +1102,26 @@ def check_response_admissible(response: WireResponse[Response], *, model: str) -
     check_wire_response(response.wire)
     parsed = response.parsed
     check_response_model(parsed, model=model)
-    check_response_contract(parsed, allowed_root_extras=SERVER_EXTENSION_NAMES)
+    check_response_contract(
+        parsed,
+        allowed_root_extras=SERVER_EXTENSION_NAMES,
+        allowed_extras_by_model={
+            InputTokensDetails: frozenset({"cache_write_tokens_details"})
+        },
+    )
+    typed_usage = parsed.usage
+    if typed_usage is not None:
+        if not isinstance(typed_usage, ResponseUsage):
+            raise wire_invalid("invalid typed OpenAI usage block")
+        typed_usage_map = typed_usage.model_dump(exclude_unset=True)
+        check_cache_usage_details(typed_usage_map)
+        raw_usage = response.wire["usage"]
+        if ("input_tokens_details" in raw_usage) != (
+            "input_tokens_details" in typed_usage_map
+        ) or raw_usage.get("input_tokens_details") != typed_usage_map.get(
+            "input_tokens_details"
+        ):
+            raise wire_invalid("OpenAI input token detail readings differ")
     check_server_extensions_agree(response.wire, parsed)
     check_reasoning_items_agree(response.wire, parsed)
     check_response_collection(parsed.output, kind="output items")

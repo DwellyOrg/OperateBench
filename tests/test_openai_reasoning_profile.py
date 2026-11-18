@@ -340,7 +340,7 @@ def test_the_openai_adapter_version_moved_with_the_request_semantics() -> None:
     profile's own claim is the one below it: the identity a run records is this
     integration's, and it is not the superseded one.
     """
-    assert OPENAI_ADAPTER_VERSION == "0.5.0"
+    assert OPENAI_ADAPTER_VERSION == "0.6.0"
     assert openai_identity(GPT_5_6_LUNA_MODEL).version == OPENAI_ADAPTER_VERSION
 
 

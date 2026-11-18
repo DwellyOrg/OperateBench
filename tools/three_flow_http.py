@@ -57,6 +57,7 @@ from tools.three_flow_profiles import (
     FABLE52_MODELS,
     MODE_PROFILES,
     NOVEMBER_MODELS,
+    OPENAI62_MODELS,
     SELECTED_SIX,
     CampaignSelection,
     http_mode_fields,
@@ -312,7 +313,7 @@ class HTTPCampaignTransport:
             raise ValueError("pacing policy requires Mistral or selected River HTTP")
         if mode_profile not in MODE_PROFILES:
             raise ValueError("unknown reasoning mode profile")
-        selected = (provider, model) in SELECTED_SIX
+        selected = (provider, model) in SELECTED_SIX + OPENAI62_MODELS
         meta = provider == "meta"
         if meta:
             metap.check_model(cast(str, model))
@@ -558,6 +559,8 @@ class HTTPCampaignTransport:
             )
         if meta and "owner_output_cap_tokens" in profile:
             self.settings["owner_output_cap_tokens"] = profile["owner_output_cap_tokens"]
+        if (provider, model) in OPENAI62_MODELS:
+            self.settings["service_tier"] = "default"
         if selected:
             if provider == "anthropic":
                 self.settings["tool_choice"] = {
@@ -639,6 +642,11 @@ class HTTPCampaignTransport:
                 "store": False,
                 "input": text,
                 **self.mode_fields,
+                **(
+                    {"service_tier": "default"}
+                    if (self.provider, self.model) in OPENAI62_MODELS
+                    else {}
+                ),
             }
         if self.provider == "anthropic":
             messages: list[dict[str, Any]] = [{"role": "user", "content": text}]
@@ -711,9 +719,13 @@ class HTTPCampaignTransport:
                     wire, model=self.model
                 )
                 if self.selected_six and self.provider == "openai":
-                    from tools.three_flow_selected import check_openai_usage_reading
+                    from tools.three_flow_selected import (
+                        check_openai62_service_tier,
+                        check_openai_usage_reading,
+                    )
 
                     check_openai_usage_reading(wire)
+                    check_openai62_service_tier(wire, model=self.model)
                 meta_projection = wire
             return (xp if self.provider == "xai" else op).response_usage(wire), (
                 xa if self.provider == "xai" else oa

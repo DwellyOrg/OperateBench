@@ -91,7 +91,7 @@ from tests.openai_transport import (
 #: The contract's own name, written out rather than imported: it is inside
 #: ``configuration_id``, so an identifier asserted against itself would follow
 #: any rename and prove nothing about the run identity a reader compares.
-EXTENSIONS_CONTRACT = "openai_response_server_extensions_v4"
+EXTENSIONS_CONTRACT = "openai_response_server_extensions_v5"
 
 #: The name the superseded reading of the same field set carried. ``v1``
 #: transcribed these names and types and then made every one of them optional
@@ -109,6 +109,8 @@ SUPERSEDED_EXTENSIONS_CONTRACT = "openai_response_server_extensions_v1"
 EXPECTED_SCHEMA: dict[str, Any] = {
     "access_programs": "null_or_cyber_access",
     "billing": {"payer": "bounded_text"},
+    "image": {"context_compression": "disabled"},
+    "input_transformations": "empty_list",
     "frequency_penalty": "penalty_number",
     "presence_penalty": "penalty_number",
     "store": "boolean",
@@ -779,7 +781,7 @@ def test_the_contract_is_provider_observed_and_says_so_by_not_claiming_the_sdk()
     declared = declared_wire_fields(Response)
 
     assert set(SERVER_EXTENSION_NAMES).isdisjoint(declared)
-    assert len(SERVER_EXTENSION_NAMES) == 6
+    assert len(SERVER_EXTENSION_NAMES) == 8
 
 
 # -- 7. what moved, and what did not -------------------------------------------
@@ -793,8 +795,8 @@ def test_the_openai_adapter_version_moved_because_what_it_accepts_moved() -> Non
     here, so a run made under either number is not comparable with one made under
     the other, and the identity a row carries has to say which one it was.
     """
-    assert OPENAI_ADAPTER_VERSION == "0.5.0"
-    assert openai_identity(GPT_5_6_LUNA_MODEL).version == "0.5.0"
+    assert OPENAI_ADAPTER_VERSION == "0.6.0"
+    assert openai_identity(GPT_5_6_LUNA_MODEL).version == "0.6.0"
 
 
 def _manifest(settings: Any, *, version: str) -> Any:

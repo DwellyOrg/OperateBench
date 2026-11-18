@@ -77,7 +77,7 @@ BASELINE_SETTINGS_DIGEST = (
 
 #: Provider, model, implementation, version — the identity every ledger row
 #: carries.
-BASELINE_IDENTITY = ("openai", "gpt-5.6-luna", "openai_responses", "0.5.0")
+BASELINE_IDENTITY = ("openai", "gpt-5.6-luna", "openai_responses", "0.6.0")
 
 #: One attempt, on the recorded fields: index, outcome, fault, http status,
 #: response received, usage reported, reservation, settlement.
@@ -197,7 +197,7 @@ def test_the_projection_builds_exactly_the_body_the_adapter_sends() -> None:
 # metadata (8ef9cce), validated non-action reasoning items (4d86101), and
 # closed cyber/standard access metadata. Only response interpretation changed.
 CURRENT_SETTINGS_DIGEST = (
-    "2da1e904230fe01e9060c4efe0d9631e6b29cf38dab2d8171b4dd0277967458d"
+    "7e29bc954874bd9af624b9db290928d44bd20e4e253e5415bcbd37c926064bc4"
 )
 
 
@@ -207,9 +207,9 @@ def test_the_settings_hashed_into_run_identity_are_unchanged() -> None:
     assert current.pop("reasoning_items_contract") == (
         "openai_reasoning_items_strict_non_action_v1"
     )
-    assert current["response_server_extensions"] == "openai_response_server_extensions_v4"
+    assert current["response_server_extensions"] == "openai_response_server_extensions_v5"
     assert current["response_server_extensions_digest"] == (
-        "4b28372d561c7299afdcf7f6d6d3bce8462eb75ae8315faac4ee6895217fb84d"
+        "acb325a605f7117a4f4080a409f652dd35366f7b9143275263dec42a18a4bf13"
     )
     # Restore only those reviewed fields and prove every other setting still
     # matches the original pre-extraction golden, rather than repinning blindly.
@@ -230,7 +230,7 @@ def test_the_adapter_settings_are_the_settings_function_settings() -> None:
 def test_the_adapter_identity_and_version_are_unchanged() -> None:
     identity = openai_identity(MODEL)
 
-    assert OPENAI_ADAPTER_VERSION == "0.5.0"
+    assert OPENAI_ADAPTER_VERSION == "0.6.0"
     assert (
         identity.provider,
         identity.model,

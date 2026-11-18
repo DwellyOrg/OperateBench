@@ -41,6 +41,7 @@ from tools.three_flow_profiles import (
     GEMINI_ROSTER_PROFILE,
     META_ROSTER_PROFILE,
     NOVEMBER_PROFILE,
+    OPENAI62_PROFILE,
     SELECTED_SIX_PROFILE,
 )
 from tools.three_flow_profiles import (
@@ -91,6 +92,7 @@ def preflight(roster_profile: str = "legacy-v1") -> dict[str, Any]:
             SELECTED_SIX_PROFILE,
             NOVEMBER_PROFILE,
             FABLE52_PROFILE,
+            OPENAI62_PROFILE,
         )
         else "990"
         if roster_profile == META_ROSTER_PROFILE
@@ -330,15 +332,13 @@ def reports(
         )
     write_private(root / "scorecard.md", ("\n".join(lines) + "\n").encode())
     if grouped:
-        gemini_pairs = tuple(
-            dict.fromkeys(
-                (r["provider"], r["model"]) for r in rows if r["provider"] == "gemini"
-            )
-        )
+        observed_pairs = tuple(dict.fromkeys((r["provider"], r["model"]) for r in rows))
         for index, (provider, model) in enumerate(
             ROSTER
             + tuple(pair for pair in LATEST_HTTP_MODELS if pair not in ROSTER)
-            + gemini_pairs
+            + tuple(
+                pair for pair in observed_pairs if pair not in ROSTER + LATEST_HTTP_MODELS
+            )
         ):
             for flow in ("maintenance", "commerce", "compliance"):
                 subset = [r for r in rows if r["model"] == model and r["flow"] == flow]

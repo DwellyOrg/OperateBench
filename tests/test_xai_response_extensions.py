@@ -1370,7 +1370,7 @@ def test_no_other_lane_accepts_these_fields_or_records_this_contract() -> None:
     )
     from boundarybench.providers.xai_openai_compat import RESPONSE_EXTENSION_DIGEST
 
-    assert OPENAI_ADAPTER_VERSION == "0.5.0"
+    assert OPENAI_ADAPTER_VERSION == "0.6.0"
     assert MISTRAL_ADAPTER_VERSION == "0.3.0"
     assert ANTHROPIC_ADAPTER_VERSION == "0.8.0"
     for settings in (

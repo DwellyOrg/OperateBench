@@ -65,12 +65,16 @@
   },
   "operatebench.providers.openai_responses": {
     "SERVER_EXTENSION_CONTRACT": {
-      "contract": "openai_response_server_extensions_v4",
+      "contract": "openai_response_server_extensions_v5",
       "members": {
         "access_programs": "null_or_cyber_access",
         "billing": {
           "payer": "bounded_text"
         },
+        "image": {
+          "context_compression": "disabled"
+        },
+        "input_transformations": "empty_list",
         "frequency_penalty": "penalty_number",
         "presence_penalty": "penalty_number",
         "store": "boolean",
@@ -96,7 +100,7 @@
       "object_members_required": true,
       "top_level_members_required": false
     },
-    "SERVER_EXTENSION_DIGEST": "4b28372d561c7299afdcf7f6d6d3bce8462eb75ae8315faac4ee6895217fb84d"
+    "SERVER_EXTENSION_DIGEST": "acb325a605f7117a4f4080a409f652dd35366f7b9143275263dec42a18a4bf13"
   },
   "operatebench.providers.xai_openai_compat": {
     "RESPONSE_EXTENSION_CONTRACT": {

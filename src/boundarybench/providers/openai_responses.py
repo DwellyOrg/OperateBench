@@ -204,7 +204,9 @@ OPENAI_IMPLEMENTATION = "openai_responses"
 #: *present* object is required. What it sends is still byte-identical to
 #: ``0.3.0``; a body ``0.4.0`` would have read as an answer is now refused, so
 #: the number moves and a run made under either is not comparable with the other.
-OPENAI_ADAPTER_VERSION = "0.5.0"
+#: ``0.6.0`` accepts the v5 inert root metadata and the observed, closed cache
+#: write TTL partition. The request mapping and pricing totals are unchanged.
+OPENAI_ADAPTER_VERSION = "0.6.0"
 
 #: How a :class:`~boundarybench.adapter.TurnRequest` becomes a request body.
 #: Pinned in settings because a different mapping is a different experiment even

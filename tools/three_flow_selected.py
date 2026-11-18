@@ -12,19 +12,24 @@ from operatebench.agents.transport import ModelResponse, ToolCall
 from operatebench.providers.wire import WireResponse, wire_invalid
 from tools.three_flow_profiles import (
     ENDPOINTS,
-    FABLE52_MODELS,
     FABLE52_PROFILE,
-    NOVEMBER_MODELS,
     NOVEMBER_PROFILE,
+    OPENAI62_MODELS,
+    OPENAI62_PROFILE,
     SELECTED_SIX,
+    selected_roster,
 )
 
 
 def mode_fields(provider: str, model: str) -> dict[str, Any]:
-    if (provider, model) not in SELECTED_SIX:
+    if (provider, model) not in SELECTED_SIX + OPENAI62_MODELS:
         raise ValueError("outside selected-six scope")
     controls: dict[str, dict[str, Any]] = {
-        "openai": {"reasoning": {"effort": "none"}},
+        "openai": {
+            "reasoning": {
+                "effort": "low" if (provider, model) in OPENAI62_MODELS else "none"
+            }
+        },
         "anthropic": {
             "thinking": {"type": "adaptive"},
             "output_config": {"effort": "low"},
@@ -36,9 +41,13 @@ def mode_fields(provider: str, model: str) -> dict[str, Any]:
     return controls[provider]
 
 
-def selected_registry(transport_policy: str) -> list[dict[str, Any]]:
+def selected_registry(
+    transport_policy: str, *, roster_profile: str = "selected-six-http-v1"
+) -> list[dict[str, Any]]:
     if transport_policy not in ("legacy-v1", "paced-safe-errors-v1"):
         raise ValueError("unknown transport policy")
+    if roster_profile == OPENAI62_PROFILE and transport_policy != "legacy-v1":
+        raise ValueError("OpenAI62 requires legacy-v1 transport policy")
     return [
         {
             "provider": p,
@@ -58,6 +67,7 @@ def selected_registry(transport_policy: str) -> list[dict[str, Any]]:
             ),
             "request_settings": {
                 **mode_fields(p, m),
+                **({"service_tier": "default"} if (p, m) in OPENAI62_MODELS else {}),
                 **(
                     {
                         "pacing_scope": "process-wide-river-http",
@@ -79,14 +89,14 @@ def selected_registry(transport_policy: str) -> list[dict[str, Any]]:
             "retries": 0,
             "admitted": False,
         }
-        for p, m in SELECTED_SIX
+        for p, m in selected_roster(roster_profile)
     ]
 
 
 def validate_selected_profile(
     p: dict[str, Any], provider: str, model: str | None
 ) -> None:
-    if (provider, model) not in SELECTED_SIX:
+    if (provider, model) not in SELECTED_SIX + OPENAI62_MODELS:
         raise ValueError("selected-six exact provider/model required")
     if p.get("execution_policy") != "three-flow-optional-limits-v1":
         raise ValueError("selected-six requires null monetary policy")
@@ -345,9 +355,10 @@ def validate_published_profile(
 
     from tools.three_flow_admission import GUARANTEES, digest
 
+    openai62 = roster_profile == OPENAI62_PROFILE
     fable = roster_profile == FABLE52_PROFILE
     november = roster_profile == NOVEMBER_PROFILE
-    roster = FABLE52_MODELS if fable else NOVEMBER_MODELS if november else SELECTED_SIX
+    roster = selected_roster(roster_profile)
     fields = {
         "endpoint",
         "input_max",
@@ -372,7 +383,9 @@ def validate_published_profile(
     if (
         p["pricing_policy"]
         != (
-            "fable52-standard-global-token-envelope-v1"
+            "openai62-standard-token-envelope-v1"
+            if openai62
+            else "fable52-standard-global-token-envelope-v1"
             if fable
             else "november-published-token-envelope-v1"
             if november
@@ -395,7 +408,11 @@ def validate_published_profile(
         validate_selected_profile(p, provider, model)
     assert model is not None
     context, input_max, output = (
-        (1000000, None, 128000) if november or fable else BOUNDS[model]
+        (1050000, 922000, 128000)
+        if openai62
+        else (1000000, None, 128000)
+        if november or fable
+        else BOUNDS[model]
     )
     if (
         (p["context_max"], p["input_max"], p["output_max"])
@@ -405,7 +422,13 @@ def validate_published_profile(
     ):
         raise ValueError("selected-six published route/bounds differ")
     rates = (
-        ("8", "0.20", "16", "40")
+        (
+            ("16", "0.8", "40", "60")
+            if model == "gpt-6.2-astra"
+            else ("4", "0.2", "10", "15")
+        )
+        if openai62
+        else ("8", "0.20", "16", "40")
         if fable
         else ("2", "0.10", "4", "10")
         if november
@@ -438,6 +461,13 @@ def validate_published_profile(
         or not re.fullmatch(r"[a-f0-9]{64}", p["bounds_evidence_sha256"])
     ):
         raise ValueError("selected-six source evidence required")
+    if openai62 and (
+        evidence["source"] != "https://developers.openai.com/api/docs/pricing.md"
+        or not isinstance(p["bounds_policy"], dict)
+        or p["bounds_policy"].get("source")
+        != f"https://developers.openai.com/api/docs/models/{model}.md"
+    ):
+        raise ValueError("OpenAI62 official source selection differs")
     b = p["bounds_policy"]
     if (
         not isinstance(b, dict)
@@ -489,6 +519,23 @@ def check_anthropic_reading(wire: WireResponse[Any]) -> None:
                 raise wire_invalid("Anthropic thinking subset differs")
 
 
+def check_openai62_service_tier(wire: WireResponse[Any], *, model: str) -> None:
+    """Require a Standard served-tier echo for the two Standard-only lanes."""
+    if ("openai", model) not in OPENAI62_MODELS:
+        return
+    raw = wire.wire.get("service_tier")
+    typed = wire.parsed
+    value = getattr(typed, "service_tier", None)
+    if (
+        type(raw) is not str
+        or raw != "default"
+        or "service_tier" not in typed.model_fields_set
+        or type(value) is not str
+        or value != "default"
+    ):
+        raise wire_invalid("OpenAI 6.2 served tier is not the admitted Standard tier")
+
+
 def check_openai_usage_reading(wire: WireResponse[Any]) -> None:
     """Preserve cache/reasoning subsets and prove original typed/raw agreement."""
     body = wire.wire
@@ -514,17 +561,29 @@ def check_openai_usage_reading(wire: WireResponse[Any]) -> None:
             raw[key] = other
     _agree(raw, typed)
     usage = body["usage"]
+    from operatebench.providers.openai_responses import check_cache_usage_details
+
+    check_cache_usage_details(usage)
     for key in ("input_tokens", "output_tokens", "total_tokens"):
         _count(usage.get(key))
     if usage["total_tokens"] != usage["input_tokens"] + usage["output_tokens"]:
         raise wire_invalid("OpenAI total usage differs")
     for key, names, total in (
-        ("input_tokens_details", {"cached_tokens", "cache_write_tokens"}, "input_tokens"),
+        (
+            "input_tokens_details",
+            {"cached_tokens", "cache_write_tokens", "cache_write_tokens_details"},
+            "input_tokens",
+        ),
         ("output_tokens_details", {"reasoning_tokens"}, "output_tokens"),
     ):
         if usage.get(key) is not None:
             details = _object(usage[key], names)
-            for value in details.values():
+            counts = [
+                value
+                for name, value in details.items()
+                if name != "cache_write_tokens_details"
+            ]
+            for value in counts:
                 _count(value)
-            if sum(details.values()) > usage[total]:
+            if sum(counts) > usage[total]:
                 raise wire_invalid("OpenAI usage subset differs")
