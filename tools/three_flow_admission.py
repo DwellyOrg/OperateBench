@@ -9,9 +9,9 @@ import math
 import platform
 import re
 import sys
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from tools.three_flow_budget import (
     META_UNCAPPED_PROFILE,
@@ -30,6 +30,7 @@ from tools.three_flow_profiles import (
     FABLE52_PROFILE,
     GEMINI_ROSTER_PROFILE,
     GEMINI_UNCAPPED_PROFILE,
+    LATE_NOVEMBER_PROFILE,
     META_ROSTER_PROFILE,
     NOVEMBER_PROFILE,
     OPENAI62_PROFILE,
@@ -94,7 +95,9 @@ def proposal(sha: str, roster_profile: str = "legacy-v1") -> dict[str, Any]:
         "runtime": runtime_identity(),
         "registry": registry(
             roster_profile=roster_profile,
-            mode_profile="gemini-low-v1"
+            mode_profile="late-november-v1"
+            if roster_profile == LATE_NOVEMBER_PROFILE
+            else "gemini-low-v1"
             if roster_profile == GEMINI_ROSTER_PROFILE
             else "off-or-minimum-v1"
             if roster_profile != "legacy-v1"
@@ -117,6 +120,11 @@ def proposal(sha: str, roster_profile: str = "legacy-v1") -> dict[str, Any]:
         ],
     }
 
+    if roster_profile == LATE_NOVEMBER_PROFILE:
+        result["cap_usd"] = "PENDING_OWNER_DECISION"
+        result["blockers"].append(
+            "late November admission and integrated factory are not yet qualified"
+        )
     if roster_profile in (
         SELECTED_SIX_PROFILE,
         NOVEMBER_PROFILE,
@@ -193,27 +201,38 @@ def _validate(
     }
     if isinstance(admission, dict) and "roster_profile" in admission:
         fields.add("roster_profile")
-        if (
-            admission["roster_profile"]
-            not in (
-                LATEST_ROSTER_PROFILE,
-                META_ROSTER_PROFILE,
-                SELECTED_SIX_PROFILE,
-                NOVEMBER_PROFILE,
-                FABLE52_PROFILE,
-                OPENAI62_PROFILE,
-            )
-            or admission.get("mode_profile") != "off-or-minimum-v1"
+        if admission["roster_profile"] not in (
+            LATEST_ROSTER_PROFILE,
+            META_ROSTER_PROFILE,
+            SELECTED_SIX_PROFILE,
+            NOVEMBER_PROFILE,
+            FABLE52_PROFILE,
+            OPENAI62_PROFILE,
+            LATE_NOVEMBER_PROFILE,
+        ) or admission.get("mode_profile") != (
+            "late-november-v1"
+            if admission["roster_profile"] == LATE_NOVEMBER_PROFILE
+            else "off-or-minimum-v1"
         ):
             raise ValueError("explicit latest roster requires off-or-minimum profile")
     if isinstance(admission, dict) and "mode_profile" in admission:
         fields.add("mode_profile")
-        if admission["mode_profile"] != "off-or-minimum-v1":
+        if admission["mode_profile"] != (
+            "late-november-v1"
+            if admission.get("roster_profile") == LATE_NOVEMBER_PROFILE
+            else "off-or-minimum-v1"
+        ):
             raise ValueError("unknown reasoning mode profile")
     if isinstance(admission, dict) and "transport_policy" in admission:
         fields.add("transport_policy")
         if admission["transport_policy"] != "paced-safe-errors-v1":
             raise ValueError("unknown transport policy")
+    late = (
+        isinstance(admission, dict)
+        and admission.get("roster_profile") == LATE_NOVEMBER_PROFILE
+    )
+    if late and "transport_policy" in admission:
+        raise ValueError("late November requires legacy transport")
     correction = isinstance(admission, dict) and "correction_binding" in admission
     if correction:
         fields.add("correction_binding")
@@ -241,6 +260,15 @@ def _validate(
         )
         if a["limit_policy"]["source_sha"] != financial_source:
             raise ValueError("optional limits source binding mismatch")
+    if late and not optional:
+        try:
+            value = (
+                Decimal(a["cap_usd"]) if isinstance(a["cap_usd"], str) else Decimal("NaN")
+            )
+        except InvalidOperation:
+            raise ValueError("explicit finite owner monetary cap required") from None
+        if not value.is_finite() or value <= 0:
+            raise ValueError("explicit finite owner monetary cap required")
     if (
         a["schema"] != "three-flow-admission-v1"
         or a["approved"] is not (not synthetic)
@@ -261,6 +289,8 @@ def _validate(
         or (
             a["cap_usd"] is not None
             if optional
+            else False
+            if late
             else a["cap_usd"]
             != ("990" if a.get("roster_profile") == META_ROSTER_PROFILE else "1000")
         )
@@ -299,8 +329,12 @@ def _validate(
             if a.get("roster_profile") == META_ROSTER_PROFILE
             else OPTIONAL_PROFILE
         )
-        if optional != (p.get("execution_policy") == expected_execution):
+        if not (late and slot["provider"] == "gemini") and optional != (
+            p.get("execution_policy") == expected_execution
+        ):
             raise ValueError("execution controls differ from monetary policy")
+        if late:
+            validate_late_profile(p, slot["provider"], slot["model"], synthetic=synthetic)
         if "owner_pricing" in p:
             owner = p["owner_pricing"]
             pricing_registry = (
@@ -347,7 +381,12 @@ def _validate(
             ):
                 raise ValueError("confirmed technical fix evidence required")
     if not historical:
-        verify_assets(a["assets"], any(s["provider"] == "river" for s in slots))
+        if late:
+            verify_ripple_assets(
+                a["assets"], any(s["provider"] == "river" for s in slots)
+            )
+        else:
+            verify_assets(a["assets"], any(s["provider"] == "river" for s in slots))
     elif any(s["provider"] == "river" for s in slots):
         assets = a["assets"]
         if (
@@ -504,6 +543,7 @@ def validate_historical_identity(a: dict[str, Any]) -> None:
         NOVEMBER_PROFILE,
         FABLE52_PROFILE,
         OPENAI62_PROFILE,
+        LATE_NOVEMBER_PROFILE,
     ):
         string_fields.add("output_limit")
     fields = string_fields | {
@@ -782,6 +822,18 @@ def validate_profile(
 
         validate_published_profile(p, provider, model, roster_profile=roster_profile)
         return
+    if provider == "gemini" and roster_profile == LATE_NOVEMBER_PROFILE:
+        from tools.three_flow_gemini import LATE_NOVEMBER_MODELS
+
+        if model not in LATE_NOVEMBER_MODELS or not isinstance(p, dict):
+            raise ValueError("exact late November Gemini profile required")
+        late_profile = LATE_NOVEMBER_MODELS[cast(str, model)]
+        if digest(p) not in (
+            digest(late_profile.settings(late_profile.output)),
+            digest(late_profile.live_settings(late_profile.output)),
+        ):
+            raise ValueError("exact late November Gemini profile required")
+        return
     if provider == "gemini":
         from tools.three_flow_gemini import MODELS as gemini_models
 
@@ -928,6 +980,9 @@ def validate_profile(
     t = p["network_timeout_seconds"]
     if provider == "meta" and roster_profile == META_ROSTER_PROFILE:
         validate_meta_profile(p, provider, model or "")
+    elif roster_profile == LATE_NOVEMBER_PROFILE:
+        if t is not None or not diagnostic:
+            raise ValueError("late November requires dynamic context and no timeout")
     elif optional:
         if t is not None or not diagnostic:
             raise ValueError(
@@ -961,3 +1016,82 @@ def verify_assets(value: Any, required: bool) -> None:
                 or hashlib.sha256(path.read_bytes()).hexdigest() != meta["sha256"]
             ):
                 raise ValueError("native asset changed")
+
+
+def validate_late_profile(
+    p: dict[str, Any], provider: str, model: str, *, synthetic: bool
+) -> None:
+    from tools.three_flow_late_november import CANDIDATES
+
+    if model not in CANDIDATES or CANDIDATES[model].provider != provider:
+        raise ValueError("late November model/route mismatch")
+    c = CANDIDATES[model]
+    if provider == "gemini":
+        from tools.three_flow_gemini import LATE_NOVEMBER_MODELS
+
+        g = LATE_NOVEMBER_MODELS[model]
+        expected = g.settings(g.output) if synthetic else g.live_settings(g.output)
+        if digest(p) != digest(expected):
+            raise ValueError("Gemini exact provenance differs")
+        return
+    output = (
+        None if provider == "river" else 1048575 if provider == "river_http" else c.output
+    )
+    if (
+        p["context_max"] != c.context
+        or p["input_max"] is not None
+        or p["output_max"] != output
+        or p["input_usd_per_million"] != c.input_rate
+        or p["output_usd_per_million"] != c.output_rate
+        or p["network_timeout_seconds"] is not None
+        or (
+            provider in ("river", "river_http")
+            and p.get("owner_output_cap_tokens") != 30000
+        )
+    ):
+        raise ValueError("late November profile bounds or prices differ")
+    if provider in ("river", "river_http"):
+        source = (
+            "https://docs.river.ai/guides/models.md"
+            if provider == "river"
+            else "https://docs.river.ai/guides/inference-models/"
+        )
+        if p["bounds_policy"].get("source") != source:
+            raise ValueError("exact River model bounds source required")
+    if provider == "meta":
+        from tools.three_flow_meta import validate_ember_profile
+
+        validate_ember_profile(p, provider, model)
+
+
+def verify_ripple_assets(value: Any, required: bool) -> None:
+    if not required:
+        if value is not None:
+            raise ValueError("unselected Ripple assets")
+        return
+    from tools.three_flow_ripple import ASSETS, MODEL, PROVENANCE_SHA256
+    from tools.three_flow_river import sdk
+
+    sdk(ripple=True)
+    if not isinstance(value, dict) or set(value) != {"root", "catalog_sha256"}:
+        raise ValueError("explicit Ripple asset binding required")
+    root = Path(value["root"])
+    if not root.is_absolute() or root.resolve(strict=True) != root:
+        raise ValueError("canonical Ripple asset path required")
+    if value["catalog_sha256"] != digest(
+        {"model": MODEL, "provenance_sha256": PROVENANCE_SHA256, "assets": ASSETS}
+    ):
+        raise ValueError("Ripple manifest binding differs")
+    provenance = root / "provenance.json"
+    if (
+        provenance.resolve(strict=True) != provenance
+        or hashlib.sha256(provenance.read_bytes()).hexdigest() != PROVENANCE_SHA256
+    ):
+        raise ValueError("Ripple provenance digest mismatch")
+    for name, expected in ASSETS.items():
+        path = root / name
+        if (
+            path.resolve(strict=True) != path
+            or hashlib.sha256(path.read_bytes()).hexdigest() != expected
+        ):
+            raise ValueError("Ripple asset digest mismatch")

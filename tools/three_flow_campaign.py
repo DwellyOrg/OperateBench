@@ -39,6 +39,7 @@ from tools.three_flow_profiles import (
 from tools.three_flow_profiles import (
     FABLE52_PROFILE,
     GEMINI_ROSTER_PROFILE,
+    LATE_NOVEMBER_PROFILE,
     META_ROSTER_PROFILE,
     NOVEMBER_PROFILE,
     OPENAI62_PROFILE,
@@ -89,6 +90,7 @@ def preflight(roster_profile: str = "legacy-v1") -> dict[str, Any]:
         if roster_profile
         in (
             GEMINI_ROSTER_PROFILE,
+            LATE_NOVEMBER_PROFILE,
             SELECTED_SIX_PROFILE,
             NOVEMBER_PROFILE,
             FABLE52_PROFILE,
@@ -110,6 +112,14 @@ def preflight(roster_profile: str = "legacy-v1") -> dict[str, Any]:
                 },
             }
             if roster_profile == META_ROSTER_PROFILE
+            else {}
+        ),
+        **(
+            {
+                "monetary_policy": "source-bound owner admission required",
+                "dispatch_status": "external admission required",
+            }
+            if roster_profile == LATE_NOVEMBER_PROFILE
             else {}
         ),
         "workers": 4,

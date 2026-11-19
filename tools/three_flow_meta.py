@@ -47,3 +47,43 @@ def validate_meta_profile(profile: dict[str, Any], provider: str, model: str) ->
         raise ValueError(
             "Meta requires exact tariff/context and unknown native output bound"
         )
+
+
+def validate_ember_profile(profile: dict[str, Any], provider: str, model: str) -> None:
+    """Validate the explicitly selected Ember envelope; not owner authority."""
+    if provider != "meta" or model != "muse-ember-1.0":
+        raise ValueError("exact Meta Ember Standard identity required")
+    required = {
+        "endpoint",
+        "context_max",
+        "input_max",
+        "output_max",
+        "network_timeout_seconds",
+        "bounds_policy",
+        "input_usd_per_million",
+        "output_usd_per_million",
+    }
+    if not isinstance(profile, dict) or not required <= profile.keys():
+        raise ValueError("Meta Ember complete profile required")
+    if (
+        type(profile["context_max"]) is not int
+        or type(profile["output_max"]) is not int
+        or profile.get("endpoint") != ENDPOINTS["meta"]
+        or profile.get("context_max") != 1048576
+        or profile.get("input_max") is not None
+        or profile.get("output_max") != 524288
+        or profile.get("network_timeout_seconds", False) is not None
+        or profile.get("bounds_policy")
+        != {
+            "mode": "published-context-diagnostic-v1",
+            "source": "https://dev.meta.ai/docs",
+            "scope": "endpoint",
+            "interpretation": "published-integer",
+        }
+        or Decimal(profile.get("input_usd_per_million", "0")) != Decimal("0.30")
+        or Decimal(profile.get("output_usd_per_million", "0")) != Decimal("1.50")
+        or "owner_output_cap_tokens" in profile
+    ):
+        raise ValueError(
+            "Meta Ember exact Standard bounds and all-tier envelope required"
+        )

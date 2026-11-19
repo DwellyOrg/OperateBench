@@ -408,6 +408,7 @@ def main(argv: list[str] | None = None, *, network: Any = None) -> int:
             "openai62-standard-same44-low-v1",
             "meta-standard-same44-v1",
             "gemini-standard-same44-low-v1",
+            "late-november-five-same44-v1",
         ),
     )
     parser.add_argument("--expected-source")

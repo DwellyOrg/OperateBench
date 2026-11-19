@@ -51,6 +51,7 @@ from tools.aggregate_budget import SharedGuard
 from tools.three_flow_http import BudgetWire
 from tools.three_flow_profiles import (
     GEMINI_ROSTER_PROFILE,
+    LATE_NOVEMBER_PROFILE,
 )
 from tools.three_flow_profiles import (
     GEMINI_UNCAPPED_PROFILE as LIMIT_PROFILE,
@@ -140,6 +141,46 @@ MODELS = MappingProxyType(
         ),
     }
 )
+
+
+@dataclass(frozen=True)
+class LateNovemberGeminiProfile(GeminiProfile):
+    cached_rate: str = ""
+
+    def settings(self, maximum: int) -> dict[str, Any]:
+        value = super().settings(maximum)
+        value["pricing_basis"].update(
+            verified_on="2026-11-19",
+            cached_input_usd_per_mtok=self.cached_rate,
+            valid_through=None,
+        )
+        return value
+
+
+LATE_NOVEMBER_MODELS = MappingProxyType(
+    {
+        "gemini-4-hydrogen": LateNovemberGeminiProfile(
+            "gemini-4-hydrogen", "1.5", "7.5", "", cached_rate="0.075"
+        ),
+        "gemini-4-neon": LateNovemberGeminiProfile(
+            "gemini-4-neon", "3", "15", "", cached_rate="0.15"
+        ),
+    }
+)
+
+
+def gemini_profile(model: str, roster_profile: str) -> GeminiProfile:
+    profiles = (
+        MODELS
+        if roster_profile == ROSTER_PROFILE
+        else LATE_NOVEMBER_MODELS
+        if roster_profile == LATE_NOVEMBER_PROFILE
+        else {}
+    )
+    try:
+        return profiles[model]
+    except KeyError:
+        raise ValueError("exact Gemini roster/model required") from None
 
 
 def declarations() -> list[dict[str, Any]]:
@@ -331,15 +372,22 @@ class GeminiCampaignTransport:
         max_output_tokens: int,
         admitted: bool = False,
         inner: httpx.BaseTransport | None = None,
+        roster_profile: str = ROSTER_PROFILE,
     ) -> GeminiCampaignTransport:
         """Launcher-owned admission is required; this is not launch authority."""
         if admitted is not True:
             raise ValueError("explicit Gemini live admission required")
-        if (
-            model not in MODELS
-            or getattr(guard.budget, "controller_profile", None) != LIMIT_PROFILE
-            or guard.budget.cap is not None
-        ):
+        gemini_profile(model, roster_profile)
+        legacy_valid = (
+            roster_profile == ROSTER_PROFILE
+            and getattr(guard.budget, "controller_profile", None) == LIMIT_PROFILE
+            and guard.budget.cap is None
+        )
+        late_valid = (
+            roster_profile == LATE_NOVEMBER_PROFILE
+            and getattr(guard.budget, "roster_profile", None) == LATE_NOVEMBER_PROFILE
+        )
+        if not (legacy_valid or late_valid):
             raise ValueError("Gemini live guard/profile admission differs")
         if (
             type(api_key) is not str
@@ -362,6 +410,7 @@ class GeminiCampaignTransport:
             max_output_tokens=max_output_tokens,
             api_key=api_key,
             direct=direct,
+            roster_profile=roster_profile,
         )
         return instance
 
@@ -374,10 +423,9 @@ class GeminiCampaignTransport:
         max_output_tokens: int,
         api_key: str | None = None,
         endpoint: str | None = None,
+        roster_profile: str = ROSTER_PROFILE,
     ) -> None:
-        if model not in MODELS:
-            raise ValueError("exact stable Gemini model required")
-        self.profile = MODELS[model]
+        self.profile = gemini_profile(model, roster_profile)
         if api_key is not None or not isinstance(inner, httpx.MockTransport):
             raise ValueError("offline Gemini accepts no credential or live transport")
         if endpoint is not None and endpoint != self.profile.endpoint:
@@ -387,6 +435,7 @@ class GeminiCampaignTransport:
             inner=inner,
             guard=guard,
             max_output_tokens=max_output_tokens,
+            roster_profile=roster_profile,
         )
 
     def _initialize(
@@ -398,8 +447,9 @@ class GeminiCampaignTransport:
         max_output_tokens: int,
         api_key: str | None = None,
         direct: bool = False,
+        roster_profile: str = ROSTER_PROFILE,
     ) -> None:
-        self.profile = MODELS[model]
+        self.profile = gemini_profile(model, roster_profile)
         if guard._max_output_tokens != max_output_tokens:
             raise ValueError("Gemini guard/output binding differs")
         if guard.policy.input_usd_per_mtok != Decimal(
@@ -681,9 +731,13 @@ def offline_limit_policy() -> dict[str, Any]:
 def offline_factory(slot: dict[str, Any], budget: Any) -> GeminiCampaignTransport:
     from operatebench.agents.pricing import LifecyclePricingPolicy
 
-    profile = MODELS[slot["model"]]
-    if budget.controller_profile != LIMIT_PROFILE or budget.cap is not None:
-        raise ValueError("Gemini offline campaign requires distinct null-cap journal")
+    roster_profile = getattr(budget, "roster_profile", ROSTER_PROFILE)
+    profile = gemini_profile(slot["model"], roster_profile)
+    if slot.get("provider") != "gemini" or (
+        roster_profile == ROSTER_PROFILE
+        and (budget.controller_profile != LIMIT_PROFILE or budget.cap is not None)
+    ):
+        raise ValueError("Gemini offline campaign requires its matching journal")
     guard = SharedGuard(
         budget=budget,
         cell=slot["trial_id"],
@@ -699,6 +753,7 @@ def offline_factory(slot: dict[str, Any], budget: Any) -> GeminiCampaignTranspor
         inner=GeminiMockTransport(profile.model, slot["flow"]),
         guard=guard,
         max_output_tokens=profile.output,
+        roster_profile=roster_profile,
     )
 
 
@@ -712,7 +767,10 @@ def validate_replay(record: dict[str, Any]) -> None:
     try:
         model = record["trial"]["model"]
         maximum = record["trial"]["max_output_tokens"]
-        profile = MODELS[model]
+        profile = gemini_profile(
+            model,
+            LATE_NOVEMBER_PROFILE if model in LATE_NOVEMBER_MODELS else ROSTER_PROFILE,
+        )
         provider = record["provider"]
         settings = provider["settings"]
         if not isinstance(settings, dict):
@@ -731,7 +789,24 @@ def validate_replay(record: dict[str, Any]) -> None:
                 or any(c not in "0123456789abcdef" for c in reference)
             ):
                 raise ValueError("Gemini admission reference invalid")
-            validate_limit_policy(settings.get("limit_policy"), mode=LIMIT_PROFILE)
+            if model in LATE_NOVEMBER_MODELS:
+                from tools.three_flow_budget import OPTIONAL_PROFILE
+
+                cap = settings.get("cap_usd")
+                if cap is None:
+                    validate_limit_policy(
+                        settings.get("limit_policy"), mode=OPTIONAL_PROFILE
+                    )
+                elif (
+                    not isinstance(cap, str)
+                    or not Decimal(cap).is_finite()
+                    or Decimal(cap) <= 0
+                    or settings.get("limit_policy") is not None
+                ):
+                    raise ValueError("Gemini admission monetary policy invalid")
+                expected["cap_usd"] = cap
+            else:
+                validate_limit_policy(settings.get("limit_policy"), mode=LIMIT_PROFILE)
             expected.update(
                 admission=True,
                 admission_provenance="source-bound-admission-reference-v1",

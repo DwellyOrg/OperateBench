@@ -7,11 +7,13 @@ non-success HTTP responses publish only a labelled, body-free status projection.
 
 from __future__ import annotations
 
+import copy
 import hashlib
 import json
 import logging
 import time
 from dataclasses import replace
+from decimal import Decimal
 from importlib.metadata import version
 from types import FunctionType, SimpleNamespace
 from typing import Any, cast
@@ -49,12 +51,13 @@ from tools.three_flow_errors import (
     ProviderPacer,
     http_error,
 )
-from tools.three_flow_meta import validate_meta_profile
+from tools.three_flow_meta import validate_ember_profile, validate_meta_profile
 from tools.three_flow_profiles import (
     ENDPOINTS as ENDPOINTS,
 )
 from tools.three_flow_profiles import (
     FABLE52_MODELS,
+    LATE_NOVEMBER_PROFILE,
     MODE_PROFILES,
     NOVEMBER_MODELS,
     OPENAI62_MODELS,
@@ -303,6 +306,7 @@ class HTTPCampaignTransport:
         admitted_cache_envelope: bool = False,
         mode_profile: str = "legacy-v1",
         transport_policy: str = "legacy-v1",
+        roster_profile: str = "legacy-v1",
     ) -> None:
         if transport_policy not in ("legacy-v1", "paced-safe-errors-v1"):
             raise ValueError("unknown transport policy")
@@ -313,15 +317,49 @@ class HTTPCampaignTransport:
             raise ValueError("pacing policy requires Mistral or selected River HTTP")
         if mode_profile not in MODE_PROFILES:
             raise ValueError("unknown reasoning mode profile")
-        selected = (provider, model) in SELECTED_SIX + OPENAI62_MODELS
+        kimi_pro = (provider, model) == ("river_http", "moonshotai/Kimi-K3.1-Pro")
+        if kimi_pro:
+            p = getattr(guard, "profile", {})
+            if (
+                roster_profile != LATE_NOVEMBER_PROFILE
+                or getattr(guard.budget, "roster_profile", None) != LATE_NOVEMBER_PROFILE
+                or p.get("context_max") != 1048576
+                or p.get("owner_output_cap_tokens") != 30000
+                or max_output_tokens != 30000
+                or context_tokens != 1048576
+                or guard.policy.input_usd_per_mtok != Decimal("2")
+                or guard.policy.output_usd_per_mtok != Decimal("10")
+                or network_timeout is not None
+                or mode_profile != "off-or-minimum-v1"
+            ):
+                raise ValueError(
+                    "Kimi Pro exact roster, output and pricing binding required"
+                )
+        selected = (provider, model) in SELECTED_SIX + OPENAI62_MODELS or kimi_pro
         meta = provider == "meta"
         if meta:
-            metap.check_model(cast(str, model))
+            ember = roster_profile == LATE_NOVEMBER_PROFILE
+            if ember:
+                if getattr(guard.budget, "roster_profile", None) != LATE_NOVEMBER_PROFILE:
+                    raise ValueError("Meta Ember requires its matching journal")
+                validate_ember_profile(
+                    cast(Any, guard).profile, provider, cast(str, model)
+                )
+                if guard.policy.input_usd_per_mtok != Decimal(
+                    "0.30"
+                ) or guard.policy.output_usd_per_mtok != Decimal("1.50"):
+                    raise ValueError("Meta Ember accounting envelope differs")
+            else:
+                metap.check_model(cast(str, model))
+                validate_meta_profile(
+                    cast(Any, guard).profile, provider, cast(str, model)
+                )
             metap.check_key(api_key)
-            validate_meta_profile(cast(Any, guard).profile, provider, cast(str, model))
             profile = cast(Any, guard).profile
             if max_output_tokens != min(
-                context_tokens, profile.get("owner_output_cap_tokens", context_tokens)
+                context_tokens,
+                profile.get("owner_output_cap_tokens", context_tokens),
+                profile["output_max"] if ember else context_tokens,
             ):
                 raise ValueError("Meta initial envelope must equal admitted output bound")
             if (
@@ -351,12 +389,16 @@ class HTTPCampaignTransport:
             raise ValueError("new models require explicit off-or-minimum profile")
         if not isinstance(api_key, str) or not api_key:
             raise ValueError("HTTP provider requires a nonempty string API key")
+        self.kimi_pro = kimi_pro
+        self.kimi_history: list[dict[str, Any]] = []
         self.november = (provider, model) in NOVEMBER_MODELS
         self.selected_six = selected
         self.mode_profile = mode_profile
         self.mode_fields = (
             {"reasoning": {"effort": "minimal"}}
             if meta
+            else {"reasoning_effort": "none"}
+            if kimi_pro
             else http_mode_fields(provider, model, mode_profile)
         )
         if provider not in MODELS and not meta and not selected:
@@ -578,6 +620,14 @@ class HTTPCampaignTransport:
                 self.settings["reasoning_mode"] = (
                     "MINIMUM" if model == "GLM-5.3" else "OFF"
                 )
+        if self.kimi_pro:
+            self.request_mapping = "three-flow-river-http-kimi-pro-native-history-v1"
+            self.settings.update(
+                native_continuation=True,
+                no_native_continuation=False,
+                reasoning_mode="OFF",
+                reasoning_effort="none",
+            )
         if self.anthropic_stateless:
             self.settings.update(
                 tool_choice={"type": "auto", "disable_parallel_tool_use": True},
@@ -685,6 +735,10 @@ class HTTPCampaignTransport:
         if self.provider == "river_http":
             payload.pop("temperature")
             payload["stream"] = False
+            if self.kimi_pro and self.kimi_history:
+                messages = copy.deepcopy(self.kimi_history)
+                messages[-1]["content"] = text
+                payload["messages"] = [cast(list[Any], payload["messages"])[0], *messages]
         payload.update(self.mode_fields)
         if diagnostic:
             return payload
@@ -848,11 +902,26 @@ class HTTPCampaignTransport:
             started = time.monotonic()
             try:
                 usage, response = self._dispatch(payload)
-                measured = self.guard.settle(
-                    reservation,
-                    input_tokens=usage.input_tokens,
-                    output_tokens=usage.output_tokens,
-                )
+                if self.provider == "meta" and self.model == "muse-ember-1.0":
+                    body = json.loads(self.wire.captures[-1]["response_utf8"])
+                    details = body["usage"].get("input_tokens_details")
+                    if (
+                        not isinstance(details, dict)
+                        or type(details.get("cached_tokens")) is not int
+                    ):
+                        raise wire_invalid("Ember cached input usage unavailable")
+                    measured = cast(Any, self.guard).settle_ember(
+                        reservation,
+                        input_tokens=usage.input_tokens,
+                        output_tokens=usage.output_tokens,
+                        cached_tokens=details["cached_tokens"],
+                    )
+                else:
+                    measured = self.guard.settle(
+                        reservation,
+                        input_tokens=usage.input_tokens,
+                        output_tokens=usage.output_tokens,
+                    )
                 self.last_turn = {
                     "requested_output_bound": request.max_output_tokens,
                     "input_bound": request_input_token_bound(
@@ -915,6 +984,21 @@ class HTTPCampaignTransport:
                 raise
             finally:
                 self.http.cookies.clear()
+            if self.kimi_pro:
+                body = json.loads(self.wire.captures[-1]["response_utf8"])
+                native = body["choices"][0]["message"]
+                calls = native.get("tool_calls") or []
+                if len(calls) == 1 and response.stop_reason == "completed":
+                    assistant = copy.deepcopy(native)
+                    for call in assistant["tool_calls"]:
+                        call.pop("index", None)
+                    self.kimi_history = [
+                        *payload["messages"][1:],
+                        assistant,
+                        {"role": "tool", "tool_call_id": calls[0]["id"], "content": ""},
+                    ]
+                else:
+                    self.kimi_history = []
             if self.provider == "meta" and not response.tool_calls:
                 raise wire_invalid("Meta auto response has no Core function call")
             return response

@@ -11,6 +11,7 @@ import hashlib
 import importlib
 import time
 from dataclasses import replace
+from decimal import Decimal
 from importlib.metadata import version
 from pathlib import Path
 from typing import Any, cast
@@ -48,9 +49,10 @@ GRPC_OPTIONS = (("grpc.enable_retries", 0),)
 SDK_VERSION = "0.12.0"
 
 
-def sdk() -> tuple[Any, Any]:
-    if version("river-client") != SDK_VERSION:
-        raise ValueError("River SDK requires reviewed version 0.12.0")
+def sdk(*, ripple: bool = False) -> tuple[Any, Any]:
+    expected = "0.22.0" if ripple else SDK_VERSION
+    if version("river-client") != expected:
+        raise ValueError(f"River SDK requires reviewed version {expected}")
     return (
         importlib.import_module("river_client._proto.river_pb2"),
         importlib.import_module("river_client._proto.river_pb2_grpc"),
@@ -100,7 +102,7 @@ class BudgetChannel:
     outstanding reservation and are recorded as network RPCs, not generations.
     """
 
-    def __init__(self, inner: Any, guard: SharedGuard) -> None:
+    def __init__(self, inner: Any, guard: SharedGuard, *, ripple: bool = False) -> None:
         if not isinstance(guard.budget, CampaignBudget):
             raise ValueError("shared durable campaign journal required")
         self.inner, self.guard = inner, guard
@@ -110,7 +112,7 @@ class BudgetChannel:
         self.reservation: Any = None
         self.request_id: str | None = None
         self.local_failure: str | None = None
-        self.pb, _ = sdk()
+        self.pb, _ = sdk(ripple=ripple)
 
     def unary_unary(
         self,
@@ -255,10 +257,27 @@ class RiverCampaignTransport:
         network_timeout: float | None = 120.0,
         mode_profile: str = "legacy-v1",
     ) -> None:
-        if mode_profile not in MODE_PROFILES:
+        from tools.three_flow_ripple import MODEL as RIPPLE_MODEL
+
+        ripple = model == RIPPLE_MODEL and mode_profile == "ripple-default-v1"
+        if mode_profile not in MODE_PROFILES and not ripple:
             raise ValueError("unknown reasoning mode profile")
+        if ripple and (
+            max_output_tokens != 30000
+            or getattr(guard, "profile", {}).get("context_max") != 262144
+            or getattr(guard, "profile", {}).get("output_max") not in (None, 30000)
+            or getattr(guard, "profile", {}).get("owner_output_cap_tokens") != 30000
+            or guard.policy.input_usd_per_mtok != Decimal("1")
+            or guard.policy.output_usd_per_mtok != Decimal("3")
+            or getattr(guard.budget, "roster_profile", None)
+            != "late-november-five-same44-v1"
+        ):
+            raise ValueError("Ripple requires its owner output and roster binding")
+        self.ripple = ripple
         self.mode_profile = mode_profile
-        self.reasoning_prefilled = river_reasoning_prefilled(model, mode_profile)
+        self.reasoning_prefilled = (
+            False if ripple else river_reasoning_prefilled(model, mode_profile)
+        )
         if mode_profile != "legacy-v1":
             self.request_mapping += "-" + mode_profile
         if not isinstance(channel, ExplicitRiverChannel) and not getattr(
@@ -271,7 +290,12 @@ class RiverCampaignTransport:
             raise ValueError("explicit positive output setting required")
         if guard._max_output_tokens != max_output_tokens:
             raise ValueError("guard output setting differs")
-        rows = [r for r in catalog()["models"] if r["model"] == model]
+        if ripple:
+            from tools.three_flow_ripple import ASSETS
+
+            rows = [{"model": model, "revision": None, "assets": ASSETS}]
+        else:
+            rows = [r for r in catalog()["models"] if r["model"] == model]
         selection = selection_for("river", model, mode_profile)
         if len(rows) != 1 or selection is None:
             raise ValueError("exact River roster model required")
@@ -281,16 +305,22 @@ class RiverCampaignTransport:
         self.model, self.assets, self.guard = model, assets, guard
         self.network_timeout = network_timeout
         self.max_output_tokens = max_output_tokens
-        self.tokenizer = family_tokenizer(assets, rows[0])
-        self.pb, generated = sdk()
-        self.wire = BudgetChannel(channel, guard)
+        if ripple:
+            from tools.three_flow_ripple import RippleTokenizer
+
+            self.tokenizer = RippleTokenizer(assets)
+            rows[0]["revision"] = self.tokenizer.revision
+        else:
+            self.tokenizer = family_tokenizer(assets, rows[0])
+        self.pb, generated = sdk(ripple=ripple)
+        self.wire = BudgetChannel(channel, guard, ripple=ripple)
         self.stub = generated.RiverServiceStub(self.wire)
         self.flight = SingleFlight(adapter="three-flow River")
         self.last_turn: dict[str, Any] | None = None
         legacy = river_legacy_fields(model)
         self.settings = {
             "sdk": "river-client",
-            "sdk_version": SDK_VERSION,
+            "sdk_version": "0.22.0" if ripple else SDK_VERSION,
             "sdk_surface": "official generated RiverServiceStub/protobuf",
             "endpoint": "api.river.ai:443",
             "protocol_version": MODEL_PROTOCOL_VERSION,
@@ -334,7 +364,17 @@ class RiverCampaignTransport:
             if getattr(channel, "offline_mock", False)
             else "PROVIDER_CANDIDATE",
         }
-        self.settings.update(river_mode_fields(model, mode_profile))
+        if ripple:
+            self.settings.pop("thinking")
+            self.settings.pop("deepseek_reasoning_effort")
+            self.settings.update(
+                mode_profile=mode_profile,
+                reasoning_mode="provider-default",
+                stop=self.tokenizer.renderer.get_stop_strings(),
+                owner_output_cap_tokens=30000,
+            )
+        else:
+            self.settings.update(river_mode_fields(model, mode_profile))
 
     def response(
         self, response: Any, ids: list[int], *, max_output_tokens: int | None = None
@@ -383,7 +423,9 @@ class RiverCampaignTransport:
             )
         try:
             calls = (
-                parse_kimi(sample.text, reasoning_prefilled=self.reasoning_prefilled)
+                self.tokenizer.parse(sample.text)
+                if self.ripple
+                else parse_kimi(sample.text, reasoning_prefilled=self.reasoning_prefilled)
                 if "Kimi" in self.model
                 else decode_response(
                     self.model,
@@ -408,8 +450,15 @@ class RiverCampaignTransport:
     def prepare_request(self, request: ModelRequest) -> ModelRequest:
         if not getattr(self.guard, "diagnostic", False):
             return request
-        rendered = family_render(
-            self.model, dict(request.prompt), self.assets, mode_profile=self.mode_profile
+        rendered = (
+            self.tokenizer.render(dict(request.prompt))
+            if self.ripple
+            else family_render(
+                self.model,
+                dict(request.prompt),
+                self.assets,
+                mode_profile=self.mode_profile,
+            )
         )
         bound = len(self.tokenizer.encode(rendered))
         return replace(
@@ -435,11 +484,15 @@ class RiverCampaignTransport:
             self.wire.reservation = None
             self.wire.request_id = None
             try:
-                rendered = family_render(
-                    self.model,
-                    dict(request.prompt),
-                    self.assets,
-                    mode_profile=self.mode_profile,
+                rendered = (
+                    self.tokenizer.render(dict(request.prompt))
+                    if self.ripple
+                    else family_render(
+                        self.model,
+                        dict(request.prompt),
+                        self.assets,
+                        mode_profile=self.mode_profile,
+                    )
                 )
                 ids = self.tokenizer.encode(rendered)
                 proto = self.pb.InferenceGenerateRequest(

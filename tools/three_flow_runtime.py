@@ -340,7 +340,12 @@ def run_trial(trial: Trial, transport: Any, *, output: Path) -> dict[str, Any]:
             record["record_digest"] = content_digest(
                 {k: v for k, v in record.items() if k != "record_digest"}
             )
-        replay_trial(trial, record, expected_record_digest=record["record_digest"])
+        replay_trial(
+            trial,
+            record,
+            expected_record_digest=record["record_digest"],
+            ripple_assets=getattr(transport, "assets", None),
+        )
         _write_once_bytes(
             canonical(record),
             output / "record.json",
@@ -389,7 +394,11 @@ def run_trial(trial: Trial, transport: Any, *, output: Path) -> dict[str, Any]:
 
 
 def replay_trial(
-    trial: Trial, record: dict[str, Any], *, expected_record_digest: str
+    trial: Trial,
+    record: dict[str, Any],
+    *,
+    expected_record_digest: str,
+    ripple_assets: Path | None = None,
 ) -> dict[str, Any]:
     """Replay all decisions in the original domain and rerun its original grader."""
     if record.get("record_digest") != expected_record_digest:
@@ -406,6 +415,12 @@ def replay_trial(
         raise ValueError("provider/settings binding differs")
     if record["evidence_origin"] != record["provider"]["settings"]["evidence_origin"]:
         raise ValueError("evidence origin differs")
+    if trial.model == "ricursiveAI/Ripple-65B-Preview-NVFP4":
+        if ripple_assets is None:
+            raise ValueError("explicit pinned Ripple assets required for replay")
+        from tools.three_flow_ripple import validate_replay as validate_ripple_replay
+
+        validate_ripple_replay(record, ripple_assets)
     if record["provider"]["provider"] == "gemini":
         from tools.three_flow_gemini import validate_replay
 
@@ -452,7 +467,7 @@ def replay_trial(
 
                 from tools.three_flow_river import sdk
 
-                pb, _ = sdk()
+                pb, _ = sdk(ripple=trial.model == "ricursiveAI/Ripple-65B-Preview-NVFP4")
                 submissions = [row for row in wire if row["model_submission"]]
                 if len(submissions) != 1:
                     raise ValueError("exactly one native submission required")
