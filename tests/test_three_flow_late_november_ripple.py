@@ -27,7 +27,9 @@ def no_network(monkeypatch):
     monkeypatch.setattr(socket, "create_connection", forbidden)
 
 
-@pytest.mark.parametrize("fault", [None, "usage"])
+@pytest.mark.parametrize(
+    "fault", [None, "usage", "stripped", "wrong_last", "interior", "stripped_usage"]
+)
 def test_ripple_native_protobuf_record_replay(tmp_path, fault):
     asset_path = os.environ.get("THREE_FLOW_RIPPLE_ASSETS")
     if not asset_path:
@@ -67,15 +69,29 @@ def test_ripple_native_protobuf_record_replay(tmp_path, fault):
         mode_profile="ripple-default-v1",
     )
     channel.tokenizer = transport.tokenizer
-    if fault == "usage":
+    if fault is not None:
         generate = channel.generate
 
-        def invalid_usage(request):
+        def shaped_response(request):
             ack = generate(request)
-            channel.pending[ack.request_id].usage.total_tokens += 1
+            result = channel.pending[ack.request_id]
+            if fault in ("stripped", "wrong_last", "interior", "stripped_usage"):
+                sample = result.results[0]
+                assert transport.tokenizer.decode([100265]) == "<|im_end|>"
+                sample.token_ids.append(100265)
+                result.usage.completion_tokens += 1
+                result.usage.total_tokens += 1
+                if fault == "wrong_last":
+                    sample.token_ids[-1] = transport.tokenizer.encode("!")[0]
+                elif fault == "interior":
+                    sample.token_ids[0] = 100265
+                elif fault == "stripped_usage":
+                    result.usage.total_tokens += 1
+            else:
+                result.usage.total_tokens += 1
             return ack
 
-        channel.generate = invalid_usage
+        channel.generate = shaped_response
     transport.settings.update(
         bounds_policy=p["bounds_policy"], context_request_bound=262144
     )
@@ -89,9 +105,10 @@ def test_ripple_native_protobuf_record_replay(tmp_path, fault):
         provider_identity(transport),
     )
     try:
-        if fault:
-            with pytest.raises(ProviderFailure):
+        if fault in ("usage", "wrong_last", "interior", "stripped_usage"):
+            with pytest.raises(ProviderFailure) as failure:
                 run_trial(trial, transport, output=tmp_path / "trial")
+            assert failure.value.fault == "provider_response_invalid"
             assert len(channel.submissions) == 1
             assert all(r["state"] == "unknown" for r in budget.records.values())
             return
@@ -103,6 +120,20 @@ def test_ripple_native_protobuf_record_replay(tmp_path, fault):
 
         from operatebench.agents.transport import content_digest
         from operatebench.providers.faults import AdapterProviderError
+
+        if fault == "stripped":
+            for turn in record["provider_turns"]:
+                row = turn["wire"][-1]
+                reply = transport.pb.RetrieveFutureResponse.FromString(
+                    base64.b64decode(row["response_base64"])
+                )
+                sample = reply.inference.results[0]
+                output_ids = list(sample.token_ids)
+                assert output_ids[-1] == 100265
+                assert transport.tokenizer.decode(output_ids[:-1]) == sample.text
+                assert transport.tokenizer.decode(output_ids) != sample.text
+                assert reply.inference.usage.completion_tokens == len(output_ids)
+                assert turn["output_tokens"] == len(output_ids)
 
         bad = copy.deepcopy(record)
         row = bad["provider_turns"][0]["wire"][-1]

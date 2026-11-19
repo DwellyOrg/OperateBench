@@ -29,8 +29,6 @@ ASSETS = {
 
 class RippleTokenizer:
     def __init__(self, root: Path) -> None:
-        from tokenizers import Tokenizer
-
         provenance = (root / "provenance.json").read_bytes()
         if hashlib.sha256(provenance).hexdigest() != PROVENANCE_SHA256:
             raise ValueError("Ripple public provenance digest mismatch")
@@ -44,6 +42,7 @@ class RippleTokenizer:
             if hashlib.sha256(raw).hexdigest() != expected:
                 raise ValueError("Ripple asset digest mismatch")
             data[name] = raw
+        backend: Any = importlib.import_module("tokenizers").Tokenizer
         tokenizer_class: Any = importlib.import_module(
             "transformers"
         ).PreTrainedTokenizerFast
@@ -51,7 +50,7 @@ class RippleTokenizer:
             "river_client.renderers.ripple"
         ).RippleRenderer
         native = tokenizer_class(
-            tokenizer_object=Tokenizer.from_str(data["tokenizer.json"].decode("utf-8")),
+            tokenizer_object=backend.from_str(data["tokenizer.json"].decode("utf-8")),
             chat_template=data["chat_template.jinja"].decode("utf-8"),
         )
         self.native = native

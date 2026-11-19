@@ -392,6 +392,7 @@ class RiverCampaignTransport:
         output = list(sample.token_ids)
         text_matches = self.tokenizer.decode(output) == sample.text
         terminal = {
+            "ricursiveAI/Ripple-65B-Preview-NVFP4": (100265, "<|im_end|>"),
             "Qwen/Qwen3.6-35B-A3B-FP8": (248046, "<|im_end|>"),
             "deepseek-ai/DeepSeek-V4.1-Flash": (1, "<｜end▁of▁sentence｜>"),  # noqa: RUF001
             "nvidia/Kimi-K2.6-NVFP4": (163586, "<|im_end|>"),
