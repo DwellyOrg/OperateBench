@@ -312,8 +312,12 @@ class RiverCampaignTransport:
             rows[0]["revision"] = self.tokenizer.revision
         else:
             self.tokenizer = family_tokenizer(assets, rows[0])
-        self.pb, generated = sdk(ripple=ripple)
-        self.wire = BudgetChannel(channel, guard, ripple=ripple)
+        self.pb, generated = sdk(ripple=True) if ripple else sdk()
+        self.wire = (
+            BudgetChannel(channel, guard, ripple=True)
+            if ripple
+            else BudgetChannel(channel, guard)
+        )
         self.stub = generated.RiverServiceStub(self.wire)
         self.flight = SingleFlight(adapter="three-flow River")
         self.last_turn: dict[str, Any] | None = None
@@ -425,7 +429,7 @@ class RiverCampaignTransport:
         try:
             calls = (
                 self.tokenizer.parse(sample.text)
-                if self.ripple
+                if getattr(self, "ripple", False)
                 else parse_kimi(sample.text, reasoning_prefilled=self.reasoning_prefilled)
                 if "Kimi" in self.model
                 else decode_response(
@@ -453,7 +457,7 @@ class RiverCampaignTransport:
             return request
         rendered = (
             self.tokenizer.render(dict(request.prompt))
-            if self.ripple
+            if getattr(self, "ripple", False)
             else family_render(
                 self.model,
                 dict(request.prompt),
@@ -487,7 +491,7 @@ class RiverCampaignTransport:
             try:
                 rendered = (
                     self.tokenizer.render(dict(request.prompt))
-                    if self.ripple
+                    if getattr(self, "ripple", False)
                     else family_render(
                         self.model,
                         dict(request.prompt),

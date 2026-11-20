@@ -212,7 +212,7 @@ def test_four_model_shared_operator(tmp_path):
 
 
 def test_ripple_parser_strict_native_blocks():
-    from river_client.renderers.ripple import parse_ripple_content_blocks
+    from tests.ripple_parser_fixture import parse_ripple_content_blocks
 
     for body in (
         '{"name":"act","arguments":{"x":NaN}}',
@@ -232,16 +232,58 @@ def test_ripple_parser_strict_native_blocks():
     assert len(calls) == 2
 
 
-def test_ripple_verified_assets_rejects_symlinks_and_mutated_manifest(
-    tmp_path, monkeypatch
-):
+@pytest.fixture
+def synthetic_ripple_assets(tmp_path, monkeypatch):
+    """Exercise the verifier with a self-contained, test-only pinned catalog."""
     import hashlib
     import json
-    from pathlib import Path
 
     from tools import three_flow_ripple as ripple
 
-    root = Path(os.environ["THREE_FLOW_RIPPLE_ASSETS"])
+    root = tmp_path / "ripple-assets"
+    root.mkdir()
+    metadata = {"repo": ripple.MODEL, "revision": "synthetic"}
+    provenance = (json.dumps(metadata, indent=2) + "\n").encode()
+    (root / "provenance.json").write_bytes(provenance)
+    assets = {}
+    for name in ripple.ASSET_NAMES:
+        data = ("synthetic " + name + "\n").encode()
+        (root / name).write_bytes(data)
+        assets[name] = hashlib.sha256(data).hexdigest()
+    catalog = json.dumps(
+        {
+            "assets": [
+                {"filename": name, "sha256": digest} for name, digest in assets.items()
+            ]
+        }
+    ).encode()
+    read_bytes = Path.read_bytes
+    monkeypatch.setattr(
+        Path,
+        "read_bytes",
+        lambda path: (
+            catalog
+            if path.name == "three_flow_river_ripple_assets.json"
+            else read_bytes(path)
+        ),
+    )
+    monkeypatch.setattr(ripple, "ASSETS", assets)
+    monkeypatch.setattr(ripple, "CATALOG_SHA256", hashlib.sha256(catalog).hexdigest())
+    monkeypatch.setattr(
+        ripple, "PROVENANCE_SHA256", hashlib.sha256(provenance).hexdigest()
+    )
+    return root
+
+
+def test_ripple_verified_assets_rejects_symlinks_and_mutated_manifest(
+    tmp_path, monkeypatch, synthetic_ripple_assets
+):
+    import hashlib
+    import json
+
+    from tools import three_flow_ripple as ripple
+
+    root = synthetic_ripple_assets
     data, metadata = ripple.read_verified_assets(root)
     assert set(data) == set(ripple.ASSETS)
     assert metadata["repo"] == ripple.MODEL
@@ -304,7 +346,9 @@ def test_ripple_verified_assets_rejects_symlinks_and_mutated_manifest(
             ripple.read_verified_assets(root)
 
 
-def test_ripple_catalog_rejects_duplicate_and_traversal_before_asset_io(monkeypatch):
+def test_ripple_catalog_rejects_duplicate_and_traversal_before_asset_io(
+    monkeypatch, synthetic_ripple_assets
+):
     import hashlib
     import json
     from pathlib import Path
@@ -312,7 +356,7 @@ def test_ripple_catalog_rejects_duplicate_and_traversal_before_asset_io(monkeypa
     from tools import three_flow_ripple as ripple
 
     real_read = Path.read_bytes
-    root = Path(os.environ["THREE_FLOW_RIPPLE_ASSETS"])
+    root = synthetic_ripple_assets
     original = json.loads(
         Path(ripple.__file__)
         .with_name("three_flow_river_ripple_assets.json")
@@ -342,13 +386,16 @@ def test_ripple_catalog_rejects_duplicate_and_traversal_before_asset_io(monkeypa
                 ripple.read_verified_assets(root)
 
 
-def test_ripple_asset_root_rejects_double_slash_before_directory_io(monkeypatch):
+def test_ripple_asset_root_rejects_double_slash_before_directory_io(
+    monkeypatch, synthetic_ripple_assets
+):
     from pathlib import Path
 
     from tools import three_flow_ripple as ripple
     from tools.three_flow_admission import digest, verify_ripple_assets
 
-    root = Path(os.environ["THREE_FLOW_RIPPLE_ASSETS"])
+    monkeypatch.setattr("tools.three_flow_river.sdk", lambda **kwargs: (None, None))
+    root = synthetic_ripple_assets
     binding = digest(
         {
             "model": ripple.MODEL,

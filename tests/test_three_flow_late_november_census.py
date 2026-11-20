@@ -88,8 +88,7 @@ def test_new_roster_null_cap_needs_source_bound_consent(tmp_path):
 
 
 def test_candidate_contracts_and_native_ripple_parser():
-    from river_client.renderers.ripple import parse_ripple_content_blocks
-
+    from tests.ripple_parser_fixture import parse_ripple_content_blocks
     from tools.three_flow_late_november import CANDIDATES, META_SHORT_TIER
 
     assert set(CANDIDATES) == {

@@ -340,6 +340,9 @@ class HTTPCampaignTransport:
         meta = provider == "meta"
         if meta:
             ember = roster_profile == LATE_NOVEMBER_PROFILE
+            if not ember:
+                metap.check_model(cast(str, model))
+            metap.check_key(api_key)
             if ember:
                 if getattr(guard.budget, "roster_profile", None) != LATE_NOVEMBER_PROFILE:
                     raise ValueError("Meta Ember requires its matching journal")
@@ -351,11 +354,9 @@ class HTTPCampaignTransport:
                 ) or guard.policy.output_usd_per_mtok != Decimal("1.50"):
                     raise ValueError("Meta Ember accounting envelope differs")
             else:
-                metap.check_model(cast(str, model))
                 validate_meta_profile(
                     cast(Any, guard).profile, provider, cast(str, model)
                 )
-            metap.check_key(api_key)
             profile = cast(Any, guard).profile
             if max_output_tokens != min(
                 context_tokens,
