@@ -1069,29 +1069,24 @@ def verify_ripple_assets(value: Any, required: bool) -> None:
         if value is not None:
             raise ValueError("unselected Ripple assets")
         return
-    from tools.three_flow_ripple import ASSETS, MODEL, PROVENANCE_SHA256
+    from tools.three_flow_ripple import (
+        ASSETS,
+        MODEL,
+        PROVENANCE_SHA256,
+        read_verified_assets,
+    )
     from tools.three_flow_river import sdk
 
     sdk(ripple=True)
     if not isinstance(value, dict) or set(value) != {"root", "catalog_sha256"}:
         raise ValueError("explicit Ripple asset binding required")
+    if not isinstance(value["root"], str):
+        raise ValueError("canonical Ripple asset path required")
     root = Path(value["root"])
-    if not root.is_absolute() or root.resolve(strict=True) != root:
+    if not root.is_absolute() or str(root) != value["root"]:
         raise ValueError("canonical Ripple asset path required")
     if value["catalog_sha256"] != digest(
         {"model": MODEL, "provenance_sha256": PROVENANCE_SHA256, "assets": ASSETS}
     ):
         raise ValueError("Ripple manifest binding differs")
-    provenance = root / "provenance.json"
-    if (
-        provenance.resolve(strict=True) != provenance
-        or hashlib.sha256(provenance.read_bytes()).hexdigest() != PROVENANCE_SHA256
-    ):
-        raise ValueError("Ripple provenance digest mismatch")
-    for name, expected in ASSETS.items():
-        path = root / name
-        if (
-            path.resolve(strict=True) != path
-            or hashlib.sha256(path.read_bytes()).hexdigest() != expected
-        ):
-            raise ValueError("Ripple asset digest mismatch")
+    read_verified_assets(root)

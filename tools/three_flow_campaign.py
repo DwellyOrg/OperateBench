@@ -385,7 +385,12 @@ def financial_row(row: dict[str, Any], budget: CampaignBudget) -> dict[str, Any]
 
 
 def reconcile_closure(
-    root: Path, slot: dict[str, Any], row: dict[str, Any], budget: CampaignBudget
+    root: Path,
+    slot: dict[str, Any],
+    row: dict[str, Any],
+    budget: CampaignBudget,
+    *,
+    ripple_assets: Path | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     """Validate retained evidence without SDK construction or historical rewrites.
 
@@ -423,7 +428,12 @@ def reconcile_closure(
             if record["binding"][source_key] != source_binding():
                 status, reason = "unavailable", "frozen_source_unavailable"
             else:
-                replay_trial(trial, record, expected_record_digest=row["record_digest"])
+                replay_trial(
+                    trial,
+                    record,
+                    expected_record_digest=row["record_digest"],
+                    ripple_assets=ripple_assets,
+                )
                 row = score_row(slot, record)
                 status = "verified"
         except FileNotFoundError:
@@ -669,7 +679,9 @@ def run_campaign(
             row: dict[str, Any] = json.loads(closure_path.read_text())
             if any(row.get(k) != v for k, v in slot.items()):
                 raise ValueError("closure differs from assigned slot")
-            row, reconciliation = reconcile_closure(root, slot, row, budget)
+            row, reconciliation = reconcile_closure(
+                root, slot, row, budget, ripple_assets=river_assets
+            )
             write_private(
                 report_root / (ident + ".reconciliation.json"), canonical(reconciliation)
             )

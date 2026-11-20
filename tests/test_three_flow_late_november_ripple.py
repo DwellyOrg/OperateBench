@@ -230,3 +230,137 @@ def test_ripple_parser_strict_native_blocks():
         '<tool_call>{"name":"wait","arguments":{}}</tool_call>'
     )
     assert len(calls) == 2
+
+
+def test_ripple_verified_assets_rejects_symlinks_and_mutated_manifest(
+    tmp_path, monkeypatch
+):
+    import shutil
+    from pathlib import Path
+
+    from tools import three_flow_ripple as ripple
+
+    root = Path(os.environ["THREE_FLOW_RIPPLE_ASSETS"])
+    data, metadata = ripple.read_verified_assets(root)
+    assert set(data) == set(ripple.ASSETS)
+    assert metadata["repo"] == ripple.MODEL
+    copy = tmp_path / "assets"
+    shutil.copytree(root, copy)
+    target = copy / "tokenizer_config.json"
+    target.unlink()
+    target.symlink_to(root / "tokenizer_config.json")
+    with pytest.raises((ValueError, OSError)):
+        ripple.read_verified_assets(copy)
+    target.unlink()
+    shutil.copyfile(root / "tokenizer_config.json", target)
+    linked = tmp_path / "linked"
+    linked.symlink_to(copy, target_is_directory=True)
+    with pytest.raises((ValueError, OSError)):
+        ripple.read_verified_assets(linked)
+    target.unlink()
+    os.mkfifo(target)
+    with pytest.raises((ValueError, OSError)):
+        ripple.read_verified_assets(copy)
+    target.unlink()
+    shutil.copyfile(root / "tokenizer_config.json", target)
+    original_open = os.open
+    moved = tmp_path / "moved"
+    sentinel = tmp_path / "sentinel"
+    sentinel.mkdir()
+    switched = []
+
+    def rename_before_member(name, flags, *args, **kwargs):
+        if name == "provenance.json" and not switched:
+            copy.rename(moved)
+            copy.symlink_to(sentinel, target_is_directory=True)
+            switched.append(True)
+        return original_open(name, flags, *args, **kwargs)
+
+    with monkeypatch.context() as patch:
+        patch.setattr(os, "open", rename_before_member)
+        anchored, _ = ripple.read_verified_assets(copy)
+    assert switched and anchored == data
+    with monkeypatch.context() as patch:
+        patch.setitem(ripple.ASSETS, "../escape", "0" * 64)
+        patch.setattr(
+            os, "open", lambda *a, **k: pytest.fail("asset I/O before validation")
+        )
+        with pytest.raises(ValueError):
+            ripple.read_verified_assets(root)
+    with monkeypatch.context() as patch:
+        patch.setitem(ripple.ASSETS, "tokenizer.json", "0" * 64)
+        patch.setattr(
+            os, "open", lambda *a, **k: pytest.fail("asset I/O before validation")
+        )
+        with pytest.raises(ValueError):
+            ripple.read_verified_assets(root)
+
+
+def test_ripple_catalog_rejects_duplicate_and_traversal_before_asset_io(monkeypatch):
+    import hashlib
+    import json
+    from pathlib import Path
+
+    from tools import three_flow_ripple as ripple
+
+    real_read = Path.read_bytes
+    root = Path(os.environ["THREE_FLOW_RIPPLE_ASSETS"])
+    original = json.loads(
+        Path(ripple.__file__)
+        .with_name("three_flow_river_ripple_assets.json")
+        .read_bytes()
+    )
+    for bad_name in (original["assets"][0]["filename"], "../escape"):
+        catalog = json.loads(json.dumps(original))
+        catalog["assets"][1]["filename"] = bad_name
+        raw = json.dumps(catalog).encode()
+        with monkeypatch.context() as patch:
+            patch.setattr(ripple, "CATALOG_SHA256", hashlib.sha256(raw).hexdigest())
+            patch.setattr(
+                Path,
+                "read_bytes",
+                lambda path, raw=raw: (
+                    raw
+                    if path.name == "three_flow_river_ripple_assets.json"
+                    else real_read(path)
+                ),
+            )
+            patch.setattr(
+                os,
+                "open",
+                lambda *a, **k: pytest.fail("asset I/O before catalog validation"),
+            )
+            with pytest.raises(ValueError):
+                ripple.read_verified_assets(root)
+
+
+def test_ripple_asset_root_rejects_double_slash_before_directory_io(monkeypatch):
+    from pathlib import Path
+
+    from tools import three_flow_ripple as ripple
+    from tools.three_flow_admission import digest, verify_ripple_assets
+
+    root = Path(os.environ["THREE_FLOW_RIPPLE_ASSETS"])
+    binding = digest(
+        {
+            "model": ripple.MODEL,
+            "provenance_sha256": ripple.PROVENANCE_SHA256,
+            "assets": ripple.ASSETS,
+        }
+    )
+    data, metadata = ripple.read_verified_assets(root)
+    assert set(data) == set(ripple.ASSETS) and metadata["repo"] == ripple.MODEL
+    verify_ripple_assets({"root": str(root), "catalog_sha256": binding}, True)
+    alias = "//" + str(root).lstrip("/")
+    assert Path(alias).anchor == "//"
+    with monkeypatch.context() as patch:
+        patch.setattr(
+            os,
+            "open",
+            lambda *a, **k: pytest.fail("directory opened before canonical check"),
+        )
+        for invalid in (alias, "relative/assets", "/safe/../assets"):
+            with pytest.raises(ValueError):
+                ripple.read_verified_assets(Path(invalid))
+            with pytest.raises(ValueError):
+                verify_ripple_assets({"root": invalid, "catalog_sha256": binding}, True)

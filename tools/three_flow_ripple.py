@@ -5,6 +5,9 @@ from __future__ import annotations
 import hashlib
 import importlib
 import json
+import os
+import re
+import stat
 from pathlib import Path
 from typing import Any, cast
 
@@ -13,35 +16,102 @@ from operatebench.agents.transport import ToolCall
 
 MODEL = "ricursiveAI/Ripple-65B-Preview-NVFP4"
 PROVENANCE_SHA256 = "784091f92ab08b07ef3ef527cb5cf2c6a8779c7829ef3d38ada4061349e307e4"
-ASSETS = {
-    "chat_template.jinja": (
-        "877c2dbf365243dda14738ca250b31398059b35ffd91d4ed0ec68be45ca6ebd3"
-    ),
-    "special_tokens_map.json": (
-        "3f7cd7d0cfb20f9faa47c75fd4df91b1c9a78aef0be27ded12cb705b23951341"
-    ),
-    "tokenizer.json": "18e309ad7f9c60037eaf26aca401a96128187cad2bdfa01a508dca7526bf6300",
-    "tokenizer_config.json": (
-        "eef580161a5d941607f7ec7ca95c50bfcd24812d2921c110ac049c620345ed85"
-    ),
-}
+CATALOG_SHA256 = "df2c6a6836b8ce572769d6ccc214dac74a60b3a87836946e461ce64491d1d72f"
+ASSET_NAMES = (
+    "chat_template.jinja",
+    "special_tokens_map.json",
+    "tokenizer.json",
+    "tokenizer_config.json",
+)
+
+
+def _catalog() -> dict[str, str]:
+    raw = Path(__file__).with_name("three_flow_river_ripple_assets.json").read_bytes()
+    if hashlib.sha256(raw).hexdigest() != CATALOG_SHA256:
+        raise ValueError("Ripple catalog digest mismatch")
+    catalog = json.loads(raw)
+    if not isinstance(catalog, dict) or set(catalog) != {"assets"}:
+        raise ValueError("invalid Ripple catalog")
+    records = catalog["assets"]
+    if not isinstance(records, list) or len(records) != len(ASSET_NAMES):
+        raise ValueError("invalid Ripple catalog records")
+    assets: dict[str, str] = {}
+    for record, name in zip(records, ASSET_NAMES, strict=True):
+        if (
+            not isinstance(record, dict)
+            or set(record) != {"filename", "sha256"}
+            or record["filename"] != name
+            or name in assets
+            or not isinstance(record["sha256"], str)
+            or re.fullmatch(r"[a-f0-9]{64}", record["sha256"]) is None
+        ):
+            raise ValueError("invalid Ripple catalog member")
+        assets[name] = record["sha256"]
+    return assets
+
+
+ASSETS = _catalog()
+
+
+def read_verified_assets(root: Path) -> tuple[dict[str, bytes], dict[str, Any]]:
+    """Read pinned files from one owner-provided directory, without following links."""
+    expected = _catalog()
+    if expected != ASSETS:
+        raise ValueError("Ripple asset catalog changed")
+    if root.anchor != "/" or ".." in root.parts:
+        raise ValueError("canonical absolute Ripple asset directory required")
+    directory = os.open("/", os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+    try:
+        for part in root.parts[1:]:
+            next_directory = os.open(
+                part, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=directory
+            )
+            os.close(directory)
+            directory = next_directory
+
+        def read_member(name: str, digest: str) -> bytes:
+            fd = os.open(
+                name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=directory
+            )
+            try:
+                before = os.fstat(fd)
+                if not stat.S_ISREG(before.st_mode) or before.st_size > 16 * 1024 * 1024:
+                    raise ValueError("invalid Ripple asset file")
+                chunks = []
+                remaining = before.st_size
+                while remaining:
+                    chunk = os.read(fd, min(remaining, 1024 * 1024))
+                    if not chunk:
+                        raise ValueError("short Ripple asset file")
+                    chunks.append(chunk)
+                    remaining -= len(chunk)
+                after = os.fstat(fd)
+                if (before.st_size, before.st_mtime_ns, before.st_ctime_ns) != (
+                    after.st_size,
+                    after.st_mtime_ns,
+                    after.st_ctime_ns,
+                ):
+                    raise ValueError("Ripple asset changed during read")
+                raw = b"".join(chunks)
+                if hashlib.sha256(raw).hexdigest() != digest:
+                    raise ValueError("Ripple asset digest mismatch")
+                return raw
+            finally:
+                os.close(fd)
+
+        provenance = read_member("provenance.json", PROVENANCE_SHA256)
+        metadata = json.loads(provenance)
+        if not isinstance(metadata, dict) or metadata.get("repo") != MODEL:
+            raise ValueError("Ripple public provenance identity mismatch")
+        return {name: read_member(name, expected[name]) for name in ASSET_NAMES}, metadata
+    finally:
+        os.close(directory)
 
 
 class RippleTokenizer:
     def __init__(self, root: Path) -> None:
-        provenance = (root / "provenance.json").read_bytes()
-        if hashlib.sha256(provenance).hexdigest() != PROVENANCE_SHA256:
-            raise ValueError("Ripple public provenance digest mismatch")
-        metadata = json.loads(provenance)
+        data, metadata = read_verified_assets(root)
         self.revision = metadata["revision"]
-        if metadata["repo"] != MODEL:
-            raise ValueError("Ripple public provenance identity mismatch")
-        data = {}
-        for name, expected in ASSETS.items():
-            raw = (root / name).read_bytes()
-            if hashlib.sha256(raw).hexdigest() != expected:
-                raise ValueError("Ripple asset digest mismatch")
-            data[name] = raw
         backend: Any = importlib.import_module("tokenizers").Tokenizer
         tokenizer_class: Any = importlib.import_module(
             "transformers"

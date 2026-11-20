@@ -379,6 +379,9 @@ def consume(path: Path, sha: str, *, network: Any = None) -> list[dict[str, Any]
             mode=a["mode"],
             attempt_id=a["attempt_id"],
             selected_corrections=corrections,
+            river_assets=Path(a["assets"]["root"])
+            if a.get("assets") is not None
+            else None,
             assignment_prepared=a["operation"] == "initial",
             roster_profile=a.get("roster_profile", "legacy-v1"),
         )

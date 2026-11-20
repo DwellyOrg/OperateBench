@@ -266,7 +266,10 @@ def test_five_routes_production_factory_synthetic(tmp_path, monkeypatch):
     assert all(row["classification"] == "scored" for row in rows), (rows, errors)
 
 
-def test_late_correction_consumes_original_and_reaches_ripple_sdk(tmp_path, monkeypatch):
+@pytest.mark.parametrize("retained", [False, True])
+def test_late_correction_consumes_original_and_reaches_ripple_sdk(
+    tmp_path, monkeypatch, retained
+):
     """Synthetic custody, one journal, and the production consuming CLI."""
     import hashlib
 
@@ -383,15 +386,48 @@ def test_late_correction_consumes_original_and_reaches_ripple_sdk(tmp_path, monk
                 channel.generate = bad_usage
             return channel
 
-    first = Network(invalid=True)
-    assert cli(path, admission, first) == 2
-    assert len(first.channels) == 1 and len(first.channels[0].submissions) == 1
-    assert (
-        json.loads((root / (slot["trial_id"] + ".closure.json")).read_text())[
-            "classification"
-        ]
-        == "excluded"
-    )
+    first = Network(invalid=not retained)
+    assert cli(path, admission, first) == (0 if retained else 2)
+    assert len(first.channels) == 1 and first.channels[0].submissions
+    assert retained or len(first.channels[0].submissions) == 1
+    assert json.loads((root / (slot["trial_id"] + ".closure.json")).read_text())[
+        "classification"
+    ] == ("scored" if retained else "excluded")
+    if retained:
+        record = root / slot["trial_id"] / "record.json"
+        saved = record.read_bytes()
+        closure = (root / (slot["trial_id"] + ".closure.json")).read_bytes()
+        from tools.three_flow_campaign import reconcile_closure
+
+        retained_budget = CampaignBudget(
+            root,
+            campaign_id="late-correction",
+            cap=Decimal("1000"),
+            roster_profile=LATE_NOVEMBER_PROFILE,
+        )
+        try:
+            missing, details = reconcile_closure(
+                root, slot, json.loads(closure), retained_budget
+            )
+            assert missing["classification"] == "aborted"
+            assert details["evidence_status"] == "invalid"
+        finally:
+            retained_budget.close()
+        assert record.read_bytes() == saved
+        assert (root / (slot["trial_id"] + ".closure.json")).read_bytes() == closure
+        continuation(path, admission, operation="resume")
+        resumed = Network()
+        assert cli(path, admission, resumed) == 0
+        assert not resumed.channels
+        assert record.read_bytes() == saved
+        assert (root / (slot["trial_id"] + ".closure.json")).read_bytes() == closure
+        reconciliation = json.loads(
+            (
+                root / "resume-second" / (slot["trial_id"] + ".reconciliation.json")
+            ).read_text()
+        )
+        assert reconciliation["evidence_status"] == "verified"
+        return
     original = copy.deepcopy(admission)
     journal = (root / "campaign-budget.jsonl").read_bytes()
     artifacts = {
