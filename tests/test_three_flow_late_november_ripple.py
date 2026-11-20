@@ -235,7 +235,8 @@ def test_ripple_parser_strict_native_blocks():
 def test_ripple_verified_assets_rejects_symlinks_and_mutated_manifest(
     tmp_path, monkeypatch
 ):
-    import shutil
+    import hashlib
+    import json
     from pathlib import Path
 
     from tools import three_flow_ripple as ripple
@@ -245,14 +246,21 @@ def test_ripple_verified_assets_rejects_symlinks_and_mutated_manifest(
     assert set(data) == set(ripple.ASSETS)
     assert metadata["repo"] == ripple.MODEL
     copy = tmp_path / "assets"
-    shutil.copytree(root, copy)
+    copy.mkdir()
+    provenance = (json.dumps(metadata, indent=2) + "\n").encode("utf-8")
+    assert hashlib.sha256(provenance).hexdigest() == ripple.PROVENANCE_SHA256
+    (copy / "provenance.json").write_bytes(provenance)
+    for name in ripple.ASSET_NAMES:
+        (copy / name).write_bytes(data[name])
     target = copy / "tokenizer_config.json"
+    sentinel_file = tmp_path / "external-config.json"
+    sentinel_file.write_bytes(data["tokenizer_config.json"])
     target.unlink()
-    target.symlink_to(root / "tokenizer_config.json")
+    target.symlink_to(sentinel_file)
     with pytest.raises((ValueError, OSError)):
         ripple.read_verified_assets(copy)
     target.unlink()
-    shutil.copyfile(root / "tokenizer_config.json", target)
+    target.write_bytes(data["tokenizer_config.json"])
     linked = tmp_path / "linked"
     linked.symlink_to(copy, target_is_directory=True)
     with pytest.raises((ValueError, OSError)):
@@ -262,7 +270,7 @@ def test_ripple_verified_assets_rejects_symlinks_and_mutated_manifest(
     with pytest.raises((ValueError, OSError)):
         ripple.read_verified_assets(copy)
     target.unlink()
-    shutil.copyfile(root / "tokenizer_config.json", target)
+    target.write_bytes(data["tokenizer_config.json"])
     original_open = os.open
     moved = tmp_path / "moved"
     sentinel = tmp_path / "sentinel"
