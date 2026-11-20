@@ -324,8 +324,19 @@ def registry(
                 mapping = {
                     "meta": "three-flow-meta-snapshot-minimal-auto-v3",
                     "river": "three-flow-river-native-v1-ripple-default-v1",
-                    "river_http": "three-flow-river-http-kimi-pro-native-history-v1",
+                    "river_http": (
+                        "three-flow-river-http-kimi-pro-native-history-paced-v2"
+                    ),
                 }[provider]
+            if provider == "river_http":
+                settings.update(
+                    transport_policy="paced-safe-errors-v1",
+                    pacing_scope="process-wide-river-http",
+                    minimum_spacing_seconds=1,
+                    retry_after_max_seconds=86400,
+                    retry_eligibility="none-proven",
+                    automatic_resubmission=False,
+                )
             late_rows.append(
                 {
                     "provider": provider,

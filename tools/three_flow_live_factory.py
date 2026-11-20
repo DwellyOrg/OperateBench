@@ -314,7 +314,11 @@ def live_factory(
                     else admission.get("mode_profile", "legacy-v1"),
                     roster_profile=LATE_NOVEMBER_PROFILE if late else "legacy-v1",
                     transport_policy=(
-                        admission.get("transport_policy", "legacy-v1")
+                        "paced-safe-errors-v1"
+                        if late
+                        and (slot["provider"], slot["model"])
+                        == ("river_http", "moonshotai/Kimi-K3.1-Pro")
+                        else admission.get("transport_policy", "legacy-v1")
                         if slot["provider"] == "mistral"
                         or (
                             slot["provider"] == "river_http"

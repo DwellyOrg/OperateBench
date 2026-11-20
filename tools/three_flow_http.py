@@ -308,16 +308,17 @@ class HTTPCampaignTransport:
         transport_policy: str = "legacy-v1",
         roster_profile: str = "legacy-v1",
     ) -> None:
+        kimi_pro = (provider, model) == ("river_http", "moonshotai/Kimi-K3.1-Pro")
         if transport_policy not in ("legacy-v1", "paced-safe-errors-v1"):
             raise ValueError("unknown transport policy")
         if transport_policy != "legacy-v1" and not (
             provider == "mistral"
             or ((provider, model) in SELECTED_SIX and provider == "river_http")
+            or (kimi_pro and roster_profile == LATE_NOVEMBER_PROFILE)
         ):
             raise ValueError("pacing policy requires Mistral or selected River HTTP")
         if mode_profile not in MODE_PROFILES:
             raise ValueError("unknown reasoning mode profile")
-        kimi_pro = (provider, model) == ("river_http", "moonshotai/Kimi-K3.1-Pro")
         if kimi_pro:
             p = getattr(guard, "profile", {})
             if (
@@ -621,7 +622,11 @@ class HTTPCampaignTransport:
                     "MINIMUM" if model == "GLM-5.3" else "OFF"
                 )
         if self.kimi_pro:
-            self.request_mapping = "three-flow-river-http-kimi-pro-native-history-v1"
+            self.request_mapping = (
+                "three-flow-river-http-kimi-pro-native-history-paced-v2"
+                if transport_policy == "paced-safe-errors-v1"
+                else "three-flow-river-http-kimi-pro-native-history-v1"
+            )
             self.settings.update(
                 native_continuation=True,
                 no_native_continuation=False,

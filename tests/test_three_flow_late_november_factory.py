@@ -28,7 +28,13 @@ def no_network(monkeypatch):
     monkeypatch.setattr(socket, "create_connection", forbidden)
 
 
-def test_five_routes_production_factory_synthetic(tmp_path):
+def test_five_routes_production_factory_synthetic(tmp_path, monkeypatch):
+    from tools import three_flow_http as http
+    from tools.three_flow_errors import ProviderPacer
+
+    monkeypatch.setattr(
+        http, "RIVER_HTTP_PACER", ProviderPacer(clock=lambda: 0.0, sleep=lambda _: None)
+    )
     assets = os.environ.get("THREE_FLOW_RIPPLE_ASSETS")
     if not assets:
         pytest.skip("explicit Ripple assets required")
