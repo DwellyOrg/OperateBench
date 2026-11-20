@@ -258,3 +258,240 @@ def test_five_routes_production_factory_synthetic(tmp_path):
     )
     assert len(rows) == 5
     assert all(row["classification"] == "scored" for row in rows), (rows, errors)
+
+
+def test_late_correction_consumes_original_and_reaches_ripple_sdk(tmp_path, monkeypatch):
+    """Synthetic custody, one journal, and the production consuming CLI."""
+    import hashlib
+
+    from tests.test_three_flow_live import cli, continuation, write
+    from tools import three_flow_live as live
+    from tools.three_flow_admission import (
+        GUARANTEES,
+        RESOURCE_POLICY,
+        digest,
+        runtime_identity,
+    )
+    from tools.three_flow_campaign import correction_slot
+    from tools.three_flow_profiles import registry
+    from tools.three_flow_ripple import ASSETS, MODEL, PROVENANCE_SHA256
+
+    assets = os.environ.get("THREE_FLOW_RIPPLE_ASSETS")
+    if not assets:
+        pytest.skip("explicit Ripple assets required")
+    tmp_path.chmod(0o700)
+    if os.environ.get("THREE_FLOW_CLEAN_SOURCE_PROOF") == "1":
+        sha = live.source_identity()
+    else:
+        sha = "d" * 40
+        monkeypatch.setattr(live, "source_identity", lambda expected=None: sha)
+    custody = tmp_path / "custody"
+    custody.mkdir(mode=0o700)
+    credential = custody / "synthetic.env"
+    credential.write_text("RIVER_API_KEY=synthetic-inert-key\n")
+    credential.chmod(0o600)
+    root = tmp_path / "campaign"
+    slot = next(
+        s
+        for s in assignments("late-correction", LATE_NOVEMBER_PROFILE)
+        if s["model"] == MODEL
+        and s["flow"] == "commerce"
+        and s["scenario"] == "UK_NORMAL"
+    )
+    profile = {
+        "endpoint": "api.river.ai:443",
+        "input_max": None,
+        "output_max": None,
+        "context_max": 262144,
+        "owner_output_cap_tokens": 30000,
+        "input_usd_per_million": "1",
+        "output_usd_per_million": "3",
+        "network_timeout_seconds": None,
+        "bounds_policy": {
+            "mode": "published-context-diagnostic-v1",
+            "source": "https://docs.river.ai/guides/models.md",
+            "scope": "endpoint",
+            "interpretation": "published-integer",
+        },
+        "rate_evidence_sha256": "a" * 64,
+        "bounds_evidence_sha256": "b" * 64,
+        "guarantees": {
+            **dict.fromkeys(GUARANTEES, True),
+            "provider_bounds_verified": False,
+        },
+        "pricing_policy": "conservative-all-tier-envelope-v1",
+    }
+    admission = {
+        "schema": "three-flow-admission-v1",
+        "approved": False,
+        "mode": "synthetic",
+        "roster_profile": LATE_NOVEMBER_PROFILE,
+        "mode_profile": "late-november-v1",
+        "source_sha": sha,
+        "runtime": runtime_identity(),
+        "registry": registry(
+            roster_profile=LATE_NOVEMBER_PROFILE, mode_profile="late-november-v1"
+        ),
+        "campaign_id": "late-correction",
+        "attempt_id": "first",
+        "campaign_root": str(root),
+        "custody_root": str(custody),
+        "credential_file": str(credential),
+        "cap_usd": "1000",
+        "resource_policy": RESOURCE_POLICY,
+        "selected": [slot["trial_id"]],
+        "profiles": {MODEL: profile},
+        "assets": {
+            "root": assets,
+            "catalog_sha256": digest(
+                {"model": MODEL, "provenance_sha256": PROVENANCE_SHA256, "assets": ASSETS}
+            ),
+        },
+        "operation": "initial",
+        "original_claim_sha256": None,
+        "journal_sha256": None,
+        "pending": [slot["trial_id"]],
+        "corrections": {},
+        "parent_gates": True,
+        "no_intervening_spend": True,
+    }
+    path = custody / "synthetic.json"
+    write(path, admission)
+
+    class Network:
+        def __init__(self, invalid=False):
+            self.channels = []
+            self.invalid = invalid
+
+        def river(self, selected):
+            channel = RiverMockChannel(selected["model"], selected["flow"])
+            self.channels.append(channel)
+            if self.invalid:
+                generate = channel.generate
+
+                def bad_usage(request):
+                    ack = generate(request)
+                    channel.pending[ack.request_id].usage.total_tokens += 1
+                    return ack
+
+                channel.generate = bad_usage
+            return channel
+
+    first = Network(invalid=True)
+    assert cli(path, admission, first) == 2
+    assert len(first.channels) == 1 and len(first.channels[0].submissions) == 1
+    assert (
+        json.loads((root / (slot["trial_id"] + ".closure.json")).read_text())[
+            "classification"
+        ]
+        == "excluded"
+    )
+    original = copy.deepcopy(admission)
+    journal = (root / "campaign-budget.jsonl").read_bytes()
+    artifacts = {
+        kind: hashlib.sha256(
+            (root / (slot["trial_id"] + "." + kind + ".json")).read_bytes()
+        ).hexdigest()
+        for kind in ("assigned", "binding", "closure")
+    }
+    continuation(path, admission, operation="correction")
+    admission["corrections"] = {
+        slot["trial_id"]: {"reason": "runtime_fix", "evidence_sha256": "c" * 64}
+    }
+    admission["correction_binding"] = {
+        "schema": "three-flow-correction-binding-v1",
+        "owner_accepted": True,
+        "owner_evidence_sha256": "d" * 64,
+        "original_source_sha": sha,
+        "execution_source_sha": sha,
+        "original_admission": original,
+        "financial_policy_sha256": digest(
+            {"cap_usd": admission["cap_usd"], "limit_policy": None}
+        ),
+        "genesis_sha256": hashlib.sha256(
+            journal.splitlines(keepends=True)[0]
+        ).hexdigest(),
+        "manifest_sha256": hashlib.sha256(
+            (root / "assignment.json").read_bytes()
+        ).hexdigest(),
+        "original_trial_artifacts_sha256": {slot["trial_id"]: artifacts},
+    }
+    fixed = correction_slot(slot, "second", "runtime_fix", "c" * 64)
+    # Factory-level checks precede every channel/constructor call.
+    budget = CampaignBudget(
+        root,
+        campaign_id="late-correction",
+        cap=Decimal("1000"),
+        roster_profile=LATE_NOVEMBER_PROFILE,
+    )
+    try:
+        original_unknown = budget.totals()["unknown"]
+        assert original_unknown > 0
+        for operation in ("initial", "resume"):
+            initial_network = Network()
+            initial_admission = {**original, "operation": operation}
+            original_factory = live_factory(
+                initial_admission,
+                {"RIVER_API_KEY": "synthetic-inert-key"},
+                network=initial_network,
+            )
+            for rejected in (
+                {**slot, "repetition": True},
+                fixed,
+                {**slot, "trial_id": "initial-999-99"},
+            ):
+                with pytest.raises(ValueError):
+                    original_factory(rejected, budget)
+                assert not initial_network.channels
+            transport = original_factory(slot, budget)
+            assert len(initial_network.channels) == 1
+            transport.close()
+        network = Network()
+        make = live_factory(
+            admission, {"RIVER_API_KEY": "synthetic-inert-key"}, network=network
+        )
+        for change in (
+            {"repetition": True},
+            {"repetition": 1.0},
+            {"unexpected": "field"},
+            {"rerun_of": "initial-999-99"},
+            {"correction_reason": "provider_fix"},
+            {"fix_evidence_sha256": "e" * 64},
+            {"trial_id": fixed["trial_id"] + "-forged"},
+            {"model": "wrong"},
+        ):
+            with pytest.raises(ValueError):
+                make({**fixed, **change}, budget)
+            assert not network.channels
+        transport = make(fixed, budget)
+        assert len(network.channels) == 1
+        transport.close()
+        with pytest.raises(ValueError):
+            make(slot, budget)
+    finally:
+        budget.close()
+    write(path, admission)
+    corrected = Network()
+    assert cli(path, admission, corrected) == 0
+    assert len(corrected.channels) == 1 and corrected.channels[0].submissions
+    assert (root / "campaign-budget.jsonl").read_bytes().startswith(journal)
+    assert all(
+        hashlib.sha256(
+            (root / (slot["trial_id"] + "." + kind + ".json")).read_bytes()
+        ).hexdigest()
+        == value
+        for kind, value in artifacts.items()
+    )
+    budget = CampaignBudget(
+        root,
+        campaign_id="late-correction",
+        cap=Decimal("1000"),
+        roster_profile=LATE_NOVEMBER_PROFILE,
+    )
+    try:
+        assert budget.totals()["unknown"] >= original_unknown
+    finally:
+        budget.close()
+    retry = Network()
+    assert cli(path, admission, retry) == 2
+    assert not retry.channels

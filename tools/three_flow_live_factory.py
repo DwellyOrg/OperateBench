@@ -12,7 +12,7 @@ from typing import Any, cast
 import httpx
 
 from operatebench.agents.pricing import GuardEvent, LifecyclePricingPolicy
-from tools.aggregate_budget import SettlementBoundsError, SharedGuard, decimal
+from tools.aggregate_budget import SettlementBoundsError, SharedGuard, canonical, decimal
 from tools.three_flow_admission import VARIABLES, digest
 from tools.three_flow_budget import META_UNCAPPED_PROFILE, CampaignBudget
 from tools.three_flow_http import HTTPCampaignTransport
@@ -146,11 +146,31 @@ def live_factory(
     def make(slot: dict[str, Any], budget: Any) -> Any:
         late = admission.get("roster_profile") == LATE_NOVEMBER_PROFILE
         if late:
-            from tools.three_flow_campaign import assignments
+            from tools.three_flow_campaign import assignments, correction_slot
 
+            originals = [
+                original
+                for original in assignments(
+                    admission["campaign_id"], LATE_NOVEMBER_PROFILE
+                )
+                if original["trial_id"] in admission["selected"]
+            ]
+            if admission["operation"] == "correction":
+                allowed = [
+                    correction_slot(
+                        original,
+                        admission["attempt_id"],
+                        admission["corrections"][original["trial_id"]]["reason"],
+                        admission["corrections"][original["trial_id"]]["evidence_sha256"],
+                    )
+                    for original in originals
+                ]
+            elif admission["operation"] in ("initial", "resume"):
+                allowed = originals
+            else:
+                raise ValueError("unknown late November operation")
             if (
-                slot not in assignments(admission["campaign_id"], LATE_NOVEMBER_PROFILE)
-                or slot["trial_id"] not in admission["selected"]
+                canonical(slot) not in {canonical(item) for item in allowed}
                 or getattr(budget, "roster_profile", None) != LATE_NOVEMBER_PROFILE
                 or (
                     None
