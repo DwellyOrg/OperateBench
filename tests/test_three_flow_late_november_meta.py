@@ -28,7 +28,10 @@ def no_network(monkeypatch):
     monkeypatch.setattr(socket, "create_connection", forbidden)
 
 
-@pytest.mark.parametrize("fault", [None, "model", "usage", "extra"])
+@pytest.mark.parametrize(
+    "fault",
+    [None, "model", "usage", "extra", "reasoning_extra", "message_extra", "incomplete"],
+)
 def test_ember_sdk_record_and_replay(tmp_path, fault):
     p = profile("muse-wonder-1.0")
     p.update(
@@ -68,6 +71,30 @@ def test_ember_sdk_record_and_replay(tmp_path, fault):
             body["model"] = "muse-ember-1.0-contributor"
         elif fault == "extra":
             body["unexpected"] = True
+        elif fault == "reasoning_extra":
+            body["output"].insert(
+                0,
+                {
+                    "type": "reasoning",
+                    "id": "rs_synthetic",
+                    "summary": [],
+                    "unexpected": True,
+                },
+            )
+        elif fault == "message_extra":
+            body["output"] = [
+                {
+                    "type": "message",
+                    "id": "msg_synthetic",
+                    "role": "assistant",
+                    "status": "completed",
+                    "content": [],
+                    "unexpected": True,
+                }
+            ]
+        elif fault == "incomplete":
+            body["status"] = "incomplete"
+            body["incomplete_details"] = {"reason": "content_filter"}
         return httpx.Response(200, json=body)
 
     transport = HTTPCampaignTransport(
@@ -144,3 +171,120 @@ def test_ember_exact_tiers_and_restart(tmp_path, input_tokens, cached, output, e
         assert replay.records[ident]["cached"] == cached
     finally:
         replay.close()
+
+
+@pytest.mark.parametrize(
+    "variant",
+    [
+        "reasoning_message",
+        "message",
+        "refusal",
+        "reasoning",
+        "malformed",
+        "reasoning_function",
+    ],
+)
+def test_ember_model_behavior_reaches_core_with_settled_usage(tmp_path, variant):
+    p = profile("muse-wonder-1.0")
+    p.update(
+        output_max=524288, input_usd_per_million="0.30", output_usd_per_million="1.50"
+    )
+    tmp_path.chmod(0o700)
+    budget = CampaignBudget(
+        tmp_path,
+        campaign_id="offline",
+        cap=Decimal("1000"),
+        roster_profile=LATE_NOVEMBER_PROFILE,
+        create=True,
+    )
+    guard = AdmittedGuard(
+        profile=p,
+        budget=budget,
+        cell="trial",
+        max_output_tokens=524288,
+        policy=LifecyclePricingPolicy("synthetic", Decimal("0.30"), Decimal("1.50")),
+    )
+    mock = SDKMockTransport("openai", "commerce", model="muse-ember-1.0")
+    requests = []
+    reasoning = {
+        "type": "reasoning",
+        "id": "rs_synthetic",
+        "summary": [],
+        "encrypted_content": None,
+        "status": "completed",
+    }
+    message = {
+        "type": "message",
+        "id": "msg_synthetic",
+        "role": "assistant",
+        "status": "completed",
+        "content": [],
+    }
+    if variant == "refusal":
+        message["content"] = [{"type": "refusal", "refusal": "synthetic"}]
+
+    def handle(request):
+        requests.append(1)
+        body = json.loads(mock.handle(request).content)
+        body.update(store=False, parallel_tool_calls=False, tool_choice="auto", tools=[])
+        body["usage"].update(
+            input_tokens_details={"cached_tokens": 1},
+            output_tokens_details={"reasoning_tokens": 1},
+        )
+        if len(requests) == 1:
+            if variant in ("malformed", "reasoning_function"):
+                if variant == "malformed":
+                    body["output"][0]["arguments"] = "{"
+                body["output"].insert(0, reasoning)
+            else:
+                body["output"] = (
+                    [reasoning] if variant in ("reasoning", "reasoning_message") else []
+                ) + ([message] if variant != "reasoning" else [])
+        return httpx.Response(200, json=body)
+
+    transport = HTTPCampaignTransport(
+        provider="meta",
+        model="muse-ember-1.0",
+        api_key="offline-key",
+        inner=httpx.MockTransport(handle),
+        guard=guard,
+        max_output_tokens=524288,
+        context_tokens=1048576,
+        mode_profile="off-or-minimum-v1",
+        roster_profile=LATE_NOVEMBER_PROFILE,
+    )
+    transport.settings.update(
+        bounds_policy=p["bounds_policy"], context_request_bound=p["context_max"]
+    )
+    trial = Trial(
+        "offline",
+        "trial",
+        "commerce",
+        "UK_NORMAL",
+        "muse-ember-1.0",
+        524288,
+        provider_identity(transport),
+    )
+    try:
+        record = run_trial(trial, transport, output=tmp_path / "trial")
+        expected = (
+            "ModelToolArgumentsMalformed"
+            if variant == "malformed"
+            else "ModelReturnedNoToolCall"
+        )
+        if variant == "reasoning_function":
+            assert record["evaluation"]["reliable"]
+        else:
+            assert expected in json.dumps(record)
+        assert len(requests) > 1
+        assert all(r["state"] == "settled" for r in budget.records.values())
+        assert budget.totals()["unknown"] == 0
+        assert (
+            replay_trial(trial, record, expected_record_digest=record["record_digest"])[
+                "provider_calls"
+            ]
+            == 0
+        )
+    finally:
+        transport.close()
+        budget.close()

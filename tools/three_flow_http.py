@@ -999,7 +999,12 @@ class HTTPCampaignTransport:
                     ]
                 else:
                     self.kimi_history = []
-            if self.provider == "meta" and not response.tool_calls:
+            # Ember delegates valid completed no-action responses to ModelAgent.
+            if (
+                self.provider == "meta"
+                and self.model != "muse-ember-1.0"
+                and not response.tool_calls
+            ):
                 raise wire_invalid("Meta auto response has no Core function call")
             return response
 
