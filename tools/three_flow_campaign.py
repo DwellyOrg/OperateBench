@@ -39,6 +39,7 @@ from tools.three_flow_profiles import (
 from tools.three_flow_profiles import (
     FABLE52_PROFILE,
     GEMINI_ROSTER_PROFILE,
+    LATE_NOVEMBER_PROFILE,
     META_ROSTER_PROFILE,
     NOVEMBER_PROFILE,
     OPENAI62_PROFILE,
@@ -89,6 +90,7 @@ def preflight(roster_profile: str = "legacy-v1") -> dict[str, Any]:
         if roster_profile
         in (
             GEMINI_ROSTER_PROFILE,
+            LATE_NOVEMBER_PROFILE,
             SELECTED_SIX_PROFILE,
             NOVEMBER_PROFILE,
             FABLE52_PROFILE,
@@ -110,6 +112,14 @@ def preflight(roster_profile: str = "legacy-v1") -> dict[str, Any]:
                 },
             }
             if roster_profile == META_ROSTER_PROFILE
+            else {}
+        ),
+        **(
+            {
+                "monetary_policy": "source-bound owner admission required",
+                "dispatch_status": "external admission required",
+            }
+            if roster_profile == LATE_NOVEMBER_PROFILE
             else {}
         ),
         "workers": 4,
@@ -375,7 +385,12 @@ def financial_row(row: dict[str, Any], budget: CampaignBudget) -> dict[str, Any]
 
 
 def reconcile_closure(
-    root: Path, slot: dict[str, Any], row: dict[str, Any], budget: CampaignBudget
+    root: Path,
+    slot: dict[str, Any],
+    row: dict[str, Any],
+    budget: CampaignBudget,
+    *,
+    ripple_assets: Path | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     """Validate retained evidence without SDK construction or historical rewrites.
 
@@ -413,7 +428,12 @@ def reconcile_closure(
             if record["binding"][source_key] != source_binding():
                 status, reason = "unavailable", "frozen_source_unavailable"
             else:
-                replay_trial(trial, record, expected_record_digest=row["record_digest"])
+                replay_trial(
+                    trial,
+                    record,
+                    expected_record_digest=row["record_digest"],
+                    ripple_assets=ripple_assets,
+                )
                 row = score_row(slot, record)
                 status = "verified"
         except FileNotFoundError:
@@ -659,7 +679,9 @@ def run_campaign(
             row: dict[str, Any] = json.loads(closure_path.read_text())
             if any(row.get(k) != v for k, v in slot.items()):
                 raise ValueError("closure differs from assigned slot")
-            row, reconciliation = reconcile_closure(root, slot, row, budget)
+            row, reconciliation = reconcile_closure(
+                root, slot, row, budget, ripple_assets=river_assets
+            )
             write_private(
                 report_root / (ident + ".reconciliation.json"), canonical(reconciliation)
             )

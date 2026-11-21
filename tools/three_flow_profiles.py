@@ -74,6 +74,15 @@ NOVEMBER_MODELS = (("anthropic", "claude-sonnet-5-5"),)
 FABLE52_PROFILE = "anthropic-fable52-same44-v1"
 FABLE52_MODELS = (("anthropic", "claude-fable-5-2"),)
 
+LATE_NOVEMBER_PROFILE = "late-november-five-same44-v1"
+LATE_NOVEMBER_MODELS = (
+    ("gemini", "gemini-4-hydrogen"),
+    ("gemini", "gemini-4-neon"),
+    ("meta", "muse-ember-1.0"),
+    ("river", "ricursiveAI/Ripple-65B-Preview-NVFP4"),
+    ("river_http", "moonshotai/Kimi-K3.1-Pro"),
+)
+
 SELECTED_SIX_PROFILE = "selected-six-http-v1"
 SELECTED_SIX = (
     ("openai", "gpt-6.1-terra"),
@@ -90,6 +99,8 @@ ENDPOINTS.update(
 
 
 def selected_roster(roster_profile: str = "legacy-v1") -> tuple[tuple[str, str], ...]:
+    if roster_profile == LATE_NOVEMBER_PROFILE:
+        return LATE_NOVEMBER_MODELS
     if roster_profile == OPENAI62_PROFILE:
         return OPENAI62_MODELS
     if roster_profile == FABLE52_PROFILE:
@@ -148,6 +159,33 @@ def selection_for(
     provider: str, model: str, mode_profile: str
 ) -> CampaignSelection | None:
     """Resolve only existing valid cells; callers retain their validation order."""
+    if (provider, model, mode_profile) == (
+        "river_http",
+        "moonshotai/Kimi-K3.1-Pro",
+        "off-or-minimum-v1",
+    ):
+        return CampaignSelection(
+            provider, model, "chat_completions", mode_profile, "tools/three_flow_http.py"
+        )
+    if (provider, model, mode_profile) == (
+        "river",
+        "ricursiveAI/Ripple-65B-Preview-NVFP4",
+        "ripple-default-v1",
+    ):
+        return CampaignSelection(
+            provider, model, RIVER_API, mode_profile, "tools/three_flow_river.py"
+        )
+    if (provider, model, mode_profile) in (
+        ("gemini", "gemini-4-hydrogen", "late-november-v1"),
+        ("gemini", "gemini-4-neon", "late-november-v1"),
+    ):
+        return CampaignSelection(
+            provider,
+            model,
+            "generate_content",
+            mode_profile,
+            "tools/three_flow_gemini.py",
+        )
     if mode_profile == "off-or-minimum-v1" and (
         (provider, model)
         in SELECTED_SIX + NOVEMBER_MODELS + FABLE52_MODELS + OPENAI62_MODELS
@@ -259,6 +297,61 @@ def registry(
     transport_policy: str = "legacy-v1",
     roster_profile: str = "legacy-v1",
 ) -> list[dict[str, Any]]:
+    if roster_profile == LATE_NOVEMBER_PROFILE:
+        if mode_profile != "late-november-v1" or transport_policy != "legacy-v1":
+            raise ValueError("late November requires its exact native mode and transport")
+        from tools.three_flow_gemini import LATE_NOVEMBER_MODELS as late_gemini_models
+        from tools.three_flow_late_november import CANDIDATES
+
+        late_rows: list[dict[str, Any]] = []
+        for provider, model in LATE_NOVEMBER_MODELS:
+            candidate = CANDIDATES[model]
+            if provider == "gemini":
+                profile = late_gemini_models[model]
+                endpoint, settings = profile.endpoint, profile.settings(profile.output)
+                mapping = "three-flow-gemini-developer-native-low-v4"
+            else:
+                endpoint = (
+                    ENDPOINTS[provider]
+                    if provider in ("meta", "river_http")
+                    else "api.river.ai:443"
+                )
+                settings = {
+                    "reasoning": candidate.reasoning,
+                    "context": candidate.context,
+                    "output": candidate.output,
+                }
+                mapping = {
+                    "meta": "three-flow-meta-snapshot-minimal-auto-v3",
+                    "river": "three-flow-river-native-v1-ripple-default-v1",
+                    "river_http": (
+                        "three-flow-river-http-kimi-pro-native-history-paced-v2"
+                    ),
+                }[provider]
+            if provider == "river_http":
+                settings.update(
+                    transport_policy="paced-safe-errors-v1",
+                    pacing_scope="process-wide-river-http",
+                    minimum_spacing_seconds=1,
+                    retry_after_max_seconds=86400,
+                    retry_eligibility="none-proven",
+                    automatic_resubmission=False,
+                )
+            late_rows.append(
+                {
+                    "provider": provider,
+                    "model": model,
+                    "endpoint": endpoint,
+                    "mapping": mapping,
+                    "request_settings": settings,
+                    "settings_source": "tools/three_flow_gemini.py"
+                    if provider == "gemini"
+                    else "tools/three_flow_late_november.py",
+                    "retries": 0,
+                    "admitted": False,
+                }
+            )
+        return late_rows
     if roster_profile in (NOVEMBER_PROFILE, FABLE52_PROFILE):
         fable = roster_profile == FABLE52_PROFILE
         if mode_profile != "off-or-minimum-v1":

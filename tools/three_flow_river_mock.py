@@ -31,7 +31,8 @@ class RiverMockChannel:
         agent: str = "reference",
         pending_polls: int = 0,
     ) -> None:
-        self.pb, _ = sdk()
+        self.ripple = model == "ricursiveAI/Ripple-65B-Preview-NVFP4"
+        self.pb, _ = sdk(ripple=self.ripple)
         self.model, self.tokenizer = model, tokenizer
         if flow == "maintenance":
             self.reference = build_agent(agent)
@@ -69,7 +70,15 @@ class RiverMockChannel:
         if name == "ask":
             decision["wait"].pop("kind")
         call = ToolCall(name, decision)
-        text = frame(call) if "Kimi" in self.model else synthetic_frame(self.model, call)
+        text = (
+            "<tool_call>"
+            + json.dumps({"name": call.name, "arguments": call.arguments})
+            + "</tool_call>"
+            if self.ripple
+            else frame(call)
+            if "Kimi" in self.model
+            else synthetic_frame(self.model, call)
+        )
         tokens = self.tokenizer.encode(text)
         if len(tokens) >= prompt.max_tokens:
             raise ValueError("mock fixture exceeds explicit output setting")
@@ -105,7 +114,7 @@ class RiverMockChannel:
         **_kwargs: Any,
     ) -> Any:
         def invoke(request: Any, *, timeout: float) -> Any:
-            if timeout != 120.0:
+            if timeout != 120.0 and not (self.ripple and timeout is None):
                 raise ValueError("unexpected per-RPC timeout")
             raw = request_serializer(request)
             if path.endswith("/InferenceGenerate"):

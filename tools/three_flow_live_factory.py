@@ -5,17 +5,18 @@ from __future__ import annotations
 import copy
 import importlib
 from decimal import Decimal
+from fractions import Fraction
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import httpx
 
-from operatebench.agents.pricing import LifecyclePricingPolicy
-from tools.aggregate_budget import SharedGuard
+from operatebench.agents.pricing import GuardEvent, LifecyclePricingPolicy
+from tools.aggregate_budget import SettlementBoundsError, SharedGuard, canonical, decimal
 from tools.three_flow_admission import VARIABLES, digest
-from tools.three_flow_budget import META_UNCAPPED_PROFILE
+from tools.three_flow_budget import META_UNCAPPED_PROFILE, CampaignBudget
 from tools.three_flow_http import HTTPCampaignTransport
-from tools.three_flow_profiles import SELECTED_SIX
+from tools.three_flow_profiles import LATE_NOVEMBER_PROFILE, SELECTED_SIX
 
 
 class AdmittedGuard(SharedGuard):
@@ -91,24 +92,107 @@ class AdmittedGuard(SharedGuard):
         ):
             raise ValueError("request exceeds admitted provider context/output")
 
+    def settle_ember(
+        self,
+        reservation: Decimal,
+        *,
+        input_tokens: int,
+        output_tokens: int,
+        cached_tokens: int,
+    ) -> Decimal:
+        from operatebench.providers.cost import CostReservationBreachedError
+
+        ident = self._check(reservation)
+        try:
+            actual = cast(CampaignBudget, self.budget).settle_ember(
+                ident,
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                cached_tokens=cached_tokens,
+            )
+        except SettlementBoundsError as exc:
+            self.forfeit(reservation)
+            raise CostReservationBreachedError(
+                "usage exceeds admitted bounds; full wire bound retained as unknown",
+                measured_usd=None,
+                reservation_usd=decimal(Fraction(self.budget.records[ident]["bound"])),
+                cap_usd=self.cap_usd,
+            ) from exc
+        self._measured += actual
+        self._last = GuardEvent(
+            reservation_usd=reservation, measured_usd=actual, forfeited_usd=None
+        )
+        self._pending_events.append(self._last)
+        self._outstanding = Decimal(0)
+        self.ticket = None
+        return actual
+
     def authorize(self, *, input_tokens_upper_bound: int) -> Decimal:
         self.check_context(input_tokens_upper_bound, self._max_output_tokens)
-        return super().authorize(
-            input_tokens_upper_bound=(
-                input_tokens_upper_bound if self.diagnostic else self.profile["input_max"]
-            )
-        )
+        bound = input_tokens_upper_bound if self.diagnostic else self.profile["input_max"]
+        return super().authorize(input_tokens_upper_bound=bound)
 
 
 def live_factory(
     admission: dict[str, Any], keys: dict[str, str], *, network: Any = None
 ) -> Any:
-    def make(slot: dict[str, Any], budget: Any) -> Any:
-        if slot["provider"] == "gemini":
-            from tools.three_flow_gemini import MODELS as GEMINI_MODELS
-            from tools.three_flow_gemini import GeminiCampaignTransport
+    if admission.get("roster_profile") == LATE_NOVEMBER_PROFILE:
+        # Resolve OpenAI's lazy resource modules before concurrent workers start.
+        # Importing chat and Responses simultaneously can deadlock module locks.
+        importlib.import_module("openai.resources.chat.completions")
+        importlib.import_module("openai.resources.responses")
+        importlib.import_module("openai.types.chat.chat_completion")
 
-            profile = GEMINI_MODELS[slot["model"]]
+    def make(slot: dict[str, Any], budget: Any) -> Any:
+        late = admission.get("roster_profile") == LATE_NOVEMBER_PROFILE
+        if late:
+            from tools.three_flow_campaign import assignments, correction_slot
+
+            originals = [
+                original
+                for original in assignments(
+                    admission["campaign_id"], LATE_NOVEMBER_PROFILE
+                )
+                if original["trial_id"] in admission["selected"]
+            ]
+            if admission["operation"] == "correction":
+                allowed = [
+                    correction_slot(
+                        original,
+                        admission["attempt_id"],
+                        admission["corrections"][original["trial_id"]]["reason"],
+                        admission["corrections"][original["trial_id"]]["evidence_sha256"],
+                    )
+                    for original in originals
+                ]
+            elif admission["operation"] in ("initial", "resume"):
+                allowed = originals
+            else:
+                raise ValueError("unknown late November operation")
+            if (
+                canonical(slot) not in {canonical(item) for item in allowed}
+                or getattr(budget, "roster_profile", None) != LATE_NOVEMBER_PROFILE
+                or (
+                    None
+                    if budget.cap is None
+                    else Decimal(budget.cap.numerator) / Decimal(budget.cap.denominator)
+                )
+                != (
+                    None
+                    if admission["cap_usd"] is None
+                    else Decimal(admission["cap_usd"])
+                )
+            ):
+                raise ValueError(
+                    "late November selected slot and budget binding required"
+                )
+        if slot["provider"] == "gemini":
+            from tools.three_flow_gemini import ROSTER_PROFILE as GEMINI_ROSTER
+            from tools.three_flow_gemini import GeminiCampaignTransport, gemini_profile
+
+            profile = gemini_profile(
+                slot["model"], LATE_NOVEMBER_PROFILE if late else GEMINI_ROSTER
+            )
             expected = (
                 profile.settings(profile.output)
                 if network is not None
@@ -136,6 +220,7 @@ def live_factory(
                 max_output_tokens=profile.output,
                 admitted=True,
                 inner=gemini_inner,
+                roster_profile=LATE_NOVEMBER_PROFILE if late else GEMINI_ROSTER,
             )
             if network is None:
                 gemini_transport.settings.update(
@@ -143,7 +228,8 @@ def live_factory(
                     admission_provenance="source-bound-admission-reference-v1",
                     admission_sha256=digest(admission),
                     admission_profile_sha256=digest(admission["profiles"][slot["model"]]),
-                    limit_policy=copy.deepcopy(admission["limit_policy"]),
+                    limit_policy=copy.deepcopy(admission.get("limit_policy")),
+                    **({"cap_usd": admission["cap_usd"]} if late else {}),
                 )
             return gemini_transport
         p = admission["profiles"][slot["model"]]
@@ -201,7 +287,9 @@ def live_factory(
                     max_output_tokens=maximum,
                     channel_options=GRPC_OPTIONS,
                     network_timeout=p["network_timeout_seconds"],
-                    mode_profile=admission.get("mode_profile", "legacy-v1"),
+                    mode_profile="ripple-default-v1"
+                    if late
+                    else admission.get("mode_profile", "legacy-v1"),
                 )
                 if network is not None:
                     inner.tokenizer = transport.tokenizer
@@ -221,9 +309,16 @@ def live_factory(
                     guard=guard,
                     max_output_tokens=maximum,
                     network_timeout=p["network_timeout_seconds"],
-                    mode_profile=admission.get("mode_profile", "legacy-v1"),
+                    mode_profile="off-or-minimum-v1"
+                    if late
+                    else admission.get("mode_profile", "legacy-v1"),
+                    roster_profile=LATE_NOVEMBER_PROFILE if late else "legacy-v1",
                     transport_policy=(
-                        admission.get("transport_policy", "legacy-v1")
+                        "paced-safe-errors-v1"
+                        if late
+                        and (slot["provider"], slot["model"])
+                        == ("river_http", "moonshotai/Kimi-K3.1-Pro")
+                        else admission.get("transport_policy", "legacy-v1")
                         if slot["provider"] == "mistral"
                         or (
                             slot["provider"] == "river_http"
@@ -249,6 +344,11 @@ def live_factory(
                 admission_sha256=digest(admission),
                 accounting="conservative all-tier envelope; usage estimate, not invoice",
             )
+            if late and slot["provider"] == "meta":
+                transport.settings["accounting"] = (
+                    "reported input/cache/output at published tier; "
+                    "conservative reservation; estimate not invoice"
+                )
             if "owner_output_cap_tokens" in p:
                 # Selected operational ceiling, not an API/provider maximum.
                 # Full profile and settings already bind admission/identity/replay.

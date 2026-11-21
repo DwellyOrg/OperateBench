@@ -19,13 +19,21 @@ import re
 import stat
 import threading
 from decimal import Decimal
+from fractions import Fraction
 from pathlib import Path
 from typing import Any
 
-from tools.aggregate_budget import Budget, canonical, money
+from tools.aggregate_budget import (
+    Budget,
+    SettlementBoundsError,
+    canonical,
+    decimal,
+    money,
+)
 from tools.three_flow_profiles import (
     GEMINI_ROSTER_PROFILE,
     GEMINI_UNCAPPED_PROFILE,
+    LATE_NOVEMBER_PROFILE,
     META_ROSTER_PROFILE,
 )
 
@@ -89,6 +97,7 @@ class CampaignBudget(Budget):
             raise ValueError("nonempty bounded campaign ID required")
         meta = roster_profile == META_ROSTER_PROFILE
         gemini = roster_profile == GEMINI_ROSTER_PROFILE
+        late_november = roster_profile == LATE_NOVEMBER_PROFILE
         optional_mode = (
             GEMINI_UNCAPPED_PROFILE
             if gemini
@@ -104,10 +113,17 @@ class CampaignBudget(Budget):
             validate_limit_policy(limit_policy, mode=optional_mode)
         elif limit_policy is not None:
             raise ValueError("historical capped policy cannot opt into optional limits")
+        self.roster_profile = roster_profile
         self.limit_policy = copy.deepcopy(limit_policy)
         self.controller_profile = optional_mode if cap is None else PROFILE
         self.cap = None if cap is None else money(cap)
-        if self.cap is not None and self.cap != (990 if meta else 1000):
+        if late_november and self.cap is not None and self.cap <= 0:
+            raise ValueError("positive owner monetary cap required")
+        if (
+            not late_november
+            and self.cap is not None
+            and self.cap != (990 if meta else 1000)
+        ):
             raise ValueError("this successor requires the global USD 1000 cap")
         if root != root.resolve(strict=True) or root.is_symlink():
             raise ValueError("canonical private root required")
@@ -126,10 +142,20 @@ class CampaignBudget(Budget):
         genesis: dict[str, Any] = {
             "kind": "genesis",
             "namespace": campaign_id,
-            "cap": None if cap is None else ("990" if meta else "1000"),
+            "cap": (
+                None
+                if cap is None
+                else str(cap)
+                if late_november
+                else "990"
+                if meta
+                else "1000"
+            ),
             "currency": "USD",
             "controller_profile": self.controller_profile,
         }
+        if late_november:
+            genesis["roster_profile"] = LATE_NOVEMBER_PROFILE
         if self.limit_policy is not None:
             genesis["limit_policy"] = self.limit_policy
         try:
@@ -194,6 +220,40 @@ class CampaignBudget(Budget):
     def _reduce(
         self, old: dict[str, dict[str, Any]], e: dict[str, Any]
     ) -> dict[str, dict[str, Any]]:
+        if e["kind"] == "ember_settle":
+            if self.roster_profile != LATE_NOVEMBER_PROFILE or (
+                set(e) != {"kind", "id", "input", "output", "cached", "seq", "prev"}
+                and set(e) != {"kind", "id", "input", "output", "cached"}
+            ):
+                raise ValueError("invalid Ember settlement scope")
+            rows = copy.deepcopy(old)
+            row = rows[e["id"]]
+            i, o, cached = e["input"], e["output"], e["cached"]
+            if row["state"] != "sent" or any(
+                type(v) is not int or v < 0 for v in (i, o, cached)
+            ):
+                raise ValueError("invalid Ember settlement usage")
+            if i > row["ib"] or o > row["ob"] or cached > i:
+                raise SettlementBoundsError("Ember usage exceeds admitted bounds")
+            if money(row["ir"]) != money("0.30") or money(row["or"]) != money("1.50"):
+                raise ValueError("Ember reservation rate differs")
+            ir, cr, out = (
+                ("0.10", "0.004", "0.50") if i <= 200000 else ("0.30", "0.012", "1.50")
+            )
+            actual = (
+                (i - cached) * money(ir) + cached * money(cr) + o * money(out)
+            ) / 1000000
+            if actual > Fraction(row["bound"]):
+                raise SettlementBoundsError("Ember settlement exceeds reservation")
+            row.update(
+                state="settled",
+                actual=str(actual),
+                input=i,
+                output=o,
+                cached=cached,
+                tariff="short" if i <= 200000 else "long",
+            )
+            return rows
         if e["kind"] != "raw_rpc":
             return super()._reduce(old, e)
         rows = dict(old)
@@ -207,6 +267,21 @@ class CampaignBudget(Budget):
             raise ValueError("invalid raw RPC sequence")
         row["raw_rpcs"] = e["ordinal"]
         return rows
+
+    def settle_ember(
+        self, ident: str, *, input_tokens: int, output_tokens: int, cached_tokens: int
+    ) -> Decimal:
+        with self.lock:
+            self._event(
+                {
+                    "kind": "ember_settle",
+                    "id": ident,
+                    "input": input_tokens,
+                    "output": output_tokens,
+                    "cached": cached_tokens,
+                }
+            )
+            return decimal(Fraction(self.records[ident]["actual"]))
 
     def raw_rpc(self, cell: str, endpoint: str, request_sha256: str) -> None:
         """Every wire RPC, including non-resubmitting polls, durably precedes wire."""

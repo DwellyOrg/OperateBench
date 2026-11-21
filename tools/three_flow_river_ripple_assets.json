@@ -1,0 +1,20 @@
+{
+  "assets": [
+    {
+      "filename": "chat_template.jinja",
+      "sha256": "877c2dbf365243dda14738ca250b31398059b35ffd91d4ed0ec68be45ca6ebd3"
+    },
+    {
+      "filename": "special_tokens_map.json",
+      "sha256": "3f7cd7d0cfb20f9faa47c75fd4df91b1c9a78aef0be27ded12cb705b23951341"
+    },
+    {
+      "filename": "tokenizer.json",
+      "sha256": "18e309ad7f9c60037eaf26aca401a96128187cad2bdfa01a508dca7526bf6300"
+    },
+    {
+      "filename": "tokenizer_config.json",
+      "sha256": "eef580161a5d941607f7ec7ca95c50bfcd24812d2921c110ac049c620345ed85"
+    }
+  ]
+}
