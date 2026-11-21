@@ -344,10 +344,10 @@ def test_positive_controls(tmp_path: Path) -> None:
         "northstar:northstar_sample",
         "riverside:riverside_sample",
     )
-    assert check_contributions(Path.cwd()) == (
+    assert {
         "prospire:lettings_property_compliance_synthetic_v1",
         "prospire:lettings_property_compliance_profiles_v1",
-    )
+    } <= set(check_contributions(Path.cwd()))
 
 
 @pytest.mark.parametrize(

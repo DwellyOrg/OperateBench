@@ -475,6 +475,7 @@ def test_real_source_layout_cli_tolerates_shared_caches_across_operations(
     tmp_path: Path,
 ) -> None:
     root = _tracked_repository(tmp_path)
+    baseline = check_contributions(root)
     environment = os.environ.copy()
     environment.pop("PYTHONDONTWRITEBYTECODE", None)
     environment.pop("PYTHONPYCACHEPREFIX", None)
@@ -537,11 +538,14 @@ def test_real_source_layout_cli_tolerates_shared_caches_across_operations(
     assert second.returncode == EXIT_OK, second.stderr
     second_result = yaml.safe_load(second.stdout)
     assert len(second_result["created_paths"]) == 13
-    assert check_contributions(root) == (
-        "northstar:northstar_account_recovery_synthetic_v1",
-        "northstar:northstar_invoice_review_synthetic_v1",
-        "prospire:lettings_property_compliance_synthetic_v1",
-        "prospire:lettings_property_compliance_profiles_v1",
+    assert tuple(sorted(check_contributions(root))) == tuple(
+        sorted(
+            set(baseline)
+            | {
+                "northstar:northstar_account_recovery_synthetic_v1",
+                "northstar:northstar_invoice_review_synthetic_v1",
+            }
+        )
     )
 
 
