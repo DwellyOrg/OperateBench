@@ -1,0 +1,11 @@
+schema_version: 1
+owner_id: finsi
+pack_id: partner.finsi.governed_campaign_launch.synthetic
+operation_id: finsi_governed_campaign_launch_synthetic_v1
+operation_type: finsi.governed_campaign_launch
+aliases: []
+module: operatebench.contributions.finsi.governed_campaign_launch
+source_path: src/operatebench/contributions/finsi/governed_campaign_launch
+test_path: tests/contributions/finsi/governed_campaign_launch/test_pack.py
+fixture_path: examples/contributions/finsi/governed_campaign_launch/operation.yaml
+documentation_path: docs/contributions/finsi/governed_campaign_launch.md
